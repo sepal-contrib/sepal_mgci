@@ -1,0 +1,33 @@
+{
+    "app": {
+        "title": "sepal_mgci",
+        "footer": "vers l'infini et au-del\u00e0 \u00a9 {}",
+        "drawer_item": {
+            "aoi": "S\u00e9lection d'aoi",
+            "default_process": "Processus",
+            "default_result": "Resultats",
+            "about": "A propos"
+        }
+    },
+    "default_process": {
+        "small_slider": "{} est une trop petite valeur, utilisez une valeur > 50",
+        "end_computation": "Calcul termin\u00e9e",
+        "hist_title": "Histograme",
+        "treecover2000": "Couvert forestier 2000",
+        "healthy_veg": "V\u00e9g\u00e9tation saine",
+        "green": "Vert",
+        "green_update": "Vert mis \u00e0 jour",
+        "gain_loss": "Gains & Pertes",
+        "slider": "Selectonnez un pourcentage",
+        "textfield": "Ecrivez quelque chose",
+        "title": "Tuile du Processus",
+        "no_aoi": "Renseignez une AOI",
+        "no_slider": "Rensignez une valeur de pourcentage",
+        "no_textfield": "Renseigner un texte",
+        "csv_btn": "Tableau en .csv"
+    },
+    "result": {
+        "title": "Resultats",
+        "no_result": "Aucun resultats \u00e0 afficher"
+    }
+}

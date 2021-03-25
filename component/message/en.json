@@ -1,0 +1,34 @@
+{
+    "not_translated": "this message only exist in the en dict",
+    "app": {
+        "title": "sepal_mgci",
+        "footer": "The sky is the limit \u00a9 {}",
+        "drawer_item": {
+            "aoi": "AOI selection",
+            "default_process": "Process",
+            "default_result": "Results",
+            "about": "About"
+        }
+    },
+    "default_process": {
+        "small_slider": "{} is not big enought, please provide a value > to 50",
+        "end_computation": "Computation complete",
+        "hist_title": "Histogram",
+        "treecover2000": "Treecover 2000",
+        "healthy_veg": "Healthy vegetation",
+        "green": "Green",
+        "green_update": "Green updated",
+        "gain_loss": "Gain & Loss",
+        "slider": "Select percentage",
+        "textfield": "Write text",
+        "title": "Process tile",
+        "no_aoi": "Please provide an AOI",
+        "no_slider": "Please provide a percentage value",
+        "no_textfield": "Please provide a text in the textfield",
+        "csv_btn": "Tab in .csv"
+    },
+    "result": {
+        "title": "Results",
+        "no_result": "No result to display yet"
+    }
+}
