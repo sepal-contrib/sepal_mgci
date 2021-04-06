@@ -54,3 +54,7 @@ class AssetSelect(v.Combobox, sw.SepalWidget):
                 images
         
         return items
+    
+class Flex(v.Flex, sw.SepalWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
