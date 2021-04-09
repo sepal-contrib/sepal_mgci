@@ -1,3 +1,4 @@
+from ipywidgets import Output
 import ipyvuetify as v
 import ee
 import sepal_ui.sepalwidgets as sw
@@ -58,3 +59,25 @@ class AssetSelect(v.Combobox, sw.SepalWidget):
 class Flex(v.Flex, sw.SepalWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+class Dialog(v.Dialog):
+    
+    def __init__(self, output, *args, **kwargs):
+        
+        self.output = output
+        
+        self.v_model=False
+        self.max_width=436
+        self.overlay_color='black'
+        self.overlay_opcity=0.7
+        self.children=[
+            v.Card(children=[self.output])
+        ]
+
+        super().__init__(*args, **kwargs)
+        
+    def alert(self, alert):
+        self.v_model=True
+        with self.output:
+            self.output.clear_output()
+            display(alert)

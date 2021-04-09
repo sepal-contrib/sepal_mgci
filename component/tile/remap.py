@@ -19,12 +19,13 @@ class Remap(v.SimpleTable):
     def _get_matrix(self, code_fields):
         
         self.matrix = {}
+        
         headers = ['From: user code', 'To: Ipcc Code']
         
         # Instantiate an empty dictionary with code as keys and empty values
         for code in code_fields:
             self.matrix[code] = ''
-        
+            
         header = [
             v.Html(
                 tag = 'tr', 

@@ -1,7 +1,7 @@
 import functools
 
 # Definition of decorator that is receiving two arguments
-def loading(alert, btn=None):
+def loading(alert, dialog, btn=None):
     def decorator_loading(func):
         @functools.wraps(func)
         def wrapper_loading(*args, **kwargs):
@@ -11,6 +11,7 @@ def loading(alert, btn=None):
             except Exception as e:
                 if btn : btn.loading=False
                 alert.add_msg(f'{e}', type_='error')
+                dialog.alert(alert)
                 raise e
             if btn : btn.loading=False
             return value

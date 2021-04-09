@@ -20,7 +20,8 @@ def remap_feature_collection(ee_asset, band, matrix):
     if asset_type == 'TABLE':
         # Convert feature collection to raster
         image = ee_asset.filter(ee.Filter.notNull([band])).reduceToImage(
-            properties=band, reducer=ee.Reducer.first()).rename([band])
+            properties=band, 
+            reducer=ee.Reducer.first()).rename([band])
         
     elif asset_type == 'IMAGE':
         image = ee.asset
