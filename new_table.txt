@@ -1,0 +1,6 @@
+1,Forest
+2,Grassland
+3,Cropland
+4,Wetland
+5,Settlement
+6,Other land
