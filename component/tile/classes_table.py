@@ -77,7 +77,8 @@ class ClassTable(v.DataTable, sw.SepalWidget):
         self.structure = structure
         
         self.headers =  [{'text': k.capitalize(), 'value': k} for k in structure.keys() if k!='id']
-        self.items = self.get_items_from_txt(items_file)
+
+        self.items = [] if items_file == '' else self.get_items_from_txt(items_file)
     
     def get_items_from_txt(self, items_path):
         """Read txt file with classification"""
@@ -205,13 +206,12 @@ class EditDialog(v.Dialog):
         
         self.table.items = new_items
         self.v_model=False
-        
-        self.reload += 1
-        
+                
     def _get_index(self):
         """Get an unique index for a new element"""
         
-        return max([i['id'] for i in self.table.items])+1
+        index = 1 if not self.table.items else max([i['id'] for i in self.table.items])+1
+        return index
         
     def _cancel(self, widget, event, data):
         """Close dialog"""
