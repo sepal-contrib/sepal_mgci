@@ -29,3 +29,25 @@ def remap_feature_collection(ee_asset, band, matrix):
     image.remap(from_, to, bandName=band)
     
     return image
+
+def add_widget(container_widget, widget, widget_name):
+    """Add widget at the end of the children view"""
+
+    su.show_component(widget)
+
+    widgets_name = [widget._metadata['name'] for widget in container_widget.children if widget._metadata]      
+
+    if widget_name not in widgets_name:
+        container_widget.children = container_widget.children + [widget]
+
+def remove_widget(container_widget, widget, widget_name):
+    """Add widget at the end of the children view"""
+
+    widgets_name = [widget._metadata['name'] for widget in container_widget.children if widget._metadata]      
+
+    if widget_name in widgets_name:
+
+        children = container_widget.children
+        children.remove(widget)
+
+        container_widget.children = children

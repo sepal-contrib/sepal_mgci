@@ -1,6 +1,7 @@
 from ipywidgets import Output
 import ipyvuetify as v
 import ee
+from traitlets import Int, link
 import sepal_ui.sepalwidgets as sw
 from sepal_ui.scripts import utils as su
 
