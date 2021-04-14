@@ -1,9 +1,7 @@
 from pandas import DataFrame
 from functools import partial
-from pathlib import Path
 from traitlets import (
-    Dict, HasTraits, Unicode, 
-    Any, link, observe
+    Dict, Any, link, observe
 )
 
 import ipyvuetify as v
@@ -128,13 +126,13 @@ class GeeSelector(v.Card):
         self.classes_file = classes_file
         self.class_ = 'pa-4'
         title = v.CardTitle(children=[cm.ui.title])
-        description = v.CardText(class_='py-0', children=[sw.Markdown(cm.ui.description)])
+        description = v.CardText(
+            class_='py-0', 
+            children=[sw.Markdown(cm.ui.description)]
+        )
         
         super().__init__(*args, **kwargs)
-        
-        self.alert_output = Output()
-        self.alert = sw.Alert()
-        self.alert_dialog = Dialog(output=self.alert_output)
+
         
         self.ee_asset = None
         self.w_reclassify = ReclassifyTable(
@@ -166,7 +164,6 @@ class GeeSelector(v.Card):
         
         # Define view
         self.children = [
-            self.alert_dialog,
             title,
             description,
             self.asset_selector,
@@ -180,8 +177,8 @@ class GeeSelector(v.Card):
         self.mapper_btn.on_event('click', self._get_mapper_matrix_event)
         
         # Decorate functions
-        self._get_mapper_matrix = loading(self.alert, self.alert_dialog, self.mapper_btn)(self._get_mapper_matrix)
-        self._validate_asset = loading(self.alert, self.alert_dialog)(self._validate_asset)
+        self._get_mapper_matrix = loading(self.alert_dialog, self.mapper_btn)(self._get_mapper_matrix)
+        self._validate_asset = loading(self.alert_dialog)(self._validate_asset)
         
         
     def _get_mapper_matrix_event(self, widget, event, data):
