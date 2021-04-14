@@ -17,12 +17,9 @@ class ClassTable(v.DataTable, sw.SepalWidget):
         Args: 
             out_path (str): output path where table will be saved
         """
-        
-        self.structure = structure
         self.out_path = out_path
         self.dialog = Output()
 
-        
         self.edit_icon = v.Icon(children=['mdi-pencil'])
         edit_icon = sw.Tooltip(self.edit_icon, 'Edit selelcted row')
         
@@ -69,14 +66,15 @@ class ClassTable(v.DataTable, sw.SepalWidget):
         self.add_icon.on_event('click', self._add_event)
         self.save_icon.on_event('click', self._save_event)
         
-    def _init_table(self, structure, items_file):
-    """ Populate table, it will fill the table with the items_file
-    
-    Args:
-        structure (dict {'title':'type'}): Dictionary with column names (key) and type of data (value)
-        items (.txt): file containing classes and description
-    
-    """
+    def populate_table(self, structure, items_file):
+        """ Populate table, it will fill the table with the items_file
+
+        Args:
+            structure (dict {'title':'type'}): Dictionary with column names (key) and type of data (value)
+            items (.txt): file containing classes and description
+
+        """
+        self.structure = structure
         
         self.headers =  [{'text': k.capitalize(), 'value': k} for k in structure.keys() if k!='id']
         self.items = self.get_items_from_txt(items_file)
