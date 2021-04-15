@@ -23,6 +23,7 @@ def loading(dialog, btn=None):
                 dialog.v_model = True
                 
                 with dialog.output:
+                    dialog.output.clear_output()
                     display(sw.Alert().add_msg(f'{e}', type_='error').show())
                     
             if btn : btn.loading=False

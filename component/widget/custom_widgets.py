@@ -63,9 +63,9 @@ class Flex(v.Flex, sw.SepalWidget):
         
 class Dialog(v.Dialog):
     
-    def __init__(self, output, *args, **kwargs):
+    def __init__(self, output=None, *args, **kwargs):
         
-        self.output = output
+        self.output = output if output else Output()
         
         self.v_model=False
         self.max_width=436

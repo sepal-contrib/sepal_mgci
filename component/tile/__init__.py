@@ -1,1 +1,2 @@
-from .remap import *
+from .reclassify import *
+from .classes_table import *

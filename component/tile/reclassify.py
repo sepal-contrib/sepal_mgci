@@ -21,7 +21,7 @@ class ReclassifyTable(v.SimpleTable):
     
     matrix = Dict({}).tag(sync=True)
     
-    def __init__(self, classes_file, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Widget to reclassify raster/feature_class into local classes
         
         Args:
@@ -95,7 +95,7 @@ class ReclassifyTable(v.SimpleTable):
         self.matrix[code] = change['new']
         
 
-    def get_classes(self, class_file, code):
+    def get_classes(self, code):
         """ Get class selector on the fly and store code to matrix
         
         Args:
@@ -121,15 +121,10 @@ class GeeSelector(v.Card):
     asset = Any('').tag(sync=True)
     code_col = Any('').tag(sync=True)
     
-    def __init__(self, classes_file, *args, **kwargs):
+    def __init__(self, alert_dialog, class_file, *args, **kwargs):
         
-        self.classes_file = classes_file
-        self.class_ = 'pa-4'
-        title = v.CardTitle(children=[cm.ui.title])
-        description = v.CardText(
-            class_='py-0', 
-            children=[sw.Markdown(cm.ui.description)]
-        )
+        self.alert_dialog = alert_dialog
+        self.w_class_file = class_file
         
         super().__init__(*args, **kwargs)
 
@@ -164,8 +159,6 @@ class GeeSelector(v.Card):
         
         # Define view
         self.children = [
-            title,
-            description,
             self.asset_selector,
         ]
         
@@ -173,7 +166,8 @@ class GeeSelector(v.Card):
         link((self, 'asset'), (self.asset_selector, 'v_model'))
         link((self.w_code, 'v_model'), (self, 'code_col'))
         
-        # Create Events
+        # Trigger events
+        
         self.mapper_btn.on_event('click', self._get_mapper_matrix_event)
         
         # Decorate functions
@@ -194,7 +188,7 @@ class GeeSelector(v.Card):
             code_fields = self._get_classes()
         
         # Create mapper widget
-        self.w_reclassify._get_matrix(classes_file.v_model, code_fields)
+        self.w_reclassify._get_matrix(self.w_class_file.v_model, code_fields)
 
         add_widget(self, self.w_reclassify, 'mapper')
 
