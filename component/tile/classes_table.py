@@ -31,7 +31,7 @@ class ClassTable(v.DataTable, sw.SepalWidget):
         
         self.save_icon = v.Icon(children=['mdi-content-save'])
         save_icon = sw.Tooltip(self.save_icon, 'Write current table on SEPAL space')
-        self.save_dialog = SaveDialog(table=self, out_path=self.out_path)
+        self.save_dialog = SaveDialog(table=self, out_path=self.out_path, transition=False)
         
         slot = v.Toolbar(
             class_='d-flex mb-6',
@@ -87,8 +87,8 @@ class ClassTable(v.DataTable, sw.SepalWidget):
         keys = self.structure.keys()
         with open(items_path) as f:
             for i, line in enumerate(f.readlines()):
-                values = [i]+line.split(',')
-                items.append(dict(zip(keys, values)))
+                item = [it.replace('\n','') if isinstance(it, str) else it for it in [i]+line.split(',')]
+                items+=[(dict(zip(keys, item)))]
                 
         return items
     
@@ -105,7 +105,8 @@ class ClassTable(v.DataTable, sw.SepalWidget):
         dial = EditDialog(
             schema = self.structure, 
             default= self.v_model[0],
-            table = self
+            table = self,
+            transition=False
         )
         with self.dialog:
             display(dial)
@@ -294,10 +295,10 @@ class SaveDialog(v.Dialog):
         if not '.csv'in file_name:
             file_name = f'{file_name}.csv'
         
-        out_file = Path.joinpath(self.out_path, file_name)
+        out_file = self.out_path/file_name
         with open(out_file, 'w') as f:
             for line in self._get_lines():
-                f.write(",".join(line))
+                f.write(",".join(line)+'\n')
         
         # Every time a file is saved, we update the current widget state
         # so it can be observed by other objects.
