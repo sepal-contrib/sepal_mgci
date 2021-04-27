@@ -12,5 +12,18 @@
             "error_type" : "\n\nThe input asset must be an instace of one of ee.Image, or  ee.Feature.",
             "no_code_col" : "Please select at least one column name or band."
         }
+    },
+    "mountain_layer" : {
+        "title":"Mountain descriptor layer",
+        "text": "Mountains can be defined with reference to a variety of parameters, such as climate, elevation, ecology (Körner et al., 2011) (Karagulle et al., 2017). This methodology adheres to the UNEP- WCMC mountain definition, relying in turn on the mountain description proposed by Kapos et al. (2000). </br></br> <In the following dropdown you can select some of the world Digital Elevation Models (DEM) that will be used to classify the mountains.",
+        "w_dem" :{
+            "label" : "Digital Elevation Model (DEM-DSM)",
+            "items" : [
+                "Custom DEM",
+                "SRTM 1 arcsec (30m)", 
+                "SRTM 3 arcsec (90m)", 
+                "Alos World 3D (30m)"
+            ]
+        }
     }
 }

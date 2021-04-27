@@ -15,16 +15,22 @@ class AssetSelect(v.Combobox, sw.SepalWidget):
         label (str): the label of the input
         folder (str): the folder of the user assets
         default_asset (str): the id of a default asset
+        only (str) (optional): type of assets to be displayed, whether table or rasters
         
     Attributes:
         folder (str): the folder of the user assets
     """
     
-    def __init__(self, label = 'Select an asset', folder = None, default_asset = None, *args, **kwargs):
+    def __init__(self, 
+                 label = 'Select an asset', 
+                 folder = None, 
+                 default_asset = None,
+                 only = None,
+                 *args, **kwargs):
         
         # if folder is not set use the root one 
         self.folder = folder if folder else ee.data.getAssetRoots()[0]['id'] + '/'
-        
+        self.only = only
         
         self.label = label
         self.v_model = default_asset
@@ -50,10 +56,20 @@ class AssetSelect(v.Combobox, sw.SepalWidget):
         tables = [e['id'] for e in assets if e['type'] == 'TABLE']
         images = [e['id'] for e in assets if e['type'] == 'IMAGE']
         
-        items = [{'divider':True}, {'header':'Tables'}] + \
-                tables + \
-                [{'divider':True}, {'header':'Rasters'}] + \
-                images
+        if not self.only:
+            items = [{'divider':True}, {'header':'Tables'}] + \
+                    tables + \
+                    [{'divider':True}, {'header':'Rasters'}] + \
+                    images
+            
+        elif self.only == 'raster':
+            
+            items = [{'divider':True}, {'header':'Rasters'}] + \
+                    images
+        elif self.only == 'table':
+            
+            items = [{'divider':True}, {'header':'Tables'}] + \
+                    tables
         
         return items
     
