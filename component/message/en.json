@@ -1,7 +1,7 @@
 {
     "ui": {
         "title" : "Re-classify custom LC/LU classes",
-        "description" : "This module will help you to translate your own land cover / land user (LC/LU) maps into the six IPCC classes. </br> In the following input cell you can select the assets stored in your Google Earth Engine account, you can use whether raster (image) or feature collection (table) assets, click over the 'Get attributes' button and a table will show up lettting you select the corresponding class."
+        "description" : "This module will help you to translate your own land cover / land user (LC/LU) maps into a custom classification. </br></br> In the following input cell you can select the assets stored in your Google Earth Engine account, you can use whether raster (image) or feature collection (table) assets, click over the 'Get attributes' button and a table will show up lettting you select the corresponding class."
     },
     "remap": {
         "label": "Select a LC/LU GEE asset (Feature or Image)",
@@ -13,13 +13,22 @@
             "no_code_col" : "Please select at least one column name or band."
         }
     },
+    "veg_layer" : {
+        "title" : "Vegetation layer",
+        "description" : "The vegetation descriptor layer categorizes land cover into green and non-green areas. Green vegetation includes both natural vegetation and vegetation resulting from anthropic activity (e.g. crops, afforestation, etc.). Non-green areas include very sparsely vegetated areas, bare land, water, permanent ice/snow and urban areas.",
+        "instructions":" ",
+        "veg_asst":{
+            "label": "Select a Land Cover Map",
+            "items" : ["Custom Land Cover Map...", "ESA Land Cover Map"]
+        }
+    },
     "mountain_layer" : {
         "title":"Mountain descriptor layer",
-        "text": "Mountains can be defined with reference to a variety of parameters, such as climate, elevation, ecology (Körner et al., 2011) (Karagulle et al., 2017). This methodology adheres to the UNEP- WCMC mountain definition, relying in turn on the mountain description proposed by Kapos et al. (2000). </br></br> <In the following dropdown you can select some of the world Digital Elevation Models (DEM) that will be used to classify the mountains.",
+        "text": "Mountains can be defined with reference to a variety of parameters, such as climate, elevation, ecology (Körner et al., 2011) (Karagulle et al., 2017). This methodology adheres to the UNEP- WCMC mountain definition, relying in turn on the mountain description proposed by Kapos et al. (2000). </br></br> In the following dropdown you can select some of the world Digital Elevation Models (DEM) that will be used to classify the mountains.",
         "w_dem" :{
             "label" : "Digital Elevation Model (DEM-DSM)",
             "items" : [
-                "Custom DEM",
+                "Custom DEM...",
                 "SRTM 1 arcsec (30m)", 
                 "SRTM 3 arcsec (90m)", 
                 "Alos World 3D (30m)"
