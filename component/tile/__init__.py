@@ -1,4 +1,2 @@
-from .reclassify import *
-from .classes_table import *
-from .mountain_layer import *
-from .vegetation_layer import *
+from .mountain_tile import *
+from .vegetation_tile import *
