@@ -8,21 +8,26 @@ ee.Initialize()
 def get_random_color():
     return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
-def get_unique_ee(raw_object, ee_object, code_col=None, maxBuckets=40000):
-    """Get raster classes"""
+def get_unique_ee(
+    raw_object, 
+    ee_object, 
+    code_col=None, 
+    maxBuckets=40000, 
+    aoi=None):
     
-    print(raw_object)
-    print(ee_object)
-    print(code_col)
+    """Get raster classes"""
 
     if not code_col:
         # If not band name selected, use the first one
         code_col = ee_object.bandNames().getInfo()[0]
 
     # Reduce image
+    
+    geometry = raw_object.geometry() if not aoi else aoi
+    
     reduced = ee_object.reduceRegion(
       reducer = ee.Reducer.autoHistogram(maxBuckets=maxBuckets), 
-      geometry = raw_object.geometry(), 
+      geometry = geometry, 
       scale=30, 
       maxPixels=1e13
     )
@@ -51,6 +56,12 @@ def get_kapos(aoi, dem):
         ee.Image
     """
     
+    # Validate inputs
+    
+    if not aoi:
+        raise Exception('No AOI selected, please go ' + \
+                        'to the previous step and select an area.')
+    
     if dem == 'srtm_1':
         dem = ee.Image("USGS/SRTMGL1_003")
     elif dem == 'srtm_3':
@@ -73,14 +84,16 @@ def get_kapos(aoi, dem):
       radius =  7000,
       kernelType = 'circle',
       units = 'meters',
-      iterations = 1)
+      iterations = 1
+    )
 
     #  Generate focal minimum elevation within range of 7km
     focalMin7km = aoi_dem.focal_min(
       radius =  7000,
       kernelType =  'circle',
       units = 'meters',
-      iterations = 1)
+      iterations = 1
+    )
 
     #  Generate local (7 km radius) elevation range
     local = focalMax7km.subtract(focalMin7km)
@@ -146,12 +159,15 @@ def get_kapos(aoi, dem):
 
     kapos_mosaic = ee.ImageCollection([
         kapos_c1,kapos_c2,kapos_c3,
-        kapos_c4,kapos_c5a,kapos_c5b,kapos_c6
+        kapos_c4,kapos_c5a,# kapos_c5b,kapos_c6
     ]).mosaic();
+    
+    return kapos_mosaic
 
     kapos_1_6 = ee.Image(kapos_mosaic)
     kapos_1_6_binary = kapos_1_6.remap([1,2,3,4,5,6], [1,1,1,1,1,1])
-
+    
+    return kapos_1_6_binary
     #  Class 7: Inner isolated areas (<=25km2 in size) - don't meet criteria but surrounded by mountains
     # get pixels that are non-mountain areas by inversing the new mountain layer:
 

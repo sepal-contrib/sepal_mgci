@@ -11,20 +11,22 @@ import ipyvuetify as v
         
 class VegetationTile(v.Card):
     
-    def __init__(self, aoi, model, *args, **kwargs):
+    def __init__(self, aoi_model, *args, **kwargs):
 
         self.class_ = 'pa-2'
         
         super().__init__(*args,  **kwargs)
-        
-        self.aoi = aoi
-        
+                
         title = v.CardTitle(children=[cm.veg_layer.title])
         description = v.CardText(
             children=[sw.Markdown(cm.veg_layer.description)]
         )
         
-        self.reclassify_tile = ReclassifyTile(RESULTS_DIR, save=False)
+        self.reclassify_tile = ReclassifyTile(
+            RESULTS_DIR, 
+            save=False, 
+            aoi_model=aoi_model
+        )
         
         self.btn = sw.Btn('Display on map')
         self.btn.disabled = True
@@ -71,6 +73,7 @@ class VegetationTile(v.Card):
         raw_ee_object = self.reclassify_tile.model.ee_object
         asset_type = self.reclassify_tile.model.asset_type
         code_col = self.reclassify_tile.model.code_col
+        aoi = self.reclassify_tile.model.aoi
         
         if asset_type=='TABLE':
             unique_values = [
@@ -89,7 +92,7 @@ class VegetationTile(v.Card):
             # it's an image
             unique_values = [
                 int(v) for v 
-                in get_unique_ee(raw_ee_object, reclass_asset, code_col)
+                in get_unique_ee(raw_ee_object, reclass_asset, code_col, aoi=aoi)
             ]
 
         min_ = min(unique_values)

@@ -19,6 +19,9 @@ class MountainTile(v.Card):
         self.aoi = aoi.view.model
         self.model = model
         
+        # Widgets
+        self.alert = sw.Alert()
+        
         # Card descriptors
         title = v.CardTitle(children=[cm.mountain_layer.title])
         description = v.CardText(children=[sw.Markdown(cm.mountain_layer.text)])
@@ -43,6 +46,7 @@ class MountainTile(v.Card):
         self.children=[
             title,
             description,
+            self.alert,
             self.w_select_dem,
             self.btn, 
             v.Card(children=[self.map_])
@@ -53,7 +57,7 @@ class MountainTile(v.Card):
         
         # Decorate functions
         self.create_kapos = su.loading_button(
-            alert=sw.Alert(), button=self.btn, debug=True
+            alert=self.alert, button=self.btn, debug=True
         )(self.create_kapos)
         
         self.btn.on_event('click', self.create_kapos)
