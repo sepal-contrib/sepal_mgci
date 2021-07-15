@@ -78,96 +78,23 @@ def get_kapos(aoi, dem):
     
     
     aoi_dem = dem.clip(aoi)
-
-    # Generate focal maximum elevation within range of 7km
-    focalMax7km = aoi_dem.focal_max(
-      radius =  7000,
-      kernelType = 'circle',
-      units = 'meters',
-      iterations = 1
-    )
-
-    #  Generate focal minimum elevation within range of 7km
-    focalMin7km = aoi_dem.focal_min(
-      radius =  7000,
-      kernelType =  'circle',
-      units = 'meters',
-      iterations = 1
-    )
-
-    #  Generate local (7 km radius) elevation range
-    local = focalMax7km.subtract(focalMin7km)
-
-    #  Generate slope
-    slope = ee.Terrain.slope(aoi_dem);
-
-    #  Class 1: elevation >= 4500 meters
-    kapos_c1 = aoi_dem.gte(4500)\
-            .selfMask()\
-            .rename('remapped')\
-            .cast({'remapped': 'byte'})
-
-    #  Class 2: elevation < 4500 & elevation >= 3500
-    kapos_c2 = aoi_dem.gte(3500)\
-            .And(aoi_dem.lt(4500))\
-            .selfMask()\
-            .remap([1],[2])\
-            .cast({'remapped': 'byte'})
-
-    #  Class 3: elevation < 3500 & elevation >= 2500
-    kapos_c3 = aoi_dem.gte(2500)\
-            .And(aoi_dem.lt(3500))\
-            .selfMask()\
-            .remap([1],[3])\
-            .cast({'remapped': 'byte'})
-
-    # Class 4: elevation < 2500 & elevation >= 1500 & slope > 2 degrees
-    kapos_c4 = aoi_dem.gte(1500)\
-            .And(aoi_dem.lt(2500))\
-            .And(slope.gt(2))\
-            .selfMask()\
-            .remap([1],[4])\
-            .cast({'remapped': 'byte'})
-
-    # Class 5a: elevation < 1500 & elevation >= 1000 & 
-    # slope >= 5 degree
-
-    kapos_c5a = aoi_dem.gte(1000)\
-            .And(aoi_dem.lt(1500))\
-            .And(slope.gt(5))\
-            .selfMask().remap([1],[5])\
-            .cast({'remapped': 'byte'})
-
-    # Class 5b elevation <1500 & elevation >= 1000 & 
-    # local (7 km radius) elevation range > 300 meters
-
-    kapos_c5b = aoi_dem.gte(1000)\
-            .And(aoi_dem.lt(1500))\
-            .selfMask()\
-            .And(local.gte(300).selfMask())\
-            .remap([1],[5])\
-            .cast({'remapped': 'byte'})
-
-    # Class 6: elevation < 1000 & elevation >= 300 & local 
-    # (7 km radius) elevation range > 300 meters
-
-    kapos_c6 = aoi_dem.gte(300)\
-            .And(aoi_dem.lt(1000).And(local.gte(300)))\
-            .selfMask()\
-            .remap([1],[6])\
-            .cast({'remapped': 'byte'})
-
-    kapos_mosaic = ee.ImageCollection([
-        kapos_c1,kapos_c2,kapos_c3,
-        kapos_c4,kapos_c5a,# kapos_c5b,kapos_c6
-    ]).mosaic();
     
-    return kapos_mosaic
-
-    kapos_1_6 = ee.Image(kapos_mosaic)
-    kapos_1_6_binary = kapos_1_6.remap([1,2,3,4,5,6], [1,1,1,1,1,1])
+    slope = ee.Terrain.slope(aoi_dem)
     
-    return kapos_1_6_binary
+    local_range = aoi_dem.focal_max(7000,"circle","meters")\
+                        .subtract(aoi_dem.focal_min(7000, "circle","meters"))
+    # Kapos Mountain classes
+    mountain_class = ee.Image(0).where(aoi_dem.gte(4500),1)\
+                      .where(aoi_dem.gte(3500).And(aoi_dem.lt(4500)),2)\
+                      .where(aoi_dem.gte(2500).And(aoi_dem.lt(3500)),3)\
+                      .where(aoi_dem.gte(1500).And(aoi_dem.lt(2500)).And(slope.gt(2)),4)\
+                      .where(aoi_dem.gte(1000).And(aoi_dem.lt(1500)).And(slope.gt(2).Or(local_range.gt(300))),5)\
+                      .where(aoi_dem.gte(300).And(aoi_dem.lt(1000)).And(local_range.gt(300)),6)\
+                      .selfMask();
+
+
+    return mountain_class
+
     #  Class 7: Inner isolated areas (<=25km2 in size) - don't meet criteria but surrounded by mountains
     # get pixels that are non-mountain areas by inversing the new mountain layer:
 
@@ -200,3 +127,33 @@ def get_kapos(aoi, dem):
     kapos_c7.getInfo()
 
     return ee.Image(ee.ImageCollection([kapos_1_6, kapos_c7]).mosaic())
+
+
+def get_lulc_area_per_class(lulc, kapos, aoi, scale=30):
+    
+    """Reduce land use/land cover image to kapos regions
+    
+    Args:
+        lulc (ee.Image, categorical): Input image to reduce
+        kapos (ee.Image, categorical): Input region
+        aoi (ee.FeatureCollection, ee.Geometry): Region to reduce image
+        scale (int, optional): By default using 30meters as scale
+        
+    Return:
+        ee.Dicionary.
+    """
+
+    return ee.Image.pixelArea().divide(10000)\
+      .updateMask(lulc.mask().And(kapos.mask()))\
+      .addBands(lulc)\
+      .addBands(kapos)\
+      .reduceRegion(**{
+        'reducer': ee.Reducer.sum().group(1).group(2), 
+        'geometry': aoi, 
+        'maxPixels': 1e13,
+        'scale': 30,
+        'bestEffort':True,
+        'tileScale':4
+      })
+    
+    
