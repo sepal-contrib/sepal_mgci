@@ -140,10 +140,10 @@ def get_lulc_area_per_class(lulc, kapos, aoi, scale=30):
         scale (int, optional): By default using 30meters as scale
         
     Return:
-        ee.Dicionary.
+        
     """
 
-    return ee.Image.pixelArea().divide(10000)\
+    result = ee.Image.pixelArea().divide(10000)\
       .updateMask(lulc.mask().And(kapos.mask()))\
       .addBands(lulc)\
       .addBands(kapos)\
@@ -157,3 +157,11 @@ def get_lulc_area_per_class(lulc, kapos, aoi, scale=30):
       })
     
     
+    class_area_per_kapos = {}
+    for group in result['groups']:
+        temp_group_dict = {}
+        for nested_group in group['groups']:
+            temp_group_dict[nested_group['group']] = nested_group['sum']
+        class_area_per_kapos[group['group']] = temp_group_dict
+    
+    return class_area_per_kapos
