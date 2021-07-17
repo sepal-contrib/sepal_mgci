@@ -2,6 +2,7 @@ import random
 import ee
 from sepal_ui.scripts import utils as su
 from pandas import DataFrame
+from component.parameter import *
 
 ee.Initialize()
     
@@ -85,17 +86,21 @@ def get_kapos(aoi, dem):
                         .subtract(aoi_dem.focal_min(7000, "circle","meters"))
     # Kapos Mountain classes
     mountain_class = ee.Image(0).where(aoi_dem.gte(4500),1)\
-                      .where(aoi_dem.gte(3500).And(aoi_dem.lt(4500)),2)\
-                      .where(aoi_dem.gte(2500).And(aoi_dem.lt(3500)),3)\
-                      .where(aoi_dem.gte(1500).And(aoi_dem.lt(2500)).And(slope.gt(2)),4)\
-                      .where(aoi_dem.gte(1000).And(aoi_dem.lt(1500)).And(slope.gt(2).Or(local_range.gt(300))),5)\
-                      .where(aoi_dem.gte(300).And(aoi_dem.lt(1000)).And(local_range.gt(300)),6)\
-                      .selfMask();
+        .where(aoi_dem.gte(3500).And(aoi_dem.lt(4500)),2)\
+        .where(aoi_dem.gte(2500).And(aoi_dem.lt(3500)),3)\
+        .where(aoi_dem.gte(1500).And(aoi_dem.lt(2500))\
+               .And(slope.gt(2)),4)\
+        .where(aoi_dem.gte(1000).And(aoi_dem.lt(1500))\
+               .And(slope.gt(2).Or(local_range.gt(300))),5)\
+        .where(aoi_dem.gte(300).And(aoi_dem.lt(1000))\
+               .And(local_range.gt(300)),6)\
+        .selfMask();
 
 
     return mountain_class
-
-    #  Class 7: Inner isolated areas (<=25km2 in size) - don't meet criteria but surrounded by mountains
+    # TODO: ADD CLASS 7
+    #  Class 7: Inner isolated areas (<=25km2 in size) - 
+    # don't meet criteria but surrounded by mountains
     # get pixels that are non-mountain areas by inversing the new mountain layer:
 
     inverse = (kapos_1_6_binary.unmask().Not()).eq(1).clip(aoi).selfMask()
@@ -140,7 +145,7 @@ def get_lulc_area_per_class(lulc, kapos, aoi, scale=30):
         scale (int, optional): By default using 30meters as scale
         
     Return:
-        
+        Dictionary with land cover class area per kapos mountain range
     """
 
     result = ee.Image.pixelArea().divide(10000)\
@@ -151,17 +156,28 @@ def get_lulc_area_per_class(lulc, kapos, aoi, scale=30):
         'reducer': ee.Reducer.sum().group(1).group(2), 
         'geometry': aoi, 
         'maxPixels': 1e13,
-        'scale': 30,
+        'scale': scale,
         'bestEffort':True,
         'tileScale':4
-      })
-    
+      }).getInfo()
     
     class_area_per_kapos = {}
     for group in result['groups']:
+
         temp_group_dict = {}
         for nested_group in group['groups']:
             temp_group_dict[nested_group['group']] = nested_group['sum']
+
+        # Create classes key with zero area when are empty
+        for class_ in DISPLAY_CLASSES:
+            if class_ not in temp_group_dict:
+                temp_group_dict[class_] = 0
+        
+        # Sort dictionary by its key
+        temp_group_dict = {
+            k:v for k,v in sorted(temp_group_dict.items(), key=lambda item: item[0])
+        }
+
         class_area_per_kapos[group['group']] = temp_group_dict
-    
+        
     return class_area_per_kapos
