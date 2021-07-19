@@ -3,14 +3,17 @@ import ipyvuetify as v
 
 import sepal_ui.mapping as sm
 from sepal_ui.scripts import utils as su
+from sepal_ui import sepalwidgets as sw
 
 from component.widget.custom_widgets import *
 from component.message import cm
 from component.scripts import *
 
-class MountainTile(v.Card):
+class MountainTile(v.Card, sw.SepalWidget):
     
     def __init__(self, aoi, model, *args, **kwargs):
+        
+        self._metadata={'mount_id': 'mountain_tile'}
         
         super().__init__(*args, **kwargs)
         

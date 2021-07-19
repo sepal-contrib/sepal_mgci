@@ -95,7 +95,7 @@ def get_overall_area_per_class(class_area_per_kapos):
     
     return sum_dict
 
-class Dashboard(v.Card):
+class Dashboard(v.Card, sw.SepalWidget):
     
     
     def __init__(self, 
@@ -104,6 +104,8 @@ class Dashboard(v.Card):
                  mountain_tile,
                  *args, **kwargs):
         
+        self._metadata={'mount_id': 'dashboard_tile'}
+        
         super().__init__(*args, **kwargs)
         
         self.aoi= aoi_tile
@@ -111,7 +113,8 @@ class Dashboard(v.Card):
         self.vegetation = vegetation_tile
         self.result = None
         
-        descriptor = v.CardText(children=[
+        title = v.CardTitle(children=[cm.dashboard.title])
+        description = v.CardText(children=[
             'Calculate the Mountain Green Cover Index dashboard, the ' +\
             'result will include an overall index for all the Kapos mountain '+\
             'classes and also a more detailed index for each of these classes. '
@@ -123,7 +126,8 @@ class Dashboard(v.Card):
         self.alert = sw.Alert()
         
         self.children=[
-            descriptor,
+            title,
+            description,
             self.alert,
             self.btn,
         ]
@@ -154,7 +158,7 @@ class Dashboard(v.Card):
         w_individual = self.get_stat_per_kaposc(class_area_per_kapos)
         
         # Merging and displaying
-        self.children = [w_overall] + w_individual
+        self.children = self.children + [w_overall] + w_individual
         
 
     def get_stat_per_kaposc(self, class_area_per_kapos, scale=300):

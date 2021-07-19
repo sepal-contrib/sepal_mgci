@@ -25,7 +25,7 @@
         }
     },
     "veg_layer" : {
-        "title" : "Vegetation layer",
+        "title" : "Vegetation descriptor layer",
         "description" : "The vegetation descriptor layer categorizes land cover into green and non-green areas. Green vegetation includes both natural vegetation and vegetation resulting from anthropic activity (e.g. crops, afforestation, etc.). Non-green areas include very sparsely vegetated areas, bare land, water, permanent ice/snow and urban areas.",
         "instructions":" ",
         "veg_asst":{
@@ -47,6 +47,7 @@
         }
     },
     "dashboard":{
+        "title" : "MGCI results dashboard",
         "kapos_title" : "Kapos range {}",
         "kapos_desc": {
                 "k1":"Where elevation >= 4,500 meters",

@@ -1,7 +1,9 @@
-import sepal_ui.mapping as sm
-from sepal_ui.reclassify.reclassify_tile import *
-from sepal_ui.scripts import utils as su
 import sepal_ui.sepalwidgets as sw
+import sepal_ui.mapping as sm
+
+from sepal_ui.scripts import utils as su
+from sepal_ui.reclassify.reclassify_tile import *
+
 from component.message import cm
 from component.parameter import *
 
@@ -9,9 +11,11 @@ from component.parameter import *
 from component.scripts import *
 import ipyvuetify as v
         
-class VegetationTile(v.Card):
+class VegetationTile(v.Card, sw.SepalWidget):
     
-    def __init__(self, aoi_model, *args, **kwargs):
+    def __init__(self, aoi_tile, *args, **kwargs):
+        
+        self._metadata={'mount_id': 'vegetation_tile'}
 
         self.class_ = 'pa-2'
         
@@ -22,10 +26,12 @@ class VegetationTile(v.Card):
             children=[sw.Markdown(cm.veg_layer.description)]
         )
         
+        self.aoi_model = aoi_tile.view.model
+        
         self.reclassify_tile = ReclassifyTile(
             RESULTS_DIR, 
             save=False, 
-            aoi_model=aoi_model
+            aoi_model=self.aoi_model
         )
         
         self.btn = sw.Btn('Display on map')
