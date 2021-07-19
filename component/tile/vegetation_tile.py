@@ -99,7 +99,8 @@ class VegetationTile(v.Card):
         max_ = max(unique_values)
 
         vis_params = {
-            'palette': [get_random_color() for _ in range(len(unique_values))],
+#             'palette': [get_random_color() for _ in range(len(unique_values))],
+            'palette' : CLASSES_COLOR,
             'min' : min_,
             'max' : max_
         }

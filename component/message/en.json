@@ -1,4 +1,15 @@
 {
+    "app": {
+        "title" : "SDG: 15.4.2 — Mountain Green Cover Index",
+        "drawer_item" : {
+            "aoi": "Area of Iterest",
+            "mountain" : "Mountain descriptor",
+            "vegetation" : "Vegetation descriptor",
+            "dashboard" : "MGCI results",
+            "about" : "About",
+            "disclaimer" : "Disclaimer"
+        }
+    },
     "ui": {
         "title" : "Re-classify custom LC/LU classes",
         "description" : "This module will help you to translate your own land cover / land user (LC/LU) maps into a custom classification. </br></br> In the following input cell you can select the assets stored in your Google Earth Engine account, you can use whether raster (image) or feature collection (table) assets, click over the 'Get attributes' button and a table will show up lettting you select the corresponding class."

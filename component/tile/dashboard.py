@@ -1,5 +1,6 @@
 import ipyvuetify as v
 
+import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
 
 from component.scripts import *
@@ -105,21 +106,44 @@ class Dashboard(v.Card):
         
         super().__init__(*args, **kwargs)
         
-        self.aoi_geometry = aoi_tile.view.model.feature_collection.geometry()
-        self.mountain_layer = mountain_tile.model.kapos_image
-        self.vegetation_layer = vegetation_tile.reclassify_tile.model.reclass_ee
-        
+        self.aoi= aoi_tile
+        self.mountain = mountain_tile
+        self.vegetation = vegetation_tile
         self.result = None
         
+        descriptor = v.CardText(children=[
+            'Calculate the Mountain Green Cover Index dashboard, the ' +\
+            'result will include an overall index for all the Kapos mountain '+\
+            'classes and also a more detailed index for each of these classes. '
+        ])
+        
+        #TODO create a fancy description calling the inputs
+        
+        self.btn = sw.Btn('Calculate MGCI')
+        self.alert = sw.Alert()
+        
+        self.children=[
+            descriptor,
+            self.alert,
+            self.btn,
+        ]
+        
+        # Decorate functions
+        self.get_dashboard = su.loading_button(
+            alert=self.alert, button=self.btn,
+            debug=True
+        )(self.get_dashboard)
+        
+        self.btn.on_event('click', self.get_dashboard)
        
-    def get_dashboard(self, scale=300):
+    def get_dashboard(self, widget, event, data, scale=300):
         """Create dashboard"""
         
         # Compute statistics and get lulc class area per kapos range
         class_area_per_kapos = get_lulc_area_per_class(
-            self.vegetation_layer, 
-            self.mountain_layer, 
-            self.aoi_geometry, 
+            self.vegetation.reclassify_tile.model.reclass_ee, 
+            self.mountain.model.kapos_image, 
+            self.aoi.view.model.feature_collection.geometry(), 
             scale=300
         )
         
