@@ -11,15 +11,13 @@ from component.scripts import *
 
 class MountainTile(v.Card, sw.SepalWidget):
     
-    def __init__(self, aoi, model, *args, **kwargs):
+    def __init__(self, model, *args, **kwargs):
         
         self._metadata={'mount_id': 'mountain_tile'}
         
         super().__init__(*args, **kwargs)
         
         # Class parameters
-        
-        self.aoi = aoi.view.model
         self.model = model
         
         # Widgets
@@ -33,52 +31,53 @@ class MountainTile(v.Card, sw.SepalWidget):
             label=cm.mountain_layer.w_dem.label,
             v_model='srtm_1',
             items=[
-#                 {'text':cm.mountain_layer.w_dem.items[0], 'value':'custom'},
+                {'text':cm.mountain_layer.w_dem.items[0], 'value':'custom'},
                 {'text':cm.mountain_layer.w_dem.items[1], 'value':'srtm_1'},
                 {'text':cm.mountain_layer.w_dem.items[2], 'value':'srtm_3'},
-#                 {'text':cm.mountain_layer.w_dem.items[3], 'value':'alos'},
             ]
         )
+        
+        self.w_custom_dem = sw.AssetSelect(
+            label="Select a custom DEM", types=["IMAGE"]
+        ).hide()
         
         self.btn = sw.Btn('Create Kapos Layer')
         self.map_ = sm.SepalMap()
         
         # bind the widgets to the model
-        self.model.bind(self.w_select_dem, 'dem_layer')
+        self.model.bind(self.w_select_dem, 'dem_type')\
+            .bind(self.w_custom_dem, 'custom_dem_id')
 
         self.children=[
             title,
             description,
             self.alert,
             self.w_select_dem,
+            self.w_custom_dem,
             self.btn, 
             v.Card(children=[self.map_])
         ]
         
         # actions
-#         self.w_select_dem.observe(self.display_custom_dem, 'v_model')
+        self.w_select_dem.observe(self.display_custom_dem, 'v_model')
         
         # Decorate functions
-        self.create_kapos = su.loading_button(
+        self.get_kapos = su.loading_button(
             alert=self.alert, button=self.btn, debug=True
-        )(self.create_kapos)
+        )(self.get_kapos)
         
-        self.btn.on_event('click', self.create_kapos)
+        self.btn.on_event('click', self.get_kapos)
     
-#     def display_custom_dem(self, change):
-#         """Display custom dem widget when w_select_dem == 'custom'"""
+    def display_custom_dem(self, change):
+        """Display custom dem widget when w_select_dem == 'custom'"""
         
-#         v_model = change['new']
-#         self.w_custom_dem.show() if v_model == 'custom' else self.w_custom_dem.hide()
+        v_model = change['new']
+        self.w_custom_dem.show() if v_model == 'custom' else self.w_custom_dem.hide()
     
-    def create_kapos(self, widget, event, data):
+    def get_kapos(self, widget, event, data):
         """Create and display kapos layer on a map"""
         
-        # Get the selected user aoi
-        aoi = self.aoi.feature_collection
-        dem = self.model.dem_layer
-        
-        self.model.kapos_image = get_kapos(aoi, dem)
+        self.model.get_kapos()
         
         # Add kapos mountain layer to map
         
@@ -88,5 +87,5 @@ class MountainTile(v.Card, sw.SepalWidget):
             'max':7
         }
         
-        self.map_.zoom_ee_object(aoi.geometry())
+        self.map_.zoom_ee_object(self.model.aoi_model.feature_collection.geometry())
         self.map_.addLayer(self.model.kapos_image, vis_params, 'Kapos map')
