@@ -1,6 +1,9 @@
+import pandas as pd
 import ee
-from traitlets import Unicode, Any
+from traitlets import Unicode, Any, Int
 from sepal_ui.model import Model
+
+from component.parameter.module_parameter import *
 
 ee.Initialize()
 
@@ -9,10 +12,17 @@ class MgciModel(Model):
     dem_type = Unicode('').tag(sync=True)
     custom_dem_id = Any('').tag(sync=True)
     
+    # output parameters
+    scale = Int(300).tag(sync=True)
+    year = Int().tag(sync=True)
+    
     def __init__(self, aoi_model):
         
         self.kapos_image = None
         self.aoi_model = aoi_model
+        
+        # Results
+        self.summary_df = None
         
     def get_kapos(self):
         """Get Kapos mountain classification layer within the area of interest
@@ -55,3 +65,77 @@ class MgciModel(Model):
             .where(aoi_dem.gte(300).And(aoi_dem.lt(1000))\
                    .And(local_range.gt(300)),6)\
             .selfMask()
+        
+    def get_lulc_area_per_class(self, lulc):
+
+        """Reduce land use/land cover image to kapos regions
+
+        Args:
+            lulc (ee.Image, categorical): Input image to reduce
+            kapos (ee.Image, categorical): Input region
+            aoi (ee.FeatureCollection, ee.Geometry): Region to reduce image
+            scale (int, optional): By default using 30meters as scale
+
+        Return:
+            Dictionary with land cover class area per kapos mountain range
+        """
+
+        result = ee.Image.pixelArea().divide(10000)\
+          .updateMask(lulc.mask().And(self.kapos_image.mask()))\
+          .addBands(lulc)\
+          .addBands(self.kapos_image)\
+          .reduceRegion(**{
+            'reducer': ee.Reducer.sum().group(1).group(2), 
+            'geometry': self.aoi_model.feature_collection.geometry(), 
+            'maxPixels': 1e13,
+            'scale': self.scale,
+            'bestEffort':True,
+            'tileScale':4
+          }).getInfo()
+
+        class_area_per_kapos = {}
+        for group in result['groups']:
+
+            # initialize classes key with zero area
+            temp_group_dict = {class_:0 for class_ in DISPLAY_CLASSES}
+
+            for nested_group in group['groups']:
+
+                if nested_group['group'] not in DISPLAY_CLASSES:
+                    # attach its area to "other classes (6)"
+                    # TODO: add warning?
+                    temp_group_dict[6] = temp_group_dict[6]+nested_group['sum']
+                else:
+                    temp_group_dict[nested_group['group']] = nested_group['sum']
+
+            # Sort dictionary by its key
+            temp_group_dict = {
+                k:v for k,v in sorted(temp_group_dict.items(), key=lambda item: item[0])
+            }
+
+            class_area_per_kapos[group['group']] = temp_group_dict
+        
+        # kapos classes are the rows and lulc are the columns
+        df = pd.DataFrame.from_dict(class_area_per_kapos, orient='index')
+        df['green_area'] = df[GREEN_CLASSES].sum(axis=1)
+        df['krange_area'] = df.sum(axis=1)
+        df['mgci'] = df['green_area']/df['krange_area']
+        
+        self.summary_df = df
+    
+    def get_mgci(self, krange=None):
+        """Get the MGCI for the overall area or for the Kapos Range if krange 
+        is specified
+        
+        Args:
+            krange (int): Kapos range [1-6].
+        
+        """
+        
+        if krange:
+            mgci = self.summary_df.loc[krange]['mgci']
+        else:
+            mgci = self.summary_df['green_area'].sum()/\
+                    self.summary_df['krange_area'].sum()
+            
+        return round(mgci,2)
