@@ -48,14 +48,41 @@
     },
     "dashboard":{
         "title" : "MGCI results dashboard",
-        "kapos_title" : "Kapos range {}",
-        "kapos_desc": {
-                "k1":"Where elevation >= 4,500 meters",
-                "k2":"Where elevation is between 3,500 and 4,500 meters",
-                "k3":"Where elevation is between 2,500 and 3,500 meters",
-                "k4":"Where elevation is between 1,500 and 2,500 meters and the slope is greather than 2%",
-                "k5":"Where elevation is between 1,000 and 1,500 meters and the slope is greather tan 5% or local elevation range (LER 7km radius) is over 300 meters",
-                "k6":"Where elevation is between 300 and 1,000 meters and local elevation range (7km radius) is over 300 meters"
+        "description" : "Calculate the Mountain Green Cover Index dashboard, the result will include an overall index for all the Kapos mountain classes and also a more detailed index for each of these classes.",
+        "label": {
+            "calculate" : "Calculate MGCI",
+            "scale" : "Process scale",
+            "year": "Year"
+        },
+        "help":{
+            "scale" : "Pixel resolution for the output. It will affect the speed and the accuracy of the results",
+            "year": "Select a year for the dashboard outputs."
+        },
+        "individual" : {
+            "title" : "Kapos range {}",
+            "desc": {
+                    "k1":"Where elevation >= 4,500 meters",
+                    "k2":"Where elevation is between 3,500 and 4,500 meters",
+                    "k3":"Where elevation is between 2,500 and 3,500 meters",
+                    "k4":"Where elevation is between 1,500 and 2,500 meters and the slope is greather than 2%",
+                    "k5":"Where elevation is between 1,000 and 1,500 meters and the slope is greather tan 5% or local elevation range (LER 7km radius) is over 300 meters",
+                    "k6":"Where elevation is between 300 and 1,000 meters and local elevation range (7km radius) is over 300 meters"
+            }
+        },
+        "global_" : {
+            "title" : "Overall Mountain Green Cover Index",
+            "desc" : "The first four IPCC classes were used as green cover classes"
+        }
+
+    },
+    "param" : {
+        "ipcc" : {
+            "forest": "Forest",
+            "grass": "Grassland",
+            "crop": "Cropland",
+            "wet": "Wetland",
+            "settl": "Settlement",
+            "other": "Other land"
         }
     }
 }
