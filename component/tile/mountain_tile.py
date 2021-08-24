@@ -1,4 +1,5 @@
 from importlib import reload
+from ipywidgets import Layout
 import ipyvuetify as v
 
 import sepal_ui.mapping as sm
@@ -8,6 +9,7 @@ from sepal_ui import sepalwidgets as sw
 from component.widget.custom_widgets import *
 from component.message import cm
 from component.scripts import *
+from component.parameter.module_parameter import *
 
 class MountainTile(v.Card, sw.SepalWidget):
     
@@ -62,11 +64,11 @@ class MountainTile(v.Card, sw.SepalWidget):
         self.w_select_dem.observe(self.display_custom_dem, 'v_model')
         
         # Decorate functions
-        self.get_kapos = su.loading_button(
+        self.add_kapos_map = su.loading_button(
             alert=self.alert, button=self.btn, debug=True
-        )(self.get_kapos)
+        )(self.add_kapos_map)
         
-        self.btn.on_event('click', self.get_kapos)
+        self.btn.on_event('click', self.add_kapos_map)
     
     def display_custom_dem(self, change):
         """Display custom dem widget when w_select_dem == 'custom'"""
@@ -74,18 +76,19 @@ class MountainTile(v.Card, sw.SepalWidget):
         v_model = change['new']
         self.w_custom_dem.show() if v_model == 'custom' else self.w_custom_dem.hide()
     
-    def get_kapos(self, widget, event, data):
+    def add_kapos_map(self, widget, event, data):
         """Create and display kapos layer on a map"""
         
         self.model.get_kapos()
         
+        # Create legend
+        self.map_.add_legend(
+            legend_title="Legend", 
+            legend_dict=KAPOS_LEGEND
+        )
+        # Do this trick to remove the scrolling bar in the legend output
+        self.map_.legend_widget.layout = Layout(width='85px', overflow="none")
+        
         # Add kapos mountain layer to map
-        
-        vis_params = {
-            'palette' : ['#D2222D', '#FFBF00', '#238823', '#007000'],
-            'min':1,
-            'max':7
-        }
-        
         self.map_.zoom_ee_object(self.model.aoi_model.feature_collection.geometry())
-        self.map_.addLayer(self.model.kapos_image, vis_params, 'Kapos map')
+        self.map_.addLayer(self.model.kapos_image, KAPOS_VIS, 'Kapos map')
