@@ -1,11 +1,11 @@
 import pandas as pd
 import ee
 from traitlets import Unicode, Any, Int
+
+from sepal_ui.scripts.utils import need_ee
 from sepal_ui.model import Model
 
-from component.parameter.module_parameter import *
-
-ee.Initialize()
+import component.parameter as param
 
 class MgciModel(Model):
     
@@ -16,6 +16,7 @@ class MgciModel(Model):
     scale = Int(300).tag(sync=True)
     year = Int().tag(sync=True)
     
+    @need_ee
     def __init__(self, aoi_model):
         
         self.kapos_image = None
@@ -23,7 +24,7 @@ class MgciModel(Model):
         
         # Results
         self.summary_df = None
-        
+    
     def get_kapos(self):
         """Get Kapos mountain classification layer within the area of interest
         """
@@ -97,11 +98,11 @@ class MgciModel(Model):
         for group in result['groups']:
 
             # initialize classes key with zero area
-            temp_group_dict = {class_:0 for class_ in DISPLAY_CLASSES}
+            temp_group_dict = {class_:0 for class_ in param.DISPLAY_CLASSES}
 
             for nested_group in group['groups']:
 
-                if nested_group['group'] not in DISPLAY_CLASSES:
+                if nested_group['group'] not in param.DISPLAY_CLASSES:
                     # attach its area to "other classes (6)"
                     # TODO: add warning?
                     temp_group_dict[6] = temp_group_dict[6]+nested_group['sum']
@@ -117,7 +118,7 @@ class MgciModel(Model):
         
         # kapos classes are the rows and lulc are the columns
         df = pd.DataFrame.from_dict(class_area_per_kapos, orient='index')
-        df['green_area'] = df[GREEN_CLASSES].sum(axis=1)
+        df['green_area'] = df[param.GREEN_CLASSES].sum(axis=1)
         df['krange_area'] = df.sum(axis=1)
         df['mgci'] = df['green_area']/df['krange_area']
         

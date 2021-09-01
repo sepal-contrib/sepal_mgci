@@ -1,5 +1,16 @@
 from component.message import cm
 
+__all__ = [
+    'UPPER_THRESHOLDS',
+    'IPCC_CLASSES',
+    'GREEN_CLASSES',
+    'CLASSES_COLOR',
+    'DISPLAY_CLASSES',
+    'KAPOS_PALETTE',
+    'KAPOS_LEGEND',
+    'KAPOS_VIS'
+]
+
 # SET SOME PARAMETERS
 UPPER_THRESHOLDS = {
     98:'green',

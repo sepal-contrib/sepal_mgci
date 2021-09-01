@@ -1,5 +1,7 @@
 from pathlib import Path
 
+__all__ = ['BASE_DIR','RESULTS_DIR','CLASS_DIR']
+
 BASE_DIR = Path('~').expanduser()
 
 RESULTS_DIR = BASE_DIR/'module_results/mgci'

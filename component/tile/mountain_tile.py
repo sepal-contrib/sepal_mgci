@@ -1,15 +1,14 @@
-from importlib import reload
 from ipywidgets import Layout
 import ipyvuetify as v
 
 import sepal_ui.mapping as sm
-from sepal_ui.scripts import utils as su
+from sepal_ui.scripts.utils import loading_button
 from sepal_ui import sepalwidgets as sw
 
-from component.widget.custom_widgets import *
 from component.message import cm
-from component.scripts import *
-from component.parameter.module_parameter import *
+import component.parameter as param
+
+__all__=['MountainTile']
 
 class MountainTile(v.Card, sw.SepalWidget):
     
@@ -64,7 +63,7 @@ class MountainTile(v.Card, sw.SepalWidget):
         self.w_select_dem.observe(self.display_custom_dem, 'v_model')
         
         # Decorate functions
-        self.add_kapos_map = su.loading_button(
+        self.add_kapos_map = loading_button(
             alert=self.alert, button=self.btn, debug=True
         )(self.add_kapos_map)
         
@@ -84,11 +83,11 @@ class MountainTile(v.Card, sw.SepalWidget):
         # Create legend
         self.map_.add_legend(
             legend_title="Legend", 
-            legend_dict=KAPOS_LEGEND
+            legend_dict=param.KAPOS_LEGEND
         )
         # Do this trick to remove the scrolling bar in the legend output
         self.map_.legend_widget.layout = Layout(width='85px', overflow="none")
         
         # Add kapos mountain layer to map
         self.map_.zoom_ee_object(self.model.aoi_model.feature_collection.geometry())
-        self.map_.addLayer(self.model.kapos_image, KAPOS_VIS, 'Kapos map')
+        self.map_.addLayer(self.model.kapos_image, param.KAPOS_VIS, 'Kapos map')

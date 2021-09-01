@@ -1,19 +1,21 @@
+from pathlib import Path
+
+import ipyvuetify as v
+
 import sepal_ui.sepalwidgets as sw
 import sepal_ui.mapping as sm
-
-from sepal_ui.scripts import utils as su
-from sepal_ui.reclassify.reclassify_tile import *
+from sepal_ui.scripts.utils import loading_button
+from sepal_ui.reclassify import ReclassifyTile
 
 from component.message import cm
-from component.parameter import *
+import component.parameter as param
 
 
-from component.scripts import *
-import ipyvuetify as v
-        
+__all__ = ['VegetationTile']
+
 class VegetationTile(v.Card, sw.SepalWidget):
     
-    def __init__(self, aoi_tile, *args, **kwargs):
+    def __init__(self, model, *args, **kwargs):
         
         self._metadata={'mount_id': 'vegetation_tile'}
 
@@ -22,16 +24,21 @@ class VegetationTile(v.Card, sw.SepalWidget):
         super().__init__(*args,  **kwargs)
                 
         title = v.CardTitle(children=[cm.veg_layer.title])
+        
         description = v.CardText(
             children=[sw.Markdown(cm.veg_layer.description)]
         )
         
-        self.aoi_model = aoi_tile.view.model
+        self.model = model
         
         self.reclassify_tile = ReclassifyTile(
             RESULTS_DIR, 
             save=False, 
-            aoi_model=self.aoi_model
+            aoi_model=self.aoi_model,
+            default_class = {
+                'IPCC' : Path(__file__).parent/'parameter/ipcc',
+                'Forest/Non Forest' : Path(__file__).parent/'parameter/binary',
+            }
         )
         
         self.btn = sw.Btn('Display on map')
@@ -52,7 +59,7 @@ class VegetationTile(v.Card, sw.SepalWidget):
         ]
         
         #Decorate functions
-        self.display_on_map = su.loading_button(
+        self.display_on_map = loading_button(
             alert=sw.Alert(), button=self.btn, debug=True
         )(self.display_on_map)
         
@@ -65,12 +72,7 @@ class VegetationTile(v.Card, sw.SepalWidget):
         if change['new'] == True:
             self.btn.disabled = False
         else:
-            self.btn.disabled = True
-            
-    def remove_layers(self, change):
-        """Remove layers from map"""
-        
-        
+            self.btn.disabled = True        
     
     def display_on_map(self, widget, event, data):
         """Display reclassified raster on map"""
@@ -105,8 +107,7 @@ class VegetationTile(v.Card, sw.SepalWidget):
         max_ = max(unique_values)
 
         vis_params = {
-#             'palette': [get_random_color() for _ in range(len(unique_values))],
-            'palette' : CLASSES_COLOR,
+            'palette' : param.CLASSES_COLOR,
             'min' : min_,
             'max' : max_
         }

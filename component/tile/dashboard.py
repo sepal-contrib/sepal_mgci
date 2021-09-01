@@ -2,14 +2,14 @@ from matplotlib import pyplot as plt
 from ipywidgets import Output
 import ipyvuetify as v
 
-import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
+from sepal_ui.scripts.utils import loading_button
 
-from component.scripts import *
-from component.parameter.module_parameter import *
+import component.parameter as param
+from component.scripts import get_mgci_color, human_format
 from component.message import cm
 
-
+__all__ = ['Dashboard']
 
 LABELS = {
     1:"Forest",
@@ -19,7 +19,6 @@ LABELS = {
     5:"Settlement",
     6:"Other land"
 }
-
 
 
 def create_avatar(mgci):
@@ -110,7 +109,7 @@ class Dashboard(v.Card, sw.SepalWidget):
         ]
         
         # Decorate functions
-        self.get_dashboard = su.loading_button(
+        self.get_dashboard = loading_button(
             alert=self.alert, button=self.btn,
             debug=True
         )(self.get_dashboard)
@@ -185,9 +184,9 @@ class Statistics(v.Card):
     def get_chart(self, krange):
         
         values = (
-            self.model.summary_df.loc[krange][DISPLAY_CLASSES]
+            self.model.summary_df.loc[krange][param.DISPLAY_CLASSES]
             if krange 
-            else self.model.summary_df[DISPLAY_CLASSES].sum()
+            else self.model.summary_df[param.DISPLAY_CLASSES].sum()
         )
         
         total_area = values.sum()
@@ -197,7 +196,9 @@ class Statistics(v.Card):
         
         # We are doing this assumming that the dict will create the labels in the
         # same order
-        labels = [IPCC_CLASSES[class_][1] for class_, _ in values.to_dict().items()]
+        labels = [
+            param.IPCC_CLASSES[class_][1] for class_, _ in values.to_dict().items()
+        ]
         
         with self.output_chart:
             
@@ -212,11 +213,11 @@ class Statistics(v.Card):
             ax.barh(
                 labels, 
                 norm_values, 
-                color=CLASSES_COLOR
+                color=param.CLASSES_COLOR
             )
             
             for i, (norm, name, val, color) in enumerate(
-                zip(norm_values, labels, human_values, CLASSES_COLOR)
+                zip(norm_values, labels, human_values, param.CLASSES_COLOR)
             ):
                 ax.text(norm+2, i, val, fontsize=40, color=color)
             
