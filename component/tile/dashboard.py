@@ -1,4 +1,6 @@
 from matplotlib import pyplot as plt
+
+from traitlets import directional_link
 from ipywidgets import Output
 import ipyvuetify as v
 
@@ -75,7 +77,8 @@ class Dashboard(v.Card, sw.SepalWidget):
                 {
                     'name':'append', 
                     'children':sw.Tooltip(
-                        question_icon, cm.dashboard.help.scale, left=True, max_width=75
+                        question_icon, cm.dashboard.help.scale, 
+                        left=True, max_width=200
                     )
                 }
             ]
@@ -84,12 +87,13 @@ class Dashboard(v.Card, sw.SepalWidget):
         self.w_year = v.TextField(
             label=cm.dashboard.label.year,
             v_model=self.model.year,
-            type='number',
+            type='string',
             v_slots=[
                 {
                     'name':'append', 
                     'children':sw.Tooltip(
-                        question_icon, cm.dashboard.help.year, left=True, max_width=75
+                        question_icon, cm.dashboard.help.year, 
+                        left=True, max_width=200
                     )
                 }
             ]
@@ -115,9 +119,15 @@ class Dashboard(v.Card, sw.SepalWidget):
         )(self.get_dashboard)
         
         self.btn.on_event('click', self.get_dashboard)
+        
+        # Let's link the 
+        directional_link((self.model, 'year'),(self.w_year, 'v_model'))
        
     def get_dashboard(self, widget, event, data):
         """Create dashboard"""
+        
+        # Calculate regions
+        self.model.reduce_to_regions()
         
         # Get overall MGCI widget        
         w_overall = Statistics(self.model)
@@ -196,9 +206,11 @@ class Statistics(v.Card):
         
         # We are doing this assumming that the dict will create the labels in the
         # same order
-        labels = [
-            param.IPCC_CLASSES[class_][1] for class_, _ in values.to_dict().items()
-        ]
+        labels, colors = zip(*[
+            (self.model.lulc_classes[class_][0], self.model.lulc_classes[class_][1])
+            for class_ 
+            in values.to_dict()
+        ])
         
         with self.output_chart:
             
@@ -213,11 +225,11 @@ class Statistics(v.Card):
             ax.barh(
                 labels, 
                 norm_values, 
-                color=param.CLASSES_COLOR
+                color=colors
             )
             
             for i, (norm, name, val, color) in enumerate(
-                zip(norm_values, labels, human_values, param.CLASSES_COLOR)
+                zip(norm_values, labels, human_values, colors)
             ):
                 ax.text(norm+2, i, val, fontsize=40, color=color)
             

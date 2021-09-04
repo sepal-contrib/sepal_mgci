@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from traitlets import directional_link
+
 import ipyvuetify as v
 
 import sepal_ui.sepalwidgets as sw
@@ -64,25 +66,36 @@ class VegetationTile(v.Card, sw.SepalWidget):
         ]
         
         #Decorate functions
-        self.display_on_map = loading_button(
+        self.display_map = loading_button(
             alert=sw.Alert(), button=self.btn, debug=True
-        )(self.display_on_map)
+        )(self.display_map)
         
-        self.reclassify_tile.model.observe(self.activate_display, 'remaped')
-        self.btn.on_event('click', self.display_on_map)
+        self.reclassify_tile.model.observe(self.update_model_vegetation, 'remaped')
         
-    def activate_display(self, change):
-        """Activate display button if an asset has been classified"""
+        # Let's bind the selected band with the model, it will be useful in the dashboard
         
-        if change['new'] == True:
-            self.btn.disabled = False
-        else:
-            self.btn.disabled = True        
+        
+        directional_link((self.reclassify_tile.model, 'band'),(self.model, 'year'))
+        directional_link((self.reclassify_tile.model, 'dst_class'),(self.model, 'lulc_classes'))
+        
+        self.btn.on_event('click', self.display_map)
     
-    def display_on_map(self, widget, event, data):
-        """Display reclassified raster on map"""
+    def update_model_vegetation(self, change):
+        """Observe reclassify model, and update the mgci model. It will store
+        the reclassified gee asset into the mgci model to perform operations.
+        """
+        if change['new']:
+
+            self.model.vegetation_image = self.reclassify_tile\
+                                            .reclassify_view.model.dst_gee_memory
+            self.btn.disabled = False
         
-        layer = self.reclassify_tile.model.dst_gee_memory
+    
+    def display_map(self, widget, event, data):
+        """Display reclassified raster on map. Get the reclassify visualization
+        image."""
+        
+        layer = self.reclassify_tile.reclassify_view.model.dst_gee_memory_vis
 
         self.map_.zoom_ee_object(layer.geometry())
         self.map_.addLayer(layer)

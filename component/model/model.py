@@ -1,6 +1,6 @@
 import pandas as pd
 import ee
-from traitlets import Unicode, Any, Int
+from traitlets import Unicode, Any, Int, Dict
 
 from sepal_ui.scripts.utils import need_ee
 from sepal_ui.model import Model
@@ -14,12 +14,16 @@ class MgciModel(Model):
     
     # output parameters
     scale = Int(300).tag(sync=True)
-    year = Int().tag(sync=True)
+    year = Unicode('', allow_none=True).tag(sync=True)
+    
+    # LCLU Classes (came from the reclassify model)
+    lulc_classes = Dict(allow_none=True).tag(sync=True)
     
     @need_ee
     def __init__(self, aoi_model):
         
         self.kapos_image = None
+        self.vegetation_image = None
         self.aoi_model = aoi_model
         
         # Results
@@ -67,11 +71,11 @@ class MgciModel(Model):
                    .And(local_range.gt(300)),6)\
             .selfMask()
         
-    def get_lulc_area_per_class(self, lulc):
+    def reduce_to_regions(self):
 
-        """Reduce land use/land cover image to kapos regions
+        """Reduce land use/land cover image to kapos regions 
 
-        Args:
+        Params:
             lulc (ee.Image, categorical): Input image to reduce
             kapos (ee.Image, categorical): Input region
             aoi (ee.FeatureCollection, ee.Geometry): Region to reduce image
@@ -80,7 +84,15 @@ class MgciModel(Model):
         Return:
             Dictionary with land cover class area per kapos mountain range
         """
-
+        if not self.kapos_image:
+            raise Exception('Please go to the mountain descriptor layer and calculate the kapos layer.')
+        if not self.vegetation_image:
+            raise Exception('Please go to the vegetation descriptor layer andreclassify an image')
+        else:
+            lulc = self.vegetation_image.select(
+                [self.vegetation_image.bandNames().get(0)]
+            )
+        
         result = ee.Image.pixelArea().divide(10000)\
           .updateMask(lulc.mask().And(self.kapos_image.mask()))\
           .addBands(lulc)\
@@ -134,9 +146,9 @@ class MgciModel(Model):
         """
         
         if krange:
-            mgci = self.summary_df.loc[krange]['mgci']
+            mgci = (self.summary_df.loc[krange]['mgci'])*100
         else:
-            mgci = self.summary_df['green_area'].sum()/\
-                    self.summary_df['krange_area'].sum()
+            mgci = (self.summary_df['green_area'].sum()/\
+                    self.summary_df['krange_area'].sum())*100
             
         return round(mgci,2)
