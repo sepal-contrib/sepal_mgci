@@ -56,7 +56,7 @@
         },
         "help":{
             "scale" : "Pixel resolution for the output. It will affect the speed and the accuracy of the results",
-            "year": "Select a year for the dashboard outputs."
+            "year": "Select a year for the dashboard outputs. It will be used to label the outputs. If not provided, the reclassified band name will be used."
         },
         "individual" : {
             "title" : "Kapos range {}",
@@ -75,14 +75,4 @@
         }
 
     },
-    "param" : {
-        "ipcc" : {
-            "forest": "Forest",
-            "grass": "Grassland",
-            "crop": "Cropland",
-            "wet": "Wetland",
-            "settl": "Settlement",
-            "other": "Other land"
-        }
-    }
 }
