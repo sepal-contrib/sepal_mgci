@@ -131,7 +131,7 @@ class MgciModel(Model):
         # kapos classes are the rows and lulc are the columns
         df = pd.DataFrame.from_dict(class_area_per_kapos, orient='index')
         df['green_area'] = df[param.GREEN_CLASSES].sum(axis=1)
-        df['krange_area'] = df.sum(axis=1)
+        df['krange_area'] = df[list(self.lulc_classes.keys())].sum(axis=1)
         df['mgci'] = df['green_area']/df['krange_area']
         
         self.summary_df = df
