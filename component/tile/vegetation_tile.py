@@ -15,7 +15,7 @@ __all__ = ['VegetationTile']
 
 class VegetationTile(v.Card, sw.SepalWidget):
     
-    def __init__(self, model, *args, **kwargs):
+    def __init__(self, model, aoi_model, *args, **kwargs):
         
         self._metadata={'mount_id': 'vegetation_tile'}
 
@@ -30,16 +30,21 @@ class VegetationTile(v.Card, sw.SepalWidget):
         )
         
         self.model = model
-        
+        self.aoi_model = aoi_model
+
         self.reclassify_tile = ReclassifyTile(
-            RESULTS_DIR, 
+            results_dir=param.RESULTS_DIR, 
             save=False, 
             aoi_model=self.aoi_model,
             default_class = {
-                'IPCC' : Path(__file__).parent/'parameter/ipcc',
-                'Forest/Non Forest' : Path(__file__).parent/'parameter/binary',
+                'IPCC' : str(Path(__file__).parents[1]/'parameter/ipcc.csv'),
+                'Forest/Non Forest' : str(Path(__file__).parents[1]/'parameter/binary.csv'),
             }
         )
+        
+        self.reclassify_tile.reclassify_view.w_asset.default_asset=[
+            'users/geflanddegradation/toolbox_datasets/lcov_esacc_1992_2018'
+        ]
         
         self.btn = sw.Btn('Display on map')
         self.btn.disabled = True
@@ -77,40 +82,7 @@ class VegetationTile(v.Card, sw.SepalWidget):
     def display_on_map(self, widget, event, data):
         """Display reclassified raster on map"""
         
-        reclass_asset = self.reclassify_tile.model.reclass_ee
-        raw_ee_object = self.reclassify_tile.model.ee_object
-        asset_type = self.reclassify_tile.model.asset_type
-        code_col = self.reclassify_tile.model.code_col
-        aoi = self.reclassify_tile.model.aoi
-        
-        if asset_type=='TABLE':
-            unique_values = [
-                int(v) for v 
-                in self.reclassify_tile.model.get_fields(reclass_asset, code_col)
-            ]
-            
-            empty = ee.Image().byte()
-            # Paint the interior of the polygons with different colors.
-            reclass_asset = empty.paint(
-              featureCollection=reclass_asset,
-              color=code_col,
-            )
-            
-        else:
-            # it's an image
-            unique_values = [
-                int(v) for v 
-                in get_unique_ee(raw_ee_object, reclass_asset, code_col, aoi=aoi)
-            ]
+        layer = self.reclassify_tile.model.dst_gee_memory
 
-        min_ = min(unique_values)
-        max_ = max(unique_values)
-
-        vis_params = {
-            'palette' : param.CLASSES_COLOR,
-            'min' : min_,
-            'max' : max_
-        }
-
-        self.map_.zoom_ee_object(raw_ee_object.geometry())
-        self.map_.addLayer(reclass_asset, vis_params, 'Recoded')
+        self.map_.zoom_ee_object(layer.geometry())
+        self.map_.addLayer(layer)
