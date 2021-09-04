@@ -1,9 +1,9 @@
 from pathlib import Path
 
 from traitlets import directional_link
+from ipywidgets import Layout
 
 import ipyvuetify as v
-
 import sepal_ui.sepalwidgets as sw
 import sepal_ui.mapping as sm
 from sepal_ui.scripts.utils import loading_button
@@ -91,11 +91,22 @@ class VegetationTile(v.Card, sw.SepalWidget):
             self.btn.disabled = False
         
     
-    def display_map(self, widget, event, data):
+    def display_map(self, *args):
         """Display reclassified raster on map. Get the reclassify visualization
         image."""
         
+        # Create legend based on the lulc classes.
+        self.map_.add_legend(
+            legend_title="Legend", 
+            legend_dict=dict(self.model.lulc_classes.values())
+        )
+        # Do this trick to remove the scrolling bar in the legend output
+        self.map_.legend_widget.layout = Layout(width='120px', overflow="none")
+        
         layer = self.reclassify_tile.reclassify_view.model.dst_gee_memory_vis
-
+        
+        #Remove previusly loaded layers
+        [self.map_.remove_last_layer() for _ in range(len(self.map_.layers))]
+        
         self.map_.zoom_ee_object(layer.geometry())
         self.map_.addLayer(layer)
