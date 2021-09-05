@@ -30,7 +30,7 @@ class MountainTile(v.Card, sw.SepalWidget):
         
         self.w_select_dem = v.Select(
             label=cm.mountain_layer.w_dem.label,
-            v_model='srtm_1',
+            v_model='srtm_3',
             items=[
                 {'text':cm.mountain_layer.w_dem.items[0], 'value':'custom'},
                 {'text':cm.mountain_layer.w_dem.items[1], 'value':'srtm_1'},
