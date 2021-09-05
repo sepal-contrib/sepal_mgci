@@ -170,8 +170,8 @@ class MgciModel(Model):
         # Create static columns
         df['Indicator'] = '15.4.2'
         df['MountainClass'] = 'C'+df.index.astype(str)
-        df['GeoAreaName'] = mgci_model.aoi_model.name
-        df['TimePeriod'] = mgci_model.year
+        df['GeoAreaName'] = self.aoi_model.name
+        df['TimePeriod'] = self.year
         df['Units'] = 'SQKM'
         
         # Sort columns

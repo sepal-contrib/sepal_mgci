@@ -35,12 +35,11 @@ class VegetationTile(v.Card, sw.SepalWidget):
         self.aoi_model = aoi_model
 
         self.reclassify_tile = ReclassifyTile(
-            results_dir=param.RESULTS_DIR, 
+            results_dir=param.CLASS_DIR, 
             save=False, 
             aoi_model=self.aoi_model,
             default_class = {
                 'IPCC' : str(Path(__file__).parents[1]/'parameter/ipcc.csv'),
-                'Forest/Non Forest' : str(Path(__file__).parents[1]/'parameter/binary.csv'),
             }
         )
         
