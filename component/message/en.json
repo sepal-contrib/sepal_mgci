@@ -50,6 +50,7 @@
         "title" : "MGCI results dashboard",
         "description" : "Calculate the Mountain Green Cover Index dashboard, the result will include an overall index for all the Kapos mountain classes and also a more detailed index for each of these classes.",
         "label": {
+            "download" : "Download results",
             "calculate" : "Calculate MGCI",
             "scale" : "Process scale",
             "year": "Year"

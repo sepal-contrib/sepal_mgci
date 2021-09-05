@@ -98,6 +98,7 @@ class Dashboard(v.Card, sw.SepalWidget):
 
         # buttons
         self.btn = sw.Btn(cm.dashboard.label.calculate)
+        self.download = sw.Btn(cm.dashboard.label.download)
         self.alert = sw.Alert()
         
         self.children=[
@@ -119,6 +120,24 @@ class Dashboard(v.Card, sw.SepalWidget):
         
         # Let's link the model year with the year widget here.
         directional_link((self.model, 'year'),(self.w_year, 'v_model'))
+        
+    def download_results(self, *args):
+        """Write the results on a comma separated values file, or an excel file"""
+        
+        # Generate report
+        self.model.get_report()
+        
+        #TODO: Create an individual folder for this output
+        
+        output_name = f'{self.model.aoi_model.name}_{self.model.year}_MGCI_Report'
+        self.model.mgci_report.to_excel(
+            f'{output_name}.xlsx', 
+            sheet_name=output_name, 
+            index=False
+        )
+        
+        # TODO: Alert user where the report was stored.
+                
        
     def get_dashboard(self, widget, event, data):
         """Create dashboard"""
@@ -156,7 +175,7 @@ class Dashboard(v.Card, sw.SepalWidget):
         
         self.children = new_items
         
-        self.alert.append_msg('Done.', type_='success')
+        self.alert.add_msg('Done.', type_='success')
 
 class Statistics(v.Card):
     
