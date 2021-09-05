@@ -28,6 +28,9 @@ class MgciModel(Model):
         
         # Results
         self.summary_df = None
+        
+        # Styled results dataframe
+        self.mgci_report = None
     
     def get_kapos(self):
         """Get Kapos mountain classification layer within the area of interest
@@ -152,3 +155,35 @@ class MgciModel(Model):
                     self.summary_df['krange_area'].sum())*100
             
         return round(mgci,2)
+    
+    def get_report(self):
+        """From the summary df, create a styled df to align format with the report"""
+        
+        assert (self.summary_df is not None), 'How you ended here?'
+        
+        df = self.summary_df.copy()
+        
+        # Get column names
+        vegetation_names = { k:v[0] for k, v in self.lulc_classes.items()}
+        df.rename(columns=vegetation_names, inplace=True)
+        
+        # Create static columns
+        df['Indicator'] = '15.4.2'
+        df['MountainClass'] = 'C'+df.index.astype(str)
+        df['GeoAreaName'] = mgci_model.aoi_model.name
+        df['TimePeriod'] = mgci_model.year
+        df['Units'] = 'SQKM'
+        
+        # Sort columns
+        first_columns = ['Indicator', 'GeoAreaName', 'MountainClass', 'TimePeriod']
+        vegetation_columns = ['Units'] + list(vegetation_names.values())
+
+        stats_cols = [
+            col for col in df.columns if col not in first_columns+vegetation_columns
+        ]
+        
+        sorted_columns = first_columns + vegetation_columns + stats_cols
+        
+        df = df[sorted_columns]
+        
+        self.mgci_report = df
