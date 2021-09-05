@@ -13,16 +13,6 @@ from component.message import cm
 
 __all__ = ['Dashboard']
 
-LABELS = {
-    1:"Forest",
-    2:"Grassland",
-    3:"Cropland",
-    4:"Wetland",
-    5:"Settlement",
-    6:"Other land"
-}
-
-
 def create_avatar(mgci):
     """Creates a circular avatar containing the MGCI value"""
     color = get_mgci_color(mgci)
@@ -59,7 +49,6 @@ class Dashboard(v.Card, sw.SepalWidget):
         
         title = v.CardTitle(children=[cm.dashboard.title])
         description = v.CardText(children=[cm.dashboard.description])
-        #TODO create a fancy description calling the inputs
         
         question_icon = v.Icon(children=['mdi-help'], x_small=True)
         
@@ -73,30 +62,38 @@ class Dashboard(v.Card, sw.SepalWidget):
             tick_size="10",
             v_model=self.model.scale,
             thumb_label='always',
-            v_slots=[
-                {
-                    'name':'append', 
-                    'children':sw.Tooltip(
-                        question_icon, cm.dashboard.help.scale, 
-                        left=True, max_width=200
-                    )
-                }
-            ]
+        )
+        # Create tooltip
+        t_scale = v.Flex(
+            class_='d-flex', 
+            children=[
+                self.w_scale,
+                sw.Tooltip(
+                    question_icon, 
+                    cm.dashboard.help.scale, 
+                    left=True, 
+                    max_width=200
+                )
+           ]
         )
 
         self.w_year = v.TextField(
             label=cm.dashboard.label.year,
             v_model=self.model.year,
             type='string',
-            v_slots=[
-                {
-                    'name':'append', 
-                    'children':sw.Tooltip(
-                        question_icon, cm.dashboard.help.year, 
-                        left=True, max_width=200
-                    )
-                }
-            ]
+        )
+        # Create tooltip
+        t_year = v.Flex(
+            class_='d-flex', 
+            children=[
+                self.w_year,
+                sw.Tooltip(
+                    question_icon, 
+                    cm.dashboard.help.year, 
+                    left=True, 
+                    max_width=200
+                )
+           ]
         )
 
         # buttons
@@ -106,10 +103,10 @@ class Dashboard(v.Card, sw.SepalWidget):
         self.children=[
             title,
             description,
-            self.w_year,
-            self.w_scale,
-            self.alert,
+            t_year,
+            t_scale,
             self.btn,
+            self.alert,
         ]
         
         # Decorate functions
@@ -120,14 +117,18 @@ class Dashboard(v.Card, sw.SepalWidget):
         
         self.btn.on_event('click', self.get_dashboard)
         
-        # Let's link the 
+        # Let's link the model year with the year widget here.
         directional_link((self.model, 'year'),(self.w_year, 'v_model'))
        
     def get_dashboard(self, widget, event, data):
         """Create dashboard"""
         
         # Calculate regions
+        self.alert.add_msg('Reducing land cover classes to Kapos regions...')
+        
         self.model.reduce_to_regions()
+        
+        self.alert.append_msg('Rendering dashboard...')
         
         # Get overall MGCI widget        
         w_overall = Statistics(self.model)
@@ -138,10 +139,24 @@ class Dashboard(v.Card, sw.SepalWidget):
             for krange, _ 
             in self.model.summary_df.iterrows()
         ]
-
-        # Merging and displaying
-        self.children = self.children + [w_overall] + w_individual
         
+        statistics = v.Layout(
+            class_='d-block',
+            children=[w_overall]+w_individual, _metadata={'name':'statistics'}
+        )
+        
+        new_items = self.children + [statistics]
+        
+        # Check if there are already loaded statistics.
+        for chld in self.children:
+            if isinstance(chld._metadata, dict):
+                if 'statistics' in chld._metadata.values():
+                    new_items = self.children[:-1] + [statistics]
+                    break
+        
+        self.children = new_items
+        
+        self.alert.append_msg('Done.', type_='success')
 
 class Statistics(v.Card):
     
@@ -156,15 +171,16 @@ class Statistics(v.Card):
             krange (int): kapos range number (1,2,3,4,5,6)
             area_per_class (dictionary): Dictionary of lu/lc areas 
         """
-        self.class_= "ma-5"
+        self.class_= "ma-4"
         self.row = True
         self.model = model
+        self.metadata_ = {'name':'statistics'}
         
         self.output_chart = Output()
         
         # Create title and description based on the inputs
         title = cm.dashboard.global_.title
-        desc = cm.dashboard.global_.desc
+        desc = sw.Alert(children=[cm.dashboard.global_.desc], dense=True).show()
         
         if krange:
             title = cm.dashboard.individual.title.format(krange)
