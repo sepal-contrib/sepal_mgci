@@ -5,7 +5,7 @@ from ipywidgets import Output
 import ipyvuetify as v
 
 import sepal_ui.sepalwidgets as sw
-from sepal_ui.scripts.utils import loading_button
+from sepal_ui.scripts.utils import loading_button, switch
 
 import component.parameter as param
 from component.scripts import get_mgci_color, human_format
@@ -98,7 +98,13 @@ class Dashboard(v.Card, sw.SepalWidget):
 
         # buttons
         self.btn = sw.Btn(cm.dashboard.label.calculate)
-        self.download = sw.Btn(cm.dashboard.label.download)
+        self.download_btn = sw.Btn(
+            cm.dashboard.label.download, class_='ml-2', disabled=True
+        )
+
+
+        w_buttons = v.Flex(children=[self.btn, self.download_btn])
+        
         self.alert = sw.Alert()
         
         self.children=[
@@ -106,7 +112,7 @@ class Dashboard(v.Card, sw.SepalWidget):
             description,
             t_year,
             t_scale,
-            self.btn,
+            w_buttons,
             self.alert,
         ]
         
@@ -116,7 +122,13 @@ class Dashboard(v.Card, sw.SepalWidget):
             debug=True
         )(self.get_dashboard)
         
+        self.download_results = loading_button(
+            alert=self.alert, button=self.download_btn,
+            debug=True
+        )(self.download_results)
+        
         self.btn.on_event('click', self.get_dashboard)
+        self.download_btn.on_event('click', self.download_results)
         
         # Let's link the model year with the year widget here.
         directional_link((self.model, 'year'),(self.w_year, 'v_model'))
@@ -127,20 +139,31 @@ class Dashboard(v.Card, sw.SepalWidget):
         # Generate report
         self.model.get_report()
         
-        #TODO: Create an individual folder for this output
+        # Create a folder to store multiple year reports from the same area
+        report_folder = param.REPORTS_DIR/f'{self.model.aoi_model.name}_MGCI'
+        (param.REPORTS_DIR/report_folder).mkdir(parents=True, exist_ok=True)
         
+        # Create a distintive name for the output file, including the year.
         output_name = f'{self.model.aoi_model.name}_{self.model.year}_MGCI_Report'
+        full_output_path = str(report_folder/f'{output_name}.xlsx')
+        
         self.model.mgci_report.to_excel(
-            f'{output_name}.xlsx', 
+            full_output_path, 
             sheet_name=output_name, 
             index=False
         )
         
-        # TODO: Alert user where the report was stored.
+        self.alert.add_msg(
+            f'The file was successfully saved in {full_output_path}', type_='success'
+        )
                 
-       
+    @switch('disabled', on_widgets=['download_btn'])
     def get_dashboard(self, widget, event, data):
         """Create dashboard"""
+        
+        # Remove previusly dashboards
+        if self.is_displayed():
+            self.children = self.children[:-1][:]
         
         # Calculate regions
         self.alert.add_msg('Reducing land cover classes to Kapos regions...')
@@ -166,16 +189,21 @@ class Dashboard(v.Card, sw.SepalWidget):
         
         new_items = self.children + [statistics]
         
-        # Check if there are already loaded statistics.
-        for chld in self.children:
-            if isinstance(chld._metadata, dict):
-                if 'statistics' in chld._metadata.values():
-                    new_items = self.children[:-1] + [statistics]
-                    break
+#         # Check if there are already loaded statistics.
+        
+#             new_items = self.children[:-1] + [statistics]
         
         self.children = new_items
+        self.alert.hide()
+    
+    def is_displayed(self):
+        """Check if there is a previusly displayed dashboard"""
         
-        self.alert.add_msg('Done.', type_='success')
+        for chld in self.children:
+            if isinstance(chld._metadata, dict):
+                if 'statistics' in chld._metadata.values(): return True
+                    
+        return False
 
 class Statistics(v.Card):
     
