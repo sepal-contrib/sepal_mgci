@@ -42,6 +42,7 @@ class Dashboard(v.Card, sw.SepalWidget):
                 ):
         
         self._metadata={'mount_id': 'dashboard_tile'}
+        self.class_ = 'pa-2'
         
         super().__init__(*args, **kwargs)
         
@@ -50,7 +51,7 @@ class Dashboard(v.Card, sw.SepalWidget):
         title = v.CardTitle(children=[cm.dashboard.title])
         description = v.CardText(children=[cm.dashboard.description])
         
-        question_icon = v.Icon(children=['mdi-help'], x_small=True)
+        question_icon = v.Icon(children=['mdi-help-circle'], small=True)
         
         # widgets
         self.w_scale = v.Slider(
@@ -72,7 +73,7 @@ class Dashboard(v.Card, sw.SepalWidget):
                     question_icon, 
                     cm.dashboard.help.scale, 
                     left=True, 
-                    max_width=200
+                    max_width=300
                 )
            ]
         )
@@ -91,7 +92,7 @@ class Dashboard(v.Card, sw.SepalWidget):
                     question_icon, 
                     cm.dashboard.help.year, 
                     left=True, 
-                    max_width=200
+                    max_width=300
                 )
            ]
         )

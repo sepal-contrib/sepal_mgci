@@ -15,6 +15,7 @@ class MountainTile(v.Card, sw.SepalWidget):
     def __init__(self, model, *args, **kwargs):
         
         self._metadata={'mount_id': 'mountain_tile'}
+        self.class_ = 'pa-2'
         
         super().__init__(*args, **kwargs)
         

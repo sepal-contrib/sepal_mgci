@@ -20,7 +20,6 @@ class VegetationTile(v.Card, sw.SepalWidget):
     def __init__(self, model, aoi_model, *args, **kwargs):
         
         self._metadata={'mount_id': 'vegetation_tile'}
-
         self.class_ = 'pa-2'
         
         super().__init__(*args,  **kwargs)
