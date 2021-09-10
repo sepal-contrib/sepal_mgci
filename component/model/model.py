@@ -96,7 +96,7 @@ class MgciModel(Model):
                 [self.vegetation_image.bandNames().get(0)]
             )
         
-        result = ee.Image.pixelArea().divide(10000)\
+        result = ee.Image.pixelArea().divide(1000000)\
           .updateMask(lulc.mask().And(self.kapos_image.mask()))\
           .addBands(lulc)\
           .addBands(self.kapos_image)\
