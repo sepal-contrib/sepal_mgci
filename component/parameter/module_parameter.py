@@ -8,7 +8,8 @@ __all__ = [
     'KAPOS_PALETTE',
     'KAPOS_LEGEND',
     'KAPOS_VIS',
-    'M49'
+    'M49',
+    'CUSTOM_AOI_ITEMS'
 ]
 
 # SET SOME PARAMETERS
@@ -41,3 +42,14 @@ KAPOS_VIS = {
 }
 
 M49 = Path(__file__).parent/'m49_iso31661.csv'
+
+
+CUSTOM_AOI_ITEMS = [
+    {'header': 'Administrative definitions'},
+    {'text': 'Country', 'value': 'ADMIN0'},
+    {'text': 'Sub-national level 1', 'value': 'ADMIN1'},
+    {'text': 'Sub-national level 2', 'value': 'ADMIN2'},
+    {'header': 'Custom geometries'},
+    {'text': 'Vector file', 'value': 'SHAPE'},
+    {'text': 'GEE Asset name', 'value': 'ASSET'}
+]
