@@ -1,3 +1,4 @@
+from pathlib import Path
 from component.message import cm
 
 __all__ = [
@@ -6,7 +7,8 @@ __all__ = [
     'DISPLAY_CLASSES',
     'KAPOS_PALETTE',
     'KAPOS_LEGEND',
-    'KAPOS_VIS'
+    'KAPOS_VIS',
+    'M49'
 ]
 
 # SET SOME PARAMETERS
@@ -38,8 +40,4 @@ KAPOS_VIS = {
     'max':6
 }
 
-
-
-
-
-
+M49 = Path(__file__).parent/'m49_iso31661.csv'

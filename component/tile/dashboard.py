@@ -8,7 +8,7 @@ import sepal_ui.sepalwidgets as sw
 from sepal_ui.scripts.utils import loading_button, switch
 
 import component.parameter as param
-from component.scripts import get_mgci_color, human_format
+from component.scripts import get_mgci_color, human_format, get_output_name
 from component.message import cm
 
 __all__ = ['Dashboard']
@@ -139,14 +139,7 @@ class Dashboard(v.Card, sw.SepalWidget):
         
         # Generate report
         self.model.get_report()
-        
-        # Create a folder to store multiple year reports from the same area
-        report_folder = param.REPORTS_DIR/f'{self.model.aoi_model.name}_MGCI'
-        (param.REPORTS_DIR/report_folder).mkdir(parents=True, exist_ok=True)
-        
-        # Create a distintive name for the output file, including the year.
-        output_name = f'{self.model.aoi_model.name}_{self.model.year}_MGCI_Report'
-        full_output_path = str(report_folder/f'{output_name}.xlsx')
+        output_name, full_output_path = get_output_name(self.model)
         
         self.model.mgci_report.to_excel(
             full_output_path, 

@@ -5,7 +5,9 @@ from traitlets import Unicode, Any, Int, Dict
 from sepal_ui.scripts.utils import need_ee
 from sepal_ui.model import Model
 
+import component.scripts as cs
 import component.parameter as param
+
 
 class MgciModel(Model):
     
@@ -159,7 +161,7 @@ class MgciModel(Model):
     def get_report(self):
         """From the summary df, create a styled df to align format with the report"""
         
-        assert (self.summary_df is not None), 'How you ended here?'
+        assert (self.summary_df is not None), 'How did you ended here?'
         
         df = self.summary_df.copy()
         
@@ -167,10 +169,14 @@ class MgciModel(Model):
         vegetation_names = { k:v[0] for k, v in self.lulc_classes.items()}
         df.rename(columns=vegetation_names, inplace=True)
         
+        
         # Create static columns
         df['Indicator'] = '15.4.2'
         df['MountainClass'] = 'C'+df.index.astype(str)
-        df['GeoAreaName'] = self.aoi_model.name
+        
+        # Get m49 name
+        df['GeoAreaName'] = cs.get_geoarea_name(self.aoi_model)
+        
         df['TimePeriod'] = self.year
         df['Units'] = 'SQKM'
         
