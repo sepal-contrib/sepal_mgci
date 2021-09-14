@@ -35,7 +35,8 @@
     },
     "mountain_layer" : {
         "title":"Mountain descriptor layer",
-        "text": "Mountains can be defined with reference to a variety of parameters, such as climate, elevation, ecology (Körner et al., 2011) (Karagulle et al., 2017). This methodology adheres to the UNEP- WCMC mountain definition, relying in turn on the mountain description proposed by Kapos et al. (2000). </br></br> In the following dropdown you can select some of the world Digital Elevation Models (DEM) that will be used to classify the mountains.",
+        "text": "SDG Indicator 15.4.2 – Mountain Green Cover Index defines mountains in accordance with the UNEP-WCMC global mountain classification (Kapos et al. 2000). This method classifies mountains according to the following scheme:</br></br><ul><li><b>Class 1</b>: elevation ≥ 4 500 m</li><li><b>Class 2</b>: elevation 3 500–4 500 m</li><li><b>Class 3</b>: elevation 2 500–3 500 m</li><li><b>Class 4</b>: elevation 1 500–2 500 m and slope ≥ 2°</li><li><b>Class 5</b>: elevation 1 000–1 500 m and slope ≥ 5° or LER (Local Elevation Range in the radius of 7 kilometers) > 300 m </li><li><b>Class 6</b>: elevation 300–1 000 m and LER (Local Elevation Range in the radius of 7 kilometers) > 300 m</li></ul></br>This module computes a UNEP-WCMC mountain class map using a Digital Elevation Model (DEM) as an input. You have the option to use a custom DEM for your country. If not available, the tool will use a global UNEP-WCMC mountain classification map produced from [To be defined] at a [To be defined] m resolution.",
+        "btn" : "Create UNEP-WCMC Mountain Class Map",
         "w_dem" :{
             "label" : "Digital Elevation Model (DEM-DSM)",
             "items" : [

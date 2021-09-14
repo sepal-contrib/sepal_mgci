@@ -43,7 +43,7 @@ class MountainTile(v.Card, sw.SepalWidget):
             label="Select a custom DEM", types=["IMAGE"]
         ).hide()
         
-        self.btn = sw.Btn('Create Kapos Layer')
+        self.btn = sw.Btn(cm.mountain_layer.btn)
         self.map_ = sm.SepalMap()
         
         # bind the widgets to the model
