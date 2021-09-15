@@ -10,11 +10,28 @@ import component.parameter as param
 
 __all__=['MountainTile']
 
-class MountainTile(v.Card, sw.SepalWidget):
+class MountainTile(v.Layout, sw.SepalWidget):
     
     def __init__(self, model, *args, **kwargs):
         
         self._metadata={'mount_id': 'mountain_tile'}
+        self.class_ = 'd-block pa-2'
+        
+        super().__init__(*args, **kwargs)
+        
+        self.model = model
+        self.description = MountainDescription()
+        self.view = MountainView(model=model)
+        
+        self.children = [
+            self.description,
+            self.view,
+        ]
+
+class MountainView(v.Card, sw.SepalWidget):
+    
+    def __init__(self, model, *args, **kwargs):
+        
         self.class_ = 'pa-2'
         
         super().__init__(*args, **kwargs)
@@ -24,18 +41,20 @@ class MountainTile(v.Card, sw.SepalWidget):
         
         # Widgets
         self.alert = sw.Alert()
+
+        self.w_use_custom = v.RadioGroup(
+            row=True,
+            v_model=0,
+            children=[
+                v.Radio(label='No', value=0),
+                v.Radio(label='Yes', value=1),
+            ]
+        )
         
-        # Card descriptors
-        title = v.CardTitle(children=[cm.mountain_layer.title])
-        description = v.CardText(children=[sw.Markdown(cm.mountain_layer.text)])
-        
-        self.w_select_dem = v.Select(
-            label=cm.mountain_layer.w_dem.label,
-            v_model='srtm_3',
-            items=[
-                {'text':cm.mountain_layer.w_dem.items[0], 'value':'custom'},
-                {'text':cm.mountain_layer.w_dem.items[1], 'value':'srtm_1'},
-                {'text':cm.mountain_layer.w_dem.items[2], 'value':'srtm_3'},
+        questionaire = v.Flex(
+            children=[
+                v.Html(tag='h3', children=[cm.mountain_layer.questionaire]),
+                self.w_use_custom
             ]
         )
         
@@ -43,25 +62,22 @@ class MountainTile(v.Card, sw.SepalWidget):
             label="Select a custom DEM", types=["IMAGE"]
         ).hide()
         
-        self.btn = sw.Btn(cm.mountain_layer.btn)
+        self.btn = sw.Btn(cm.mountain_layer.btn, class_='mb-2')
         self.map_ = sm.SepalMap()
         
         # bind the widgets to the model
-        self.model.bind(self.w_select_dem, 'dem_type')\
-            .bind(self.w_custom_dem, 'custom_dem_id')
+        self.model.bind(self.w_use_custom, 'use_custom')            
 
         self.children=[
-            title,
-            description,
             self.alert,
-            self.w_select_dem,
+            questionaire,
             self.w_custom_dem,
             self.btn, 
             v.Card(children=[self.map_])
         ]
         
         # actions
-        self.w_select_dem.observe(self.display_custom_dem, 'v_model')
+        self.w_use_custom.observe(self.display_custom_dem, 'v_model')
         
         # Decorate functions
         self.add_kapos_map = loading_button(
@@ -74,7 +90,7 @@ class MountainTile(v.Card, sw.SepalWidget):
         """Display custom dem widget when w_select_dem == 'custom'"""
         
         v_model = change['new']
-        self.w_custom_dem.show() if v_model == 'custom' else self.w_custom_dem.hide()
+        self.w_custom_dem.show() if v_model == 1 else self.w_custom_dem.hide()
     
     def add_kapos_map(self, widget, event, data):
         """Create and display kapos layer on a map"""
@@ -92,3 +108,20 @@ class MountainTile(v.Card, sw.SepalWidget):
         # Add kapos mountain layer to map
         self.map_.zoom_ee_object(self.model.aoi_model.feature_collection.geometry())
         self.map_.addLayer(self.model.kapos_image, param.KAPOS_VIS, 'Kapos map')
+        
+class MountainDescription(v.Card, sw.SepalWidget):
+    
+    def __init__(self, *args, **kwargs):
+        
+        self.class_ = 'pa-2 mb-2'
+        
+        super().__init__(*args, **kwargs)
+        
+        # Card descriptors
+        title = v.CardTitle(children=[cm.mountain_layer.title])
+        description = v.CardText(children=[sw.Markdown(cm.mountain_layer.text)])
+
+        self.children=[
+            title,
+            description,
+        ]

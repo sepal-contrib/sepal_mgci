@@ -1,6 +1,6 @@
 import pandas as pd
 import ee
-from traitlets import Unicode, Any, Int, Dict
+from traitlets import Unicode, Any, Int, Dict, CBool
 
 from sepal_ui.scripts.utils import need_ee
 from sepal_ui.model import Model
@@ -11,8 +11,7 @@ import component.parameter as param
 
 class MgciModel(Model):
     
-    dem_type = Unicode('').tag(sync=True)
-    custom_dem_id = Any('').tag(sync=True)
+    use_custom = CBool(0).tag(sync=True)
     
     # output parameters
     scale = Int(300).tag(sync=True)
@@ -44,19 +43,14 @@ class MgciModel(Model):
         if not aoi:
             raise Exception('No AOI selected, please go ' + \
                             'to the previous step and select an area.')
-
-        if self.dem_type == 'srtm_1':
-            dem = ee.Image("USGS/SRTMGL1_003")
-        elif self.dem_type == 'srtm_3':
-            dem = ee.Image("CGIAR/SRTM90_V4")
-        elif self.dem_type == 'alos':
-            ""
-            # TODO: 
-            # dem = ee.Image('asset_id')
-        else:
-            # User has selected a custom layer
+            
+        if self.use_custom:
             dem = ee.Image(self.custom_dem_id)
-
+            
+        else:
+            # TODO: decide which of the assets use
+            # dem = ee.Image("USGS/SRTMGL1_003") # srtm_1
+            dem = ee.Image("CGIAR/SRTM90_V4") # srtm_3
 
         aoi_dem = dem.clip(aoi)
 
