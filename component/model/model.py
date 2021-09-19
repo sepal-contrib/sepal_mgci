@@ -65,10 +65,50 @@ class MgciModel(Model):
             .where(aoi_dem.gte(1500).And(aoi_dem.lt(2500))\
                    .And(slope.gt(2)),4)\
             .where(aoi_dem.gte(1000).And(aoi_dem.lt(1500))\
-                   .And(slope.gt(2).Or(local_range.gt(300))),5)\
+                   .And(slope.gt(5).Or(local_range.gt(300))),5)\
             .where(aoi_dem.gte(300).And(aoi_dem.lt(1000))\
                    .And(local_range.gt(300)),6)\
             .selfMask()
+        
+    var inverse_kapos = kapos_1_6.unmask().not().eq(1).selfMask()
+
+    var inverse_kapos_mask = kapos_1_6.unmask().not()
+    Map.addLayer(inverse_kapos_mask)
+
+    var connected = inverse_kapos.connectedComponents({
+      connectedness: ee.Kernel.plus(1),
+      maxSize: 128 //255
+    });
+
+    var connected_size = connected.select('labels')
+      .connectedPixelCount({
+        maxSize: 128, 
+        eightConnected: false 
+      });
+    var connected_area = ee.Image.pixelArea()
+      .addBands(connected_size)
+      .lte(25000000)
+      .eq(1)
+      .selfMask()
+      .select('labels')
+
+    // Map.addLayer(connected_area.mask(), null, mask)
+
+
+    var kapos_fill10 = kapos_1_6.focal_mean( 1,'square','pixels',10)
+
+      .updateMask(connected_area)
+      .selfMask()
+
+    var kapos_1_6_filled = kapos_1_6.addBands(kapos_fill10)
+      .reduce(ee.Reducer.max()).regexpRename('max','constant')
+
+    // Map.addLayer(kapos_1_6, imageVisParam, '1to6')
+    // Map.addLayer(kapos_1_6_filled, imageVisParam, 'kapos')
+
+
+    Map.centerObject(aoi)
+
         
     def reduce_to_regions(self):
 
