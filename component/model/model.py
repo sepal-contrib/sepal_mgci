@@ -59,7 +59,7 @@ class MgciModel(Model):
         local_range = aoi_dem.focal_max(7000,"circle","meters")\
                             .subtract(aoi_dem.focal_min(7000, "circle","meters"))
         # Kapos Mountain classes
-        self.kapos_image = ee.Image(0).where(aoi_dem.gte(4500),1)\
+        self.kapos_1_6 = ee.Image(0).where(aoi_dem.gte(4500),1)\
             .where(aoi_dem.gte(3500).And(aoi_dem.lt(4500)),2)\
             .where(aoi_dem.gte(2500).And(aoi_dem.lt(3500)),3)\
             .where(aoi_dem.gte(1500).And(aoi_dem.lt(2500))\
@@ -70,44 +70,42 @@ class MgciModel(Model):
                    .And(local_range.gt(300)),6)\
             .selfMask()
         
-    var inverse_kapos = kapos_1_6.unmask().not().eq(1).selfMask()
+        # Create the 7th class
+        # The 7th class won't be a class by itself, we have to find areas that
+        # are surrounded by the first 6 classes and assign them to its neighbors
+        
+        inverse_kapos = kapos_1_6.unmask().Not().eq(1).selfMask()
 
-    var inverse_kapos_mask = kapos_1_6.unmask().not()
-    Map.addLayer(inverse_kapos_mask)
+        connected = inverse_kapos.connectedComponents(**{
+          'connectedness': ee.Kernel.plus(1),
+          'maxSize': 128
+        })
 
-    var connected = inverse_kapos.connectedComponents({
-      connectedness: ee.Kernel.plus(1),
-      maxSize: 128 //255
-    });
+        connected_size = (
+            connected.select('labels')
+                      .connectedPixelCount(**{'maxSize': 128, 'eightConnected': False })
+        )
+        connected_area = (
+            ee.Image.pixelArea()
+                  .addBands(connected_size)
+                  .lte(25000000)
+                  .eq(1)
+                  .selfMask()
+                  .select('labels')
+        )
 
-    var connected_size = connected.select('labels')
-      .connectedPixelCount({
-        maxSize: 128, 
-        eightConnected: false 
-      });
-    var connected_area = ee.Image.pixelArea()
-      .addBands(connected_size)
-      .lte(25000000)
-      .eq(1)
-      .selfMask()
-      .select('labels')
+        kapos_fill10 = (
+            kapos_1_6.focal_mean( 1,'square','pixels',10)
+              .updateMask(connected_area)
+              .selfMask()
+        )
 
-    // Map.addLayer(connected_area.mask(), null, mask)
-
-
-    var kapos_fill10 = kapos_1_6.focal_mean( 1,'square','pixels',10)
-
-      .updateMask(connected_area)
-      .selfMask()
-
-    var kapos_1_6_filled = kapos_1_6.addBands(kapos_fill10)
-      .reduce(ee.Reducer.max()).regexpRename('max','constant')
-
-    // Map.addLayer(kapos_1_6, imageVisParam, '1to6')
-    // Map.addLayer(kapos_1_6_filled, imageVisParam, 'kapos')
-
-
-    Map.centerObject(aoi)
+        kapos_1_6_filled = (
+            kapos_1_6.addBands(kapos_fill10)
+              .reduce(ee.Reducer.max()).regexpRename('max','constant')
+        )
+        
+        self.kapos_image
 
         
     def reduce_to_regions(self):
