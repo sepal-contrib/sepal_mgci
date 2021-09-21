@@ -9,7 +9,8 @@ __all__ = [
     'KAPOS_LEGEND',
     'KAPOS_VIS',
     'M49',
-    'CUSTOM_AOI_ITEMS'
+    'CUSTOM_AOI_ITEMS',
+    'LULC_DEFAULT'
 ]
 
 # SET SOME PARAMETERS
@@ -53,3 +54,8 @@ CUSTOM_AOI_ITEMS = [
     {'text': 'Vector file', 'value': 'SHAPE'},
     {'text': 'GEE Asset name', 'value': 'ASSET'}
 ]
+
+
+LULC_DEFAULT = 'users/geflanddegradation/toolbox_datasets/lcov_esacc_1992_2018'
+
+ESA_IPCC_MATRIX = Path(__file__).parent/'esa_ipcc_matrix.csv'
