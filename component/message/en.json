@@ -26,16 +26,20 @@
     },
     "veg_layer" : {
         "title" : "Vegetation descriptor layer",
-        "description" : "The vegetation descriptor layer categorizes land cover into green and non-green areas. Green vegetation includes both natural vegetation and vegetation resulting from anthropic activity (e.g. crops, afforestation, etc.). Non-green areas include very sparsely vegetated areas, bare land, water, permanent ice/snow and urban areas.",
+        "description" : "The vegetation descriptor layer categorizes land cover into green and non-green areas. Green vegetation includes both natural vegetation and vegetation resulting from anthropic activity (e.g. crops, afforestation, etc.). Non-green areas include very sparsely vegetated areas, bare land, water, permanent ice/snow and urban areas.</br></br> This module computes a vegetation descriptor layer using a land use/land cover map as an input. You have the option to use a custom land use/land cover map for your country. If not available, the tool will use a land cover time series produced by the European Space Agency (ESA) under the Climate Change Initiative (CCI) (Available at: http://maps.elie.ucl.ac.be/CCI/viewer/index.php)",
         "instructions":" ",
         "veg_asst":{
             "label": "Select a Land Cover Map",
             "items" : ["Custom Land Cover Map...", "ESA Land Cover Map"]
+        },
+        "questionaire" : {
+            "q1":"Would you like to use a custom land use/land cover map?",
+            "q2":"Do you have a reclassification matrix table in a CSV format?"
         }
     },
     "mountain_layer" : {
         "title":"Mountain descriptor layer",
-        "text": "SDG Indicator 15.4.2 – Mountain Green Cover Index defines mountains in accordance with the UNEP-WCMC global mountain classification (Kapos et al. 2000). This method classifies mountains according to the following scheme:</br></br><ul><li><b>Class 1</b>: elevation ≥ 4 500 m</li><li><b>Class 2</b>: elevation 3 500–4 500 m</li><li><b>Class 3</b>: elevation 2 500–3 500 m</li><li><b>Class 4</b>: elevation 1 500–2 500 m and slope ≥ 2°</li><li><b>Class 5</b>: elevation 1 000–1 500 m and slope ≥ 5° or LER (Local Elevation Range in the radius of 7 kilometers) > 300 m </li><li><b>Class 6</b>: elevation 300–1 000 m and LER (Local Elevation Range in the radius of 7 kilometers) > 300 m</li></ul></br>This module computes a UNEP-WCMC mountain class map using a Digital Elevation Model (DEM) as an input. You have the option to use a custom DEM for your country. If not available, the tool will use a global UNEP-WCMC mountain classification map produced from [To be defined] at a [To be defined] m resolution.",
+        "description": "SDG Indicator 15.4.2 – Mountain Green Cover Index defines mountains in accordance with the UNEP-WCMC global mountain classification (Kapos et al. 2000). This method classifies mountains according to the following scheme:</br></br><ul><li><b>Class 1</b>: elevation ≥ 4 500 m</li><li><b>Class 2</b>: elevation 3 500–4 500 m</li><li><b>Class 3</b>: elevation 2 500–3 500 m</li><li><b>Class 4</b>: elevation 1 500–2 500 m and slope ≥ 2°</li><li><b>Class 5</b>: elevation 1 000–1 500 m and slope ≥ 5° or LER (Local Elevation Range in the radius of 7 kilometers) > 300 m </li><li><b>Class 6</b>: elevation 300–1 000 m and LER (Local Elevation Range in the radius of 7 kilometers) > 300 m</li></ul></br>This module computes a UNEP-WCMC mountain class map using a Digital Elevation Model (DEM) as an input. You have the option to use a custom DEM for your country. If not available, the tool will use a global UNEP-WCMC mountain classification map produced from [To be defined] at a [To be defined] m resolution.",
         "questionaire":"Would you like to use a custom DEM?",
         "btn" : "Create UNEP-WCMC Mountain Class Map",
         "w_dem" :{
