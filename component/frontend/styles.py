@@ -1,6 +1,6 @@
 # from traitlets import Unicode
 # from IPython.display import display
-# import ipyvuetify as v 
+# import ipyvuetify as v
 
 # class Styles(v.VuetifyTemplate):
 
@@ -11,6 +11,6 @@
 #         }
 #     </style>
 #     """).tag(sync=True)
-    
+
 # styles=Styles()
 # display(styles)
