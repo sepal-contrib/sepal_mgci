@@ -20,17 +20,21 @@ class MountainTile(v.Layout, sw.SepalWidget):
         super().__init__(*args, **kwargs)
         
         self.model = model
-        self.description = MountainDescription()
-        self.view = MountainView(model=model)
+        self.map_ = sm.SepalMap()
+        self.view = MountainView(model=model, map_=self.map_)
         
+        title = v.CardTitle(children=[cm.mountain_layer.title])
+        description = v.CardText(children=[sw.Markdown(cm.mountain_layer.description)])
+
         self.children = [
-            self.description,
+            v.Card(children=[title, description]),
             self.view,
+            v.Card(children=[v.CardTitle(children=['Visualize']), self.map_])
         ]
 
 class MountainView(v.Card, sw.SepalWidget):
     
-    def __init__(self, model, *args, **kwargs):
+    def __init__(self, model, map_, *args, **kwargs):
         
         self.class_ = 'pa-2'
         
@@ -51,19 +55,14 @@ class MountainView(v.Card, sw.SepalWidget):
             ]
         )
         
-        questionaire = v.Flex(
-            children=[
-                v.Html(tag='h3', children=[cm.mountain_layer.questionaire]),
-                self.w_use_custom
-            ]
-        )
+        self.w_use_custom = BoolQuestion(cm.mountain_layer.questionaire)
         
         self.w_custom_dem = sw.AssetSelect(
             label="Select a custom DEM", types=["IMAGE"]
         ).hide()
         
         self.btn = sw.Btn(cm.mountain_layer.btn, class_='mb-2')
-        self.map_ = sm.SepalMap()
+        
         
         # bind the widgets to the model
         self.model.bind(self.w_use_custom, 'use_custom')            
@@ -109,19 +108,6 @@ class MountainView(v.Card, sw.SepalWidget):
         self.map_.zoom_ee_object(self.model.aoi_model.feature_collection.geometry())
         self.map_.addLayer(self.model.kapos_image, param.KAPOS_VIS, 'Kapos map')
         
-class MountainDescription(v.Card, sw.SepalWidget):
-    
-    def __init__(self, *args, **kwargs):
+        # Create a trait to let others know that we have created a kapos layer
+        self.model.kapos_done+=1
         
-        self.class_ = 'pa-2 mb-2'
-        
-        super().__init__(*args, **kwargs)
-        
-        # Card descriptors
-        title = v.CardTitle(children=[cm.mountain_layer.title])
-        description = v.CardText(children=[sw.Markdown(cm.mountain_layer.text)])
-
-        self.children=[
-            title,
-            description,
-        ]
