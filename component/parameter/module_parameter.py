@@ -10,7 +10,8 @@ __all__ = [
     'KAPOS_VIS',
     'M49',
     'CUSTOM_AOI_ITEMS',
-    'LULC_DEFAULT'
+    'LULC_DEFAULT',
+    'ESA_IPCC_MATRIX'
 ]
 
 # SET SOME PARAMETERS
@@ -58,4 +59,5 @@ CUSTOM_AOI_ITEMS = [
 
 LULC_DEFAULT = 'users/geflanddegradation/toolbox_datasets/lcov_esacc_1992_2018'
 
+# Define the translation matrix between ESA and IPCC classes
 ESA_IPCC_MATRIX = Path(__file__).parent/'esa_ipcc_matrix.csv'
