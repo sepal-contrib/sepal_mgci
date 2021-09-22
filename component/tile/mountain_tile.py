@@ -7,6 +7,7 @@ from sepal_ui import sepalwidgets as sw
 
 from component.message import cm
 import component.parameter as param
+import component.widget as cw
 
 __all__ = ["MountainTile"]
 
@@ -27,21 +28,22 @@ class MountainTile(v.Layout, sw.SepalWidget):
         description = v.CardText(children=[sw.Markdown(cm.mountain_layer.description)])
 
         self.children = [
-            v.Card(children=[title, description]),
-            self.view,
-            v.Card(children=[v.CardTitle(children=["Visualize"]), self.map_]),
+            v.Card(class_="pa-2 mb-2", children=[title, description]),
+            v.Card(class_="pa-2 mb-2", children=[self.view]),
+            v.Card(class_="pa-2 mb-2", children=[v.CardTitle(children=["Visualize"]), self.map_]),
         ]
 
 
-class MountainView(v.Card, sw.SepalWidget):
+class MountainView(v.Layout, sw.SepalWidget):
     def __init__(self, model, map_, *args, **kwargs):
 
-        self.class_ = "pa-2"
-
+        self.class_ = "d-block pa-2"
+        
         super().__init__(*args, **kwargs)
 
         # Class parameters
         self.model = model
+        self.map_ = map_
 
         # Widgets
         self.alert = sw.Alert()
@@ -55,7 +57,7 @@ class MountainView(v.Card, sw.SepalWidget):
             ],
         )
 
-        self.w_use_custom = BoolQuestion(cm.mountain_layer.questionaire)
+        self.w_use_custom = cw.BoolQuestion(cm.mountain_layer.questionaire)
 
         self.w_custom_dem = sw.AssetSelect(
             label="Select a custom DEM", types=["IMAGE"]
@@ -68,10 +70,9 @@ class MountainView(v.Card, sw.SepalWidget):
 
         self.children = [
             self.alert,
-            questionaire,
+            self.w_use_custom,
             self.w_custom_dem,
-            self.btn,
-            v.Card(children=[self.map_]),
+            self.btn
         ]
 
         # actions
