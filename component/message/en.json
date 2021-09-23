@@ -78,7 +78,7 @@
         },
         "global_" : {
             "title" : "Overall Mountain Green Cover Index",
-            "desc" : "The first four IPCC classes were used as green cover classes. All the units are shown in hectares."
+            "desc" : "The first four IPCC classes were used as green cover classes. All the units are shown in {}."
         }
 
     }

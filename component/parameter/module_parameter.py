@@ -12,6 +12,7 @@ __all__ = [
     "CUSTOM_AOI_ITEMS",
     "LULC_DEFAULT",
     "ESA_IPCC_MATRIX",
+    "UNITS"
 ]
 
 # SET SOME PARAMETERS
@@ -53,3 +54,9 @@ LULC_DEFAULT = "users/geflanddegradation/toolbox_datasets/lcov_esacc_1992_2018"
 
 # Define the translation matrix between ESA and IPCC classes
 ESA_IPCC_MATRIX = Path(__file__).parent / "esa_ipcc_matrix.csv"
+
+UNITS = {
+    # acronym: [factor, name]
+    'ha': [10000, 'hectares'],
+    'sqkm': [1000000, 'square kilometers'],
+}

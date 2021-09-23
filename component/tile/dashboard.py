@@ -25,7 +25,17 @@ def create_avatar(mgci):
 
 
 class Dashboard(v.Card, sw.SepalWidget):
-    def __init__(self, model, *args, **kwargs):
+    
+    def __init__(self, model, units='sqkm', *args, **kwargs):
+        
+        """Dashboard tile to calculate and resume the zonal statistics for the 
+        vegetation layer by kapos ranges.
+        
+        Args:
+            model (MgciModel): Mgci Model
+            units (str): Units to display the results. Available [{}]
+            
+        """.format(list(param.UNITS.keys()))
 
         self._metadata = {"mount_id": "dashboard_tile"}
         self.class_ = "pa-2"
@@ -33,6 +43,13 @@ class Dashboard(v.Card, sw.SepalWidget):
         super().__init__(*args, **kwargs)
 
         self.model = model
+        
+        if not units in list(param.UNITS.keys()):
+            raise Exception(
+                f'{units} is not an available unit, only use {list(param.UNITS.keys())}'
+            )
+        
+        self.units = units
 
         title = v.CardTitle(children=[cm.dashboard.title])
         description = v.CardText(children=[cm.dashboard.description])
@@ -137,16 +154,16 @@ class Dashboard(v.Card, sw.SepalWidget):
         # Calculate regions
         self.alert.add_msg("Reducing land cover classes to Kapos regions...")
 
-        self.model.reduce_to_regions()
+        self.model.reduce_to_regions(units=self.units)
 
         self.alert.append_msg("Rendering dashboard...")
 
         # Get overall MGCI widget
-        w_overall = Statistics(self.model)
+        w_overall = Statistics(self.model, self.units)
 
         # Get individual stats widgets per Kapos classes
         w_individual = [
-            Statistics(self.model, krange=krange)
+            Statistics(self.model, self.units, krange=krange)
             for krange, _ in self.model.summary_df.iterrows()
         ]
 
@@ -157,10 +174,6 @@ class Dashboard(v.Card, sw.SepalWidget):
         )
 
         new_items = self.children + [statistics]
-
-        #         # Check if there are already loaded statistics.
-
-        #             new_items = self.children[:-1] + [statistics]
 
         self.children = new_items
         self.alert.hide()
@@ -177,7 +190,8 @@ class Dashboard(v.Card, sw.SepalWidget):
 
 
 class Statistics(v.Card):
-    def __init__(self, model, *args, krange=None, **kwargs):
+    
+    def __init__(self, model, units, *args, krange=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         """
@@ -187,7 +201,10 @@ class Statistics(v.Card):
         Args:
             krange (int): kapos range number (1,2,3,4,5,6)
             area_per_class (dictionary): Dictionary of lu/lc areas 
-        """
+            units (str): Units to display the results. Available [{}]
+            
+        """.format(list(param.UNITS.keys()))
+
         self.class_ = "ma-4"
         self.row = True
         self.model = model
@@ -197,7 +214,9 @@ class Statistics(v.Card):
 
         # Create title and description based on the inputs
         title = cm.dashboard.global_.title
-        desc = sw.Alert(children=[cm.dashboard.global_.desc], dense=True).show()
+        desc = sw.Alert(children=[
+            cm.dashboard.global_.desc.format(param.UNITS[units][1])
+        ], dense=True).show()
 
         if krange:
             title = cm.dashboard.individual.title.format(krange)
