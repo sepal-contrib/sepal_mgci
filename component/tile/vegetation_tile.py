@@ -133,7 +133,7 @@ class VegetationView(v.Card, sw.SepalWidget):
             ]
         )
 
-        layer = reclass_model.dst_gee_memory.visualize(
+        layer = reclass_model.dst_gee_memory.mask(self.model.kapos_image).visualize(
             **{
                 "bands": reclass_model.band,
                 "palette": color,
