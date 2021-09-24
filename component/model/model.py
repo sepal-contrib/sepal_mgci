@@ -162,7 +162,7 @@ class MgciModel(Model):
                     "reducer": ee.Reducer.sum().group(1).group(2),
                     "geometry": aoi,
                     "maxPixels": 1e19,
-                    "scale": self.scale,
+                    "scale": scale,
                     "bestEffort": True,
                     "tileScale": 4,
                 }
