@@ -56,7 +56,7 @@
         "title" : "MGCI results dashboard",
         "description" : "Calculate the Mountain Green Cover Index dashboard, the result will include an overall index for all the Kapos mountain classes and also a more detailed index for each of these classes.",
         "label": {
-            "download" : "Download results",
+            "download" : "Export reporting tables",
             "calculate" : "Calculate MGCI",
             "scale" : "Process scale",
             "year": "Year",
@@ -65,7 +65,7 @@
             "plan" : "planimetric area"
         },
         "alert" : {
-            "computing" : "Reducing land cover classes to Kapos regions, using {}. This process may take a few minutes.",
+            "computing" : "Calculating MGCI values, using {}. This process may take a few minutes.",
             "rendering" : "Rendering dashboard"
         },
         "help":{
@@ -86,7 +86,7 @@
         },
         "global_" : {
             "title" : "Overall Mountain Green Cover Index",
-            "desc" : "The first four IPCC classes were used as green cover classes. All the units are shown in {}."
+            "desc" : "The last four IPCC classes are considered as green cover in accordance to SDG Indicator 15.4.2 Metadata. All the units are shown in {}."
         }
 
     }
