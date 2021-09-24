@@ -14,7 +14,6 @@ class MgciModel(Model):
     use_custom = CBool(0).tag(sync=True)
 
     # output parameters
-    scale = Int(300).tag(sync=True)
     year = Unicode("", allow_none=True).tag(sync=True)
 
     # LCLU Classes (came from the reclassify model)
@@ -146,6 +145,12 @@ class MgciModel(Model):
         
         if rsa:
             image_area = cs.get_real_surface_area(dem_asset, aoi)
+            
+        scale = dem_asset.projection().nominalScale().max(
+            lulc.projection().nominalScale()
+        ).getInfo()
+        
+        print(scale)
             
         result = (
             image_area.divide(param.UNITS[units][0])

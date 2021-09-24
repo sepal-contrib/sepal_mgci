@@ -58,26 +58,6 @@ class Dashboard(v.Card, sw.SepalWidget):
         question_icon = v.Icon(children=["mdi-help-circle"], small=True)
         
         # widgets
-        self.w_scale = v.Slider(
-            label=cm.dashboard.label.scale,
-            class_="mt-4",
-            min=10,
-            max=1000,
-            step=10,
-            tick_size="10",
-            v_model=self.model.scale,
-            thumb_label="always",
-        )
-        # Create tooltip
-        t_scale = v.Flex(
-            class_="d-flex",
-            children=[
-                self.w_scale,
-                sw.Tooltip(
-                    question_icon, cm.dashboard.help.scale, left=True, max_width=300
-                ),
-            ],
-        )
         
         self.w_year = v.TextField(
             label=cm.dashboard.label.year,
@@ -125,7 +105,6 @@ class Dashboard(v.Card, sw.SepalWidget):
             description,
             t_year,
             t_rsa,
-            t_scale,
             w_buttons,
             self.alert,
         ]

@@ -13,7 +13,7 @@ __all__ = ["get_real_surface_area"]
 # Define names to the eight neighbors and central bands.
 NEIGHBORS_NAMES = ee.List(["A", "B", "C", "D", "E", "F", "G", "H", "I"])
 
-# Define a subtraction matrix used to steps 1-2
+# Define a subtraction matrix used to steps 1-2.
 SUBTRACTION_MATRIX = ee.Dictionary(
     {
         "A": ["B", "D", "E"],
@@ -28,7 +28,7 @@ SUBTRACTION_MATRIX = ee.Dictionary(
     }
 )
 
-# Define diagonals
+# Define diagonals (from the center pixel)
 DIAGONALS = ee.List(["AE", "CE", "GE", "IE"])
 
 # Define triangles segments that will be used in the 3-4 step
