@@ -79,7 +79,6 @@ class MgciModel(Model):
             .where(aoi_dem.gte(300).And(aoi_dem.lt(1000)).And(local_range.gt(300)), 6)
             .selfMask()
         )
-        print('omitted')
 #         # Create the 7th class
 #         # The 7th class won't be a class by itself, we have to find areas that
 #         # are surrounded by the first 6 classes and assign them to its neighbors
@@ -110,11 +109,12 @@ class MgciModel(Model):
 
 #         self.kapos_image = kapos_1_6.addBands(kapos_fill10).reduce(ee.Reducer.max())
 
-    def reduce_to_regions(self, units):
+    def reduce_to_regions(self, units, rsa):
         """Reduce land use/land cover image to kapos regions
         
         Args:
             units (str): Units to display the results. Available [{}]
+            rsa (bool): Whether use real surface area or not (use planimetric)
         Attr:
             lulc (ee.Image, categorical): Input image to reduce
             kapos (ee.Image, categorical): Input region
@@ -141,11 +141,14 @@ class MgciModel(Model):
 
         aoi = self.aoi_model.feature_collection.geometry()
         dem_asset = ee.Image("CGIAR/SRTM90_V4")
-
-        real_surface_area = cs.get_real_surface_area(dem_asset, aoi)
-
+        
+        image_area = ee.Image.pixelArea()
+        
+        if rsa:
+            image_area = cs.get_real_surface_area(dem_asset, aoi)
+            
         result = (
-            ee.Image(real_surface_area).divide(param.UNITS[units][0])
+            image_area.divide(param.UNITS[units][0])
             .updateMask(lulc.mask().And(self.kapos_image.mask()))
             .addBands(lulc)
             .addBands(self.kapos_image)

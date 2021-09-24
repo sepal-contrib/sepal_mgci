@@ -26,7 +26,7 @@ def create_avatar(mgci):
 
 class Dashboard(v.Card, sw.SepalWidget):
     
-    def __init__(self, model, units='sqkm', *args, **kwargs):
+    def __init__(self, model, units='sqkm', rsa=True, *args, **kwargs):
         
         """Dashboard tile to calculate and resume the zonal statistics for the 
         vegetation layer by kapos ranges.
@@ -50,12 +50,13 @@ class Dashboard(v.Card, sw.SepalWidget):
             )
         
         self.units = units
+        self.rsa = rsa
 
         title = v.CardTitle(children=[cm.dashboard.title])
         description = v.CardText(children=[cm.dashboard.description])
 
         question_icon = v.Icon(children=["mdi-help-circle"], small=True)
-
+        
         # widgets
         self.w_scale = v.Slider(
             label=cm.dashboard.label.scale,
@@ -77,7 +78,7 @@ class Dashboard(v.Card, sw.SepalWidget):
                 ),
             ],
         )
-
+        
         self.w_year = v.TextField(
             label=cm.dashboard.label.year,
             v_model=self.model.year,
@@ -92,6 +93,21 @@ class Dashboard(v.Card, sw.SepalWidget):
                     question_icon, cm.dashboard.help.year, left=True, max_width=300
                 ),
             ],
+        )
+        
+        self.w_use_rsa = v.Switch(
+            v_model=self.rsa,
+            label=cm.dashboard.label.rsa,
+            value=True
+        )
+        
+        t_rsa = v.Flex(
+            class_='d-flex', 
+            children=[
+                sw.Tooltip(
+                    self.w_use_rsa, cm.dashboard.help.rsa, right=True, max_width=300
+                )
+            ]
         )
 
         # buttons
@@ -108,6 +124,7 @@ class Dashboard(v.Card, sw.SepalWidget):
             title,
             description,
             t_year,
+            t_rsa,
             t_scale,
             w_buttons,
             self.alert,
@@ -150,13 +167,20 @@ class Dashboard(v.Card, sw.SepalWidget):
         # Remove previusly dashboards
         if self.is_displayed():
             self.children = self.children[:-1][:]
+            
+        area_type = (
+            cm.dashboard.label.rsa_name 
+            if self.w_use_rsa.v_model 
+            else cm.dashboard.label.plan
+        )
 
         # Calculate regions
-        self.alert.add_msg("Reducing land cover classes to Kapos regions...")
+        self.alert.add_msg(cm.dashboard.alert.computing.format(area_type))
+        
+        # Units will depend of the developer. rsa it's an input from user
+        self.model.reduce_to_regions(units=self.units, rsa=self.w_use_rsa.v_model)
 
-        self.model.reduce_to_regions(units=self.units)
-
-        self.alert.append_msg("Rendering dashboard...")
+        self.alert.append_msg(cm.dashboard.alert.rendering)
 
         # Get overall MGCI widget
         w_overall = Statistics(self.model, self.units)

@@ -59,9 +59,17 @@
             "download" : "Download results",
             "calculate" : "Calculate MGCI",
             "scale" : "Process scale",
-            "year": "Year"
+            "year": "Year",
+            "rsa": "Use real surface area",
+            "rsa_name"  :"real surface area",
+            "plan" : "planimetric area"
+        },
+        "alert" : {
+            "computing" : "Reducing land cover classes to Kapos regions, using {}. This process may take a few minutes.",
+            "rendering" : "Rendering dashboard"
         },
         "help":{
+            "rsa" : "Use Real Surface Area. Disable it to calculate the results using planimetric area. To more details, please refer to the module documentation.",
             "scale" : "Pixel resolution for the output. It will affect the speed and the accuracy of the results",
             "year": "Select a year for the dashboard outputs. It will be used to label the outputs. If not provided, the reclassified band name will be used."
         },
