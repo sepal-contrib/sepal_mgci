@@ -69,9 +69,8 @@ class ReclassifyTile(v.Card):
 
         # Create a default destination classification file
         self.w_reclass.w_dst_class_file.select_file(default_class["IPCC"]).hide()
-        self.w_reclass.model.dst_class = self.w_reclass.model.get_classes(
-            default_class["IPCC"]
-        )
+        self.w_reclass.model.dst_class_file = default_class["IPCC"]
+        self.w_reclass.model.dst_class = self.w_reclass.model.get_classes()
 
         self.input_maptrix = self.w_reclass.import_dialog.w_file
         self.load_btn = self.w_reclass.import_dialog.load_btn
