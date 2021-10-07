@@ -11,7 +11,7 @@ pyproj<3.0.0
 
 # The base lib to run any sepal_ui based app
 # Don't forget to fix it to a specific version when you're app is ready
-sepal_ui==2.2.1
+sepal_ui==2.3.0
 
 # custom libs
 matplotlib==3.1.2
