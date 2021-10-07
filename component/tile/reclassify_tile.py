@@ -53,6 +53,7 @@ class ReclassifyTile(v.Card):
             aoi_model=self.aoi_model,
             folder=folder,
             save=save,
+            enforce_aoi=True,
         )
 
         # set the tabs elements
@@ -63,6 +64,7 @@ class ReclassifyTile(v.Card):
             default_class=default_class,
             aoi_model=aoi_model,
             folder=folder,
+            enforce_aoi=True,
         ).nest_tile()
 
         # Remove import button from toolbar, as we are goin gto replace it by other w
