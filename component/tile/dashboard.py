@@ -127,19 +127,31 @@ class Dashboard(v.Card, sw.SepalWidget):
     def download_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 
-        # Generate report
-        self.model.get_report()
-        output_name, full_output_path = get_output_name(self.model)
-
-        self.model.mgci_report.to_excel(
-            full_output_path, sheet_name=output_name, index=False
-        )
+        # Generate three reports
+        reports = self.model.get_report(self.units)
+        m49 = get_geoarea(self.model.aoi_model)
+        
+        report_filenames = [
+            f'ER_MTN_GRNCVI_{m49}.xlsx',
+            f'ER_MTN_GRNCOV_{m49}.xlsx',
+            f'ER_MTN_TOTL_{m49}.xlsx',
+        ]
+        
+        report_folder = get_report_folder(self.model)
+        
+        for report, report_filename,  in zip(*[reports, report_filenames]):
+            
+            report.to_excel(
+                str(Path(report_folder, report_filename)), 
+                sheet_name=output_name, 
+                index=False
+            )
 
         self.alert.add_msg(
-            f"The file was successfully saved in {full_output_path}", type_="success"
+            f"The reports were successfully exported in {report_folder}", type_="success"
         )
 
-    @switch("disabled", on_widgets=["download_btn"])
+    @switch("disabled", on_widgets=["download_btn"], targets=[False])
     def get_dashboard(self, widget, event, data):
         """Create dashboard"""
 

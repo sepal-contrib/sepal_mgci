@@ -7,6 +7,7 @@ from sepal_ui.model import Model
 
 import component.scripts as cs
 import component.parameter as param
+from component.parameter.report_template import *
 
 
 class MgciModel(Model):
@@ -149,9 +150,7 @@ class MgciModel(Model):
         scale = dem_asset.projection().nominalScale().max(
             lulc.projection().nominalScale()
         ).getInfo()
-        
-        print(scale)
-            
+                    
         result = (
             image_area.divide(param.UNITS[units][0])
             .updateMask(lulc.mask().And(self.kapos_image.mask()))
@@ -219,38 +218,88 @@ class MgciModel(Model):
 
         return round(mgci, 2)
 
-    def get_report(self):
+    def get_report(self, units):
         """From the summary df, create a styled df to align format with the
         report"""
+        
+        # The following format respet 
+        # https://github.com/dfguerrerom/sepal_mgci/issues/23
 
         assert self.summary_df is not None, "How did you ended here?"
 
-        df = self.summary_df.copy()
-
-        # Get column names
+        # Create a df with the report columns
+        base_df = pd.DataFrame(columns=param.BASE_COLS)
+        
         vegetation_names = {k: v[0] for k, v in self.lulc_classes.items()}
-        df.rename(columns=vegetation_names, inplace=True)
+        vegetation_columns = list(vegetation_names.values())
+        
+        # Create the base columns for the statistics dataframe
+        stats_df = self.summary_df.copy()
+        stats_df.rename(columns=vegetation_names, inplace=True)
+        stats_df[INDICATOR] = "15.4.2"
+        stats_df[GEOAREANAM] = cs.get_geoarea(self.aoi_model)[0]
+        stats_df[GEOAREACODE] = cs.get_geoarea(self.aoi_model)[1]
+        stats_df[TIMEPERIOD] = self.year
+        stats_df[MOUNTAINCLASS] = "C" + stats_df.mgci.index.astype(str)
+        
+        # We have to create three tables
+        # ER_MTN_GRNCOV_276, ER_MTN_GRNCVI_276
+        
+        def get_mgci_report():
+            """Returns df with MGC index for every mountain range"""
+            
+            mgci_df = base_df.copy()
+            
+            # Merge dataframes
+            mgci_df = pd.merge(base_df, stats_df, how='right')
+            
+            # Rename 
+            mgci_df[VALUE] = stats_df.mgci
+            mgci_df[SERIESDESC] = "Mountain Green Cover Index"
+            mgci_df[UNITSNAME] = "INDEX"
+            mgci_df[SERIESCOD] = "ER_MTN_GRNCVI"
+            
+            return mgci_df[param.BASE_COLS]
+        
+        def get_green_cov_report():
+            """Returns df with green cover and total mountain area for every mountain 
+            range"""
+            
+            greencov_df = base_df.copy()
+            
+            return greencov_df
+        
+        def get_land_cov_report():
+            """Returns df with land cover area per every mountain range"""
+            
+            landcov_df = base_df.copy()
+            
+            melt_df = (
+                pd.melt(
+                    stats_df, 
+                    id_vars=[
+                        col 
+                        for col 
+                        in stats_df.columns.to_list() 
+                        if col not in vegetation_columns
+                    ], 
+                    value_vars=vegetation_columns
+                )
+                .sort_values(by=[MOUNTAINCLASS])
+                .rename(columns={'variable':LULCCLASS, 'value':VALUE})
+            )
+            
+            # Merge dataframes
+            
+            unit = param.UNITS[units]
+            
+            landcov_df = pd.merge(base_df, landcov_df, how='right')
+            landcov_df[SERIESDESC] = f"Mountain area ({unit[1]})"
+            landcov_df[UNITSNAME] = unit.upper()
+            landcov_df[SERIESCOD] = "ER_MTN_TOTL"
+            
+            # Return in order
+            return landcov_df[BASE_COLS_TOTL]
+        
 
-        # Create static columns
-        df["Indicator"] = "15.4.2"
-        df["MountainClass"] = "C" + df.index.astype(str)
-
-        # Get m49 name
-        df["GeoAreaName"] = cs.get_geoarea_name(self.aoi_model)
-
-        df["TimePeriod"] = self.year
-        df["Units"] = "SQKM"
-
-        # Sort columns
-        first_columns = ["Indicator", "GeoAreaName", "MountainClass", "TimePeriod"]
-        vegetation_columns = ["Units"] + list(vegetation_names.values())
-
-        stats_cols = [
-            col for col in df.columns if col not in first_columns + vegetation_columns
-        ]
-
-        sorted_columns = first_columns + vegetation_columns + stats_cols
-
-        df = df[sorted_columns]
-
-        self.mgci_report = df
+        return [get_mgci_report(), get_green_cov_report(), get_land_cov_report()]

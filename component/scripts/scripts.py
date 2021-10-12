@@ -3,12 +3,21 @@ import random
 import component.parameter as param
 
 __all__ = [
+    "human_format",
     "get_random_color",
     "get_mgci_color",
-    "get_geoarea_name",
-    "get_output_name",
-    "human_format",
+    "get_geoarea",
+    "get_report_folder",
 ]
+
+def human_format(num, round_to=2):
+    magnitude = 0
+    while abs(num) >= 1000:
+        magnitude += 1
+        num = round(num / 1000.0, round_to)
+    return "{:.{}f}{}".format(
+        round(num, round_to), round_to, ["", "K", "M", "G", "T", "P"][magnitude]
+    )
 
 
 def get_random_color():
@@ -27,30 +36,17 @@ def get_mgci_color(mgci):
     return param.UPPER_THRESHOLDS[threshold]
 
 
-def human_format(num, round_to=2):
-    magnitude = 0
-    while abs(num) >= 1000:
-        magnitude += 1
-        num = round(num / 1000.0, round_to)
-    return "{:.{}f}{}".format(
-        round(num, round_to), round_to, ["", "K", "M", "G", "T", "P"][magnitude]
-    )
-
-
-def get_output_name(model):
-    """Get output report path name"""
+def get_report_folder(mgci_model):
+    """Get output report folder path"""
 
     # Create a folder to store multiple year reports from the same area
-    report_folder = param.REPORTS_DIR / f"MGCI_{model.aoi_model.name}"
+    report_folder = param.REPORTS_DIR / f"MGCI_{mgci_model.aoi_model.name}"
     report_folder.mkdir(parents=True, exist_ok=True)
 
-    # Create a distintive name for the output file, including the year.
-    output_name = f"{model.aoi_model.name}_{model.year}"
-
-    return output_name, str(report_folder / f"{output_name}.xlsx")
+    return report_folder
 
 
-def get_geoarea_name(aoi_model):
+def get_geoarea(aoi_model):
     """Create the geo area name to the excel report"""
 
     if aoi_model.method in ["ADMIN0", "ADMIN1", "ADMIN2"]:
@@ -67,7 +63,7 @@ def get_geoarea_name(aoi_model):
         if len(split_name) > 1:
             geoarea_name = f"{m49_code}_" + "_".join(split_name[1:])
 
-        return geoarea_name
+        return geoarea_name, m49_code
 
     else:
-        return aoi_model.name
+        return aoi_model.name, None
