@@ -79,35 +79,36 @@ class MgciModel(Model):
             .where(aoi_dem.gte(300).And(aoi_dem.lt(1000)).And(local_range.gt(300)), 6)
             .selfMask()
         )
-#         # Create the 7th class
-#         # The 7th class won't be a class by itself, we have to find areas that
-#         # are surrounded by the first 6 classes and assign them to its neighbors
 
-#         inverse_kapos = kapos_1_6.unmask().Not().eq(1).selfMask()
+    #         # Create the 7th class
+    #         # The 7th class won't be a class by itself, we have to find areas that
+    #         # are surrounded by the first 6 classes and assign them to its neighbors
 
-#         connected = inverse_kapos.connectedComponents(
-#             **{"connectedness": ee.Kernel.plus(1), "maxSize": 128}
-#         )
+    #         inverse_kapos = kapos_1_6.unmask().Not().eq(1).selfMask()
 
-#         connected_size = connected.select("labels").connectedPixelCount(
-#             **{"maxSize": 128, "eightConnected": False}
-#         )
-#         connected_area = (
-#             ee.Image.pixelArea()
-#             .addBands(connected_size)
-#             .lte(25000000)
-#             .eq(1)
-#             .selfMask()
-#             .select("labels")
-#         )
+    #         connected = inverse_kapos.connectedComponents(
+    #             **{"connectedness": ee.Kernel.plus(1), "maxSize": 128}
+    #         )
 
-#         kapos_fill10 = (
-#             kapos_1_6.focal_mean(1, "square", "pixels", 10)
-#             .updateMask(connected_area)
-#             .selfMask()
-#         )
+    #         connected_size = connected.select("labels").connectedPixelCount(
+    #             **{"maxSize": 128, "eightConnected": False}
+    #         )
+    #         connected_area = (
+    #             ee.Image.pixelArea()
+    #             .addBands(connected_size)
+    #             .lte(25000000)
+    #             .eq(1)
+    #             .selfMask()
+    #             .select("labels")
+    #         )
 
-#         self.kapos_image = kapos_1_6.addBands(kapos_fill10).reduce(ee.Reducer.max())
+    #         kapos_fill10 = (
+    #             kapos_1_6.focal_mean(1, "square", "pixels", 10)
+    #             .updateMask(connected_area)
+    #             .selfMask()
+    #         )
+
+    #         self.kapos_image = kapos_1_6.addBands(kapos_fill10).reduce(ee.Reducer.max())
 
     def reduce_to_regions(self, units, rsa):
         """Reduce land use/land cover image to kapos regions
@@ -123,8 +124,10 @@ class MgciModel(Model):
 
         Return:
             Dictionary with land cover class area per kapos mountain range
-        """.format(list(param.UNITS.keys()))
-        
+        """.format(
+            list(param.UNITS.keys())
+        )
+
         if not self.kapos_image:
             raise Exception(
                 "Please go to the mountain descriptor layer"
@@ -141,16 +144,19 @@ class MgciModel(Model):
 
         aoi = self.aoi_model.feature_collection.geometry()
         dem_asset = ee.Image("CGIAR/SRTM90_V4")
-        
+
         image_area = ee.Image.pixelArea()
-        
+
         if rsa:
             image_area = cs.get_real_surface_area(dem_asset, aoi)
-            
-        scale = dem_asset.projection().nominalScale().max(
-            lulc.projection().nominalScale()
-        ).getInfo()
-                    
+
+        scale = (
+            dem_asset.projection()
+            .nominalScale()
+            .max(lulc.projection().nominalScale())
+            .getInfo()
+        )
+
         result = (
             image_area.divide(param.UNITS[units][0])
             .updateMask(lulc.mask().And(self.kapos_image.mask()))
@@ -222,7 +228,7 @@ class MgciModel(Model):
         """From the summary df, create a styled df to align format with the
         report"""
 
-        # The following format respet 
+        # The following format respet
         # https://github.com/dfguerrerom/sepal_mgci/issues/23
 
         assert self.summary_df is not None, "How did you ended here?"
@@ -250,9 +256,11 @@ class MgciModel(Model):
             """Returns df with MGC index for every mountain range"""
 
             # Merge dataframes
-            mgci_df = pd.merge(base_df, stats_df.rename(columns={'mgci':VALUE}), how='right')
+            mgci_df = pd.merge(
+                base_df, stats_df.rename(columns={"mgci": VALUE}), how="right"
+            )
 
-            # Rename 
+            # Rename
             mgci_df[VALUE] = stats_df.mgci
             mgci_df[SERIESDESC] = "Mountain Green Cover Index"
             mgci_df[UNITSNAME] = "INDEX"
@@ -261,17 +269,17 @@ class MgciModel(Model):
             return mgci_df[BASE_COLS]
 
         def get_green_cov_report():
-            """Returns df with green cover and total mountain area for every mountain 
+            """Returns df with green cover and total mountain area for every mountain
             range"""
 
             unit = param.UNITS[units][1]
 
-            green_area_df = pd.merge(base_df, stats_df, how='right')
+            green_area_df = pd.merge(base_df, stats_df, how="right")
             green_area_df[VALUE] = stats_df.green_area
             green_area_df[SERIESDESC] = f"Mountain green cover area ({unit})"
             green_area_df[SERIESCOD] = "ER_MTN_GRNCOV"
 
-            mountain_area_df = pd.merge(base_df, stats_df, how='right')
+            mountain_area_df = pd.merge(base_df, stats_df, how="right")
             mountain_area_df[VALUE] = stats_df.krange_area
             mountain_area_df[SERIESDESC] = f"Mountain area ({unit})"
             mountain_area_df[SERIESCOD] = "ER_MTN_TOTL"
@@ -289,29 +297,27 @@ class MgciModel(Model):
 
             melt_df = (
                 pd.melt(
-                    stats_df, 
+                    stats_df,
                     id_vars=[
-                        col 
-                        for col 
-                        in stats_df.columns.to_list() 
+                        col
+                        for col in stats_df.columns.to_list()
                         if col not in vegetation_columns
-                    ], 
-                    value_vars=vegetation_columns
+                    ],
+                    value_vars=vegetation_columns,
                 )
                 .sort_values(by=[MOUNTAINCLASS])
-                .rename(columns={'variable':LULCCLASS, 'value':VALUE})
+                .rename(columns={"variable": LULCCLASS, "value": VALUE})
             )
             # Merge dataframes
 
             unit = param.UNITS[units][1]
 
-            landcov_df = pd.merge(base_df, melt_df, how='right')
+            landcov_df = pd.merge(base_df, melt_df, how="right")
             landcov_df[SERIESDESC] = f"Mountain area ({unit})"
             landcov_df[UNITSNAME] = units.upper()
             landcov_df[SERIESCOD] = "ER_MTN_TOTL"
 
             # Return in order
-            return landcov_df[BASE_COLS_TOTL].sort_values(by=[MOUNTAINCLASS,LULCCLASS])
-
+            return landcov_df[BASE_COLS_TOTL].sort_values(by=[MOUNTAINCLASS, LULCCLASS])
 
         return [get_mgci_report(), get_green_cov_report(), get_land_cov_report()]

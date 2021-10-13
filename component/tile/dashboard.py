@@ -26,9 +26,8 @@ def create_avatar(mgci):
 
 
 class Dashboard(v.Card, sw.SepalWidget):
-    
-    def __init__(self, model, units='sqkm', rsa=True, *args, **kwargs):
-        
+    def __init__(self, model, units="sqkm", rsa=True, *args, **kwargs):
+
         """Dashboard tile to calculate and resume the zonal statistics for the 
         vegetation layer by kapos ranges.
         
@@ -36,7 +35,9 @@ class Dashboard(v.Card, sw.SepalWidget):
             model (MgciModel): Mgci Model
             units (str): Units to display the results. Available [{}]
             
-        """.format(list(param.UNITS.keys()))
+        """.format(
+            list(param.UNITS.keys())
+        )
 
         self._metadata = {"mount_id": "dashboard_tile"}
         self.class_ = "pa-2"
@@ -44,12 +45,12 @@ class Dashboard(v.Card, sw.SepalWidget):
         super().__init__(*args, **kwargs)
 
         self.model = model
-        
+
         if not units in list(param.UNITS.keys()):
             raise Exception(
-                f'{units} is not an available unit, only use {list(param.UNITS.keys())}'
+                f"{units} is not an available unit, only use {list(param.UNITS.keys())}"
             )
-        
+
         self.units = units
         self.rsa = rsa
 
@@ -57,9 +58,9 @@ class Dashboard(v.Card, sw.SepalWidget):
         description = v.CardText(children=[cm.dashboard.description])
 
         question_icon = v.Icon(children=["mdi-help-circle"], small=True)
-        
+
         # widgets
-        
+
         self.w_year = v.TextField(
             label=cm.dashboard.label.year,
             v_model=self.model.year,
@@ -75,20 +76,18 @@ class Dashboard(v.Card, sw.SepalWidget):
                 ),
             ],
         )
-        
+
         self.w_use_rsa = v.Switch(
-            v_model=self.rsa,
-            label=cm.dashboard.label.rsa,
-            value=True
+            v_model=self.rsa, label=cm.dashboard.label.rsa, value=True
         )
-        
+
         t_rsa = v.Flex(
-            class_='d-flex', 
+            class_="d-flex",
             children=[
                 sw.Tooltip(
                     self.w_use_rsa, cm.dashboard.help.rsa, right=True, max_width=300
                 )
-            ]
+            ],
         )
 
         # buttons
@@ -131,25 +130,29 @@ class Dashboard(v.Card, sw.SepalWidget):
         # Generate three reports
         reports = self.model.get_report(self.units)
         m49 = cs.get_geoarea(self.model.aoi_model)[1]
-        
+
         report_filenames = [
-            f'ER_MTN_GRNCVI_{m49}.xlsx',
-            f'ER_MTN_GRNCOV_{m49}.xlsx',
-            f'ER_MTN_TOTL_{m49}.xlsx',
+            f"ER_MTN_GRNCVI_{m49}.xlsx",
+            f"ER_MTN_GRNCOV_{m49}.xlsx",
+            f"ER_MTN_TOTL_{m49}.xlsx",
         ]
-        
+
         report_folder = cs.get_report_folder(self.model)
-        
-        for report, report_filename,  in zip(*[reports, report_filenames]):
-            
+
+        for (
+            report,
+            report_filename,
+        ) in zip(*[reports, report_filenames]):
+
             report.to_excel(
-                str(Path(report_folder, report_filename)), 
-                sheet_name=report_filename, 
-                index=False
+                str(Path(report_folder, report_filename)),
+                sheet_name=report_filename,
+                index=False,
             )
 
         self.alert.add_msg(
-            f"The reports were successfully exported in {report_folder}", type_="success"
+            f"The reports were successfully exported in {report_folder}",
+            type_="success",
         )
 
     @switch("disabled", on_widgets=["download_btn"], targets=[False])
@@ -159,16 +162,16 @@ class Dashboard(v.Card, sw.SepalWidget):
         # Remove previusly dashboards
         if self.is_displayed():
             self.children = self.children[:-1][:]
-            
+
         area_type = (
-            cm.dashboard.label.rsa_name 
-            if self.w_use_rsa.v_model 
+            cm.dashboard.label.rsa_name
+            if self.w_use_rsa.v_model
             else cm.dashboard.label.plan
         )
 
         # Calculate regions
         self.alert.add_msg(cm.dashboard.alert.computing.format(area_type))
-        
+
         # Units will depend of the developer. rsa it's an input from user
         self.model.reduce_to_regions(units=self.units, rsa=self.w_use_rsa.v_model)
 
@@ -206,7 +209,6 @@ class Dashboard(v.Card, sw.SepalWidget):
 
 
 class Statistics(v.Card):
-    
     def __init__(self, model, units, *args, krange=None, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -219,7 +221,9 @@ class Statistics(v.Card):
             area_per_class (dictionary): Dictionary of lu/lc areas 
             units (str): Units to display the results. Available [{}]
             
-        """.format(list(param.UNITS.keys()))
+        """.format(
+            list(param.UNITS.keys())
+        )
 
         self.class_ = "ma-4"
         self.row = True
@@ -230,9 +234,10 @@ class Statistics(v.Card):
 
         # Create title and description based on the inputs
         title = cm.dashboard.global_.title
-        desc = sw.Alert(children=[
-            cm.dashboard.global_.desc.format(param.UNITS[units][1])
-        ], dense=True).show()
+        desc = sw.Alert(
+            children=[cm.dashboard.global_.desc.format(param.UNITS[units][1])],
+            dense=True,
+        ).show()
 
         if krange:
             title = cm.dashboard.individual.title.format(krange)

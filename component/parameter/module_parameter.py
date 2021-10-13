@@ -12,7 +12,7 @@ __all__ = [
     "CUSTOM_AOI_ITEMS",
     "LULC_DEFAULT",
     "ESA_IPCC_MATRIX",
-    "UNITS"
+    "UNITS",
 ]
 
 # SET SOME PARAMETERS
@@ -57,6 +57,6 @@ ESA_IPCC_MATRIX = Path(__file__).parent / "esa_ipcc_matrix.csv"
 
 UNITS = {
     # acronym: [factor, name]
-    'ha': [10000, 'hectares'],
-    'sqkm': [1000000, 'square kilometers'],
+    "ha": [10000, "hectares"],
+    "sqkm": [1000000, "square kilometers"],
 }

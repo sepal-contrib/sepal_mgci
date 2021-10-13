@@ -10,6 +10,7 @@ __all__ = [
     "get_geoarea",
 ]
 
+
 def human_format(num, round_to=2):
     magnitude = 0
     while abs(num) >= 1000:

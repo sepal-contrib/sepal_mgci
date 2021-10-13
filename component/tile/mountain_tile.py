@@ -30,7 +30,10 @@ class MountainTile(v.Layout, sw.SepalWidget):
         self.children = [
             v.Card(class_="pa-2 mb-2", children=[title, description]),
             v.Card(class_="pa-2 mb-2", children=[self.view]),
-            v.Card(class_="pa-2 mb-2", children=[v.CardTitle(children=["Visualize"]), self.map_]),
+            v.Card(
+                class_="pa-2 mb-2",
+                children=[v.CardTitle(children=["Visualize"]), self.map_],
+            ),
         ]
 
 
@@ -38,7 +41,7 @@ class MountainView(v.Layout, sw.SepalWidget):
     def __init__(self, model, map_, *args, **kwargs):
 
         self.class_ = "d-block pa-2"
-        
+
         super().__init__(*args, **kwargs)
 
         # Class parameters
@@ -68,12 +71,7 @@ class MountainView(v.Layout, sw.SepalWidget):
         # bind the widgets to the model
         self.model.bind(self.w_use_custom, "use_custom")
 
-        self.children = [
-            self.alert,
-            self.w_use_custom,
-            self.w_custom_dem,
-            self.btn
-        ]
+        self.children = [self.alert, self.w_use_custom, self.w_custom_dem, self.btn]
 
         # actions
         self.w_use_custom.observe(self.display_custom_dem, "v_model")
