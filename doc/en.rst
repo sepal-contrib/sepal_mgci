@@ -1,14 +1,19 @@
+SEPAL-MGCI
+==========
+
 Definition 
-^^^^^^^^^^
+----------
 
 The Mountain Green Cover Index (MGCI) is designed to measure the extent and the changes of green vegetation in mountain areas - i.e. forest, shrubs, trees, pasture land, cropland, etc. – in order to monitor progress towards the mountain target. MGCI is defined as the percentage of green cover over the total surface of the mountain region of a given country and for given reporting year. The aim of the index is to monitor the evolution of the green cover and thus assess the status of conservation of mountain ecosystems.
 
 The SEPAL-MGCI module will allow you to calculate this index by following 4 steps that are described below. 
 
-.. note:: All the computation is done in the Google Earth Engine servers.
+.. note:: 
 
-1. Area of interest (AOI)
-^^^^^^^^^^^^^^^^^^^^^^^^^
+    All the computation is done in the Google Earth Engine servers.
+
+Area of interest (AOI)
+----------------------
 
 The MGCI will be calculated based on the user inputs. The first mandatory input is the area of interest. In this step you'll have the possibility to choose from a predefined list of administrative layers or use your own datasets, the available options are:
  
@@ -23,13 +28,15 @@ The MGCI will be calculated based on the user inputs. The first mandatory input 
    
 After selecting the desired area, click over the 'Select these inputs' button and the map show up your selection.
 
-.. note:: You can only select one area of interest. In some cases, depending on the input data you could run out of resources in GEE.
+.. note:: 
+
+    You can only select one area of interest. In some cases, depending on the input data you could run out of resources in GEE.
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/1_aoi_selection.PNG
    :align: center
 
-2. Mountain descriptor layer 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Mountain descriptor layer 
+-------------------------
 
 Mountains can be defined with reference to a variety of parameters, such as climate, elevation, ecology (Körner et al., 2011) (Karagulle et al., 2017). This methodology adheres to the UNEP- WCMC mountain definition, relying in turn on the mountain description proposed by Kapos et al. (2000).
    
@@ -49,8 +56,8 @@ These datasets may be replaced by nationally relevant data sources when availabl
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/2_mountain_descriptor.PNG
    :align: center
 
-3. Vegetation descriptor layer
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Vegetation descriptor layer
+---------------------------
 
 The vegetation descriptor layer categorizes land cover into green and non-green areas. Green vegetation includes both natural vegetation and vegetation resulting from anthropic activity (e.g. crops, afforestation, etc.). Non-green areas include very sparsely vegetated areas, bare land, water, permanent ice/snow and urban areas. The vegetation description layer can be derived in different ways, but remote sensing based land cover maps are the most convenient data source for this purpose, as they provide the required information on green and non-green areas in a spatially explicit manner and allow for comparison over time through land cover change analysis.
 
@@ -66,8 +73,8 @@ The vegetation descriptor layer categorizes land cover into green and non-green 
    "5","Settlement","#FFFFFF"
    "6","Other land","#FF00DE"
    
-3.1. Reclassify assets
-======================
+Reclassify assets
+^^^^^^^^^^^^^^^^^
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_1_reclassify_table.PNG
    :align: center
@@ -75,8 +82,8 @@ The vegetation descriptor layer categorizes land cover into green and non-green 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_3_vegetation_descriptor.PNG
    :align: center
    
-4. Dashboard
-^^^^^^^^^^^^
+Dashboard
+---------
 
 The module will calculate the area of every IPCC class into each Kapos range as well as the overall result.
 
