@@ -1,3 +1,4 @@
+from pathlib import Path
 from matplotlib import pyplot as plt
 
 from traitlets import directional_link
@@ -8,7 +9,7 @@ import sepal_ui.sepalwidgets as sw
 from sepal_ui.scripts.utils import loading_button, switch
 
 import component.parameter as param
-from component.scripts import get_mgci_color, human_format, get_output_name
+import component.scripts as cs
 from component.message import cm
 
 __all__ = ["Dashboard"]
@@ -16,7 +17,7 @@ __all__ = ["Dashboard"]
 
 def create_avatar(mgci):
     """Creates a circular avatar containing the MGCI value"""
-    color = get_mgci_color(mgci)
+    color = cs.get_mgci_color(mgci)
 
     overall_mgci_html = v.Html(
         tag="h1", children=["MGCI", v.Html(tag="br"), str(mgci) + "%"]
@@ -129,7 +130,7 @@ class Dashboard(v.Card, sw.SepalWidget):
 
         # Generate three reports
         reports = self.model.get_report(self.units)
-        m49 = get_geoarea(self.model.aoi_model)
+        m49 = cs.get_geoarea(self.model.aoi_model)[1]
         
         report_filenames = [
             f'ER_MTN_GRNCVI_{m49}.xlsx',
@@ -137,13 +138,13 @@ class Dashboard(v.Card, sw.SepalWidget):
             f'ER_MTN_TOTL_{m49}.xlsx',
         ]
         
-        report_folder = get_report_folder(self.model)
+        report_folder = cs.get_report_folder(self.model)
         
         for report, report_filename,  in zip(*[reports, report_filenames]):
             
             report.to_excel(
                 str(Path(report_folder, report_filename)), 
-                sheet_name=output_name, 
+                sheet_name=report_filename, 
                 index=False
             )
 
@@ -269,7 +270,7 @@ class Statistics(v.Card):
         total_area = values.sum()
 
         norm_values = [area / total_area * 100 for area in values]
-        human_values = [f"{human_format(val)}" for val in values]
+        human_values = [f"{cs.human_format(val)}" for val in values]
 
         # We are doing this assumming that the dict will create the labels in the
         # same order

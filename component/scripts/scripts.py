@@ -6,8 +6,8 @@ __all__ = [
     "human_format",
     "get_random_color",
     "get_mgci_color",
-    "get_geoarea",
     "get_report_folder",
+    "get_geoarea",
 ]
 
 def human_format(num, round_to=2):

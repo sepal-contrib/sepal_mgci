@@ -221,18 +221,18 @@ class MgciModel(Model):
     def get_report(self, units):
         """From the summary df, create a styled df to align format with the
         report"""
-        
+
         # The following format respet 
         # https://github.com/dfguerrerom/sepal_mgci/issues/23
 
         assert self.summary_df is not None, "How did you ended here?"
 
         # Create a df with the report columns
-        base_df = pd.DataFrame(columns=param.BASE_COLS)
-        
+        base_df = pd.DataFrame(columns=BASE_COLS)
+
         vegetation_names = {k: v[0] for k, v in self.lulc_classes.items()}
         vegetation_columns = list(vegetation_names.values())
-        
+
         # Create the base columns for the statistics dataframe
         stats_df = self.summary_df.copy()
         stats_df.rename(columns=vegetation_names, inplace=True)
@@ -241,39 +241,52 @@ class MgciModel(Model):
         stats_df[GEOAREACODE] = cs.get_geoarea(self.aoi_model)[1]
         stats_df[TIMEPERIOD] = self.year
         stats_df[MOUNTAINCLASS] = "C" + stats_df.mgci.index.astype(str)
-        
+        stats_df = stats_df.reset_index()
+
         # We have to create three tables
         # ER_MTN_GRNCOV_276, ER_MTN_GRNCVI_276
-        
+
         def get_mgci_report():
             """Returns df with MGC index for every mountain range"""
-            
-            mgci_df = base_df.copy()
-            
+
             # Merge dataframes
-            mgci_df = pd.merge(base_df, stats_df, how='right')
-            
+            mgci_df = pd.merge(base_df, stats_df.rename(columns={'mgci':VALUE}), how='right')
+
             # Rename 
             mgci_df[VALUE] = stats_df.mgci
             mgci_df[SERIESDESC] = "Mountain Green Cover Index"
             mgci_df[UNITSNAME] = "INDEX"
             mgci_df[SERIESCOD] = "ER_MTN_GRNCVI"
-            
-            return mgci_df[param.BASE_COLS]
-        
+
+            return mgci_df[BASE_COLS]
+
         def get_green_cov_report():
             """Returns df with green cover and total mountain area for every mountain 
             range"""
-            
-            greencov_df = base_df.copy()
-            
-            return greencov_df
-        
+
+            unit = param.UNITS[units][1]
+
+            green_area_df = pd.merge(base_df, stats_df, how='right')
+            green_area_df[VALUE] = stats_df.green_area
+            green_area_df[SERIESDESC] = f"Mountain green cover area ({unit})"
+            green_area_df[SERIESCOD] = "ER_MTN_GRNCOV"
+
+            mountain_area_df = pd.merge(base_df, stats_df, how='right')
+            mountain_area_df[VALUE] = stats_df.krange_area
+            mountain_area_df[SERIESDESC] = f"Mountain area ({unit})"
+            mountain_area_df[SERIESCOD] = "ER_MTN_TOTL"
+
+            greencov_df = pd.concat([green_area_df, mountain_area_df])
+
+            greencov_df[UNITSNAME] = units.upper()
+
+            return greencov_df[BASE_COLS].sort_values(by=[MOUNTAINCLASS])
+
         def get_land_cov_report():
             """Returns df with land cover area per every mountain range"""
-            
+
             landcov_df = base_df.copy()
-            
+
             melt_df = (
                 pd.melt(
                     stats_df, 
@@ -288,18 +301,17 @@ class MgciModel(Model):
                 .sort_values(by=[MOUNTAINCLASS])
                 .rename(columns={'variable':LULCCLASS, 'value':VALUE})
             )
-            
             # Merge dataframes
-            
-            unit = param.UNITS[units]
-            
-            landcov_df = pd.merge(base_df, landcov_df, how='right')
-            landcov_df[SERIESDESC] = f"Mountain area ({unit[1]})"
-            landcov_df[UNITSNAME] = unit.upper()
+
+            unit = param.UNITS[units][1]
+
+            landcov_df = pd.merge(base_df, melt_df, how='right')
+            landcov_df[SERIESDESC] = f"Mountain area ({unit})"
+            landcov_df[UNITSNAME] = units.upper()
             landcov_df[SERIESCOD] = "ER_MTN_TOTL"
-            
+
             # Return in order
-            return landcov_df[BASE_COLS_TOTL]
-        
+            return landcov_df[BASE_COLS_TOTL].sort_values(by=[MOUNTAINCLASS,LULCCLASS])
+
 
         return [get_mgci_report(), get_green_cov_report(), get_land_cov_report()]
