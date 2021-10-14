@@ -1,6 +1,6 @@
 {
     "app": {
-        "title" : "SDG Indicator 15.4.2 - Mountain Green Cover Index (MGCI)",
+        "title" : "SDG Indicator 15.4.2 - Mountain Green Cover Index (MGCI) (BETA)",
         "drawer_item" : {
             "aoi": "Area of Iterest",
             "mountain" : "Mountain descriptor",
