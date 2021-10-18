@@ -14,6 +14,7 @@ INDICATOR = "Indicator"
 GEOAREANAM = "GeoAreaName"
 TIMEPERIOD = "TimePeriod"
 GEOAREACODE = "GeoAreaCode"
+TIMEDETAIL = "Time_Detail"
 
 # ER_MTN_GRNCOV_276, ER_MTN_GRNCVI_276
 # * The order will be used to display the report
@@ -25,7 +26,7 @@ BASE_COLS = [
     GEOAREANAM,
     TIMEPERIOD,
     VALUE,
-    "Time_Detail",
+    TIMEDETAIL,
     "Source",
     "Footnote",
     "Nature",

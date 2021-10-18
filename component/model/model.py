@@ -246,6 +246,7 @@ class MgciModel(Model):
         stats_df[GEOAREANAM] = cs.get_geoarea(self.aoi_model)[0]
         stats_df[GEOAREACODE] = cs.get_geoarea(self.aoi_model)[1]
         stats_df[TIMEPERIOD] = self.year
+        stats_df[TIMEDETAIL] = self.year
         stats_df[MOUNTAINCLASS] = "C" + stats_df.mgci.index.astype(str)
         stats_df = stats_df.reset_index()
 

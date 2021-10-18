@@ -26,7 +26,7 @@ def create_avatar(mgci):
 
 
 class Dashboard(v.Card, sw.SepalWidget):
-    def __init__(self, model, units="sqkm", rsa=True, *args, **kwargs):
+    def __init__(self, model, units="sqkm", rsa=False, *args, **kwargs):
 
         """Dashboard tile to calculate and resume the zonal statistics for the 
         vegetation layer by kapos ranges.
