@@ -1,6 +1,8 @@
 import pandas as pd
 import random
 import component.parameter as param
+import component.scripts as cs
+import ipyvuetify as v
 
 __all__ = [
     "human_format",
@@ -8,7 +10,17 @@ __all__ = [
     "get_mgci_color",
     "get_report_folder",
     "get_geoarea",
+    "create_avatar",
 ]
+
+def create_avatar(mgci):
+    """Creates a circular avatar containing the MGCI value"""
+    color = cs.get_mgci_color(mgci)
+
+    overall_mgci_html = v.Html(
+        tag="h1", children=["MGCI", v.Html(tag="br"), str(mgci) + "%"]
+    )
+    return v.Avatar(color=color, size="150", children=[overall_mgci_html])
 
 
 def human_format(num, round_to=2):
@@ -67,4 +79,4 @@ def get_geoarea(aoi_model):
         return geoarea_name, m49_code
 
     else:
-        return aoi_model.name, None
+        return aoi_model.name, ""

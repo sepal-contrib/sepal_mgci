@@ -56,6 +56,10 @@
     "dashboard":{
         "title" : "MGCI results dashboard",
         "description" : "Calculate the Mountain Green Cover Index dashboard, the result will include an overall index for all the Kapos mountain classes and also a more detailed index for each of these classes.",
+        "report" : {
+            "title":"Download report",
+            "description": "By exporting tables, the app will create three outputs. <ul><li>ER_MTN_GRNCOV:</li><li>ER_MTN_GRNCVI:</li><li>ER_MTN_TOTL:</li>"
+        },
         "label": {
             "download" : "Export reporting tables",
             "calculate" : "Calculate MGCI",
@@ -63,7 +67,8 @@
             "year": "Year",
             "rsa": "Use real surface area",
             "rsa_name"  :"real surface area",
-            "plan" : "planimetric area"
+            "plan" : "planimetric area",
+            "source" : "Institution"
         },
         "alert" : {
             "computing" : "Calculating MGCI values, using {}. This process may take a few minutes.",
@@ -72,7 +77,8 @@
         "help":{
             "rsa" : "Use Real Surface Area. Disable it to calculate the results using planimetric area. To more details, please refer to the module documentation.",
             "scale" : "Pixel resolution for the output. It will affect the speed and the accuracy of the results",
-            "year": "Select a year for the dashboard outputs. It will be used to label the outputs. If not provided, the reclassified band name will be used."
+            "year": "Select a year for the dashboard outputs. It will be used to label the outputs. If not provided, the reclassified band name will be used.",
+            "source": "Please insert the name of the institution you belong to."
         },
         "individual" : {
             "title" : "Kapos range {}",

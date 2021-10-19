@@ -53,14 +53,17 @@ class VegetationTile(v.Layout, sw.SepalWidget):
             )
             for card in cards
         ]
+        
+        # Save the answer in the model. It will be used in the report
+        directional_link((w_questionaire, 'custom_lulc'),(self.model, 'custom_lulc'))
 
 
-class VegetationView(v.Card, sw.SepalWidget):
+class VegetationView(v.Layout, sw.SepalWidget):
     def __init__(self, model, aoi_model, map_, questionaire, *args, **kwargs):
 
         self._metadata = {"mount_id": "vegetation_tile"}
-        self.class_ = "pa-2"
-        self.min_height = "400px"
+        self.class_ = "d-block pa-2"
+        # self.min_height = "400px"
 
         super().__init__(*args, **kwargs)
 
@@ -79,7 +82,7 @@ class VegetationView(v.Card, sw.SepalWidget):
             },
         )
 
-        self.display_btn = sw.Btn("Display on map")
+        self.display_btn = sw.Btn("Display on map", class_='mt-2')
 
         self.children = [self.reclassify_tile, self.display_btn]
 
