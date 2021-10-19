@@ -22,8 +22,7 @@ UPPER_THRESHOLDS = {98: "green", 95: "orange", 90: "red"}
 # Forest, grassland, cropland, wetland
 GREEN_CLASSES = [1, 2, 3, 4]
 
-
-# Classes that will be displayed in the dashboard
+# LULC Classes that will be displayed in the dashboard
 DISPLAY_CLASSES = [1, 2, 3, 4, 5, 6]
 
 KAPOS_PALETTE = ["#ff0000", "#ff6f00", "#ffd500", "#bbff00", "#04ff00", "#034502"]

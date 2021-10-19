@@ -1,8 +1,8 @@
 import pandas as pd
 import ee
-from traitlets import Unicode, Any, Int, Dict, CBool
+from traitlets import Unicode, Any, Int, Dict, CBool, Bool
 
-from sepal_ui.scripts.utils import need_ee
+import sepal_ui.scripts.utils as su
 from sepal_ui.model import Model
 
 import component.scripts as cs
@@ -16,14 +16,19 @@ class MgciModel(Model):
 
     # output parameters
     year = Unicode("", allow_none=True).tag(sync=True)
-
+    source = Unicode("", allow_none=True).tag(sync=True)
+    
+    # Custom
+    custom_lulc = Bool(allow_none=True).tag(sync=True)
     # LCLU Classes (came from the reclassify model)
     lulc_classes = Dict(allow_none=True).tag(sync=True)
+    rsa = Bool(False, allow_none=True).tag(sync=True) 
 
     # Observation variables
     kapos_done = Int(0).tag(sync=True)
+    reduce_done = Bool(False).tag(sync=True)
 
-    @need_ee
+    @su.need_ee
     def __init__(self, aoi_model):
 
         self.kapos_image = None
@@ -49,14 +54,14 @@ class MgciModel(Model):
             )
 
         if self.use_custom:
-            dem = ee.Image(self.custom_dem_id)
+            self.dem = ee.Image(self.custom_dem_id)
 
         else:
             # TODO: decide which of the assets use
             # dem = ee.Image("USGS/SRTMGL1_003") # srtm_1
-            dem = ee.Image("CGIAR/SRTM90_V4")  # srtm_3
+            self.dem = ee.Image("CGIAR/SRTM90_V4")  # srtm_3
 
-        aoi_dem = dem.clip(aoi)
+        aoi_dem = self.dem.clip(aoi)
 
         slope = ee.Terrain.slope(aoi_dem)
 
@@ -109,13 +114,13 @@ class MgciModel(Model):
     #         )
 
     #         self.kapos_image = kapos_1_6.addBands(kapos_fill10).reduce(ee.Reducer.max())
-
-    def reduce_to_regions(self, units, rsa):
+    
+    @su.switch('reduce_done', targets=[True])
+    def reduce_to_regions(self, units):
         """Reduce land use/land cover image to kapos regions
         
         Args:
             units (str): Units to display the results. Available [{}]
-            rsa (bool): Whether use real surface area or not (use planimetric)
         Attr:
             lulc (ee.Image, categorical): Input image to reduce
             kapos (ee.Image, categorical): Input region
@@ -137,21 +142,20 @@ class MgciModel(Model):
             raise Exception(
                 "Please go to the vegetation descriptor layer and reclassify an image"
             )
-        else:
-            lulc = self.vegetation_image.select(
-                [self.vegetation_image.bandNames().get(0)]
-            )
+        
+        lulc = self.vegetation_image.select(
+            [self.vegetation_image.bandNames().get(0)]
+        )
 
         aoi = self.aoi_model.feature_collection.geometry()
-        dem_asset = ee.Image("CGIAR/SRTM90_V4")
 
         image_area = ee.Image.pixelArea()
 
-        if rsa:
-            image_area = cs.get_real_surface_area(dem_asset, aoi)
+        if self.rsa:
+            image_area = cs.get_real_surface_area(self.dem, aoi)
 
         scale = (
-            dem_asset.projection()
+            self.dem.projection()
             .nominalScale()
             .max(lulc.projection().nominalScale())
             .getInfo()
@@ -200,9 +204,17 @@ class MgciModel(Model):
 
         # kapos classes are the rows and lulc are the columns
         df = pd.DataFrame.from_dict(class_area_per_kapos, orient="index")
+        
+        # Create the kapos class even if is not present in the dataset.
+        for kapos_range in list(range(1,7)):
+            if not kapos_range in df.index:
+                df.loc[kapos_range]=0
+        
+        df.sort_index(inplace=True)
         df["green_area"] = df[param.GREEN_CLASSES].sum(axis=1)
         df["krange_area"] = df[list(self.lulc_classes.keys())].sum(axis=1)
         df["mgci"] = df["green_area"] / df["krange_area"]
+        df.fillna(0, inplace=True)
 
         self.summary_df = df
 
@@ -228,7 +240,7 @@ class MgciModel(Model):
         """From the summary df, create a styled df to align format with the
         report"""
 
-        # The following format respet
+        # The following format respects
         # https://github.com/dfguerrerom/sepal_mgci/issues/23
 
         assert self.summary_df is not None, "How did you ended here?"
@@ -239,20 +251,25 @@ class MgciModel(Model):
         vegetation_names = {k: v[0] for k, v in self.lulc_classes.items()}
         vegetation_columns = list(vegetation_names.values())
 
+
         # Create the base columns for the statistics dataframe
         stats_df = self.summary_df.copy()
+        # Replace 0 vals with "N" according with requirements.
+        stats_df.replace(0,NO_VALUE, inplace=True)
         stats_df.rename(columns=vegetation_names, inplace=True)
-        stats_df[INDICATOR] = "15.4.2"
+        stats_df[INDICATOR] = INDICATOR_NUM
         stats_df[GEOAREANAM] = cs.get_geoarea(self.aoi_model)[0]
         stats_df[GEOAREACODE] = cs.get_geoarea(self.aoi_model)[1]
         stats_df[TIMEPERIOD] = self.year
         stats_df[TIMEDETAIL] = self.year
+        stats_df[SOURCE] = self.source
+        stats_df[NATURE] = CUSTOM_ if self.custom_lulc==True else GLOBAL_
+        stats_df[REPORTING] = REPORTING_VALUE
         stats_df[MOUNTAINCLASS] = "C" + stats_df.mgci.index.astype(str)
         stats_df = stats_df.reset_index()
 
         # We have to create three tables
-        # ER_MTN_GRNCOV_276, ER_MTN_GRNCVI_276
-
+        # ER_MTN_GRNCVI
         def get_mgci_report():
             """Returns df with MGC index for every mountain range"""
 
@@ -263,12 +280,13 @@ class MgciModel(Model):
 
             # Rename
             mgci_df[VALUE] = stats_df.mgci
-            mgci_df[SERIESDESC] = "Mountain Green Cover Index"
-            mgci_df[UNITSNAME] = "INDEX"
-            mgci_df[SERIESCOD] = "ER_MTN_GRNCVI"
+            mgci_df[SERIESDESC] = SERIESDESC_GRNCVI
+            mgci_df[UNITSNAME] = UNITSNAME_GRNCVI
+            mgci_df[SERIESCOD] = SERIESCOD_GRNCVI
 
             return mgci_df[BASE_COLS]
-
+        
+        #ER_MTN_GRNCOV
         def get_green_cov_report():
             """Returns df with green cover and total mountain area for every mountain
             range"""
@@ -277,13 +295,13 @@ class MgciModel(Model):
 
             green_area_df = pd.merge(base_df, stats_df, how="right")
             green_area_df[VALUE] = stats_df.green_area
-            green_area_df[SERIESDESC] = f"Mountain green cover area ({unit})"
-            green_area_df[SERIESCOD] = "ER_MTN_GRNCOV"
+            green_area_df[SERIESDESC] = SERIESDESC_GRNCOV_1.format(unit=unit)
+            green_area_df[SERIESCOD] = SERIESCOD_GRNCOV_1
 
             mountain_area_df = pd.merge(base_df, stats_df, how="right")
             mountain_area_df[VALUE] = stats_df.krange_area
-            mountain_area_df[SERIESDESC] = f"Mountain area ({unit})"
-            mountain_area_df[SERIESCOD] = "ER_MTN_TOTL"
+            mountain_area_df[SERIESDESC] = SERIESDESC_GRNCOV_2.format(unit=unit)
+            mountain_area_df[SERIESCOD] = SERIESCOD_GRNCOV_2
 
             greencov_df = pd.concat([green_area_df, mountain_area_df])
 
@@ -314,9 +332,9 @@ class MgciModel(Model):
             unit = param.UNITS[units][1]
 
             landcov_df = pd.merge(base_df, melt_df, how="right")
-            landcov_df[SERIESDESC] = f"Mountain area ({unit})"
+            landcov_df[SERIESDESC] = SERIESDESC_TTL.format(unit=unit)
             landcov_df[UNITSNAME] = units.upper()
-            landcov_df[SERIESCOD] = "ER_MTN_TOTL"
+            landcov_df[SERIESCOD] = SERIESCOD_TTL
 
             # Return in order
             return landcov_df[BASE_COLS_TOTL].sort_values(by=[MOUNTAINCLASS, LULCCLASS])

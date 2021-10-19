@@ -1,71 +1,72 @@
 from pathlib import Path
 from matplotlib import pyplot as plt
 
-from traitlets import directional_link
+from traitlets import directional_link, link
 from ipywidgets import Output
 import ipyvuetify as v
 
 import sepal_ui.sepalwidgets as sw
 from sepal_ui.scripts.utils import loading_button, switch
 
+import component.parameter.report_template as rt
 import component.parameter as param
 import component.scripts as cs
+import component.widget as cw
 from component.message import cm
 
-__all__ = ["Dashboard"]
+__all__ = ["DashboardTile"]
 
 
-def create_avatar(mgci):
-    """Creates a circular avatar containing the MGCI value"""
-    color = cs.get_mgci_color(mgci)
-
-    overall_mgci_html = v.Html(
-        tag="h1", children=["MGCI", v.Html(tag="br"), str(mgci) + "%"]
-    )
-    return v.Avatar(color=color, size="150", children=[overall_mgci_html])
-
-
-class Dashboard(v.Card, sw.SepalWidget):
-    def __init__(self, model, units="sqkm", rsa=False, *args, **kwargs):
-
-        """Dashboard tile to calculate and resume the zonal statistics for the 
-        vegetation layer by kapos ranges.
+class DashboardTile(v.Layout,sw.SepalWidget):
+    
+    def __init__(self, model, *args, **kwargs):
         
-        Args:
-            model (MgciModel): Mgci Model
-            units (str): Units to display the results. Available [{}]
-            
-        """.format(
-            list(param.UNITS.keys())
+        self.class_='d-block'
+        self._metadata = {"mount_id": "dashboard_tile"}
+        
+        super().__init__(*args, **kwargs)
+        
+        self.model=model
+        self.dashboard_view = DashboardView(model=self.model)
+        self.report_view = ReportView(model=self.model, units=self.dashboard_view.units)
+        
+        self.children = [
+            cw.Tabs(
+                titles=["Calculation", "Generate report"],
+                content=[self.dashboard_view, self.report_view]
+            )
+        ]
+
+class ReportView(v.Card):
+    def __init__(self, model, units, *args, **kwargs):
+        
+        self.class_ = "pa-2"
+        super().__init__(*args, **kwargs)
+        
+        self.units=units
+        self.model=model
+        
+        self.alert = sw.Alert()
+        
+        self.download_btn = sw.Btn(
+            cm.dashboard.label.download, class_="ml-2", disabled=True
         )
 
-        self._metadata = {"mount_id": "dashboard_tile"}
-        self.class_ = "pa-2"
-
-        super().__init__(*args, **kwargs)
-
-        self.model = model
-
-        if not units in list(param.UNITS.keys()):
-            raise Exception(
-                f"{units} is not an available unit, only use {list(param.UNITS.keys())}"
-            )
-
-        self.units = units
-        self.rsa = rsa
-
-        title = v.CardTitle(children=[cm.dashboard.title])
-        description = v.CardText(children=[cm.dashboard.description])
-
-        question_icon = v.Icon(children=["mdi-help-circle"], small=True)
-
-        # widgets
-
+        
         self.w_year = v.TextField(
             label=cm.dashboard.label.year,
             v_model=self.model.year,
             type="string",
         )
+        
+        self.w_source = v.TextField(
+            label=cm.dashboard.label.source,
+            v_model=self.model.source,
+            type="string",
+        )
+        
+        question_icon = v.Icon(children=["mdi-help-circle"], small=True)
+        
         # Create tooltip
         t_year = v.Flex(
             class_="d-flex",
@@ -76,65 +77,56 @@ class Dashboard(v.Card, sw.SepalWidget):
                 ),
             ],
         )
-
-        self.w_use_rsa = v.Switch(
-            v_model=self.rsa, label=cm.dashboard.label.rsa, value=True
-        )
-
-        t_rsa = v.Flex(
+        
+        t_source = v.Flex(
             class_="d-flex",
             children=[
+                self.w_source,
                 sw.Tooltip(
-                    self.w_use_rsa, cm.dashboard.help.rsa, right=True, max_width=300
-                )
+                    question_icon, cm.dashboard.help.source, left=True, max_width=300
+                ),
             ],
         )
-
-        # buttons
-        self.btn = sw.Btn(cm.dashboard.label.calculate)
-        self.download_btn = sw.Btn(
-            cm.dashboard.label.download, class_="ml-2", disabled=True
-        )
-
-        w_buttons = v.Flex(children=[self.btn, self.download_btn])
-
-        self.alert = sw.Alert()
-
-        self.children = [
-            title,
-            description,
+        
+        self.children=[
+            v.CardTitle(children=[cm.dashboard.report.title]),
+            v.CardText(children=[sw.Markdown(cm.dashboard.report.description)]),
             t_year,
-            t_rsa,
-            w_buttons,
+            t_source,
+            self.download_btn,
             self.alert,
         ]
-
-        # Decorate functions
-        self.get_dashboard = loading_button(
-            alert=self.alert, button=self.btn, debug=True
-        )(self.get_dashboard)
-
+        
         self.download_results = loading_button(
             alert=self.alert, button=self.download_btn, debug=True
         )(self.download_results)
-
-        self.btn.on_event("click", self.get_dashboard)
+        
         self.download_btn.on_event("click", self.download_results)
-
-        # Let's link the model year with the year widget here.
-        directional_link((self.model, "year"), (self.w_year, "v_model"))
-
+        
+        # We need a two-way-binding for the year
+        link((self.w_year, 'v_model'),(self.model, 'year'))
+        
+        self.model.bind(self.w_source, 'source')
+        self.model.observe(self.activate_download, 'reduce_done')
+        
+    def activate_download(self, change):
+        """Verify if the calculation is done, and activate button"""
+        if change["new"]:
+            self.download_btn.disabled=False
+        else:
+            self.download_btn.disabled=True
+    
     def download_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 
         # Generate three reports
-        reports = self.model.get_report(self.units)
+        reports = self.model.get_report(units=self.units)
         m49 = cs.get_geoarea(self.model.aoi_model)[1]
-
+        
         report_filenames = [
-            f"ER_MTN_GRNCVI_{m49}.xlsx",
-            f"ER_MTN_GRNCOV_{m49}.xlsx",
-            f"ER_MTN_TOTL_{m49}.xlsx",
+            f"{rt.SERIESCOD_GRNCVI}_{m49}.xlsx",
+            f"{rt.SERIESCOD_GRNCOV_1}_{m49}.xlsx",
+            f"{rt.SERIESCOD_TTL}_{m49}.xlsx",
         ]
 
         report_folder = cs.get_report_folder(self.model)
@@ -155,7 +147,76 @@ class Dashboard(v.Card, sw.SepalWidget):
             type_="success",
         )
 
-    @switch("disabled", on_widgets=["download_btn"], targets=[False])
+
+class DashboardView(v.Card, sw.SepalWidget):
+    def __init__(self, model, units="sqkm", rsa=False, *args, **kwargs):
+
+        """Dashboard tile to calculate and resume the zonal statistics for the 
+        vegetation layer by kapos ranges.
+        
+        Args:
+            model (MgciModel): Mgci Model
+            units (str): Units to display the results. Available [{}]
+            
+        """.format(
+            list(param.UNITS.keys())
+        )
+
+        
+        self.class_ = "pa-2"
+
+        super().__init__(*args, **kwargs)
+
+        self.model = model
+
+        if not units in list(param.UNITS.keys()):
+            raise Exception(
+                f"{units} is not an available unit, only use {list(param.UNITS.keys())}"
+            )
+
+        self.units = units
+
+        title = v.CardTitle(children=[cm.dashboard.title])
+        description = v.CardText(children=[cm.dashboard.description])
+
+        question_icon = v.Icon(children=["mdi-help-circle"], small=True)
+
+        # widgets
+        self.w_use_rsa = v.Switch(
+            v_model=self.model.rsa, label=cm.dashboard.label.rsa, value=True,
+        )
+
+        t_rsa = v.Flex(
+            class_="d-flex",
+            children=[
+                sw.Tooltip(
+                    self.w_use_rsa, cm.dashboard.help.rsa, right=True, max_width=300
+                )
+            ],
+        )
+
+        # buttons
+        self.btn = sw.Btn(cm.dashboard.label.calculate)
+        self.alert = sw.Alert()
+
+        self.children = [
+            title,
+            description,
+            t_rsa,
+            self.btn,
+            self.alert,
+        ]
+        
+        self.model.bind(self.w_use_rsa, 'rsa')
+
+        # Decorate functions
+        self.get_dashboard = loading_button(
+            alert=self.alert, button=self.btn, debug=True
+        )(self.get_dashboard)
+
+        self.btn.on_event("click", self.get_dashboard)
+
+
     def get_dashboard(self, widget, event, data):
         """Create dashboard"""
 
@@ -172,8 +233,8 @@ class Dashboard(v.Card, sw.SepalWidget):
         # Calculate regions
         self.alert.add_msg(cm.dashboard.alert.computing.format(area_type))
 
-        # Units will depend of the developer. rsa it's an input from user
-        self.model.reduce_to_regions(units=self.units, rsa=self.w_use_rsa.v_model)
+        # Units will depend of the developer.
+        self.model.reduce_to_regions(units=self.units)
 
         self.alert.append_msg(cm.dashboard.alert.rendering)
 
@@ -183,7 +244,8 @@ class Dashboard(v.Card, sw.SepalWidget):
         # Get individual stats widgets per Kapos classes
         w_individual = [
             Statistics(self.model, self.units, krange=krange)
-            for krange, _ in self.model.summary_df.iterrows()
+            for krange, row in self.model.summary_df.iterrows()
+            if row["krange_area"] != 0
         ]
 
         statistics = v.Layout(
@@ -209,6 +271,7 @@ class Dashboard(v.Card, sw.SepalWidget):
 
 
 class Statistics(v.Card):
+    
     def __init__(self, model, units, *args, krange=None, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -217,19 +280,19 @@ class Statistics(v.Card):
         horizontal bars of land cover area per kapos classes.
         
         Args:
-            krange (int): kapos range number (1,2,3,4,5,6)
+            krange (int): kapos range number (1,2,3,4,5,6); empty for overall.
             area_per_class (dictionary): Dictionary of lu/lc areas 
             units (str): Units to display the results. Available [{}]
             
         """.format(
             list(param.UNITS.keys())
         )
-
+        
+        self._metadata = {"name": "statistics"}
         self.class_ = "ma-4"
         self.row = True
         self.model = model
-        self.metadata_ = {"name": "statistics"}
-
+        
         self.output_chart = Output()
 
         # Create title and description based on the inputs
@@ -251,7 +314,7 @@ class Statistics(v.Card):
                     v.Col(
                         sm=4,
                         class_="d-flex justify-center",
-                        children=[create_avatar(self.model.get_mgci(krange))],
+                        children=[cs.create_avatar(self.model.get_mgci(krange))],
                     ),
                     v.Col(
                         children=[
