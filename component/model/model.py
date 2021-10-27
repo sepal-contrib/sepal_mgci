@@ -149,10 +149,10 @@ class MgciModel(Model):
 
         aoi = self.aoi_model.feature_collection.geometry()
 
-        image_area = ee.Image.pixelArea()
-
         if self.rsa:
             image_area = cs.get_real_surface_area(self.dem, aoi)
+        else:
+            image_area = ee.Image.pixelArea()
 
         scale = (
             self.dem.projection()
