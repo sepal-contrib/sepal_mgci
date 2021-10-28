@@ -17,56 +17,54 @@ from component.message import cm
 __all__ = ["DashboardTile"]
 
 
-class DashboardTile(v.Layout,sw.SepalWidget):
-    
+class DashboardTile(v.Layout, sw.SepalWidget):
     def __init__(self, model, *args, **kwargs):
-        
-        self.class_='d-block'
+
+        self.class_ = "d-block"
         self._metadata = {"mount_id": "dashboard_tile"}
-        
+
         super().__init__(*args, **kwargs)
-        
-        self.model=model
+
+        self.model = model
         self.dashboard_view = DashboardView(model=self.model)
-        self.report_view = ReportView(model=self.model, units=self.dashboard_view.units)
-        
+        self.report_view = ReportView(model=self.model)
+
         self.children = [
             cw.Tabs(
                 titles=["Calculation", "Generate report"],
-                content=[self.dashboard_view, self.report_view]
+                content=[self.dashboard_view, self.report_view],
             )
         ]
 
+
 class ReportView(v.Card):
-    def __init__(self, model, units, *args, **kwargs):
-        
+    def __init__(self, model, *args, **kwargs):
+
         self.class_ = "pa-2"
         super().__init__(*args, **kwargs)
-        
-        self.units=units
-        self.model=model
-        
+
+        self.model = model
+
         self.alert = sw.Alert()
-        
+
         self.download_btn = sw.Btn(
             cm.dashboard.label.download, class_="ml-2", disabled=True
         )
 
-        
         self.w_year = v.TextField(
             label=cm.dashboard.label.year,
             v_model=self.model.year,
             type="string",
         )
-        
+
         self.w_source = v.TextField(
             label=cm.dashboard.label.source,
             v_model=self.model.source,
             type="string",
         )
-        
+
         question_icon = v.Icon(children=["mdi-help-circle"], small=True)
-        
+
         # Create tooltip
         t_year = v.Flex(
             class_="d-flex",
@@ -77,7 +75,7 @@ class ReportView(v.Card):
                 ),
             ],
         )
-        
+
         t_source = v.Flex(
             class_="d-flex",
             children=[
@@ -87,8 +85,8 @@ class ReportView(v.Card):
                 ),
             ],
         )
-        
-        self.children=[
+
+        self.children = [
             v.CardTitle(children=[cm.dashboard.report.title]),
             v.CardText(children=[sw.Markdown(cm.dashboard.report.description)]),
             t_year,
@@ -96,33 +94,33 @@ class ReportView(v.Card):
             self.download_btn,
             self.alert,
         ]
-        
+
         self.download_results = loading_button(
             alert=self.alert, button=self.download_btn, debug=True
         )(self.download_results)
-        
+
         self.download_btn.on_event("click", self.download_results)
-        
+
         # We need a two-way-binding for the year
-        link((self.w_year, 'v_model'),(self.model, 'year'))
-        
-        self.model.bind(self.w_source, 'source')
-        self.model.observe(self.activate_download, 'reduce_done')
-        
+        link((self.w_year, "v_model"), (self.model, "year"))
+
+        self.model.bind(self.w_source, "source")
+        self.model.observe(self.activate_download, "reduce_done")
+
     def activate_download(self, change):
         """Verify if the calculation is done, and activate button"""
         if change["new"]:
-            self.download_btn.disabled=False
+            self.download_btn.disabled = False
         else:
-            self.download_btn.disabled=True
-    
+            self.download_btn.disabled = True
+
     def download_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 
         # Generate three reports
-        reports = self.model.get_report(units=self.units)
+        reports = self.model.get_report()
         m49 = cs.get_geoarea(self.model.aoi_model)[1]
-        
+
         report_filenames = [
             f"{rt.SERIESCOD_GRNCVI}_{m49}.xlsx",
             f"{rt.SERIESCOD_GRNCOV_1}_{m49}.xlsx",
@@ -131,17 +129,14 @@ class ReportView(v.Card):
 
         report_folder = cs.get_report_folder(self.model)
 
-        for (
-            report,
-            report_filename,
-        ) in zip(*[reports, report_filenames]):
-
+        for report, report_filename, in zip(*[reports, report_filenames]):
+            
             report.to_excel(
                 str(Path(report_folder, report_filename)),
                 sheet_name=report_filename,
                 index=False,
             )
-
+            
         self.alert.add_msg(
             f"The reports were successfully exported in {report_folder}",
             type_="success",
@@ -149,32 +144,21 @@ class ReportView(v.Card):
 
 
 class DashboardView(v.Card, sw.SepalWidget):
-    def __init__(self, model, units="sqkm", rsa=False, *args, **kwargs):
+    def __init__(self, model, rsa=False, *args, **kwargs):
 
         """Dashboard tile to calculate and resume the zonal statistics for the 
         vegetation layer by kapos ranges.
         
         Args:
             model (MgciModel): Mgci Model
-            units (str): Units to display the results. Available [{}]
             
-        """.format(
-            list(param.UNITS.keys())
-        )
+        """
 
-        
         self.class_ = "pa-2"
 
         super().__init__(*args, **kwargs)
 
         self.model = model
-
-        if not units in list(param.UNITS.keys()):
-            raise Exception(
-                f"{units} is not an available unit, only use {list(param.UNITS.keys())}"
-            )
-
-        self.units = units
 
         title = v.CardTitle(children=[cm.dashboard.title])
         description = v.CardText(children=[cm.dashboard.description])
@@ -183,7 +167,9 @@ class DashboardView(v.Card, sw.SepalWidget):
 
         # widgets
         self.w_use_rsa = v.Switch(
-            v_model=self.model.rsa, label=cm.dashboard.label.rsa, value=True,
+            v_model=self.model.rsa,
+            label=cm.dashboard.label.rsa,
+            value=True,
         )
 
         t_rsa = v.Flex(
@@ -206,8 +192,8 @@ class DashboardView(v.Card, sw.SepalWidget):
             self.btn,
             self.alert,
         ]
-        
-        self.model.bind(self.w_use_rsa, 'rsa')
+
+        self.model.bind(self.w_use_rsa, "rsa")
 
         # Decorate functions
         self.get_dashboard = loading_button(
@@ -216,14 +202,12 @@ class DashboardView(v.Card, sw.SepalWidget):
 
         self.btn.on_event("click", self.get_dashboard)
 
-
     def get_dashboard(self, widget, event, data):
         """Create dashboard"""
 
         # Remove previusly dashboards
         if self.is_displayed():
             self.children = self.children[:-1][:]
-
         area_type = (
             cm.dashboard.label.rsa_name
             if self.w_use_rsa.v_model
@@ -232,18 +216,48 @@ class DashboardView(v.Card, sw.SepalWidget):
 
         # Calculate regions
         self.alert.add_msg(cm.dashboard.alert.computing.format(area_type))
+        
+        
+        def task_result():
+            
+            # The process will take so long. Create a task in gee.
+            task = self.model.task_result()
+        
+        if not self.model.rsa:
+            
+            try:
+                self.model.extract_summary_from_result()
+            
+            except:
+                
+            
+        else:
 
-        # Units will depend of the developer.
-        self.model.reduce_to_regions(units=self.units)
+        if self.model.rsa:
 
+            
+            # TODO: Store task id
+            self.alert.add_msg(
+                f"The calculation is being executed in GEE. You can track its process, "
+                f"by using the task id: {task.id}"
+            )
+            # Create an alert to store the taskId
+            return
+        else:
+            try:
+                # We will use the coarser resolution, so it will finish the process
+                # on the fly
+                self.model.extract_summary_from_result(result)
+            except:
+                
         self.alert.append_msg(cm.dashboard.alert.rendering)
 
         # Get overall MGCI widget
-        w_overall = Statistics(self.model, self.units)
+        w_overall = Statistics(self.model)
 
         # Get individual stats widgets per Kapos classes
         w_individual = [
-            Statistics(self.model, self.units, krange=krange)
+            Statistics(self.model, krange=krange)
             for krange, row in self.model.summary_df.iterrows()
             if row["krange_area"] != 0
         ]
@@ -266,13 +280,11 @@ class DashboardView(v.Card, sw.SepalWidget):
             if isinstance(chld._metadata, dict):
                 if "statistics" in chld._metadata.values():
                     return True
-
         return False
 
 
 class Statistics(v.Card):
-    
-    def __init__(self, model, units, *args, krange=None, **kwargs):
+    def __init__(self, model, *args, krange=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         """
@@ -281,31 +293,26 @@ class Statistics(v.Card):
         
         Args:
             krange (int): kapos range number (1,2,3,4,5,6); empty for overall.
-            area_per_class (dictionary): Dictionary of lu/lc areas 
-            units (str): Units to display the results. Available [{}]
-            
-        """.format(
-            list(param.UNITS.keys())
-        )
+            area_per_class (dictionary): Dictionary of lu/lc areas             
+        """
         
         self._metadata = {"name": "statistics"}
         self.class_ = "ma-4"
         self.row = True
         self.model = model
-        
+
         self.output_chart = Output()
 
         # Create title and description based on the inputs
         title = cm.dashboard.global_.title
         desc = sw.Alert(
-            children=[cm.dashboard.global_.desc.format(param.UNITS[units][1])],
+            children=[cm.dashboard.global_.desc.format(param.UNITS['sqkm'][1])],
             dense=True,
         ).show()
 
         if krange:
             title = cm.dashboard.individual.title.format(krange)
             desc = eval(f"cm.dashboard.individual.desc.k{krange}")
-
         self.children = [
             v.CardTitle(children=[title]),
             v.CardText(children=[desc]),
@@ -364,7 +371,6 @@ class Statistics(v.Card):
                 zip(norm_values, labels, human_values, colors)
             ):
                 ax.text(norm + 2, i, val, fontsize=40, color=color)
-
             # cosmetic tuning
 
             ax.set_xlim(0, 110)
