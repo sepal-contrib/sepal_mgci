@@ -85,35 +85,6 @@ class MgciModel(Model):
             .selfMask()
         )
 
-    #         # Create the 7th class
-    #         # The 7th class won't be a class by itself, we have to find areas that
-    #         # are surrounded by the first 6 classes and assign them to its neighbors
-
-    #         inverse_kapos = kapos_1_6.unmask().Not().eq(1).selfMask()
-
-    #         connected = inverse_kapos.connectedComponents(
-    #             **{"connectedness": ee.Kernel.plus(1), "maxSize": 128}
-    #         )
-
-    #         connected_size = connected.select("labels").connectedPixelCount(
-    #             **{"maxSize": 128, "eightConnected": False}
-    #         )
-    #         connected_area = (
-    #             ee.Image.pixelArea()
-    #             .addBands(connected_size)
-    #             .lte(25000000)
-    #             .eq(1)
-    #             .selfMask()
-    #             .select("labels")
-    #         )
-
-    #         kapos_fill10 = (
-    #             kapos_1_6.focal_mean(1, "square", "pixels", 10)
-    #             .updateMask(connected_area)
-    #             .selfMask()
-    #         )
-
-    #         self.kapos_image = kapos_1_6.addBands(kapos_fill10).reduce(ee.Reducer.max())
     
     @su.switch('reduce_done', targets=[True])
     def reduce_to_regions(self, units):
@@ -153,14 +124,15 @@ class MgciModel(Model):
             image_area = cs.get_real_surface_area(self.dem, aoi)
         else:
             image_area = ee.Image.pixelArea()
-
+        
+        # Use the finer scale from the inputs.
         scale = (
             self.dem.projection()
             .nominalScale()
-            .max(lulc.projection().nominalScale())
+            .min(lulc.projection().nominalScale())
             .getInfo()
         )
-
+        
         result = (
             image_area.divide(param.UNITS[units][0])
             .updateMask(lulc.mask().And(self.kapos_image.mask()))
@@ -212,7 +184,7 @@ class MgciModel(Model):
         
         df.sort_index(inplace=True)
         df["green_area"] = df[param.GREEN_CLASSES].sum(axis=1)
-        df["krange_area"] = df[list(self.lulc_classes.keys())].sum(axis=1)
+        df["krange_area"] = df[param.DISPLAY_CLASSES].sum(axis=1)
         df["mgci"] = df["green_area"] / df["krange_area"]
         df.fillna(0, inplace=True)
 
