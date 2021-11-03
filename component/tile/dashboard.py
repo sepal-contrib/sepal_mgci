@@ -6,7 +6,7 @@ from ipywidgets import Output
 import ipyvuetify as v
 
 import sepal_ui.sepalwidgets as sw
-from sepal_ui.scripts.utils import loading_button, switch
+import sepal_ui.scripts.utils as su
 
 import component.parameter.report_template as rt
 import component.parameter as param
@@ -26,14 +26,29 @@ class DashboardTile(v.Layout, sw.SepalWidget):
         super().__init__(*args, **kwargs)
 
         self.model = model
-        self.dashboard_view = DashboardView(model=self.model)
-        self.report_view = ReportView(model=self.model)
+
+        self.dashboard_view = DashboardView(model=self.model).hide()
+
+        self.calculation_view = CalculationView(self.model, self.dashboard_view)
+        self.download_task_view = DownloadTaskView(self.model, self.dashboard_view)
+
+        self.report_view = ReportView(self.model)
 
         self.children = [
             cw.Tabs(
-                titles=["Calculation", "Generate report"],
-                content=[self.dashboard_view, self.report_view],
-            )
+                titles=[
+                    "Calculation",
+                    "Calculation from Task",
+                    "Export results",
+                ],
+                content=[
+                    self.calculation_view,
+                    self.download_task_view,
+                    self.report_view,
+                ],
+                class_="mb-2",
+            ),
+            self.dashboard_view,
         ]
 
 
@@ -47,9 +62,7 @@ class ReportView(v.Card):
 
         self.alert = sw.Alert()
 
-        self.download_btn = sw.Btn(
-            cm.dashboard.label.download, class_="ml-2", disabled=True
-        )
+        self.btn = sw.Btn(cm.dashboard.label.download, class_="ml-2", disabled=True)
 
         self.w_year = v.TextField(
             label=cm.dashboard.label.year,
@@ -88,18 +101,20 @@ class ReportView(v.Card):
 
         self.children = [
             v.CardTitle(children=[cm.dashboard.report.title]),
-            v.CardText(children=[sw.Markdown(cm.dashboard.report.description)]),
+            v.CardText(
+                children=[
+                    sw.Markdown(
+                        cm.dashboard.report.description.format(*param.UNITS["sqkm"][1])
+                    )
+                ]
+            ),
             t_year,
             t_source,
-            self.download_btn,
+            self.btn,
             self.alert,
         ]
 
-        self.download_results = loading_button(
-            alert=self.alert, button=self.download_btn, debug=True
-        )(self.download_results)
-
-        self.download_btn.on_event("click", self.download_results)
+        self.btn.on_event("click", self.download_results)
 
         # We need a two-way-binding for the year
         link((self.w_year, "v_model"), (self.model, "year"))
@@ -110,10 +125,11 @@ class ReportView(v.Card):
     def activate_download(self, change):
         """Verify if the calculation is done, and activate button"""
         if change["new"]:
-            self.download_btn.disabled = False
+            self.btn.disabled = False
         else:
-            self.download_btn.disabled = True
+            self.btn.disabled = True
 
+    @su.loading_button(debug=True)
     def download_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 
@@ -129,29 +145,73 @@ class ReportView(v.Card):
 
         report_folder = cs.get_report_folder(self.model)
 
-        for report, report_filename, in zip(*[reports, report_filenames]):
-            
+        for (
+            report,
+            report_filename,
+        ) in zip(*[reports, report_filenames]):
+
             report.to_excel(
                 str(Path(report_folder, report_filename)),
                 sheet_name=report_filename,
                 index=False,
             )
-            
         self.alert.add_msg(
             f"The reports were successfully exported in {report_folder}",
             type_="success",
         )
 
 
-class DashboardView(v.Card, sw.SepalWidget):
-    def __init__(self, model, rsa=False, *args, **kwargs):
+class DownloadTaskView(v.Card):
+    def __init__(self, model, dashboard_view, *args, **kwargs):
+        """
+        Download tile tab: to search and select the tasks_id file, check if the task is
+        complete and then download the file.
 
-        """Dashboard tile to calculate and resume the zonal statistics for the 
+        """
+        self.class_ = "pa-2"
+
+        super().__init__(*args, **kwargs)
+
+        self.model = model
+        self.dashboard_view = dashboard_view
+
+        # Widgets
+        title = v.CardTitle(children=[cm.dashboard.tasks.title])
+        description = v.CardText(
+            children=[
+                sw.Markdown(cm.dashboard.tasks.description.format(param.TASKS_DIR))
+            ]
+        )
+
+        question_icon = v.Icon(children=["mdi-help-circle"], small=True)
+
+        self.w_file_input = sw.FileInput(folder=param.TASKS_DIR, extentions=[".csv"])
+
+        self.alert = sw.Alert()
+        self.btn = sw.Btn(cm.dashboard.label.calculate)
+
+        self.children = [title, description, self.w_file_input, self.btn, self.alert]
+
+        self.btn.on_event("click", self.render_dashboard)
+
+        self.model.bind(self.w_file_input, "task_file")
+
+    @su.loading_button(debug=True)
+    def render_dashboard(self, widget, event, data):
+
+        self.dashboard_view.clear()
+        self.dashboard_view.render_dashboard(from_task=True)
+
+
+class CalculationView(v.Card, sw.SepalWidget):
+    def __init__(self, model, dashboard_view, rsa=False, *args, **kwargs):
+
+        """Dashboard tile to calculate and resume the zonal statistics for the
         vegetation layer by kapos ranges.
-        
+
         Args:
             model (MgciModel): Mgci Model
-            
+
         """
 
         self.class_ = "pa-2"
@@ -159,6 +219,7 @@ class DashboardView(v.Card, sw.SepalWidget):
         super().__init__(*args, **kwargs)
 
         self.model = model
+        self.dashboard_view = dashboard_view
 
         title = v.CardTitle(children=[cm.dashboard.title])
         description = v.CardText(children=[cm.dashboard.description])
@@ -195,19 +256,18 @@ class DashboardView(v.Card, sw.SepalWidget):
 
         self.model.bind(self.w_use_rsa, "rsa")
 
-        # Decorate functions
-        self.get_dashboard = loading_button(
-            alert=self.alert, button=self.btn, debug=True
-        )(self.get_dashboard)
+        self.btn.on_event("click", self.run_statistics)
 
-        self.btn.on_event("click", self.get_dashboard)
+    @su.loading_button(debug=True)
+    def run_statistics(self, widget, event, data):
+        """Start the calculation of the statistics. It will start the process on the fly
+        or making a task in the background depending if the rsa is selected or if the
+        computation is taking so long.
+        """
+        # Clear previous loaded results
+        self.model.summary_df = None
+        self.dashboard_view.clear()
 
-    def get_dashboard(self, widget, event, data):
-        """Create dashboard"""
-
-        # Remove previusly dashboards
-        if self.is_displayed():
-            self.children = self.children[:-1][:]
         area_type = (
             cm.dashboard.label.rsa_name
             if self.w_use_rsa.v_model
@@ -216,41 +276,58 @@ class DashboardView(v.Card, sw.SepalWidget):
 
         # Calculate regions
         self.alert.add_msg(cm.dashboard.alert.computing.format(area_type))
-        
-        
-        def task_result():
-            
-            # The process will take so long. Create a task in gee.
-            task = self.model.task_result()
-        
+
+        # It will create the process and store it in reduced_process from model
+        self.model.reduce_to_regions()
+
         if not self.model.rsa:
-            
+
+            # Try the process in on the fly
             try:
                 self.model.extract_summary_from_result()
-            
-            except:
-                
-            
+                self.dashboard_view.render_dashboard()
+                self.alert.reset()
+            except Exception as e:
+                if e.args[0] == "Computation timed out.":
+                    name, task_id, task_id_file = self.model.task_process()
+                    self.alert.children = [
+                        sw.Markdown(
+                            cm.dashboard.alert.tasks_failed.format(
+                                Path(name).stem, task_id_file
+                            )
+                        )
+                    ]
+                else:
+                    raise Exception(f"There was an error {e}")
         else:
+            name, task_id, task_id_file = self.model.task_process()
+            self.alert.children = [
+                sw.Markdown(
+                    cm.dashboard.alert.tasks_rsa.format(Path(name).stem, task_id_file)
+                )
+            ]
 
-        if self.model.rsa:
 
-            
-            # TODO: Store task id
-            self.alert.add_msg(
-                f"The calculation is being executed in GEE. You can track its process, "
-                f"by using the task id: {task.id}"
-            )
-            # Create an alert to store the taskId
-            return
-        else:
-            try:
-                # We will use the coarser resolution, so it will finish the process
-                # on the fly
-                self.model.extract_summary_from_result(result)
-            except:
-                
-        self.alert.append_msg(cm.dashboard.alert.rendering)
+class DashboardView(v.Card, sw.SepalWidget):
+    def __init__(self, model, rsa=False, *args, **kwargs):
+
+        self.class_ = "my-4"
+
+        super().__init__(*args, **kwargs)
+
+        self.model = model
+        self.alert = sw.Alert()
+
+        self.children = [self.alert]
+
+    @su.switch("loading")
+    def render_dashboard(self, from_task=False):
+        """Display results in the dashboard"""
+
+        if from_task:
+            self.model.extract_summary_from_result(from_task=True)
+        self.show()
+        self.alert.add_msg(cm.dashboard.alert.rendering)
 
         # Get overall MGCI widget
         w_overall = Statistics(self.model)
@@ -273,29 +350,29 @@ class DashboardView(v.Card, sw.SepalWidget):
         self.children = new_items
         self.alert.hide()
 
-    def is_displayed(self):
-        """Check if there is a previusly displayed dashboard"""
+    def clear(self):
+        """Check if there is a previusly displayed dashboard and clear it"""
 
         for chld in self.children:
             if isinstance(chld._metadata, dict):
                 if "statistics" in chld._metadata.values():
-                    return True
-        return False
+                    self.children = self.children[:-1][:]
+                    break
 
 
 class Statistics(v.Card):
     def __init__(self, model, *args, krange=None, **kwargs):
-        super().__init__(*args, **kwargs)
-
         """
-        Creates a full layout view with a circular MGC index followed by 
+        Creates a full layout view with a circular MGC index followed by
         horizontal bars of land cover area per kapos classes.
-        
+
         Args:
             krange (int): kapos range number (1,2,3,4,5,6); empty for overall.
-            area_per_class (dictionary): Dictionary of lu/lc areas             
+            area_per_class (dictionary): Dictionary of lu/lc areas
         """
-        
+
+        super().__init__(*args, **kwargs)
+
         self._metadata = {"name": "statistics"}
         self.class_ = "ma-4"
         self.row = True
@@ -306,7 +383,7 @@ class Statistics(v.Card):
         # Create title and description based on the inputs
         title = cm.dashboard.global_.title
         desc = sw.Alert(
-            children=[cm.dashboard.global_.desc.format(param.UNITS['sqkm'][1])],
+            children=[cm.dashboard.global_.desc.format(param.UNITS["sqkm"][1])],
             dense=True,
         ).show()
 

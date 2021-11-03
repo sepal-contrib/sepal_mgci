@@ -77,8 +77,9 @@
         "alert" : {
             "computing" : "Calculating MGCI values, using {}. This process could take a few minutes.",
             "rendering" : "Rendering dashboard",
-            "tasks_failed": "Due to computation timed out in GEE, the statistics couldn't be completed on the fly. However, the process has been sent to GEE under the name '{}'. You can track its progress in <a href='https://code.earthengine.google.com/tasks'>tasks tracker</a>, once it is completed, you will be able to use use the {} file in the 'Download tasks' tab to generate the report. ",
-            "tasks_rsa": "The calculation is being executed in GEE under the name '{}'. You can track its progress in <a href='https://code.earthengine.google.com/tasks'>tasks tracker</a>, once the process is complete, you will be able to use use the {} file in the 'Download tasks' tab to generate the report. "
+            "tasks_failed": "Due to computation timed out in GEE, the statistics couldn't be completed on the fly. However, the process has been sent to GEE under the name '{}'. You can track its progress in <a href='https://code.earthengine.google.com/tasks'>tasks tracker</a>. Once it is completed, you will be able to use use the {} file in the 'Calculation from task' tab to generate the report.",
+            "tasks_rsa": "The calculation is being executed in GEE under the name '{}', you can track its progress in <a href='https://code.earthengine.google.com/tasks'>tasks tracker</a>. Once the process is complete, you will be able to use use the {} file in the 'Calculation from task' tab to generate the report. ",
+            "no_summary" : "It seems like you have not calculated the MGCI. Please calculate it before trying to export the results."
         },
         "help":{
             "rsa" : "Use Real Surface Area. Disable it to calculate the results using planimetric area. To more details, please refer to the module documentation.",
