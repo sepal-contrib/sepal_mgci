@@ -60,7 +60,7 @@ The calculation of the MGCI will be restricted to a specific area of interest, i
    - Drawn shapes on the map
    - Google Earth Engine Asset
    
-After selecting the desired area, click over the 'Select these inputs' button and the map will show up your selection.
+After selecting the desired area, click over the :guilabel:`Select these inputs` button and the map will show up your selection.
 
 .. note:: 
 
@@ -164,14 +164,14 @@ As the vegetation layer only has to include the :ref:`six IPCC classes <ipcc_cla
    :width: 600
 
 
-If you do not have a reclassification matrix, —after selecting the dataset and clicking over "get table" button— the module will search over all of its pixel values and it will display an interactive table where you can manually reclassify from old pixel values to new ones. As you can see in the below table, the example dataset has values that do not match with the :ref:`IPCC classes <ipcc_classes>`, so with prior knowledge about the dataset, you can use the corresponding combo box that is in the right column to reclassify that specific value. By default, the module will use as target the 6 IPCC classes.
+If you do not have a reclassification matrix, —after selecting the dataset and clicking over :guilabel:`get table`— the module will search over all of its pixel values and it will display an interactive table where you can manually reclassify from old pixel values to new ones. As you can see in the below table, the example dataset has values that do not match with the :ref:`IPCC classes <ipcc_classes>`, so with prior knowledge about the dataset, you can use the corresponding combo box that is in the right column to reclassify that specific value. By default, the module will use as target the 6 IPCC classes.
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_1_reclassify_table.PNG
    :align: center
    :width: 600
 
 
-.. tip:: After manually reclassifying your dataset, you can use the save button to store the table as a CSV file and you can use it later instead of manually filling up the table.
+.. tip:: After manually reclassifying your dataset, you can use the :guilabel:`save` button to store the table as a CSV file and you can use it later instead of manually filling up the table.
 
 Alternatively, if you have a reclassification table, it means that you do not have to manually fill up all the new values, instead, you could use this table to match the old values with the new ones, if a value in your dataset is not present in the reclassify table, the new value will be empty, so you will have to manually select the new value.
 
@@ -218,7 +218,7 @@ To overcome this limitation, the process will be executed as a task —which are
 Calculation from task
 ^^^^^^^^^^^^^^^^^^^^^
 
-If the computation can't be done on the fly, a new file containing the id of the task is created and stored in the `../module_results/sdg_indicators/mgci/tasks` folder. This file will help you to track the status of the task at any moment. To do so, you only have to search this file in your SEPAL environment using the navigator by clicking on the "search file" button, and then clicking over the "Calculate MGCI" button and the result will be displayed if the process status is completed.
+If the computation can't be done on the fly, a new file containing the id of the task is created and stored in the `../module_results/sdg_indicators/mgci/tasks` folder. This file will help you to track the status of the task at any moment. To do so, you only have to search this file in your SEPAL environment using the navigator by clicking on the :guilabel:`search file` button, and then clicking over the :guilabel:`Calculate MGCI` button and the result will be displayed if the process status is completed.
 
 .. tip:: an alternative way to track the progress of the task is by using the `GEE task tracker <https://code.earthengine.google.com/tasks>`_, there you can find the tasks that are running on the server.
 
@@ -244,7 +244,7 @@ Each section will provide an overall MGCI displayed in a circle along with the s
 Export results
 ^^^^^^^^^^^^^^
 
-After the calculation is done, the export button will be available. To download the report you just have to fill up the institution that will issue the report and the year of the land use/cover map, and the result will download three files:
+After the calculation is done, the export button will become available. To download the report, you just have to fill up the institution that will issue the report and the year of the land use/cover map, and the result will download three files:
 
 - ER_MTN_GRNCOV: Mountain green cover area (skqm).
 - ER_MTN_GRNCVI: Mountain Green Cover Index.
