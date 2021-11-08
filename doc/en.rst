@@ -186,7 +186,7 @@ Once you have reclassified the new values or used the default dataset, you can d
 
 .. tip:: Remember that the MGCI is only calculated over the mountain classes, so the vegetation layer will mask out the areas where there is no presence of a mountain class.
 
-.. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_3_vegetation_descriptor.PNG
+.. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_3_vegetation_descriptor_2.PNG
    :align: center
    :width: 600
 
