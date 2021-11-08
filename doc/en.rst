@@ -69,6 +69,7 @@ After selecting the desired area, click over the 'Select these inputs' button an
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/1_aoi_selection.PNG
    :align: center
+   :width: 600
 
 Mountain descriptor layer 
 -------------------------
@@ -95,6 +96,7 @@ The questionnaire will help you to decide whether to use a custom dataset or a d
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/2_questionaire.PNG
    :align: center
+   :width: 300
 
 Custom dataset
 ::::::::::::::
@@ -105,6 +107,7 @@ After clicking the button, the module will create the mountain descriptor layer,
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/2_mountain_descriptor.PNG
    :align: center
+   :width: 600
 
 Vegetation descriptor layer
 ---------------------------
@@ -135,6 +138,7 @@ As well as the mountain descriptor layer, this panel will help you to use your l
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_questionnaire.PNG
    :align: center
+   :width: 600
 
 Use default dataset
 :::::::::::::::::::
@@ -143,19 +147,22 @@ By selecting default, the module will use the `land cover time series map <http:
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_default.PNG
    :align: center
+   :width: 600
 
 Use custom dataset
 ::::::::::::::::::
 
-As the vegetation layer only has to include the :ref:`six IPCC classes <_ipcc_classes>`, the module won't be able to ensure that your custom dataset has these classes, to help in this matter, this section will display a reclassification tool to help you reclassify the values of the land cover/use map.
+As the vegetation layer only has to include the :ref:`six IPCC classes <ipcc_classes>`, the module won't be able to ensure that your custom dataset has these classes, to help in this matter, this section will display a reclassification tool to help you reclassify the values of the land cover/use map.
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_custom.PNG
    :align: center
+   :width: 600
    
 If you do not have a reclassification matrix, —after selecting the dataset and clicking over "get table" button— the module will search over all of its pixel values and it will display an interactive table where you can manually reclassify from old pixel values to new ones. As you can see in the below table, the example dataset has values that do not match with the :ref:`IPCC classes <_ipcc_classes>`, so with prior knowledge about the dataset, you can use the corresponding combo box that is in the right column to reclassify that specific value. By default, the module will use as target the 6 IPCC classes.
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_1_reclassify_table.PNG
    :align: center
+   :width: 600
    
 .. tip:: After manually reclassifying your dataset, you can use the save button to store the table as a CSV file and you can use it later instead of manually filling up the table.
 
@@ -174,6 +181,7 @@ Once you have reclassified the new values or used the default dataset, you can d
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_3_vegetation_descriptor.PNG
    :align: center
+   :width: 600
    
 MGCI calculation
 ----------------
@@ -188,11 +196,13 @@ Depending on the size of your area of interest and whether you are using the rea
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/4_dashboard_1_calculation.PNG
    :align: center
+   :width: 600
    
 To overcome this limitation, the process will be executed as a task —which are operations that are capable of running much longer than the standard timeout (see `gee tasks <https://developers.google.com/earth-engine/guides/playground#tasks-tab>`_ )—. If the computation is created as a task, you will see a similar message as the shown in the below image, and to get the results, please see the :ref:`calculation from task<_calculation_from_task>` section, otherwise, the result will be displayed on the dashboard (see :ref:`dashboard <_display>`).
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/4_computation_timeout.PNG
    :align: center
+   :width: 600
 
 .. _calculation_from_task:
 Calculation from task
@@ -204,6 +214,7 @@ If the computation can't be done on the fly, a new file containing the id of the
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/4_dashboard_tasks.PNG
    :align: center
+   :width: 600
 
 .. _display:
 Display dashboard
@@ -219,8 +230,6 @@ No matter if you the computation is done on the fly or if you have used the task
 
 Each section will provide an overall MGCI displayed in a circle along with the summary of the area in each of the IPCC classes, as is shown in the below image.
 
-
-
 Export results
 ^^^^^^^^^^^^^^
 
@@ -233,3 +242,4 @@ After the calculation is done, the export button will be available. To download 
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/4_dashboard_export.PNG
    :align: center
+   :width: 600
