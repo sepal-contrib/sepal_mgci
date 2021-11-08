@@ -8,9 +8,45 @@ The Mountain Green Cover Index (MGCI) is designed to measure the extent and the 
 
 The SEPAL-MGCI module will allow you to calculate this index by following 4 steps that are described below. 
 
-.. note:: 
+    
+Requirements
+------------
 
-    All the computation is done in the Google Earth Engine servers.
+To run the MGCI SEPAL module you will need a web browser, an Internet connection, and a SEPAL and Google Earth Engine (GEE) account:
+
+- SEPAL: is the enviroment where the module is deployed and therefore displayed. To create an account, please follow the `registration steps <https://docs.sepal.io/en/latest/setup/register.html#sign-up-to-sepal>`_ and then familiarize yourself with the tool by exploring its interface.
+- GEE: the module has been built under the GEE Python API, which means that all the computational steps are done thorugh the GEE servers. Please follow the `registration steps <https://docs.sepal.io/en/latest/setup/gee.html#create-a-gee-account>`_ and `initialize the home folder <https://docs.sepal.io/en/latest/setup/gee.html#initialize-the-home-folder>`_.
+- Connect your SEPAL and GEE accounts: the last step is to connect both accounts, you can achieve this by following the `step-by-step <https://docs.sepal.io/en/latest/setup/gee.html#connection-between-gee-and-sepal>`_.
+
+SEPAL interface
+---------------
+
+If you are new to SEPAL, you would like to take a look over the interface and to familiarize with the main tools. A detalied description of the features can be consulted in the `interface documentation <https://docs.sepal.io/en/latest/setup/presentation.html#sepal-interface>`_. 
+
+- Use the `apps tab <https://docs.sepal.io/en/latest/setup/presentation.html#apps-tab>`_ and navigate through the pages or type into the searchbox the "Mountain Green Cover Index" module. 
+
+- Click over the app drawer and wait patiently until the the module is displayed in your session, which should be looks like the below image:
+
+
+MGCI Module
+-----------
+
+A SEPAL module is divided into two main sections:
+
+- Help drawers: used to describe the tool, objectives and give a background about how it was developed
+    
+  - About: 
+  - Source code: the module was developed under a MIT licence, which means that the development is freely accesible and the code is public. It will link you to the GitHub repository of the module.
+  - Wiki: 
+  - Bug report: no tool is perfect and we are not exempt of bugs, furtunately, our team is always aware and constat alert to fix anything that is supposed to work well, so this section can be used to report any unexpected result or behaviour. To report an error please follow the `contribution guidelines <https://github.com/dfguerrerom/sepal_mgci/blob/master/CONTRIBUTE.md>`_.
+  
+- Process drawers: where you can find the steps or sections that are designed to be used for the used to accomplish the goal of the module. The MGCI module has therefore four main steps:
+
+  - Area of interest selection
+  - Mountain descriptor
+  - Vegetation descriptor
+  - MGCI results
+
 
 Area of interest (AOI)
 ----------------------
