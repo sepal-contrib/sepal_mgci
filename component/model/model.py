@@ -102,6 +102,59 @@ class MgciModel(Model):
             .where(aoi_dem.gte(300).And(aoi_dem.lt(1000)).And(local_range.gt(300)), 6)
             .selfMask()
         )
+        
+#         # Get the areas inside the other classes but which doesn't belong to them.
+#         inverse = kapos_1_6.unmask().Not().eq(1).selfMask()
+
+#         # Add the inverse band to the 1-6 classes
+#         all_kapos = kapos_1_6.addBands(inverse).reduce(ee.Reducer.Max())
+
+#         # Create neighborhoods, reduce them and update the mask
+#         # It will get the inverse areas with a border (the surrounding class)
+#         reduced_neighbors = (
+#             all_kapos.neighborhoodToBands(ee.Kernel.plus(1))
+#                 .reduce(ee.Reducer.Max())
+#                 .updateMask(inverse)
+#         )
+
+#         # Separate and clump individual 'objects'
+#         inverse_connected = inverse.connectedComponents({
+#           connectedness: ee.Kernel.plus(1),
+#           maxSize: 1024
+#         }).updateMask(inverse)
+
+#         # Calculate its area
+#         connected_size = inverse_connected.select('labels')
+#           .connectedPixelCount({
+#             maxSize: 1024, 
+#             eightConnected: False
+#         })
+
+#         # Filter them by its area
+#         connected_area = (
+#             ee.Image.pixelArea()
+#                 .addBands(connected_size)
+#                 .lte(25000000)
+#                 .eq(1)
+#                 .selfMask()
+#                 .select('labels')
+#         )
+
+#         # Remove the objects which are greather than the given area
+#         inverse_connected = inverse_connected.updateMask(connected_area)
+
+#         # reduce by  the maximum value from the reduced_neighbors(with borders).
+#         reduced_neighbors = reduced_neighbors.addBands(
+#             inverse_connected.select('labels')
+#         )
+
+#         result = reduced_neighbors.reduceConnectedComponents({
+#           reducer: ee.Reducer.max(),
+#           labelBand: 'labels'
+#         })
+
+#         # Merge all classes
+#         self.kapos_image = kapos_1_6.addBands(result).reduce(ee.Reducer.max())
 
     
     @su.switch('reduce_done', targets=[True])

@@ -26,7 +26,7 @@
     },
     "veg_layer" : {
         "title" : "Vegetation descriptor layer",
-        "description" : "The vegetation descriptor layer categorizes land cover into green and non-green areas. Green vegetation includes both natural vegetation and vegetation resulting from anthropic activity (e.g. crops, afforestation, etc.). Non-green areas include very sparsely vegetated areas, bare land, water, permanent ice/snow and urban areas.</br></br> This module computes a vegetation descriptor layer using a land use/land cover map as an input. You have the option to use a custom land use/land cover map for your country. If not available, the tool will use a land cover time series produced by the European Space Agency (ESA) under the Climate Change Initiative (CCI) (Available at: http://maps.elie.ucl.ac.be/CCI/viewer/index.php)",
+        "description" : "The vegetation descriptor layer categorizes land cover into green and non-green areas. Green vegetation includes both natural vegetation and vegetation resulting from anthropic activity (e.g. crops, afforestation, etc.). Non-green areas include very sparsely vegetated areas, bare land, water, permanent ice/snow and urban areas.</br></br> This module computes a vegetation descriptor layer using a land use/land cover map as an input. You have the option to use a custom land use/land cover map for your country. If not available, the tool will use a land cover time series produced by the European Space Agency (ESA) under the Climate Change Initiative (CCI) (Available at: <a href = 'http://maps.elie.ucl.ac.be/CCI/viewer/index.php'> ESA CCI viewer </a>)",
         "instructions":" ",
         "veg_asst":{
             "label": "Select a Land Cover Map",
