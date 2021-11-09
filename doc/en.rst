@@ -64,7 +64,7 @@ After selecting the desired area, click over the :guilabel:`Select these inputs`
 
 .. note:: 
 
-    You can only select one area of interest. In some cases, depending on the input data, the process could take longer (see `_processing <processing>`).
+    You can only select one area of interest. In some cases, depending on the input data, the process could take longer (see `calculation <calculation>`).
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/1_aoi_selection.PNG
    :align: center
@@ -196,7 +196,7 @@ MGCI calculation
 
 Once you have set the inputs in the previous steps, the module will calculate the area of every IPCC class into each mountain class range as well as the overall result. The module has the option to do the calculation using the planimetric area or the `real surface area <https://www.fs.fed.us/rm/pubs_other/rmrs_2004_jenness_j001.pdf>`_. 
 
-
+.. _calculation:
 Calculation
 ^^^^^^^^^^^
 
