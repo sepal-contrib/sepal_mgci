@@ -30,9 +30,11 @@ class MgciModel(Model):
 
     # Observation variables
     kapos_done = Int(0).tag(sync=True)
-    reduce_done = Bool(False).tag(sync=True)
     
     task_file = Unicode('', allow_none=True).tag(sync=True)
+    
+    # Results
+    summary_df = Any(allow_none=True).tag(sync=True)
 
     @su.need_ee
     def __init__(self, aoi_model):
@@ -49,9 +51,6 @@ class MgciModel(Model):
         self.kapos_image = None
         self.vegetation_image = None
         self.aoi_model = aoi_model
-
-        # Results
-        self.summary_df = None
 
         # Styled results dataframe
         self.mgci_report = None
@@ -78,6 +77,7 @@ class MgciModel(Model):
             # TODO: decide which of the assets use
             # dem = ee.Image("USGS/SRTMGL1_003") # srtm_1
             self.dem = ee.Image("CGIAR/SRTM90_V4")  # srtm_3
+            # self.dem = ee.Image("USGS/GTOPO30")
 
         aoi_dem = self.dem.clip(aoi)
 
@@ -157,7 +157,6 @@ class MgciModel(Model):
 #         self.kapos_image = kapos_1_6.addBands(result).reduce(ee.Reducer.max())
 
     
-    @su.switch('reduce_done', targets=[True])
     def reduce_to_regions(self):
         """
         Reduce land use/land cover image to kapos regions using planimetric or real

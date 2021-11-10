@@ -60,7 +60,9 @@ class ReportView(v.Card):
 
         self.model = model
 
-        self.alert = sw.Alert()
+        self.alert = sw.Alert().add_msg(
+            cm.dashboard.report.disabled_alert, type_="warning"
+        )
 
         self.btn = sw.Btn(cm.dashboard.label.download, class_="ml-2", disabled=True)
 
@@ -110,8 +112,8 @@ class ReportView(v.Card):
             ),
             t_year,
             t_source,
-            self.btn,
             self.alert,
+            self.btn,
         ]
 
         self.btn.on_event("click", self.download_results)
@@ -120,14 +122,17 @@ class ReportView(v.Card):
         link((self.w_year, "v_model"), (self.model, "year"))
 
         self.model.bind(self.w_source, "source")
-        self.model.observe(self.activate_download, "reduce_done")
+        self.model.observe(self.activate_download, "summary_df")
 
     def activate_download(self, change):
-        """Verify if the calculation is done, and activate button"""
-        if change["new"]:
+        """Verify if the summary_df is created, and activate button"""
+        
+        if change["new"] is not None:
             self.btn.disabled = False
+            self.alert.reset()
         else:
             self.btn.disabled = True
+            self.alert.add_msg(cm.dashboard.report.disabled_alert, type_="warning")
 
     @su.loading_button(debug=True)
     def download_results(self, *args):
@@ -265,7 +270,6 @@ class CalculationView(v.Card, sw.SepalWidget):
         computation is taking so long.
         """
         # Clear previous loaded results
-        self.model.summary_df = None
         self.dashboard_view.clear()
 
         area_type = (
@@ -309,6 +313,7 @@ class CalculationView(v.Card, sw.SepalWidget):
 
 
 class DashboardView(v.Card, sw.SepalWidget):
+    
     def __init__(self, model, rsa=False, *args, **kwargs):
 
         self.class_ = "my-4"
@@ -351,7 +356,11 @@ class DashboardView(v.Card, sw.SepalWidget):
         self.alert.hide()
 
     def clear(self):
-        """Check if there is a previusly displayed dashboard and clear it"""
+        """Check if there is a previusly displayed dashboard and clear it, and
+        reset the modeul summary"""
+        
+        # Reset summary df to clear previous loaded summaries.
+        self.model.summary_df = None
 
         for chld in self.children:
             if isinstance(chld._metadata, dict):
