@@ -26,7 +26,7 @@
     },
     "veg_layer" : {
         "title" : "Vegetation descriptor layer",
-        "description" : "The vegetation descriptor layer categorizes land cover into green and non-green areas. Green vegetation includes both natural vegetation and vegetation resulting from anthropic activity (e.g. crops, afforestation, etc.). Non-green areas include very sparsely vegetated areas, bare land, water, permanent ice/snow and urban areas.</br></br> This module computes a vegetation descriptor layer using a land use/land cover map as an input. You have the option to use a custom land use/land cover map for your country. If not available, the tool will use a land cover time series produced by the European Space Agency (ESA) under the Climate Change Initiative (CCI) (Available at: http://maps.elie.ucl.ac.be/CCI/viewer/index.php)",
+        "description" : "The vegetation descriptor layer categorizes land cover into green and non-green areas. Green vegetation includes both natural vegetation and vegetation resulting from anthropic activity (e.g. crops, afforestation, etc.). Non-green areas include very sparsely vegetated areas, bare land, water, permanent ice/snow and urban areas.</br></br> This module computes a vegetation descriptor layer using a land use/land cover map as an input. You have the option to use a custom land use/land cover map for your country. If not available, the tool will use a land cover time series produced by the European Space Agency (ESA) under the Climate Change Initiative (CCI) (Available at: <a href = 'http://maps.elie.ucl.ac.be/CCI/viewer/index.php'> ESA CCI viewer </a>)",
         "instructions":" ",
         "veg_asst":{
             "label": "Select a Land Cover Map",
@@ -54,11 +54,16 @@
         }
     },
     "dashboard":{
-        "title" : "MGCI results dashboard",
+        "title" : "MGCI calculation",
         "description" : "Calculate the Mountain Green Cover Index dashboard, the result will include an overall index for all the Kapos mountain classes and also a more detailed index for each of these classes.",
         "report" : {
             "title":"Download report",
-            "description": "By exporting tables, the app will create three outputs. <ul><li>ER_MTN_GRNCOV:</li><li>ER_MTN_GRNCVI:</li><li>ER_MTN_TOTL:</li>"
+            "description": "By exporting tables, the app will create three outputs. <ul><li>ER_MTN_GRNCOV: Mountain green cover area ({1}).</li><li>ER_MTN_GRNCVI: Mountain Green Cover Index.</li><li>ER_MTN_TOTL: Total mountain area (in {1})</li>",
+            "disabled_alert" : "The export button will be available once you have calculated the MGCI report."
+        },
+        "tasks" : {
+            "title":"MGCI calculation on background",
+            "description":"This tab will help you to download the results file required to get the dashboard with the MGCI. You can track the progress of your task in the <a href='https://code.earthengine.google.com/tasks'>GEE tasks tracker</a>, and once it is done, you can select whether the task id given in the calculation tab or use the tasks file which is stored in the '<i>{}</i>' folder."
         },
         "label": {
             "download" : "Export reporting tables",
@@ -71,8 +76,11 @@
             "source" : "Institution"
         },
         "alert" : {
-            "computing" : "Calculating MGCI values, using {}. This process may take a few minutes.",
-            "rendering" : "Rendering dashboard"
+            "computing" : "Calculating MGCI values, using {}. This process could take a few minutes.",
+            "rendering" : "Rendering dashboard",
+            "tasks_failed": "Due to computation timed out in GEE, the statistics couldn't be completed on the fly. However, the process has been sent to GEE under the name '{}'. You can track its progress in <a href='https://code.earthengine.google.com/tasks'>tasks tracker</a>. Once it is completed, you will be able to use use the {} file in the 'Calculation from task' tab to generate the report.",
+            "tasks_rsa": "The calculation is being executed in GEE under the name '{}', you can track its progress in <a href='https://code.earthengine.google.com/tasks'>tasks tracker</a>. Once the process is complete, you will be able to use use the {} file in the 'Calculation from task' tab to generate the report. ",
+            "no_summary" : "It seems like you have not calculated the MGCI. Please calculate it before trying to export the results."
         },
         "help":{
             "rsa" : "Use Real Surface Area. Disable it to calculate the results using planimetric area. To more details, please refer to the module documentation.",

@@ -29,7 +29,7 @@ KAPOS_PALETTE = ["#ff0000", "#ff6f00", "#ffd500", "#bbff00", "#04ff00", "#034502
 
 KAPOS_LEGEND = {
     name: color
-    for name, color in zip([f"Kapos {i+1}" for i in range(6)], KAPOS_PALETTE)
+    for name, color in zip([f"Class {i+1}" for i in range(6)], KAPOS_PALETTE)
 }
 
 # Kapos layer visualization for map
