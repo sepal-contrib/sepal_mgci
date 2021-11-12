@@ -81,15 +81,17 @@ def get_geoarea(aoi_model):
 
         split_name = aoi_model.name.split("_")
 
-        iso_31661 = split_name[0]
+        iso31661 = split_name[0]
 
-        m49_df = pd.read_csv(param.M49)
-        m49_code = str(m49_df[m49_df.iso_31661 == iso_31661]["m49"].values[0])
+        m49_df = pd.read_csv(param.M49_FILE, sep=";")
 
-        geoarea_name = m49_code
+        gaul_row = m49_df[m49_df.iso31661 == iso31661]
+
+        geoarea_name = gaul_row["country"].values[0]
+        m49_code = gaul_row["m49"].values[0]
 
         if len(split_name) > 1:
-            geoarea_name = f"{m49_code}_" + "_".join(split_name[1:])
+            geoarea_name = f"{geoarea_name}_" + "_".join(split_name[1:])
 
         return geoarea_name, m49_code
 
