@@ -13,6 +13,7 @@ __all__ = [
     "LULC_DEFAULT",
     "ESA_IPCC_MATRIX",
     "UNITS",
+    "M49_FILE",
 ]
 
 # SET SOME PARAMETERS
@@ -36,6 +37,7 @@ KAPOS_LEGEND = {
 KAPOS_VIS = {"palette": KAPOS_PALETTE, "min": 1, "max": 6}
 
 M49 = Path(__file__).parent / "m49_iso31661.csv"
+M49_FILE = Path(__file__).parent / "m49_countries.csv"
 
 
 CUSTOM_AOI_ITEMS = [
