@@ -11,21 +11,23 @@ __all__ = [
     "get_report_folder",
     "get_geoarea",
     "create_avatar",
-    "read_from_task"
+    "read_from_task",
 ]
+
+
 def read_from_task(results_file):
     """Read a tasks file and extract its structure"""
-    
-    result={}
-    group="group"
-    groups="groups"
-    sum="sum"
 
-    result["groups"] = eval(pd.read_csv(results_file)["groups"][0].replace('=',':'))
-    
+    result = {}
+    group = "group"
+    groups = "groups"
+    sum = "sum"
+
+    result["groups"] = eval(pd.read_csv(results_file)["groups"][0].replace("=", ":"))
+
     return result
-    
-    
+
+
 def create_avatar(mgci):
     """Creates a circular avatar containing the MGCI value"""
     color = cs.get_mgci_color(mgci)

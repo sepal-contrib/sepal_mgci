@@ -126,7 +126,7 @@ class ReportView(v.Card):
 
     def activate_download(self, change):
         """Verify if the summary_df is created, and activate button"""
-        
+
         if change["new"] is not None:
             self.btn.disabled = False
             self.alert.reset()
@@ -313,7 +313,6 @@ class CalculationView(v.Card, sw.SepalWidget):
 
 
 class DashboardView(v.Card, sw.SepalWidget):
-    
     def __init__(self, model, rsa=False, *args, **kwargs):
 
         self.class_ = "my-4"
@@ -358,7 +357,7 @@ class DashboardView(v.Card, sw.SepalWidget):
     def clear(self):
         """Check if there is a previusly displayed dashboard and clear it, and
         reset the modeul summary"""
-        
+
         # Reset summary df to clear previous loaded summaries.
         self.model.summary_df = None
 

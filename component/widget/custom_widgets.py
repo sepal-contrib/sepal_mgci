@@ -2,7 +2,7 @@ from traitlets import link, CBool, Int
 import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
 
-__all__ = ["BoolQuestion","Tabs"]
+__all__ = ["BoolQuestion", "Tabs"]
 
 
 class BoolQuestion(v.Flex, sw.SepalWidget):
@@ -26,7 +26,7 @@ class BoolQuestion(v.Flex, sw.SepalWidget):
 
         self.children = [v.Html(tag="h3", children=[question]), bool_radios]
 
-        
+
 class Tabs(v.Card):
 
     current = Int(0).tag(sync=True)

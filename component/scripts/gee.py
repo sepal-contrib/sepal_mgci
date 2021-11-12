@@ -10,6 +10,7 @@ logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 
 __all__ = ["GDrive"]
 
+
 class GDrive:
     def __init__(self):
 
@@ -70,7 +71,7 @@ class GDrive:
         fo = open(output_file, "wb")
         fo.write(fh.getvalue())
         fo.close()
-        
+
         return True
 
     def delete_file(self, filename):
@@ -82,15 +83,14 @@ class GDrive:
             print(filename + " not found")
 
         self.service.files().delete(fileId=fId[0]).execute()
-    
+
     @staticmethod
     def get_task(task_id):
         """Get the current state of the task"""
-        
+
         tasks_list = ee.batch.Task.list()
         for task in tasks_list:
             if task.id == task_id:
                 return task
 
         raise Exception(f"The task id {task_id} doesn't exist in your tasks.")
-        

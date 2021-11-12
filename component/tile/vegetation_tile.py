@@ -53,9 +53,9 @@ class VegetationTile(v.Layout, sw.SepalWidget):
             )
             for card in cards
         ]
-        
+
         # Save the answer in the model. It will be used in the report
-        directional_link((w_questionaire, 'custom_lulc'),(self.model, 'custom_lulc'))
+        directional_link((w_questionaire, "custom_lulc"), (self.model, "custom_lulc"))
 
 
 class VegetationView(v.Layout, sw.SepalWidget):
@@ -82,7 +82,7 @@ class VegetationView(v.Layout, sw.SepalWidget):
             },
         )
 
-        self.display_btn = sw.Btn("Display on map", class_='mt-2')
+        self.display_btn = sw.Btn("Display on map", class_="mt-2")
 
         self.children = [self.reclassify_tile, self.display_btn]
 

@@ -1,7 +1,12 @@
 from pathlib import Path
 
 __all__ = [
-    "BASE_DIR", "RESULTS_DIR", "CLASS_DIR", "REPORTS_DIR", "MATRIX_DIR", "TASKS_DIR"
+    "BASE_DIR",
+    "RESULTS_DIR",
+    "CLASS_DIR",
+    "REPORTS_DIR",
+    "MATRIX_DIR",
+    "TASKS_DIR",
 ]
 
 BASE_DIR = Path("~").expanduser()

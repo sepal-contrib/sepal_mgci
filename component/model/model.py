@@ -21,31 +21,31 @@ class MgciModel(Model):
     # output parameters
     year = Unicode("", allow_none=True).tag(sync=True)
     source = Unicode("", allow_none=True).tag(sync=True)
-    
+
     # Custom
     custom_lulc = Bool(allow_none=True).tag(sync=True)
     # LCLU Classes (came from the reclassify model)
     lulc_classes = Dict(allow_none=True).tag(sync=True)
-    rsa = Bool(False, allow_none=True).tag(sync=True) 
+    rsa = Bool(False, allow_none=True).tag(sync=True)
 
     # Observation variables
     kapos_done = Int(0).tag(sync=True)
-    
-    task_file = Unicode('', allow_none=True).tag(sync=True)
-    
+
+    task_file = Unicode("", allow_none=True).tag(sync=True)
+
     # Results
     summary_df = Any(allow_none=True).tag(sync=True)
 
     @su.need_ee
     def __init__(self, aoi_model):
         """
-        
+
         Parameters:
-        
+
             Dashboard
             ---------
             results_file (str): file containing a task .csv file with name and task_id
-        
+
         """
 
         self.kapos_image = None
@@ -54,7 +54,7 @@ class MgciModel(Model):
 
         # Styled results dataframe
         self.mgci_report = None
-        
+
         # Save the GEE reduce to region json proces
         self.reduced_process = None
 
@@ -102,72 +102,71 @@ class MgciModel(Model):
             .where(aoi_dem.gte(300).And(aoi_dem.lt(1000)).And(local_range.gt(300)), 6)
             .selfMask()
         )
-        
-#         # Get the areas inside the other classes but which doesn't belong to them.
-#         inverse = kapos_1_6.unmask().Not().eq(1).selfMask()
 
-#         # Add the inverse band to the 1-6 classes
-#         all_kapos = kapos_1_6.addBands(inverse).reduce(ee.Reducer.Max())
+    #         # Get the areas inside the other classes but which doesn't belong to them.
+    #         inverse = kapos_1_6.unmask().Not().eq(1).selfMask()
 
-#         # Create neighborhoods, reduce them and update the mask
-#         # It will get the inverse areas with a border (the surrounding class)
-#         reduced_neighbors = (
-#             all_kapos.neighborhoodToBands(ee.Kernel.plus(1))
-#                 .reduce(ee.Reducer.Max())
-#                 .updateMask(inverse)
-#         )
+    #         # Add the inverse band to the 1-6 classes
+    #         all_kapos = kapos_1_6.addBands(inverse).reduce(ee.Reducer.Max())
 
-#         # Separate and clump individual 'objects'
-#         inverse_connected = inverse.connectedComponents({
-#           connectedness: ee.Kernel.plus(1),
-#           maxSize: 1024
-#         }).updateMask(inverse)
+    #         # Create neighborhoods, reduce them and update the mask
+    #         # It will get the inverse areas with a border (the surrounding class)
+    #         reduced_neighbors = (
+    #             all_kapos.neighborhoodToBands(ee.Kernel.plus(1))
+    #                 .reduce(ee.Reducer.Max())
+    #                 .updateMask(inverse)
+    #         )
 
-#         # Calculate its area
-#         connected_size = inverse_connected.select('labels')
-#           .connectedPixelCount({
-#             maxSize: 1024, 
-#             eightConnected: False
-#         })
+    #         # Separate and clump individual 'objects'
+    #         inverse_connected = inverse.connectedComponents({
+    #           connectedness: ee.Kernel.plus(1),
+    #           maxSize: 1024
+    #         }).updateMask(inverse)
 
-#         # Filter them by its area
-#         connected_area = (
-#             ee.Image.pixelArea()
-#                 .addBands(connected_size)
-#                 .lte(25000000)
-#                 .eq(1)
-#                 .selfMask()
-#                 .select('labels')
-#         )
+    #         # Calculate its area
+    #         connected_size = inverse_connected.select('labels')
+    #           .connectedPixelCount({
+    #             maxSize: 1024,
+    #             eightConnected: False
+    #         })
 
-#         # Remove the objects which are greather than the given area
-#         inverse_connected = inverse_connected.updateMask(connected_area)
+    #         # Filter them by its area
+    #         connected_area = (
+    #             ee.Image.pixelArea()
+    #                 .addBands(connected_size)
+    #                 .lte(25000000)
+    #                 .eq(1)
+    #                 .selfMask()
+    #                 .select('labels')
+    #         )
 
-#         # reduce by  the maximum value from the reduced_neighbors(with borders).
-#         reduced_neighbors = reduced_neighbors.addBands(
-#             inverse_connected.select('labels')
-#         )
+    #         # Remove the objects which are greather than the given area
+    #         inverse_connected = inverse_connected.updateMask(connected_area)
 
-#         result = reduced_neighbors.reduceConnectedComponents({
-#           reducer: ee.Reducer.max(),
-#           labelBand: 'labels'
-#         })
+    #         # reduce by  the maximum value from the reduced_neighbors(with borders).
+    #         reduced_neighbors = reduced_neighbors.addBands(
+    #             inverse_connected.select('labels')
+    #         )
 
-#         # Merge all classes
-#         self.kapos_image = kapos_1_6.addBands(result).reduce(ee.Reducer.max())
+    #         result = reduced_neighbors.reduceConnectedComponents({
+    #           reducer: ee.Reducer.max(),
+    #           labelBand: 'labels'
+    #         })
 
-    
+    #         # Merge all classes
+    #         self.kapos_image = kapos_1_6.addBands(result).reduce(ee.Reducer.max())
+
     def reduce_to_regions(self):
         """
         Reduce land use/land cover image to kapos regions using planimetric or real
         surface area
-        
+
         Attributes:
             lulc (ee.Image, categorical): Input image to reduce
             kapos (ee.Image, categorical): Input region
             aoi (ee.FeatureCollection, ee.Geometry): Region to reduce image
         Return:
-            GEE Dicionary process (is not yet executed), with land cover class area 
+            GEE Dicionary process (is not yet executed), with land cover class area
             per kapos mountain range
         """
 
@@ -180,10 +179,8 @@ class MgciModel(Model):
             raise Exception(
                 "Please go to the vegetation descriptor layer and reclassify an image"
             )
-        
-        lulc = self.vegetation_image.select(
-            [self.vegetation_image.bandNames().get(0)]
-        )
+
+        lulc = self.vegetation_image.select([self.vegetation_image.bandNames().get(0)])
 
         aoi = self.aoi_model.feature_collection.geometry()
 
@@ -201,9 +198,9 @@ class MgciModel(Model):
                 .max(lulc.projection().nominalScale())
                 .getInfo()
             )
-        
+
         self.reduced_process = (
-            image_area.divide(param.UNITS['sqkm'][0])
+            image_area.divide(param.UNITS["sqkm"][0])
             .updateMask(lulc.mask().And(self.kapos_image.mask()))
             .addBands(lulc)
             .addBands(self.kapos_image)
@@ -218,82 +215,83 @@ class MgciModel(Model):
                 }
             )
         )
-    
+
     def task_process(self):
         """
         Send the task to the GEE servers and process it in background. This will be
         neccessary when the process is timed out.
         """
-        
+
         # Create an unique name (to search after in Drive)
         unique_preffix = su.random_string(4).upper()
-        filename = f'{unique_preffix}_{self.aoi_model.name}_{self.year}.csv'
-        
-        task = ee.batch.Export.table.toDrive(**{
-                'collection': ee.FeatureCollection(
+        filename = f"{unique_preffix}_{self.aoi_model.name}_{self.year}.csv"
+
+        task = ee.batch.Export.table.toDrive(
+            **{
+                "collection": ee.FeatureCollection(
                     [ee.Feature(None, self.reduced_process)]
                 ),
-                'description': Path(filename).stem,
-                'fileFormat': 'CSV'
-            })
-        
+                "description": Path(filename).stem,
+                "fileFormat": "CSV",
+            }
+        )
+
         task.start()
-        
+
         # Create a file containing the task id to track when the process is done.
-        
-        task_id_file = (param.TASKS_DIR / filename)
-        task_id_file.write_text(f'{filename}, {task.id}')
-        
+
+        task_id_file = param.TASKS_DIR / filename
+        task_id_file.write_text(f"{filename}, {task.id}")
+
         return filename, task.id, str(task_id_file)
-    
+
     def download_from_task_file(self, task_file):
         """Download result from task file"""
-        
+
         gdrive = cs.GDrive()
 
         # Read and get the first row (it shouldn't be mroeo than one)
         filename, task_id = pd.read_csv(task_file, header=None).values.tolist()[0]
-        
+
         # Check if the task is completed
         task = gdrive.get_task(task_id.strip())
-        
+
         if task.state == "COMPLETED":
 
-            tmp_result_file = Path(param.TASKS_DIR, f'tmp_{filename}')
+            tmp_result_file = Path(param.TASKS_DIR, f"tmp_{filename}")
             gdrive.download_file(filename, tmp_result_file)
             return tmp_result_file
-        
+
         elif task.state == "FAILED":
             raise Exception(f"The task {Path(filename).stem} failed.")
-        
+
         else:
             raise SepalWarning(
                 f"The task '{Path(filename).stem}' state is: {task.state}."
             )
-            
-        
+
     def extract_summary_from_result(self, from_task=False):
         """
         From the gee result dictionary, extract the values and give a proper
         format in a pd.DataFrame.
-        
+
         Args:
-            from_task (bool, optional): Wheter the extraction will be from a results 
+            from_task (bool, optional): Wheter the extraction will be from a results
             file coming from a task or directly from the fly.
         """
-        
+
         if from_task:
             if not self.task_file:
                 raise Exception("You have to download and select a task file.")
-            
+
             # Dowload from file
             result_file = self.download_from_task_file(self.task_file)
             result_ = cs.read_from_task(result_file)
             result_file.unlink()
-            
+
         else:
             result_ = self.reduced_process.getInfo()
-        
+
         class_area_per_kapos = {}
         for group in result_["groups"]:
 
@@ -319,12 +317,12 @@ class MgciModel(Model):
 
         # kapos classes are the rows and lulc are the columns
         df = pd.DataFrame.from_dict(class_area_per_kapos, orient="index")
-        
+
         # Create the kapos class even if is not present in the dataset.
-        for kapos_range in list(range(1,7)):
+        for kapos_range in list(range(1, 7)):
             if not kapos_range in df.index:
-                df.loc[kapos_range]=0
-        
+                df.loc[kapos_range] = 0
+
         df.sort_index(inplace=True)
         df["green_area"] = df[param.GREEN_CLASSES].sum(axis=1)
         df["krange_area"] = df[param.DISPLAY_CLASSES].sum(axis=1)
@@ -357,7 +355,7 @@ class MgciModel(Model):
 
         # The following format respects
         # https://github.com/dfguerrerom/sepal_mgci/issues/23
-        
+
         if self.summary_df is None:
             raise Exception(cm.dashboard.alert.no_summary)
 
@@ -367,11 +365,10 @@ class MgciModel(Model):
         vegetation_names = {k: v[0] for k, v in self.lulc_classes.items()}
         vegetation_columns = list(vegetation_names.values())
 
-
         # Create the base columns for the statistics dataframe
         stats_df = self.summary_df.copy()
         # Replace 0 vals with "N" according with requirements.
-        stats_df.replace(0,NO_VALUE, inplace=True)
+        stats_df.replace(0, NO_VALUE, inplace=True)
         stats_df.rename(columns=vegetation_names, inplace=True)
         stats_df[INDICATOR] = INDICATOR_NUM
         stats_df[GEOAREANAM] = cs.get_geoarea(self.aoi_model)[0]
@@ -379,7 +376,7 @@ class MgciModel(Model):
         stats_df[TIMEPERIOD] = self.year
         stats_df[TIMEDETAIL] = self.year
         stats_df[SOURCE] = self.source
-        stats_df[NATURE] = CUSTOM_ if self.custom_lulc==True else GLOBAL_
+        stats_df[NATURE] = CUSTOM_ if self.custom_lulc == True else GLOBAL_
         stats_df[REPORTING] = REPORTING_VALUE
         stats_df[MOUNTAINCLASS] = "C" + stats_df.mgci.index.astype(str)
         stats_df = stats_df.reset_index()
@@ -401,13 +398,13 @@ class MgciModel(Model):
             mgci_df[SERIESCOD] = SERIESCOD_GRNCVI
 
             return mgci_df[BASE_COLS]
-        
-        #ER_MTN_GRNCOV
+
+        # ER_MTN_GRNCOV
         def get_green_cov_report():
             """Returns df with green cover and total mountain area for every mountain
             range"""
 
-            unit = param.UNITS['sqkm'][1]
+            unit = param.UNITS["sqkm"][1]
 
             green_area_df = pd.merge(base_df, stats_df, how="right")
             green_area_df[VALUE] = stats_df.green_area
@@ -445,7 +442,7 @@ class MgciModel(Model):
             )
             # Merge dataframes
 
-            unit = param.UNITS['sqkm'][1]
+            unit = param.UNITS["sqkm"][1]
 
             landcov_df = pd.merge(base_df, melt_df, how="right")
             landcov_df[SERIESDESC] = SERIESDESC_TTL.format(unit=unit)
