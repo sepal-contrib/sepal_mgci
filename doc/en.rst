@@ -1,66 +1,134 @@
-SEPAL-MGCI
-==========
+SEPAL-MGCI :sub:`beta`
+======================
 
-Definition 
-----------
+A tool to support the computation of SDG Indicator 15.4.2 – Mountain Green Cover Index and to monitor the ecosystem restoration.
 
-The Mountain Green Cover Index (MGCI) is designed to measure the extent and the changes of green vegetation in mountain areas - i.e. forest, shrubs, trees, pastureland, cropland, etc. – to monitor progress towards the mountain target. MGCI is defined as the percentage of green cover over the total surface of the mountain region of a given country and for a given reporting year. The index aims to monitor the evolution of the green cover and thus assess the status of conservation of mountain ecosystems.
+General Information
+-------------------
 
-The SEPAL-MGCI module will allow you to calculate this index by following the 4 steps that are described below. 
+About SEPAL-MGCI :sub:`beta`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+SEPAL-MGCI :sub:`beta` was developed by the Food and Agriculture Organization (FAO) of the United Nations to support member countries to compute and report against SDG Indicator 15.4.2 as well as a tool to track the progress of efforts to monitor the ecosystem restoration under the UN Decade on Ecosystem Restoration.
+
+SEPAL-MGCI :sub:`beta` is built on SEPAL (System for Earth Observation Data Access, Processing, and Analysis for Land Monitoring), an open-source cloud-based platform which allow users to query and process satellite data quickly and efficiently, tailor products for local needs and produce sophisticated and relevant geospatial analyses quickly. 
+
+SEPAL-MGCI is in a beta stage and therefore it is still under development. Please contact the SEPAL-MGCI :sub:`beta` team with any comments or suggestions. If you have specific bugs to report or improvements to the tool that you would like to suggest, you can also submit them via email to the maintainer (Daniel.GuerreroMachado@fao.org) or in Github’s issue tracker for SEPAL-MGCI :sub:`beta`.
+
+Authors 
+^^^^^^^
+
+SEPAL-MGCI :sub:`beta` has been developed by the Food and Agriculture Organization (FAO) of the United Nations, and has been funded by Norway's International Climate and Forest Iniciative (NICFI) and....
+Contributors to SEPAL-MGCI :sub:`beta` and its documentation include Daniel Guerrero, Pierrick Rambaud, Corinna Ravilious and Xavier de Lamo.
+
+Acknowledgements
+^^^^^^^^^^^^^^^^
+
+License
+^^^^^^^
+SEPAL-MGCI :sub:`beta` is free and open source. It is licensed undera `MIT license <https://opensource.org/licenses/MIT>`_ . The documentation is made available under the terms of the Creative Commons Attribution 4.0 International License (CC BY 4.0). The boundaries, names and designations used do not imply official endorsement or acceptance by the United Nations.
+
+Data sources
+^^^^^^^^^^^^
+
+SEPAL-MGCI draws on a number of global data sources to allow the computation of the SDG 15.4.2 indicator when national data is not available. The datasets described below have been made available by the following organizations under separate terms as indicated in their respective metadata.
+Land cover: European Space Agency (ESA) Climate Change Initiative (CCI) Land cover 
+Digital Elevation Model: The Shuttle Radar Topography Mission (SRTM), available at `Google Earth Engine <https://developers.google.com/earth-engine/datasets/catalog/CGIAR_SRTM90_V4>`_
+Administrative Boundaries: FAO GAUL: Global Administrative Unit Layers 2015, available at `Google Earth Engine <https://developers.google.com/earth-engine/datasets/catalog/FAO_GAUL_2015_level1>`_
+
+.. note:: The  Administrative Boundaries provided in SEPAL-MGCI are in the public domain. The designations employed and the presentation of material on this map do not imply the expression of any opinion whatsoever on the part of the Secretariat of the United Nations concerning the legal status of any country, territory, city or area or of its authorities, or concerning the delimitation of its frontiers or boundaries. If using SEPAL-MGCI for official purposes, it is recommended that users use an official boundary provided by the designated office of their country.
+
+Background
+^^^^^^^^^^
+
+SDG Indicator 15.4.2 – Mountain Green Cover Index (MGCI) is one of the two indicators under SDG Target 15.4, which aims to ‘’ensure the conservation of mountain ecosystems, including their biodiversity, to enhance their capacity to provide benefits which are essential for sustainable development’’. The Food and Agriculture Organization (FAO) of the United Nations is the custodian agency of this indicator. The Mountain Green Cover Index (MGCI) is designed to measure the extent and the changes of green vegetation in mountain areas to monitor progress towards SDG Target 15.4.
+
+The MGCI is defined as the ratio of the mountain green cover area to the total mountain area:
+
+.. math::
     
-Requirements
-------------
+    MGCI = (Mountain Green Cover Area)/(Total Mountain Area)
+
+Where: 
+
+- **Mountain Green Cover Area**: sum of mountain area (km :sup:`2`) covered by cropland, grassland, forestland, shrubland and wetland, as defined based on the IPCC classification (Penman et al. 2003). This component is calculated from the vegetation descriptor layer. 
+- **Total Mountain Area**: total area (Km2) of mountains. In both the numerator and denominator, mountain area is defined according to Kapos et al. 2000. This component is calculated from the mountain description layer.
+- **Vegetation descriptor layer**: The vegetation descriptor layer categorizes land cover into green and non-green areas. Green vegetation includes both natural vegetation and vegetation resulting from anthropic activity (e.g. crops, afforestation, etc.). Non-green areas include very sparsely vegetated areas, bare land, water, permanent ice/snow and urban areas. The vegetation description layer is derived from a land cover map, where land cover categories are classified into IPCC categories and then in green/non-green areas. 
+- **Mountain descriptor layer**:  The mountain descriptor layer consists in a map of mountain classes following the UNEP-WCMC classification (Kapos et al. 2000). The UNEP-WCMC classification classifies the world mountain areas according altitude, slope and elevation range into the following categories.
+
+
+.. _mountain_classes:
+.. csv-table:: Mountain classes
+   :header: "UNEP-WCMC Mountain Class", "Description"
+   :widths: auto
+   :align: center
+
+   "1","Elevation > 4.500 meters"
+   "2","Elevation 3.500–4.500 meters"
+   "3","Elevation 2.500–3.500 meters"
+   "4","Elevation 1.500–2.500 meters and slope > 2"
+   "5","Elevation 1.000–1.500 meters and slope > 5 or local elevation range (LER 7 kilometer radius) > 300 meters"
+   "6","Elevation 300–1.000 meters and local elevation range (7 kilometer radius) > 300 meters"
+
+SEPAL-MGCI :sub:`beta` allows the user to compute each of these description layers to then calculate MGCI values for any given area using both global and user-provided data. The results of this analysis can then be exported to a set of standardized reporting tables where MGCI values are disaggregated by mountain class and IPCC land category, as specified in the metadata of SDG Indicator 15.4.2.
+
+References
+^^^^^^^^^^
+
+Kapos, V., Rhind, J., Edwards, M., Prince, M., & Ravillous, C. (2000). Developing a map of the world’s mountain forests. In M. F. Price , & N. Butt (Eds.), Forests in Sustainable Mountain Development: A State-of-Knowledge Report for 2000 (pp. 4-9). Wallingford: CAB International.  
+Penman, J., Gytarsky, M., Hiraishi, T., Krug, T., Kruger, D., Pipatti, R., Buendia, L., Miwa, K., Ngara, T., Tanabe, K. (2003). Good Practice Guidance for Land Use, Land-use Change and Forestry. Good Practice Guidance for Land Use, Land-use Change and Forestry. 
+
+Before using SEPAL-MGCI :sub:`beta`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To run the MGCI SEPAL module you will need a web browser, an Internet connection, and a SEPAL and Google Earth Engine (GEE) account:
-
-- SEPAL: is the environment where the module is deployed and therefore displayed. To create an account, please follow the `registration steps <https://docs.sepal.io/en/latest/setup/register.html#sign-up-to-sepal>`_ and then familiarize yourself with the tool by exploring its interface.
-- GEE: the module has been built under the GEE Python API, which means that all the computational steps are done through the GEE servers. Please follow the `registration steps <https://docs.sepal.io/en/latest/setup/gee.html#create-a-gee-account>`_ and don't forget to `initialize the home folder <https://docs.sepal.io/en/latest/setup/gee.html#initialize-the-home-folder>`_.
+- SEPAL: is the environment where the SEPAL-MGCI :sub:`beta` is deployed and therefore displayed. To create a SEPAL account, please follow the `registration steps <https://docs.sepal.io/en/latest/setup/register.html#sign-up-to-sepal>`_ and then familiarize yourself with the tool by exploring its interface.
+- Google Earth Engine (GEE): SEPAL-MGCI :sub:`beta` has been built under the GEE Python API, which means that all the computational steps are done through the GEE servers. To open a GEE account, please follow the `registration steps <https://docs.sepal.io/en/latest/setup/gee.html#create-a-gee-account>`_ and don't forget to `initialize the home folder <https://docs.sepal.io/en/latest/setup/gee.html#initialize-the-home-folder>`_.
 - Connect your SEPAL and GEE accounts: the last step is to connect both accounts, you can achieve this by following the `step-by-step <https://docs.sepal.io/en/latest/setup/gee.html#connection-between-gee-and-sepal>`_.
 
 SEPAL interface
 ---------------
 
-If you are new to SEPAL, you would like to take a look over the interface and familiarize yourself with the main tools. A detailed description of the features can be consulted in the `interface documentation <https://docs.sepal.io/en/latest/setup/presentation.html#sepal-interface>`_. 
+If you are new to SEPAL, it is recommended to take a look over the interface and familiarize yourself with the main tools. A detailed description of the features can be consulted in the `interface documentation <https://docs.sepal.io/en/latest/setup/presentation.html#sepal-interface>`_. 
+-To open SEPAL-MGCI :sub:`beta` use the `apps tab <https://docs.sepal.io/en/latest/setup/presentation.html#apps-tab>`_ and navigate through the pages, or type into the search box "Mountain Green Cover Index". 
+- Click over the app drawer and wait patiently until the SEPAL-MGCI :sub:`beta` module is displayed in your session (it may take a few minutes). The module should look like the below image:
 
-- Use the `apps tab <https://docs.sepal.io/en/latest/setup/presentation.html#apps-tab>`_ and navigate through the pages, or type into the search box the "Mountain Green Cover Index" module. 
+SEPAL-MGCI :sub:`beta` module
+-----------------------------
 
-- Click over the app drawer and wait patiently until the module is displayed in your session, which should look like the below image:
+SEPAL-MGCI :sub:`beta`, as any other SEPAL module is divided into two main sections:
 
-
-MGCI Module
------------
-
-A SEPAL module is divided into two main sections:
-
-- Process drawers: where you can find the steps or sections that are designed to be used to accomplish the goal of the module. The MGCI module has therefore four main steps, and the index will be calculated based on the user inputs:
+- Process drawers: where you can find the processing steps to accomplish the goal of the module. SEPAL-MGCI :sub:`beta` is composed by 4 steps:
 
   - Area of interest selection
   - Mountain descriptor
   - Vegetation descriptor
   - MGCI results
 
-- Help drawers: used to describe the tool, objectives and give a background about how it was developed.
-    
-  - Source code: the module was developed under an MIT license, which means that the development is freely accessible and the code is public. It will link you to the GitHub repository of the module.
-  - Wiki: it will point to the latest documentation. If you have any problems, this is the place where you can start learning the workflow and features of the module.
-  - Bug report: no tool is perfect and we are not exempt from bugs, fortunately, our team is always aware and constat alert to fix anything that is supposed to work well, so this section can be used to report any unexpected result or behavior. To report an error please follow the `contribution guidelines <https://github.com/dfguerrerom/sepal_mgci/blob/master/CONTRIBUTE.md>`_.
+- Help drawers: used to describe the tool, objectives and give a background about how it was developed:
+
+  - Source code: the module was developed under a `MIT license <https://opensource.org/licenses/MIT>`_, which means that the development is freely accessible and the code is public. It will link you to the GitHub repository of the module.
+  - Wiki: It will point to the latest documentation on SEPAL-MGCI :sub:`beta`. This is where you can start learning the workflow and features of the module.
+  - Bug report: No tool is perfect and we are not exempt from bugs, fortunately, our team is always aware and on constant alert to fix anything that is supposed to work well. Use this section to report any unexpected result or behavior. To report do so please follow the `contribution guidelines <https://github.com/dfguerrerom/sepal_mgci/blob/master/CONTRIBUTE.md>`_.
 
 
 Area of interest (AOI)
 ----------------------
-The calculation of the MGCI will be restricted to a specific area of interest, in this step, you will have the option to choose between a predefined list of administrative layers or to use a custom dataset. The available options are described below:
+
+The calculation of the MGCI will be restricted to a specific area of interest. In this step, you will have the option to choose between a predefined list of administrative layers or to use a custom dataset. The available options are described below:
  
 - Predefined layers: 
    - Country/province
    - Administrative level 1
    - Administrative level 2
-- Custom layers
-   - Vector file
-   - Drawn shapes on the map
-   - Google Earth Engine Asset
    
-After selecting the desired area, click over the :guilabel:`Select these inputs` button and the map will show up your selection.
+- Custom layers
+   - Vector file: 
+   - GEE Asset name: `Upload an asset in GEE <https://docs.sepal.io/en/latest/setup/gee.html#upload-files-to-gee>`_
+   
+As all the processing is done in GEE, all custom layers have to be previously stored as an `earth engine asset <https://developers.google.com/earth-engine/guides/asset_manager>`_ in your GEE account (it could be private) or in a third-party account as a public asset (see `how to upload an asset in GEE <https://docs.sepal.io/en/latest/setup/gee.html#upload-files-to-gee>`_). The dropdown menu will query all the assets in your GEE folder that matches the Image type. You can select it from the dropdown or write/paste it directly.
+
+.. warning:: The  Administrative Boundaries provided in SEPAL-MGCI are in the public domain. The designations employed and the presentation of material on this map do not imply the expression of any opinion whatsoever on the part of the Secretariat of the United Nations concerning the legal status of any country, territory, city or area or of its authorities, or concerning the delimitation of its frontiers or boundaries. If using SEPAL-MGCI for official purposes, it is recommended that users use an official boundary provided by the designated office of their country.After selecting the desired area, click over the :guilabel:`Select these inputs` button and the map will show up your selection.
 
 .. note:: 
 
@@ -74,25 +142,12 @@ After selecting the desired area, click over the :guilabel:`Select these inputs`
 Mountain descriptor layer 
 -------------------------
 
-Mountains can be defined with reference to a variety of parameters, such as climate, elevation, ecology (Körner et al., 2011) (Karagulle et al., 2017). This methodology adheres to the UNEP- WCMC mountain definition, relying in turn on the mountain description proposed by Kapos et al. (2000).
-   
-The global mountain descriptor layer is based on the mountain classification proposed by Kapos et al. (2000):
-
-- Class 1: elevation > 4500 meters
-- Class 2: elevation 3500 - 4500 meters
-- Class 3: elevation 2500 – 3500 meters
-- Class 4: elevation 1500 – 2500 meters and slope ≥ 2
-- Class 5: elevation 1,000–1,500 meters and slope ≥ 5 or local elevation range (7 kilometers radius) ≥ 300 meters
-- Class 6: elevation 300–1,000 meters and local elevation range (7 kilometers radius) ≥ 300 meters outside 23°N—19°S
-- Class 0: Defined to represent the non-mountainous areas.
-
-The mountain description layer used to derive the global estimates was created by the US Geological Survey from a 250 m Digital Elevation Model (DEM) (Sayre et al. 2018)
-These datasets may be replaced by nationally relevant data sources when available.
+This section of SEPAL-MGCI :sub:`beta` produces a UNEP-WCMC mountain class map for the study area selected in the previous step using a Digital Elevation Model (DEM) as an input. You have the option to provide a custom DEM for your study area or use The Shuttle Radar Topography Mission (SRTM), at 90 meter resolution developed by NASA/CGIAR. 
 
 Questionnaire
 ^^^^^^^^^^^^^
 
-The questionnaire will help you to decide whether to use a custom dataset or a default DEM. By clicking over the desired option, the module will hide or display a text box to insert or select an asset id.
+Here you have to indicate the DEM dataset you wish to use to develop the mountain class map. If you wish to use your own DEM dataset, select “Yes”. By clicking over the desired option, the module will hide or display a text box to insert or select an asset id.
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/2_questionaire.PNG
    :align: center
@@ -114,87 +169,88 @@ After clicking the button, the module will create the mountain descriptor layer,
 Vegetation descriptor layer
 ---------------------------
 
-The vegetation descriptor layer categorizes land cover into green and non-green areas. Green vegetation includes both natural vegetation and vegetation resulting from anthropic activity (e.g. crops, afforestation, etc.). Non-green areas include very sparsely vegetated areas, bare land, water, permanent ice/snow, and urban areas. The vegetation description layer can be derived in different ways, but remote sensing-based land cover maps are the most convenient data source for this purpose, as they provide the required information on green and non-green areas in a spatially explicit manner and allow for comparison over time through land cover change analysis.
-
-
-.. _ipcc_classes:
-.. csv-table:: IPCC Classification!
-   :header: "CODE", "Description", "Color"
-   :widths: auto
-   :align: center
-
-   "1","Forest","#044D02"
-   "2","Grassland","#F5FF00"
-   "3","Cropland","#FF8100"
-   "4","Wetland","#0013FF"
-   "5","Settlement","#FFFFFF"
-   "6","Other land","#FF00DE"
-   
+This section of SEPAL-MGCI :sub:`beta` produces the vegetation descriptor layer needed to compute the MGCI for the selected study area. It does so by reclassifying a land cover map into the six IPCC land cover classes (Forest, Cropland, Grassland, Wetland, Settlements and Other Land) and then into green and non-green cover following the reclassification rules specified in the indicator’s metadata. 
 
 Questionnaire
 ^^^^^^^^^^^^^
 
-The purpose of the questionnaire is to display only the required inputs by the user depending on the answers.
-
-As well as the mountain descriptor layer, this panel will help you to use your land cover/use map in case that you have one or to select the default parameters.
-
+Here you have to indicate the land cover map that you wish to use to compute the vegetation descriptor layer. If you wish to use your own land cover map, select “yes”. If you select “no”, SEPAL-MGCI :sub:`beta` will use the CCI Land Cover datasets developed by the European Space Agency for the years 1992-2018 at 300 meters resolution to produce the vegetation descriptor layer for the selected area of interest.
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_questionnaire.PNG
    :align: center
    :width: 600
 
 
-Use default dataset
-:::::::::::::::::::
+If you have selected 'No'
+:::::::::::::::::::::::::
 
-By selecting default, the module will use the `land cover time series map <http://maps.elie.ucl.ac.be/CCI/viewer/index.php>`_ produced by the European Space Agency (ESA) under the Climate Initiative (CCI) reclassified under the 6 IPCC classes, and you just have to select the year of interest in the dropdown menu, available to select the band.
+SEPAL-MGCI :sub:`beta` will use the ESA-CCI Land Cover dataset and you just have to select in the dropdown menu the year for which you want to compute the analysis (“select band/property”). Once you have selected the year, click on ‘display on map” to create an IPCC land cover class.
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_default.PNG
    :align: center
    :width: 600
 
+If you have selected 'Yes'
+::::::::::::::::::::::::::
 
-Use custom dataset
-::::::::::::::::::
-
-As the vegetation layer only has to include the :ref:`six IPCC classes <ipcc_classes>`, the module won't be able to ensure that your custom dataset has these classes, to help in this matter, this section will display a reclassification tool to help you reclassify the values of the land cover/use map.
+Similarly to the mountain description layer, to be able to use your own land cover map you would need upload it first in your GEE account or in a third-party account as a public asset. The dropdown menu will query all the assets in your GEE folder that matches the Image type. You can select it from the dropdown or directly copy and paste the link to the dataset.
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_custom.PNG
    :align: center
    :width: 600
 
+To allow SEPAL-MGCI :sub:`beta` to create an IPCC land cover class map using the land cover map you have provided, you will need to specify how the land cover classes of your map have to be reclassified into the :ref:`six IPCC classes <ipcc_classes>`.  You can do this in two different ways:
 
-If you do not have a reclassification matrix, —after selecting the dataset and clicking over :guilabel:`get table`— the module will search over all of its pixel values and it will display an interactive table where you can manually reclassify from old pixel values to new ones. As you can see in the below table, the example dataset has values that do not match with the :ref:`IPCC classes <ipcc_classes>`, so with prior knowledge about the dataset, you can use the corresponding combo box that is in the right column to reclassify that specific value. By default, the module will use as target the 6 IPCC classes.
+- Upload a table in a csv format (reclassification matrix) showing how the IPCC land cover equivalent of the classes of your land cover map. See its structure in :ref:`reclassification matrix <reclass_table>`. To provide the information in this way, click on :guilabel:`yes` below the question 'Do you have a reclassification matrix table in a csv format'?.
+
+  After having the table in the SEPAL enviroment, click over the :guilabel:`Filename` and navigate trhough the folders and select your table.
+
+.. _reclass_table:
+.. tip:: What is a reclassification matrix table?:
+    A reclassification matrix is a comma-separated values (CSV) file used to reclassify old pixel values into new ones. The CSV file only has to contain two values per line, the first one refers to the `from` value, while the second is the `target` value, just as it is described in the following table:
+    
+    .. csv-table:: Reclassification table example
+       :header: "Origin class", "Target class"
+       :widths: auto
+       :align: center
+   
+       "311", "1"
+       "111", "5"
+       "232", "3"
+       "233", "3"
+       "333", "6"
+       "511", "4"
+       "...","..."
+   
+   To upload a classification table, please see the `how to exchange files in SEPAL <https://docs.sepal.io/en/latest/setup/filezilla.html#exchange-files-with-sepal>`_.
+
+
+- Directly specify the reclassification rules by clicking on :guilabel:`get table` and manually indicate the IPCC land cover equivalent (in the destination class column) of each of the land cover classes of your custom dataset (in the original class column) in the interactive table.  To provide the reclassification matrix using this method click on “No” below the question “Do you have a reclassification matrix table in a csv format’’?
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_1_reclassify_table.PNG
    :align: center
    :width: 600
 
-
 .. tip:: After manually reclassifying your dataset, you can use the :guilabel:`save` button to store the table as a CSV file and you can use it later instead of manually filling up the table.
-
-Alternatively, if you have a reclassification table, it means that you do not have to manually fill up all the new values, instead, you could use this table to match the old values with the new ones, if a value in your dataset is not present in the reclassify table, the new value will be empty, so you will have to manually select the new value.
-
-.. tip:: What is a reclassification matrix table?:
-    A reclassification matrix is a comma-separated values (CSV) file used to reclassify old pixel values into new ones. The CSV file only has to contain two values per line, the first one refers to the `from` value, while the second is the `target` value.
-
+ 
 Display results
 ^^^^^^^^^^^^^^^
 
-Once you have reclassified the new values or used the default dataset, you can display the land use/cover map in the map by clicking over the "display map" button. Depending on your area of interest, the map should look like this:
-
-
-.. tip:: Remember that the MGCI is only calculated over the mountain classes, so the vegetation layer will mask out the areas where there is no presence of a mountain class.
+Once you have reclassified the new values or used the default dataset, you can display the land use/cover map in the map by clicking over the :guilabel:`display map` button. Depending on your area of interest, the map should look like this:
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_3_vegetation_descriptor_2.PNG
    :align: center
    :width: 600
 
+.. tip:: Remember that the MGCI is only calculated over the mountain classes, so the vegetation layer will mask out the areas where there is no presence of a mountain class.
+
+
 
 MGCI calculation
 ----------------
 
-Once you have set the inputs in the previous steps, the module will calculate the area of every IPCC class into each mountain class range as well as the overall result. The module has the option to do the calculation using the planimetric area or the `real surface area <https://www.fs.fed.us/rm/pubs_other/rmrs_2004_jenness_j001.pdf>`_. 
+Once you have set the inputs in the previous steps, click on “Calculate MGCI” to calculate the both area of each IPCC land cover class and MGCI values for the whole mountain area and for each mountain class. The module has the option to do the calculation using the planimetric area or the `real surface area <https://www.fs.fed.us/rm/pubs_other/rmrs_2004_jenness_j001.pdf>`_. 
+Each section will provide an overall MGCI displayed in a circle along with the summary of the area in each of the IPCC classes, as is shown in the below image.
 
 .. _calculation:
 Calculation
@@ -207,7 +263,7 @@ Depending on the size of your area of interest and whether you are using the rea
    :width: 600
 
 
-To overcome this limitation, the process will be executed as a task —which are operations that are capable of running much longer than the standard timeout (see `gee tasks <https://developers.google.com/earth-engine/guides/playground#tasks-tab>`_ )—. If the computation is created as a task, you will see a similar message as the shown in the below image, and to get the results, please see the :ref:`calculation from task <calculation_from_task>` section, otherwise, the result will be displayed on the dashboard (see :ref:`dashboard <display>`).
+To overcome this limitation, the process will be executed as a task —which are operations that are capable of running much longer than the standard timeout (see `gee tasks <https://developers.google.com/earth-engine/guides/playground#tasks-tab>`_)—. If the computation is created as a task, you will see a similar message as the shown in the below image, and to get the results, please see the :ref:`calculation from task <calculation_from_task>` section, otherwise, the result will be displayed on the dashboard (see :ref:`dashboard <display>`).
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/4_computation_timeout.PNG
    :align: center
@@ -236,22 +292,20 @@ No matter if you the computation is done on the fly or if you have used the task
 - Overall MGCI: it indicates the overall index for the whole mountain classes.
 - Mountain class MGCI: it indicates the index for that specific mountain range.
 
-.. note:: The module will only display the IPCC classes. The user has to reclassify the values from 1 to 6, otherwise, the module will nest those classes into the "other lands" class (6). 
+.. note:: The module will only work with the 6 IPCC classes. If you have provided different values to the classes, the module will classify them as "other lands" class (IPCC 6). 
 
-
-Each section will provide an overall MGCI displayed in a circle along with the summary of the area in each of the IPCC classes, as is shown in the below image.
 
 Export results
 ^^^^^^^^^^^^^^
 
-After the calculation is done, the export button will become available. To download the report, you just have to fill up the institution that will issue the report and the year of the land use/cover map, and the result will download three files:
+After the calculation is done, the export button will become available. To generate the report, you have to enter the name of the institution you belong to and click on :guilable:`export reporting tables` for the year of the land use/cover map. The report will consists in the following three files:
 
 - ER_MTN_GRNCOV: Mountain green cover area (skqm).
 - ER_MTN_GRNCVI: Mountain Green Cover Index.
 - ER_MTN_TOTL: Total mountain area (sqkm)
 
-
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/4_dashboard_export.PNG
    :align: center
    :width: 600
 
+Once the process is done, the alert message will show you where the report files are stored, to download them, you can use any of the options available at `exchange files in SEPAL <https://docs.sepal.io/en/latest/setup/filezilla.html#exchange-files-with-sepal>`_.
