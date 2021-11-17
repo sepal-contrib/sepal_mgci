@@ -197,6 +197,7 @@ MGCI calculation
 Once you have set the inputs in the previous steps, the module will calculate the area of every IPCC class into each mountain class range as well as the overall result. The module has the option to do the calculation using the planimetric area or the `real surface area <https://www.fs.fed.us/rm/pubs_other/rmrs_2004_jenness_j001.pdf>`_. 
 
 .. _calculation:
+
 Calculation
 ^^^^^^^^^^^
 
@@ -215,6 +216,7 @@ To overcome this limitation, the process will be executed as a task —which are
 
 
 .. _calculation_from_task:
+
 Calculation from task
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -228,6 +230,7 @@ If the computation can't be done on the fly, a new file containing the id of the
 
 
 .. _display:
+
 Display dashboard
 ^^^^^^^^^^^^^^^^^
 
