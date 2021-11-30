@@ -14,6 +14,7 @@ __all__ = [
     "ESA_IPCC_MATRIX",
     "UNITS",
     "M49_FILE",
+    "DEM_DEFAULT",
 ]
 
 # SET SOME PARAMETERS
