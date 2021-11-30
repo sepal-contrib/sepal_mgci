@@ -51,7 +51,12 @@ CUSTOM_AOI_ITEMS = [
 ]
 
 
-LULC_DEFAULT = "users/geflanddegradation/toolbox_datasets/lcov_esacc_1992_2018"
+LULC_DEFAULT = "users/amitghosh/sdg_module/esa_cci_lc_1992_2019"
+DEM_DEFAULT = "CGIAR/SRTM90_V4"
+
+# dem = ee.Image("USGS/SRTMGL1_003") # srtm_1
+# dem = ee.Image("USGS/GTOPO30")
+
 
 # Define the translation matrix between ESA and IPCC classes
 ESA_IPCC_MATRIX = Path(__file__).parent / "esa_ipcc_matrix.csv"

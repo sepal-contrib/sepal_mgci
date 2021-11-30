@@ -24,6 +24,8 @@ class MgciModel(Model):
 
     # Custom
     custom_lulc = Bool(allow_none=True).tag(sync=True)
+    custom_dem_id = Unicode(allow_none=True).tag(sync=True)
+
     # LCLU Classes (came from the reclassify model)
     lulc_classes = Dict(allow_none=True).tag(sync=True)
     rsa = Bool(False, allow_none=True).tag(sync=True)
@@ -74,10 +76,7 @@ class MgciModel(Model):
             self.dem = ee.Image(self.custom_dem_id)
 
         else:
-            # TODO: decide which of the assets use
-            # dem = ee.Image("USGS/SRTMGL1_003") # srtm_1
-            self.dem = ee.Image("CGIAR/SRTM90_V4")  # srtm_3
-            # self.dem = ee.Image("USGS/GTOPO30")
+            self.dem = ee.Image(param.DEM_DEFAULT)
 
         aoi_dem = self.dem.clip(aoi)
 

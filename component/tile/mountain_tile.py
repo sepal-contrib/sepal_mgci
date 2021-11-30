@@ -69,7 +69,9 @@ class MountainView(v.Layout, sw.SepalWidget):
         self.btn = sw.Btn(cm.mountain_layer.btn, class_="mb-2")
 
         # bind the widgets to the model
-        self.model.bind(self.w_use_custom, "use_custom")
+        self.model.bind(self.w_use_custom, "use_custom").bind(
+            self.w_custom_dem, "custom_dem_id"
+        )
 
         self.children = [self.alert, self.w_use_custom, self.w_custom_dem, self.btn]
 
