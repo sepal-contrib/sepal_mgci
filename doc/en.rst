@@ -344,6 +344,7 @@ If the computation can't be done on the fly, a new file containing the id of the
    :align: center
    :width: 600
    :alt: Download from task
+   
 |
 
 .. _display:
