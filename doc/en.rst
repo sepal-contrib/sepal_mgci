@@ -13,7 +13,7 @@ SEPAL-MGCI :sub:`beta` was developed by the Food and Agriculture Organization (F
 
 SEPAL-MGCI :sub:`beta` is built on SEPAL (System for Earth Observation Data Access, Processing, and Analysis for Land Monitoring), an open-source cloud-based platform which allow users to query and process satellite data quickly and efficiently, tailor products for local needs and produce sophisticated and relevant geospatial analyses quickly. 
 
-SEPAL-MGCI is in a beta stage and therefore it is still under development. Please contact the SEPAL-MGCI :sub:`beta` team with any comments or suggestions. If you have specific bugs to report or improvements to the tool that you would like to suggest, please use the `GitHub’s issue tracker <https://github.com/dfguerrerom/sepal_mgci/issues>`_ of the SEPAL-MGCI :sub:`beta` module and do follow the `contribution guidelines <https://github.com/dfguerrerom/sepal_mgci/blob/master/CONTRIBUTE.md>`_.
+SEPAL-MGCI is in a beta stage and therefore it is still under development. Please contact the SEPAL-MGCI :sub:`beta` team with any comments or suggestions. If you have specific bugs to report or improvements to the tool that you would like to suggest, please use the `GitHub’s issue tracker <https://github.com/dfguerrerom/sepal_mgci/issues>`__ of the SEPAL-MGCI :sub:`beta` module and do follow the `contribution guidelines <https://github.com/dfguerrerom/sepal_mgci/blob/master/CONTRIBUTE.md>`__.
 
 Authors 
 ^^^^^^^
@@ -24,18 +24,18 @@ Contributors to SEPAL-MGCI :sub:`beta` and its documentation include Daniel Guer
 
 License
 ^^^^^^^
-SEPAL-MGCI :sub:`beta` is free and open source. It is licensed under `MIT license <https://opensource.org/licenses/MIT>`_ . The documentation is made available under the terms of the `Creative Commons Attribution 4.0 International License (CC BY 4.0) <https://creativecommons.org/licenses/by/4.0>`_ . The boundaries, names and designations used do not imply official endorsement or acceptance by the United Nations.
+SEPAL-MGCI :sub:`beta` is free and open source. It is licensed under `MIT license <https://opensource.org/licenses/MIT>`__. The documentation is made available under the terms of the `Creative Commons Attribution 4.0 International License (CC BY 4.0) <https://creativecommons.org/licenses/by/4.0>`__. The boundaries, names and designations used do not imply official endorsement or acceptance by the United Nations.
 
 Data sources
 ^^^^^^^^^^^^
 
 SEPAL-MGCI draws on a number of global data sources to allow the computation of the SDG 15.4.2 indicator when national data is not available. The datasets described below have been made available by the following organizations under separate terms as indicated in their respective metadata.
 
-- **Land cover**: European Space Agency (ESA) Climate Change Initiative (CCI) Land cover available at the `ESA-CCI viewer <http://maps.elie.ucl.ac.be/CCI/viewer/index.php>`_.
+- **Land cover**: European Space Agency (ESA) Climate Change Initiative (CCI) Land cover available at the `ESA-CCI viewer <http://maps.elie.ucl.ac.be/CCI/viewer/index.php>`__.
 
-- **Digital Elevation Model**: The Shuttle Radar Topography Mission (SRTM), available at `Google Earth Engine <https://developers.google.com/earth-engine/datasets/catalog/CGIAR_SRTM90_V4>`_.
+- **Digital Elevation Model**: The Shuttle Radar Topography Mission (SRTM), available at `Google Earth Engine <https://developers.google.com/earth-engine/datasets/catalog/CGIAR_SRTM90_V4>`__.
 
-- **Administrative Boundaries**: FAO GAUL: Global Administrative Unit Layers 2015, available at `Google Earth Engine <https://developers.google.com/earth-engine/datasets/catalog/FAO_GAUL_2015_level1>`_.
+- **Administrative Boundaries**: FAO GAUL: Global Administrative Unit Layers 2015, available at `Google Earth Engine <https://developers.google.com/earth-engine/datasets/catalog/FAO_GAUL_2015_level1>`__.
 
 .. note:: The  Administrative Boundaries provided in SEPAL-MGCI are in the public domain. The designations employed and the presentation of material on this map do not imply the expression of any opinion whatsoever on the part of the Secretariat of the United Nations concerning the legal status of any country, territory, city or area or of its authorities, or concerning the delimitation of its frontiers or boundaries. If using SEPAL-MGCI for official purposes, it is recommended that users use an official boundary provided by the designated office of their country.
 
@@ -45,6 +45,7 @@ Background
 SDG Indicator 15.4.2 – Mountain Green Cover Index (MGCI) is one of the two indicators under SDG Target 15.4, which aims to:
 
     "*ensure the conservation of mountain ecosystems, including their biodiversity, to enhance their capacity to provide benefits which are essential for sustainable development*". 
+
 The Food and Agriculture Organization (FAO) of the United Nations is the custodian agency of this indicator. The Mountain Green Cover Index (MGCI) is designed to measure the extent and the changes of green vegetation in mountain areas to monitor progress towards SDG Target 15.4.
 
 The MGCI is defined as the ratio of the mountain green cover area to the total mountain area:
@@ -102,16 +103,16 @@ Before using SEPAL-MGCI :sub:`beta`
 
 To run the MGCI SEPAL module you will need a web browser, an Internet connection, and a SEPAL and Google Earth Engine (GEE) account:
 
-- **SEPAL**: is the environment where the SEPAL-MGCI :sub:`beta` is deployed and therefore displayed. To create a SEPAL account, please follow the `registration steps <https://docs.sepal.io/en/latest/setup/register.html#sign-up-to-sepal>`_ and then familiarize yourself with the tool by exploring its interface.
-- **Google Earth Engine (GEE)**: SEPAL-MGCI :sub:`beta` has been built under the GEE Python API, which means that all the computational steps are done through the GEE servers. To open a GEE account, please follow the `registration steps <https://docs.sepal.io/en/latest/setup/gee.html#create-a-gee-account>`_ and don't forget to `initialize the home folder <https://docs.sepal.io/en/latest/setup/gee.html#initialize-the-home-folder>`_.
-- **Connect your SEPAL and GEE accounts**: the last step is to connect both accounts, you can achieve this by following the `step-by-step <https://docs.sepal.io/en/latest/setup/gee.html#connection-between-gee-and-sepal>`_.
+- **SEPAL**: is the environment where the SEPAL-MGCI :sub:`beta` is deployed and therefore displayed. To create a SEPAL account, please follow the `registration steps <https://docs.sepal.io/en/latest/setup/register.html#sign-up-to-sepal>`__ and then familiarize yourself with the tool by exploring its interface.
+- **Google Earth Engine (GEE)**: SEPAL-MGCI :sub:`beta` has been built under the GEE Python API, which means that all the computational steps are done through the GEE servers. To open a GEE account, please follow the `registration steps <https://docs.sepal.io/en/latest/setup/gee.html#create-a-gee-account>`__ and don't forget to `initialize the home folder <https://docs.sepal.io/en/latest/setup/gee.html#initialize-the-home-folder>`__.
+- **Connect your SEPAL and GEE accounts**: the last step is to connect both accounts, you can achieve this by following the `step-by-step <https://docs.sepal.io/en/latest/setup/gee.html#connection-between-gee-and-sepal>`__.
 
 SEPAL interface
 ---------------
 
-If you are new to SEPAL, it is recommended to take a look over the interface and familiarize yourself with the main tools. A detailed description of the features can be consulted in the `interface documentation <https://docs.sepal.io/en/latest/setup/presentation.html#sepal-interface>`_. 
+If you are new to SEPAL, it is recommended to take a look over the interface and familiarize yourself with the main tools. A detailed description of the features can be consulted in the `interface documentation <https://docs.sepal.io/en/latest/setup/presentation.html#sepal-interface>`__. 
 
-To open SEPAL-MGCI :sub:`beta` use the `apps tab <https://docs.sepal.io/en/latest/setup/presentation.html#apps-tab>`_ and navigate through the pages, or type into the search box "Mountain Green Cover Index", click over the app drawer and wait patiently until the SEPAL-MGCI :sub:`beta` module is displayed in your session (it may take a few minutes). The module should look like the following image:
+To open SEPAL-MGCI :sub:`beta` use the `apps tab <https://docs.sepal.io/en/latest/setup/presentation.html#apps-tab>`__ and navigate through the pages, or type into the search box "Mountain Green Cover Index", click over the app drawer and wait patiently until the SEPAL-MGCI :sub:`beta` module is displayed in your session (it may take a few minutes). The module should look like the following image:
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/0_app_overview.PNG
    :align: center
@@ -134,9 +135,9 @@ SEPAL-MGCI :sub:`beta`, as any other SEPAL module, is divided into two main sect
 
 - **Help drawers**: used to describe the tool, objectives and give a background about how it was developed. This is composed by:
 
-  - Source code: the module was developed under a `MIT license <https://opensource.org/licenses/MIT>`_, which means that the development is freely accessible and the code is public. It will link you to the GitHub repository of the module.
+  - Source code: the module was developed under a `MIT license <https://opensource.org/licenses/MIT>`__, which means that the development is freely accessible and the code is public. It will link you to the GitHub repository of the module.
   - Wiki: It will point to the latest documentation on SEPAL-MGCI :sub:`beta`. This is where you can start learning the workflow and features of the module.
-  - Bug report: No tool is perfect and we are not exempt from bugs. Fortunately, our team is always aware and on constant alert to fix any problem. Use this section to report any unexpected result or behavior. To do so, please follow the `contribution guidelines <https://github.com/dfguerrerom/sepal_mgci/blob/master/CONTRIBUTE.md>`_.
+  - Bug report: No tool is perfect and we are not exempt from bugs. Fortunately, our team is always aware and on constant alert to fix any problem. Use this section to report any unexpected result or behavior. To do so, please follow the `contribution guidelines <https://github.com/dfguerrerom/sepal_mgci/blob/master/CONTRIBUTE.md>`__.
 
 
 Area of interest (AOI)
@@ -150,7 +151,7 @@ The calculation of the MGCI will be restricted to a specific area of interest. I
    - Administrative level 2
    
 - Custom layers
-   - Vector file: use this option to upload a custom vector file. Select the "Vector file" method in the dropdown list, a file manager will be displayed below and will allow you to search and select a vector file stored in your SEPAL environment (see `how to exchange files with SEPAL <https://docs.sepal.io/en/latest/setup/filezilla.html#exchange-files-with-sepal>`_). The below dropdown called "Column" is useful to filter the features of the vector file, the default option is "Use all features", to filter the collection, select a column and a "Value" in the corresponding dropdown, then click over the :guilabel:`Select aoi` button. 
+   - Vector file: use this option to upload a custom vector file. Select the "Vector file" method in the dropdown list, a file manager will be displayed below and will allow you to search and select a vector file stored in your SEPAL environment (see `how to exchange files with SEPAL <https://docs.sepal.io/en/latest/setup/filezilla.html#exchange-files-with-sepal>`__). The below dropdown called "Column" is useful to filter the features of the vector file, the default option is "Use all features", to filter the collection, select a column and a "Value" in the corresponding dropdown, then click over the :guilabel:`Select aoi` button. 
      
      .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/1_vector_file.PNG
         :align: center
@@ -159,11 +160,11 @@ The calculation of the MGCI will be restricted to a specific area of interest. I
      
      .. note:: the AOI tool will read the following formats: [".shp", ".geojson", ".gpkg", ".kml"] and it will transform its original coordinates into EPSG:4326
      
-   - GEE Asset name: see how to `upload an asset in GEE <https://docs.sepal.io/en/latest/setup/gee.html#upload-files-to-gee>`_
+   - GEE Asset name: see how to `upload an asset in GEE <https://docs.sepal.io/en/latest/setup/gee.html#upload-files-to-gee>`__
    
 
    
-As all the processing is done in GEE, all custom layers have to be previously stored as an `earth engine asset <https://developers.google.com/earth-engine/guides/asset_manager>`_ in your GEE account (it could be private) or in a third-party account as a public asset (see `how to upload an asset in GEE <https://docs.sepal.io/en/latest/setup/gee.html#upload-files-to-gee>`_). The dropdown menu will query all the assets in your GEE folder that matches the Image type. You can select it from the dropdown or write/paste it directly.
+As all the processing is done in GEE, all custom layers have to be previously stored as an `earth engine asset <https://developers.google.com/earth-engine/guides/asset_manager>`__ in your GEE account (it could be private) or in a third-party account as a public asset (see `how to upload an asset in GEE <https://docs.sepal.io/en/latest/setup/gee.html#upload-files-to-gee>`__). The dropdown menu will query all the assets in your GEE folder that matches the Image type. You can select it from the dropdown or write/paste it directly.
 
 .. warning:: The  Administrative Boundaries provided in SEPAL-MGCI are in the public domain. The designations employed and the presentation of material on this map do not imply the expression of any opinion whatsoever on the part of the Secretariat of the United Nations concerning the legal status of any country, territory, city or area or of its authorities, or concerning the delimitation of its frontiers or boundaries. If using SEPAL-MGCI for official purposes, it is recommended that users use an official boundary provided by the designated office of their country.
 
@@ -197,7 +198,7 @@ Here you have to indicate the DEM dataset you wish to use to develop the mountai
 Custom dataset
 ::::::::::::::
 
-As all the processing is done in GEE, all the inputs have to be uploaded as an `earth engine asset <https://developers.google.com/earth-engine/guides/asset_manager>`_. When you are using a custom dataset, it has to be stored in your GEE account (it could be private) or in a third-party account as a public asset. The dropdown menu will query all the assets in your GEE folder that matches the Image type. You can select it from the dropdown or write/paste it directly.
+As all the processing is done in GEE, all the inputs have to be uploaded as an `earth engine asset <https://developers.google.com/earth-engine/guides/asset_manager>`__. When you are using a custom dataset, it has to be stored in your GEE account (it could be private) or in a third-party account as a public asset. The dropdown menu will query all the assets in your GEE folder that matches the Image type. You can select it from the dropdown or write/paste it directly.
 
 After clicking the :guilabel:`Create UNEP-WCMC Mountain Class Map` button, the module will create the mountain descriptor layer, and it will be automatically displayed on the map.
 
@@ -237,7 +238,7 @@ SEPAL-MGCI :sub:`beta` will use the ESA-CCI Land Cover dataset and you just have
 If you have selected 'Yes'
 ::::::::::::::::::::::::::
 
-Similarly to the mountain description layer, to be able to use your own land cover map you would need upload it first in your GEE account or in a third-party account as a public asset (see `how to upload files to gee <https://docs.sepal.io/en/latest/setup/gee.html#upload-files-to-gee>`_). The dropdown menu will query all the assets in your GEE folder that matches the Image type. You can select it from the dropdown or directly copy and paste the link to the dataset.
+Similarly to the mountain description layer, to be able to use your own land cover map you would need upload it first in your GEE account or in a third-party account as a public asset (see `how to upload files to gee <https://docs.sepal.io/en/latest/setup/gee.html#upload-files-to-gee>`__). The dropdown menu will query all the assets in your GEE folder that matches the Image type. You can select it from the dropdown or directly copy and paste the link to the dataset.
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/3_custom.PNG
    :align: center
@@ -261,6 +262,7 @@ To allow SEPAL-MGCI :sub:`beta` to create an IPCC land cover class map using the
 
 
   .. _reclass_table:
+  
   .. tip:: What is a reclassification matrix table?:
       A reclassification matrix is a comma-separated values (CSV) file used to reclassify pixel values from one dataset into another. The CSV file only has to contain two values per line, the first one refers to the `from` value, while the second is the `target` value, just as it is described in the following table:
     
@@ -274,7 +276,7 @@ To allow SEPAL-MGCI :sub:`beta` to create an IPCC land cover class map using the
          "...","..."
          "511", "4"
    
-     To upload a classification table, please see the `how to exchange files in SEPAL <https://docs.sepal.io/en/latest/setup/filezilla.html#exchange-files-with-sepal>`_.
+     To upload a classification table, please see the `how to exchange files in SEPAL <https://docs.sepal.io/en/latest/setup/filezilla.html#exchange-files-with-sepal>`__.
      
      **Note**: The target values must match with the :ref:`IPCC classification table <ipcc_classes>` 
 
@@ -305,14 +307,15 @@ Once you have reclassified the new values or used the default land cover dataset
 MGCI calculation
 ----------------
 
-Once you have set the inputs in the previous steps, click on “Calculate MGCI” to calculate both the area of each IPCC land cover class and MGCI values for the whole mountain area and for each mountain class. The module has the option to do the calculation using the planimetric area or the `real surface area <https://www.fs.fed.us/rm/pubs_other/rmrs_2004_jenness_j001.pdf>`_. 
+Once you have set the inputs in the previous steps, click on “Calculate MGCI” to calculate both the area of each IPCC land cover class and MGCI values for the whole mountain area and for each mountain class. The module has the option to do the calculation using the planimetric area or the `real surface area <https://www.fs.fed.us/rm/pubs_other/rmrs_2004_jenness_j001.pdf>`__. 
 Each section will provide an overall MGCI displayed in a circle along with the summary of the area in each of the IPCC classes, as is shown in the below image.
 
 .. _calculation:
+
 Calculation
 ^^^^^^^^^^^
 
-Depending on the size of your area of interest and whether you are using the real surface area or not, the process could take longer. As we explained in the previous sections, the calculation of the land cover/use area per mountain class, as well as the MGCI, is done in GEE, which means that the computation is restricted by the GEE available resources, one of these limitations is the time to get the results on the fly (see `computation time out <https://developers.google.com/earth-engine/guides/debugging#timed-out>`_), so any computation that takes more than five minutes will throw an exception.
+Depending on the size of your area of interest and whether you are using the real surface area or not, the process could take longer. As we explained in the previous sections, the calculation of the land cover/use area per mountain class, as well as the MGCI, is done in GEE, which means that the computation is restricted by the GEE available resources, one of these limitations is the time to get the results on the fly (see `computation time out <https://developers.google.com/earth-engine/guides/debugging#timed-out>`__), so any computation that takes more than five minutes will throw an exception.
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/4_dashboard_1_calculation.PNG
    :align: center
@@ -320,7 +323,7 @@ Depending on the size of your area of interest and whether you are using the rea
    :alt: Dashboard calculation
 
 
-To overcome this limitation, the process will be executed as a task —which are operations that are capable of running much longer than the standard timeout (see `gee tasks <https://developers.google.com/earth-engine/guides/playground#tasks-tab>`_)—. If the computation is created as a task, you will see a similar message as the shown in the below image, and to get the results, please see the :ref:`calculation from task <calculation_from_task>` section, otherwise, the result will be displayed on the dashboard (see :ref:`dashboard <display>`).
+To overcome this limitation, the process will be executed as a task —which are operations that are capable of running much longer than the standard timeout (see `gee tasks <https://developers.google.com/earth-engine/guides/playground#tasks-tab>`__)—. If the computation is created as a task, you will see a similar message as the shown in the below image, and to get the results, please see the :ref:`calculation from task <calculation_from_task>` section, otherwise, the result will be displayed on the dashboard (see :ref:`dashboard <display>`).
 
 .. image:: https://raw.githubusercontent.com/dfguerrerom/sepal_mgci/master/doc/img/4_computation_timeout.PNG
    :align: center
@@ -329,6 +332,7 @@ To overcome this limitation, the process will be executed as a task —which are
 
 
 .. _calculation_from_task:
+
 Calculation from task
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -340,8 +344,11 @@ If the computation can't be done on the fly, a new file containing the id of the
    :align: center
    :width: 600
    :alt: Download from task
+   
 |
+
 .. _display:
+
 Display dashboard
 ^^^^^^^^^^^^^^^^^
 
@@ -367,4 +374,4 @@ After the calculation is done, the export button will become available. To gener
    :width: 600
    :alt: Export report
 
-Once the process is done, the alert message will show you where the report files are stored, to download them, you can use any of the options available at `exchange files in SEPAL <https://docs.sepal.io/en/latest/setup/filezilla.html#exchange-files-with-sepal>`_.
+Once the process is done, the alert message will show you where the report files are stored, to download them, you can use any of the options available at `exchange files in SEPAL <https://docs.sepal.io/en/latest/setup/filezilla.html#exchange-files-with-sepal>`__.
