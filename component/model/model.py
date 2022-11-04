@@ -1,16 +1,16 @@
 import warnings
 from pathlib import Path
-import pandas as pd
-import ee
-from traitlets import Unicode, Any, Int, Dict, CBool, Bool
 
-from sepal_ui.scripts.warning import SepalWarning
+import ee
+import pandas as pd
 import sepal_ui.scripts.utils as su
 from sepal_ui.model import Model
+from sepal_ui.scripts.warning import SepalWarning
+from traitlets import Any, Bool, CBool, Dict, Int, Unicode
 
-from component.message import cm
-import component.scripts as cs
 import component.parameter as param
+import component.scripts as cs
+from component.message import cm
 from component.parameter.report_template import *
 
 
@@ -38,6 +38,9 @@ class MgciModel(Model):
     # Results
     summary_df = Any(allow_none=True).tag(sync=True)
 
+    biobelt_image = None
+    "ee.Image: clipped bioclimatic belt image with aoi_model.feature_collection"
+
     @su.need_ee
     def __init__(self, aoi_model):
         """
@@ -50,7 +53,7 @@ class MgciModel(Model):
 
         """
 
-        self.kapos_image = None
+        self.biobelt_imaga = None
         self.vegetation_image = None
         self.aoi_model = aoi_model
 
@@ -59,101 +62,6 @@ class MgciModel(Model):
 
         # Save the GEE reduce to region json proces
         self.reduced_process = None
-
-    def get_kapos(self):
-        """Get Kapos mountain classification layer within the area of interest"""
-
-        # Validate inputs
-        aoi = self.aoi_model.feature_collection
-
-        if not aoi:
-            raise Exception(
-                "No AOI selected, please go "
-                + "to the previous step and select an area."
-            )
-
-        if self.use_custom:
-            self.dem = ee.Image(self.custom_dem_id)
-
-        else:
-            self.dem = ee.Image(param.DEM_DEFAULT)
-
-        aoi_dem = self.dem.clip(aoi)
-
-        slope = ee.Terrain.slope(aoi_dem)
-
-        local_range = aoi_dem.focal_max(7000, "circle", "meters").subtract(
-            aoi_dem.focal_min(7000, "circle", "meters")
-        )
-        # Kapos Mountain classes
-        self.kapos_image = (
-            ee.Image(0)
-            .where(aoi_dem.gte(4500), 1)
-            .where(aoi_dem.gte(3500).And(aoi_dem.lt(4500)), 2)
-            .where(aoi_dem.gte(2500).And(aoi_dem.lt(3500)), 3)
-            .where(aoi_dem.gte(1500).And(aoi_dem.lt(2500)).And(slope.gt(2)), 4)
-            .where(
-                aoi_dem.gte(1000)
-                .And(aoi_dem.lt(1500))
-                .And(slope.gt(5).Or(local_range.gt(300))),
-                5,
-            )
-            .where(aoi_dem.gte(300).And(aoi_dem.lt(1000)).And(local_range.gt(300)), 6)
-            .selfMask()
-        )
-
-    #         # Get the areas inside the other classes but which doesn't belong to them.
-    #         inverse = kapos_1_6.unmask().Not().eq(1).selfMask()
-
-    #         # Add the inverse band to the 1-6 classes
-    #         all_kapos = kapos_1_6.addBands(inverse).reduce(ee.Reducer.Max())
-
-    #         # Create neighborhoods, reduce them and update the mask
-    #         # It will get the inverse areas with a border (the surrounding class)
-    #         reduced_neighbors = (
-    #             all_kapos.neighborhoodToBands(ee.Kernel.plus(1))
-    #                 .reduce(ee.Reducer.Max())
-    #                 .updateMask(inverse)
-    #         )
-
-    #         # Separate and clump individual 'objects'
-    #         inverse_connected = inverse.connectedComponents({
-    #           connectedness: ee.Kernel.plus(1),
-    #           maxSize: 1024
-    #         }).updateMask(inverse)
-
-    #         # Calculate its area
-    #         connected_size = inverse_connected.select('labels')
-    #           .connectedPixelCount({
-    #             maxSize: 1024,
-    #             eightConnected: False
-    #         })
-
-    #         # Filter them by its area
-    #         connected_area = (
-    #             ee.Image.pixelArea()
-    #                 .addBands(connected_size)
-    #                 .lte(25000000)
-    #                 .eq(1)
-    #                 .selfMask()
-    #                 .select('labels')
-    #         )
-
-    #         # Remove the objects which are greather than the given area
-    #         inverse_connected = inverse_connected.updateMask(connected_area)
-
-    #         # reduce by  the maximum value from the reduced_neighbors(with borders).
-    #         reduced_neighbors = reduced_neighbors.addBands(
-    #             inverse_connected.select('labels')
-    #         )
-
-    #         result = reduced_neighbors.reduceConnectedComponents({
-    #           reducer: ee.Reducer.max(),
-    #           labelBand: 'labels'
-    #         })
-
-    #         # Merge all classes
-    #         self.kapos_image = kapos_1_6.addBands(result).reduce(ee.Reducer.max())
 
     def reduce_to_regions(self):
         """
