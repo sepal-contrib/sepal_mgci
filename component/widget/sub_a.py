@@ -1,8 +1,9 @@
 import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
-from traitlets import Dict, Int
+from traitlets import Dict, Int, List
 
 import component.parameter as param
+from component.message import cm
 from component.tile.aoi_view import AoiView
 from component.widget.legend_control import LegendControl
 
@@ -14,15 +15,14 @@ class CustomList(sw.List):
     counter = Int(1).tag(syc=True)
     max_ = Int(4 - 1).tag(syc=True)
     v_model = Dict({}).tag(syc=True)
+    items = List([]).tag(sync=True)
 
     def __init__(self):
 
         super().__init__()
 
         self.add_btn = v.Icon(children=["mdi-plus"])
-
         self.children = self.get_element(single=True)
-
         self.add_btn.on_event("click", self.add_element)
 
     def remove_element(self, *args, id_):
@@ -71,8 +71,8 @@ class CustomList(sw.List):
             ]
         )
 
-        w_basep = v.Select(label="Baseline period year", items=list(range(10)))
-        w_reportp = v.Select(label="Reporting period", items=list(range(10)))
+        w_basep = v.Select(label=cm.calculation.y_base, items=list(range(10)))
+        w_reportp = v.Select(label=cm.calculation.y_report, items=list(range(10)))
 
         w_basep.on_event(
             "change", lambda *args: self.update_model(*args, id_=id_, pos="base")
@@ -84,6 +84,7 @@ class CustomList(sw.List):
         item = [
             v.ListItem(
                 attributes={"id": id_},
+                class_="ma-0 pa-0",
                 children=[
                     v.ListItemContent(children=[w_basep, w_reportp]),
                 ]
@@ -97,25 +98,64 @@ class CustomList(sw.List):
         return item
 
 
-class SubB(sw.Card):
+class SubA(sw.Card):
+
+    active = Bool(True).tag(sync=True)
+
     def __init__(self):
 
         super().__init__()
 
-        title = v.CardTitle(children=["Sub indicator B"])
+        self.class_ = "px-4 mr-2"
+        w_active = v.Switch(v_model=True)
+        title = v.CardTitle(children=[cm.calculation.sub_a, v.Spacer(), w_active])
+
+        self.children = [
+            title,
+            sw.Card(
+                class_="ma-0 pa-0",
+                flat=True,
+                children=[v.Select(label=cm.calculation.y_report)],
+            ),
+        ]
+
+        w_active.observe(self.toggle, "v_model")
+
+    def toggle(self, change):
+        """toggle card disabled status"""
+
+        self.active = not change["new"]
+        self.children[-1].disabled = not change["new"]
+
+
+class SubB(sw.Card):
+
+    active = Bool(True).tag(sync=True)
+
+    def __init__(self):
+
+        self.class_ = "px-4"
+        self.tile = True
+
+        super().__init__()
+
+        w_active = v.Switch(v_model=True)
+        title = v.CardTitle(children=[cm.calculation.sub_b, v.Spacer(), w_active])
+
         self.custom_list = CustomList()
 
-        self.children = [title, self.custom_list]
+        self.children = [
+            title,
+            sw.Card(class_="ma-0 pa-0", flat=True, children=[self.custom_list]),
+        ]
 
+        w_active.observe(self.toggle, "v_model")
 
-class SubA(sw.Card):
-    def __init__(self):
+    def toggle(self, change):
+        """toggle card disabled status"""
 
-        super().__init__()
-
-        title = v.CardTitle(children=["Sub indicator A"])
-
-        self.children = [title, v.Select()]
+        self.active = not change["new"]
+        self.children[-1].disabled = not change["new"]
 
 
 class Calculation(sw.Layout):
@@ -127,6 +167,6 @@ class Calculation(sw.Layout):
         w_sub_b = SubB()
 
         self.children = [
-            v.Flex(xs6=True, children=[w_sub_a]),
-            v.Flex(xs6=True, children=[w_sub_b]),
+            v.Flex(xs12=True, sm6=True, children=[w_sub_a]),
+            v.Flex(xs12=True, sm6=True, children=[w_sub_b]),
         ]
