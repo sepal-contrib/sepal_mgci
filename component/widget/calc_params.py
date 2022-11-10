@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
 from traitlets import Bool, Dict, Int, List
@@ -32,7 +34,11 @@ class CustomList(sw.List):
             chld for chld in self.children if chld not in self.get_children(id_)
         ]
 
-        self.v_model.pop(id_, None)
+        tmp_vmodel = deepcopy(self.v_model)
+
+        tmp_vmodel.pop(id_, None)
+
+        self.v_model = tmp_vmodel
 
         self.counter -= 1
 
@@ -46,12 +52,18 @@ class CustomList(sw.List):
     def update_model(self, *args, id_, pos):
         """update v_model content based on select changes"""
 
-        if not id_ in self.v_model:
-            self.v_model[id_] = {}
+        tmp_vmodel = deepcopy(self.v_model)
 
-        self.v_model[id_][pos] = args[-1]
+        if not id_ in tmp_vmodel:
+            tmp_vmodel[id_] = {}
+
+        tmp_vmodel[id_][pos] = args[-1]
+
+        self.v_model = tmp_vmodel
 
     def get_element(self, single=False):
+        """creates a double select widget with add and remove buttons. To allow user
+        calculate subindicator B and also perform multiple calculations at once"""
 
         id_ = self.counter
 
@@ -71,8 +83,8 @@ class CustomList(sw.List):
             ]
         )
 
-        w_basep = v.Select(label=cm.calculation.y_base, items=list(range(10)))
-        w_reportp = v.Select(label=cm.calculation.y_report, items=list(range(10)))
+        w_basep = v.Select(label=cm.calculation.y_base, items=self.items)
+        w_reportp = v.Select(label=cm.calculation.y_report, items=self.items)
 
         w_basep.on_event(
             "change", lambda *args: self.update_model(*args, id_=id_, pos="base")
@@ -86,7 +98,9 @@ class CustomList(sw.List):
                 attributes={"id": id_},
                 class_="ma-0 pa-0",
                 children=[
-                    v.ListItemContent(children=[w_basep, w_reportp]),
+                    v.ListItemContent(
+                        attributes={"id": "selects"}, children=[w_basep, w_reportp]
+                    ),
                 ]
                 + actions,
             ),
@@ -96,6 +110,32 @@ class CustomList(sw.List):
         ]
 
         return item
+
+    def get_select_elements(self):
+        """receive v.select items, save in object (to be reused by new elements) and
+        fill the current one ones in the view"""
+
+        item_content_chlds = self.get_children("selects")
+
+        if not isinstance(item_content_chlds, list):
+            item_content_chlds = [item_content_chlds]
+
+        return [select for item in item_content_chlds for select in item.children]
+
+    def populate(self, items):
+        """receive v.select items, save in object (to be reused by new elements) and
+        fill the current one ones in the view"""
+
+        self.items = items
+
+        select_wgts = self.get_select_elements()
+
+        [setattr(select, "items", items) for select in select_wgts]
+
+    def reset(self):
+        """remove all selected values form selection widgets"""
+
+        self.v_model = {}
 
 
 class EditionDialog(sw.Dialog):
@@ -109,8 +149,10 @@ class EditionDialog(sw.Dialog):
         super().__init__()
 
         self.attributes = {"id": f"dialg_{indicator}"}
+        self.content = content
 
         close_btn = sw.Btn("OK", small=True)
+        clean_btn = v.Icon(children=["mdi-broom"])
 
         self.children = [
             sw.Card(
@@ -118,14 +160,27 @@ class EditionDialog(sw.Dialog):
                 min_height=420,
                 class_="pa-4",
                 children=[
-                    v.CardTitle(children=[cm.calculation[indicator], v.Spacer()]),
-                    content,
+                    v.CardTitle(
+                        children=[cm.calculation[indicator], v.Spacer(), clean_btn]
+                    ),
+                    self.content,
                     v.CardActions(children=[v.Spacer(), close_btn]),
                 ],
             ),
         ]
 
         close_btn.on_event("click", lambda *args: setattr(self, "v_model", False))
+        clean_btn.on_event("click", self.reset_event)
+
+    def reset_event(self, *args):
+        """search within the content and trigger reset method"""
+
+        if self.attributes["id"] == "dialg_sub_a":
+            self.content.v_model = False
+
+        else:
+            print("asdf")
+            self.content.reset()
 
 
 class Calculation(sw.List):
@@ -135,11 +190,13 @@ class Calculation(sw.List):
 
     indicators = ["sub_a", "sub_b"]
 
-    def __init__(self):
+    def __init__(self, model):
 
         super().__init__()
 
-        self.w_content_a = v.Select()
+        self.model = model
+
+        self.w_content_a = v.Select(v_model="")
         self.w_content_b = CustomList()
 
         self.dialog_a = EditionDialog(self.w_content_a, "sub_a")
@@ -149,6 +206,22 @@ class Calculation(sw.List):
             self.dialog_a,
             self.dialog_b,
         ]
+
+        self.model.observe(self.populate_years, "ic_items")
+        self.w_content_a.observe(
+            lambda change: self.get_chips(change, "sub_a"), "v_model"
+        )
+        self.w_content_b.observe(
+            lambda change: self.get_chips(change, "sub_b"), "v_model"
+        )
+
+    def populate_years(self, change):
+        """function to trigger and send population methods from a and b content based
+        on model ic_items change"""
+
+        if change["new"]:
+            self.w_content_a.items = change["new"]
+            self.w_content_b.populate(change["new"])
 
     def get_item(self, indicator):
         """returns the specific structure required to display the bands(years) that will
@@ -173,11 +246,15 @@ class Calculation(sw.List):
                                         switch,
                                     ]
                                 ),
-                                v.CardText(
+                                sw.CardText(
                                     children=[
                                         "You are about to calculate the MGCI witht the layer",
                                         v.Spacer(),
-                                        self.get_chips(indicator),
+                                        v.Html(
+                                            attributes={"id": f"span_{indicator}"},
+                                            tag="span",
+                                            children=self.get_chips({}, indicator),
+                                        ),
                                     ]
                                 ),
                             ]
@@ -200,10 +277,34 @@ class Calculation(sw.List):
         dialog = self.get_children(f"dialg_{indicator}")
         dialog.v_model = True
 
-    def get_chips(self, indicator):
+    def get_chips(self, change, indicator):
         """get chips that will be inserted in the list elements and corresponds
         to the bands(years) selected for each of subindicator"""
 
-        # If subindicator A : return simple chips
-        # else: return pair-wise chips
-        return ""
+        span = self.get_children(f"span_{indicator}")
+
+        if not change.get("new", None):
+            return [""]
+
+        data = change["new"]
+
+        if indicator == "sub_a":
+            chips = [v.Chip(small=True, children=[data])]
+        else:
+            multichips = [
+                [
+                    v.Chip(
+                        small=True,
+                        draggable=True,
+                        children=[
+                            val.get("base", "...") + " AND " + val.get("report", "..."),
+                        ],
+                    ),
+                    " , ",
+                ]
+                for period, val in data.items()
+            ]
+            # Flat list
+            chips = [val for period in multichips for val in period][:-1]
+
+        span.children = chips
