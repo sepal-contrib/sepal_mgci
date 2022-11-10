@@ -6,7 +6,7 @@ import pandas as pd
 import sepal_ui.scripts.utils as su
 from sepal_ui.model import Model
 from sepal_ui.scripts.warning import SepalWarning
-from traitlets import Any, Bool, CBool, Dict, Int, Unicode
+from traitlets import Any, Bool, CBool, Dict, Int, List, Unicode
 
 import component.parameter as param
 import component.scripts as cs
@@ -31,9 +31,11 @@ class MgciModel(Model):
     rsa = Bool(False, allow_none=True).tag(sync=True)
 
     # Observation variables
-    kapos_done = Int(0).tag(sync=True)
 
     task_file = Unicode("", allow_none=True).tag(sync=True)
+
+    ic_items = List([]).tag(sync=True)
+    "list: list of select.items containing image ids and image names from the image collection"
 
     # Results
     summary_df = Any(allow_none=True).tag(sync=True)
@@ -42,7 +44,7 @@ class MgciModel(Model):
     "ee.Image: clipped bioclimatic belt image with aoi_model.feature_collection"
 
     @su.need_ee
-    def __init__(self, aoi_model):
+    def __init__(self, aoi_model=None):
         """
 
         Parameters:
@@ -77,11 +79,6 @@ class MgciModel(Model):
             per kapos mountain range
         """
 
-        if not self.kapos_image:
-            raise Exception(
-                "Please go to the mountain descriptor layer"
-                " and calculate the kapos layer."
-            )
         if not self.vegetation_image:
             raise Exception(
                 "Please go to the vegetation descriptor layer and reclassify an image"
