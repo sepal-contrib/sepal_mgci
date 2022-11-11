@@ -49,15 +49,14 @@ class CustomList(sw.List):
             self.counter += 1
             self.children = self.children + self.get_element()
 
-    def update_model(self, *args, id_, pos):
+    def update_model(self, data, id_, pos):
         """update v_model content based on select changes"""
 
         tmp_vmodel = deepcopy(self.v_model)
 
         if not id_ in tmp_vmodel:
             tmp_vmodel[id_] = {}
-
-        tmp_vmodel[id_][pos] = args[-1]
+        tmp_vmodel[id_][pos] = data["new"]
 
         self.v_model = tmp_vmodel
 
@@ -83,14 +82,24 @@ class CustomList(sw.List):
             ]
         )
 
-        w_basep = v.Select(label=cm.calculation.y_base, items=self.items)
-        w_reportp = v.Select(label=cm.calculation.y_report, items=self.items)
-
-        w_basep.on_event(
-            "change", lambda *args: self.update_model(*args, id_=id_, pos="base")
+        w_basep = v.Select(
+            v_model=False,
+            attributes={"id": f"base_{id_}"},
+            label=cm.calculation.y_base,
+            items=self.items,
         )
-        w_reportp.on_event(
-            "change", lambda *args: self.update_model(*args, id_=id_, pos="report")
+        w_reportp = v.Select(
+            v_model=False,
+            attributes={"id": f"report_{id_}"},
+            label=cm.calculation.y_report,
+            items=self.items,
+        )
+
+        w_basep.observe(
+            lambda chg: self.update_model(chg, id_=id_, pos="base"), "v_model"
+        )
+        w_reportp.observe(
+            lambda chg: self.update_model(chg, id_=id_, pos="report"), "v_model"
         )
 
         item = [
@@ -117,9 +126,9 @@ class CustomList(sw.List):
 
         item_content_chlds = self.get_children("selects")
 
+        # Manage the special case when there is only one item.
         if not isinstance(item_content_chlds, list):
             item_content_chlds = [item_content_chlds]
-
         return [select for item in item_content_chlds for select in item.children]
 
     def populate(self, items):
@@ -135,7 +144,9 @@ class CustomList(sw.List):
     def reset(self):
         """remove all selected values form selection widgets"""
 
-        self.v_model = {}
+        select_wgts = self.get_select_elements()
+
+        [setattr(select, "v_model", False) for select in select_wgts]
 
 
 class EditionDialog(sw.Dialog):
@@ -161,7 +172,11 @@ class EditionDialog(sw.Dialog):
                 class_="pa-4",
                 children=[
                     v.CardTitle(
-                        children=[cm.calculation[indicator], v.Spacer(), clean_btn]
+                        children=[
+                            cm.calculation[indicator].title,
+                            v.Spacer(),
+                            clean_btn,
+                        ]
                     ),
                     self.content,
                     v.CardActions(children=[v.Spacer(), close_btn]),
@@ -176,10 +191,8 @@ class EditionDialog(sw.Dialog):
         """search within the content and trigger reset method"""
 
         if self.attributes["id"] == "dialg_sub_a":
-            self.content.v_model = False
-
+            self.content.v_model = []
         else:
-            print("asdf")
             self.content.reset()
 
 
@@ -196,7 +209,7 @@ class Calculation(sw.List):
 
         self.model = model
 
-        self.w_content_a = v.Select(v_model="")
+        self.w_content_a = v.Select(v_model=[], multiple=True)
         self.w_content_b = CustomList()
 
         self.dialog_a = EditionDialog(self.w_content_a, "sub_a")
@@ -215,6 +228,22 @@ class Calculation(sw.List):
             lambda change: self.get_chips(change, "sub_b"), "v_model"
         )
 
+    def reset_event(self, data, indicator):
+        """search within the content and trigger reset method"""
+
+        if indicator in f"dialg_sub_a":
+            self.w_content_a.v_model = []
+        else:
+            self.w_content_b.reset()
+
+        self.get_children(f"desc_{indicator}").children = (
+            [cm.calculation[indicator].desc_disabled]
+            if not data
+            else [cm.calculation[indicator].desc_active]
+        )
+
+        self.get_children(f"pen_{indicator}").disabled = not data
+
     def populate_years(self, change):
         """function to trigger and send population methods from a and b content based
         on model ic_items change"""
@@ -228,6 +257,10 @@ class Calculation(sw.List):
         be used to calculate each of the specific subindicator"""
 
         switch = sw.Switch(attributes={"id": f"swit_{indicator}"}, v_model=True)
+        switch.observe(
+            lambda chg: self.reset_event(chg["new"], indicator=indicator), "v_model"
+        )
+
         pencil = sw.Icon(children=["mdi-pencil"], attributes={"id": f"pen_{indicator}"})
         pencil.on_event(
             "click", lambda *args: self.open_dialog(indicator=f"{indicator}")
@@ -241,19 +274,24 @@ class Calculation(sw.List):
                             children=[
                                 v.CardTitle(
                                     children=[
-                                        cm.calculation[indicator],
+                                        cm.calculation[indicator].title,
                                         v.Spacer(),
                                         switch,
                                     ]
                                 ),
                                 sw.CardText(
                                     children=[
-                                        "You are about to calculate the MGCI witht the layer",
+                                        v.Html(
+                                            tag="span",
+                                            attributes={"id": f"desc_{indicator}"},
+                                            children=[
+                                                cm.calculation[indicator].desc_active
+                                            ],
+                                        ),
                                         v.Spacer(),
                                         v.Html(
-                                            attributes={"id": f"span_{indicator}"},
                                             tag="span",
-                                            children=self.get_chips({}, indicator),
+                                            attributes={"id": f"span_{indicator}"},
                                         ),
                                     ]
                                 ),
@@ -284,27 +322,43 @@ class Calculation(sw.List):
         span = self.get_children(f"span_{indicator}")
 
         if not change.get("new", None):
-            return [""]
+            span.children = [""]
+            return
 
         data = change["new"]
 
         if indicator == "sub_a":
-            chips = [v.Chip(small=True, children=[data])]
+            multichips = [[v.Chip(small=True, children=[year]), ", "] for year in data]
+
         else:
-            multichips = [
-                [
-                    v.Chip(
-                        small=True,
-                        draggable=True,
-                        children=[
-                            val.get("base", "...") + " AND " + val.get("report", "..."),
-                        ],
-                    ),
-                    " , ",
-                ]
-                for period, val in data.items()
-            ]
-            # Flat list
-            chips = [val for period in multichips for val in period][:-1]
+
+            multichips = []
+            for period, val in data.items():
+
+                base_y = val.get("base", "...") or "..."
+                report_y = val.get("report", "...") or "..."
+
+                if not all([base_y != "...", base_y != "..."]):
+                    continue
+
+                multichips.append(
+                    [
+                        v.Chip(
+                            small=True,
+                            draggable=True,
+                            children=[
+                                base_y + " AND " + report_y,
+                            ],
+                        ),
+                        ", ",
+                    ]
+                )
+
+            if not multichips:
+                span.children = [""]
+                return
+
+        # Flat list and always remove the last element (the comma)
+        chips = [val for period in multichips for val in period][:-1]
 
         span.children = chips
