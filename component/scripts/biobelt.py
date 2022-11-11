@@ -71,7 +71,7 @@ def get_belt_area(aoi, biobelt):
 
 
 def add_belt_map(aoi_model, map_):
-    """Create and display bioclimatic belt layer on a map"""
+    """Create and display bioclimatic belt layer on a map."""
 
     aoi = aoi_model.feature_collection.geometry()
     biobelt = ee.Image(BIOBELT).clip(aoi)

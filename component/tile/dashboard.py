@@ -1,15 +1,14 @@
 from pathlib import Path
-from matplotlib import pyplot as plt
 
-from traitlets import directional_link, link
-from ipywidgets import Output
 import ipyvuetify as v
-
-import sepal_ui.sepalwidgets as sw
 import sepal_ui.scripts.utils as su
+import sepal_ui.sepalwidgets as sw
+from ipywidgets import Output
+from matplotlib import pyplot as plt
+from traitlets import directional_link, link
 
-import component.parameter.report_template as rt
 import component.parameter as param
+import component.parameter.report_template as rt
 import component.scripts as cs
 import component.widget as cw
 from component.message import cm
@@ -224,6 +223,7 @@ class CalculationView(v.Card, sw.SepalWidget):
         super().__init__(*args, **kwargs)
 
         self.model = model
+        self.calculation = cw.Calculation(self.model)
         self.dashboard_view = dashboard_view
 
         title = v.CardTitle(children=[cm.dashboard.title])
@@ -254,6 +254,7 @@ class CalculationView(v.Card, sw.SepalWidget):
         self.children = [
             title,
             description,
+            self.calculation,
             t_rsa,
             self.btn,
             self.alert,
