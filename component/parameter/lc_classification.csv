@@ -1,0 +1,11 @@
+target_code,target_desc,color
+1,Artificial surfaces,#515151
+2,Croplands,#F18701
+3,Grassland,#92B4A7
+4,Tree-covered areas,#044D02
+5,Shrub-covered areas,#00CECB
+6,"Shrubs and/or herbaceous vegetation, aquatic or regularly flooded",#0DAB76
+7,Sparsely natural vegetated areas,#8D9F87
+8,Terrestrial barren land,#CDC6A5
+9,Permanent snow and glaciers,#FFFFFF
+10,Inland water bodies,#3D348B

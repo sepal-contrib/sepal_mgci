@@ -4,20 +4,6 @@ from sepal_ui import color
 
 from component.message import cm
 
-__all__ = [
-    "UPPER_THRESHOLDS",
-    "GREEN_CLASSES",
-    "DISPLAY_CLASSES",
-    "M49",
-    "CUSTOM_AOI_ITEMS",
-    "LULC_DEFAULT",
-    "ESA_IPCC_MATRIX",
-    "UNITS",
-    "M49_FILE",
-    "DEM_DEFAULT",
-    "LEGEND_NAMES",
-]
-
 # SET SOME PARAMETERS
 UPPER_THRESHOLDS = {98: "green", 95: "orange", 90: "red"}
 
@@ -67,16 +53,16 @@ CUSTOM_AOI_ITEMS = [
 
 
 BIOBELT = "users/xavidelamo/SDG1542_Mntn_BioclimaticBelts"
-LULC_DEFAULT = "users/amitghosh/sdg_module/esa_cci_lc_1992_2019"
+LULC_DEFAULT = "users/amitghosh/sdg_module/esa/cci_landcover"
+# LULC_DEFAULT = "users/amitghosh/sdg_module/esa_cci_lc_1992_2019"
+
 DEM_DEFAULT = "CGIAR/SRTM90_V4"
 
+# Define the translation matrix between ESA and MGCI LC classes
+LC_MAP_MATRIX = Path(__file__).parent / "lc_map_matrix.csv"
 
-# dem = ee.Image("USGS/SRTMGL1_003") # srtm_1
-# dem = ee.Image("USGS/GTOPO30")
-
-
-# Define the translation matrix between ESA and IPCC classes
-ESA_IPCC_MATRIX = Path(__file__).parent / "esa_ipcc_matrix.csv"
+# Define the default classes that will be loaded as target in the reclassify tile
+LC_CLASSES = Path(__file__).parent / "lc_classification.csv"
 
 UNITS = {
     # acronym: [factor, name]
