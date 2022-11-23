@@ -11,17 +11,8 @@ from component.scripts.biobelt import add_belt_map
 
 
 class AoiView(sw.Layout):
-    """
-    Versatile card object to deal with the aoi selection. multiple selection method are available (see the MethodSelector object) and the widget can be fully customizable. Can also be bound to ee (ee==True) or not (ee==False)
-
-    Args:
-        methods (list, optional): the methods to use in the widget, default to 'ALL'. Available: {'ADMIN0', 'ADMIN1', 'ADMIN2', 'SHAPE', 'DRAW', 'POINTS', 'ASSET', 'ALL'}
-        map\_ (SepalMap, optional): link the aoi_view to a custom SepalMap to display the output, default to None
-        gee (bool, optional): wether to bind to ee or not
-        vector (str|pathlib.Path, optional): the path to the default vector object
-        admin (int, optional): the administrative code of the default selection. Need to be GADM if :code:`ee==False` and GAUL 2015 if :code:`ee==True`.
-        asset (str, optional): the default asset. Can only work if :code:`ee==True`
-    """
+    """Custom aoi view to display biobelt layer and lagend in the map as soon as the
+    image"""
 
     # ##########################################################################
     # ###                             widget parameters                      ###
