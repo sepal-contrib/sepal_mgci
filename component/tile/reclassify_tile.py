@@ -1,21 +1,21 @@
 from pathlib import Path
-from traitlets import link
-import pandas as pd
 
 import ipyvuetify as v
-
+import pandas as pd
 import sepal_ui.scripts.utils as su
-from sepal_ui.reclassify.parameters import *
 from sepal_ui import sepalwidgets as sw
 from sepal_ui.message import ms
-from sepal_ui import reclassify as rec
+from sepal_ui.reclassify.parameters import *
+from traitlets import link
 
-import component.parameter as param
+import component.parameter.module_parameter as param
+from component.message import cm
+from component.widget import reclassify as rec
 
 __all__ = ["ReclassifyTile"]
 
 
-class ReclassifyTile(v.Card):
+class ReclassifyTile(sw.Card):
 
     """Custom reclassify tile to replace the default Reclassify Tile and View
     from sepal_ui. This card will change depending on a input questionaire which
@@ -67,14 +67,12 @@ class ReclassifyTile(v.Card):
             enforce_aoi=True,
         ).nest_tile()
 
-        # Remove import button from toolbar, as we are goin gto replace it by other w
-
         # Create a default destination classification file
+
         self.w_reclass.w_dst_class_file.select_file(default_class["IPCC"]).hide()
         self.w_reclass.model.dst_class_file = default_class["IPCC"]
         self.w_reclass.model.dst_class = self.w_reclass.model.get_classes()
 
-        self.input_maptrix = self.w_reclass.import_dialog.w_file
         self.load_btn = self.w_reclass.import_dialog.load_btn
         self.load_btn.disabled = True
 
@@ -82,16 +80,12 @@ class ReclassifyTile(v.Card):
             class_="d-flex",
             align="center",
             children=[
-                v.Col(cols="10", children=[self.input_maptrix]),
                 v.Col(cols="1", class_="text-right", children=[self.load_btn]),
             ],
         )
 
         # Insert the input map matrix widget in the reclassify view widget
-        new_items = self.w_reclass.children.copy()
-        new_items.insert(
-            new_items.index(self.w_reclass.toolbar) + 1, self.w_input_matrix
-        )
+        new_items = self.w_reclass.children.copy() + [self.w_input_matrix]
         self.w_reclass.children = new_items
 
         self.children = [
@@ -113,11 +107,8 @@ class ReclassifyTile(v.Card):
     def use_default(self):
         """Define a default asset to the w_image component from w_reclass"""
 
-        self.w_reclass.w_image.v_model = param.LULC_DEFAULT
         self.w_reclass.model.matrix = dict(
-            list(
-                zip(*list(pd.read_csv(param.ESA_IPCC_MATRIX).to_dict("list").values()))
-            )
+            list(zip(*list(pd.read_csv(param.LC_MAP_MATRIX).to_dict("list").values())))
         )
 
     def get_view(self, change=None):
@@ -126,58 +117,36 @@ class ReclassifyTile(v.Card):
 
         # get the reclassify view components
         components = [
-            "title",
-            "w_input_title",
-            "w_image",
-            "w_code",
-            "w_optional",
-            "w_class_title",
-            "w_default",
             "w_dst_class_file",
+            "w_input_title",
+            "btn_get_table",
             "alert",
-            "w_table_title",
-            "toolbar",
             "reclassify_table",
-            "duplicate_layout",
-            "import_table",
-            "reclassify_btn",
         ]
 
         # hide components
         for c in components:
+
             widget = getattr(self.w_reclass, c)
             widget.disabled = False
             su.hide_component(widget)
-
-            if c == "toolbar":
-                widget.class_ = "d-none"
 
         self.w_input_matrix.class_ = "d-none"
 
         # Would you like to use a custom land use/land cover map?
         if self.questionaire.custom_lulc:
 
-            # Do you have a reclassification matrix table in a CSV format?
-            if self.questionaire.class_file:
-                # Make w_image available and let the user select a year
-                components = ["w_image", "w_code", "toolbar", "reclassify_table"]
-
-                # Manually display the input maptrix
-                self.w_input_matrix.class_ = "d-flex"
-
-            else:
-                # Let the user import the table and fill the elements
-                components = ["w_image", "w_code", "toolbar", "reclassify_table"]
+            self.w_reclass.w_ic_select.label = cm.reclass_view.ic_custom_label
+            self.w_reclass.w_ic_select.disabled = False
+            self.w_reclass.reclassify_table.set_table({}, {})
+            components = ["btn_get_table", "reclassify_table"]
 
         else:
-            # User will have only to select the year
-            components = ["w_image", "w_code"]
-            setattr(getattr(self.w_reclass, "w_image"), "disabled", True)
-
+            components = []
+            self.w_reclass.w_ic_select.label = cm.reclass_view.ic_default_label
+            self.w_reclass.w_ic_select.v_model = param.LULC_DEFAULT
+            self.w_reclass.w_ic_select.disabled = True
             self.use_default()
 
         # display components
         [su.show_component(getattr(self.w_reclass, c)) for c in components]
-
-        if "toolbar" in components:
-            getattr(self.w_reclass, "toolbar").class_ = "d-flex mb-6"
