@@ -1,18 +1,18 @@
 from pathlib import Path
 
-from traitlets import directional_link, observe, CBool, link
-from ipywidgets import Layout
-
 import ipyvuetify as v
-import sepal_ui.sepalwidgets as sw
 import sepal_ui.mapping as sm
+import sepal_ui.sepalwidgets as sw
+from ipywidgets import Layout
 from sepal_ui.scripts.utils import loading_button
+from traitlets import CBool, directional_link, link, observe
 
-from component.message import cm
+import component.parameter.directory as dir_
+import component.parameter.module_parameter as param
 import component.widget as cw
-import component.parameter as param
-from . import reclassify_tile as rt
+from component.message import cm
 
+from . import reclassify_tile as rt
 
 __all__ = ["VegetationTile", "Questionaire"]
 
@@ -74,11 +74,11 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
         self.reclassify_tile = rt.ReclassifyTile(
             self.w_questionaire,
-            results_dir=param.CLASS_DIR,
+            results_dir=dir_.CLASS_DIR,
             save=False,
             aoi_model=self.aoi_model,
             default_class={
-                "IPCC": str(Path(__file__).parents[1] / "parameter/ipcc.csv"),
+                "IPCC": str(param.LC_CLASSES),
             },
         )
 
@@ -93,7 +93,8 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
         self.reclassify_tile.model.observe(self.update_model_vegetation, "remaped")
 
-        # Let's bind the selected band with the model, it will be useful in the dashboard
+        # Let's bind the selected band with the model, it will be useful in the
+        # dashboard
 
         directional_link((self.reclassify_tile.model, "band"), (self.model, "year"))
         directional_link(
@@ -160,14 +161,12 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
 
 class Questionaire(v.Layout, sw.SepalWidget):
-    """
-    Vegetation questionaire. Do some questions to the user, save the answers
+    """Vegetation questionaire. Do some questions to the user, save the answers
     in the traits and use them later to display the proper Vegetation View
 
     """
 
     custom_lulc = CBool().tag(sync=True)
-    class_file = CBool().tag(sync=True)
 
     def __init__(self, *args, **kwargs):
 
@@ -176,19 +175,6 @@ class Questionaire(v.Layout, sw.SepalWidget):
         super().__init__(*args, **kwargs)
 
         self.w_custom_lulc = cw.BoolQuestion(cm.veg_layer.questionaire.q1)
-        self.w_class_file = cw.BoolQuestion(cm.veg_layer.questionaire.q2).hide()
-
-        self.children = [self.w_custom_lulc, self.w_class_file]
+        self.children = [self.w_custom_lulc]
 
         link((self.w_custom_lulc, "v_model"), (self, "custom_lulc"))
-        link((self.w_class_file, "v_model"), (self, "class_file"))
-
-    @observe("custom_lulc")
-    def toggle_question(self, change):
-        """Toggle second question, based on the first answer"""
-
-        if change["new"]:
-            self.w_class_file.show()
-        else:
-            self.w_class_file.v_model = False
-            self.w_class_file.hide()
