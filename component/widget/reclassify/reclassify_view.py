@@ -1,20 +1,41 @@
+from copy import deepcopy
 from pathlib import Path
 
 import ipyvuetify as v
 import pandas as pd
 import sepal_ui.sepalwidgets as sw
+from sepal_ui import color
 from sepal_ui.message import ms
 from sepal_ui.scripts import utils as su
+from sepal_ui.scripts.decorator import switch
 from sepal_ui.scripts.utils import loading_button
 from traitlets import Unicode
 
 from component.message import cm
 from component.parameter.module_parameter import LULC_DEFAULT
+from component.scripts.frequency_hist import get_unique_classes
 
 from .parameters import MATRIX_NAMES, NO_VALUE
 from .reclassify_model import ReclassifyModel
 
 __all__ = ["ReclassifyView"]
+
+
+class Btn(v.Btn, sw.SepalWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def toggle_loading(self):
+        """
+        Jump between two states : disabled and loading - enabled and not loading
+
+        Return:
+            self
+        """
+        self.loading = not self.loading
+        self.disabled = self.loading
+
+        return self
 
 
 class ImportMatrixDialog(sw.Dialog):
@@ -34,16 +55,23 @@ class ImportMatrixDialog(sw.Dialog):
 
         # create the 3 widgets
         title = sw.CardTitle(children=["Load reclassification matrix"])
-        self.w_file = sw.FileInput(label="filename", folder=folder)
-        self.load_btn = sw.Btn("Load")
-        cancel = sw.Btn("Cancel", outlined=True)
-        actions = sw.CardActions(children=[cancel, self.load_btn])
+        self.w_file = sw.FileInput(
+            label="filename", folder=folder, attributes={"id": "1"}
+        )
+        self.load_btn = Btn(children=["Load"], small=True)
+        cancel = Btn(children=["Cancel"], small=True)
+        actions = sw.CardActions(
+            children=[
+                v.Spacer(),
+                cancel,
+                self.load_btn,
+            ]
+        )
 
         # default params
         self.value = False
-        self.max_width = 500
+        self.max_width = 600
         self.overlay_opacity = 0.7
-        self.persistent = True
         self.children = [sw.Card(class_="pa-4", children=[title, self.w_file, actions])]
 
         # create the dialog
@@ -57,13 +85,9 @@ class ImportMatrixDialog(sw.Dialog):
 
         self.value = False
 
-        return self
-
     def show(self):
 
         self.value = True
-
-        return self
 
 
 class SaveMatrixDialog(sw.Dialog):
@@ -82,17 +106,22 @@ class SaveMatrixDialog(sw.Dialog):
 
         # create the widgets
         title = sw.CardTitle(children=["Save matrix"])
-        self.w_file = sw.TextField(label="filename", v_model=None)
-        btn = sw.Btn("Save matrix")
-        cancel = sw.Btn("Cancel", outlined=True)
-        actions = sw.CardActions(children=[cancel, btn])
+        self.w_file = sw.TextField(label="Set a matrix file name: ", v_model=None)
+        btn = Btn(children=["Save"], small=True)
+        cancel = Btn(children=["Cancel"], small=True)
+        actions = sw.CardActions(
+            children=[
+                v.Spacer(),
+                cancel,
+                btn,
+            ]
+        )
         self.alert = sw.Alert(children=["Choose a name for the output"]).show()
 
         # default parameters
         self.value = False
-        self.max_width = 500
+        self.max_width = 600
         self.overlay_opcity = 0.7
-        self.persistent = True
         self.children = [
             sw.Card(class_="pa-4", children=[title, self.w_file, self.alert, actions])
         ]
@@ -116,13 +145,12 @@ class SaveMatrixDialog(sw.Dialog):
 
         if not new_val:
             msg = "Choose a name for the output"
-
         self.alert.add_msg(msg)
 
     def _cancel(self, widget, event, data):
         """do nothing and exit"""
 
-        self.w_file.v_model = None
+        self.w_file.v_model = ""
         self.value = False
 
         return self
@@ -158,7 +186,6 @@ class SaveMatrixDialog(sw.Dialog):
 
         if not self.w_file.v_model:
             return self
-
         self.w_file.v_model = su.normalize_str(self.w_file.v_model)
 
         return self
@@ -191,7 +218,7 @@ class ClassSelect(sw.Select):
         super().__init__(**kwargs)
 
 
-class ReclassifyTable(sw.DataTable):
+class ReclassifyTable(sw.Layout):
     """
     Table to store the reclassifying information.
     2 columns are integrated, the new class value and the values in the original input
@@ -210,44 +237,118 @@ class ReclassifyTable(sw.DataTable):
 
     HEADERS = ms.rec.rec.headers
 
-    def __init__(self, model, dst_classes={}, src_classes={}, **kwargs):
+    def __init__(self, model, **kwargs):
 
-        # default parameters
-        self.dense = True
-
+        self.class_ = "d-block"
         # create the table
         super().__init__(**kwargs)
 
         # save the model
         self.model = model
 
-        self.btn_save_table = sw.Btn(
-            "save", "fas fa-save", color="secondary", small=True
+        self.btn_save_table = Btn(
+            icon=True,
+            children=[v.Icon(children=["mdi-content-save"])],
+            color="primary",
+            class_="mr-2",
         )
-        self.btn_load_table = sw.Icon(
-            "load", "fas fa-open", color="secondary", small=True
+        self.btn_load_table = Btn(
+            icon=True,
+            children=[v.Icon(children=["mdi-upload"])],
+            color="primary",
         )
 
-        toolbar = [v.Spacer(children=["Actions"])]
+        self.message = sw.Html(tag="span", style_=f"color: {color.warning}")
+
+        self.toolbar = v.Toolbar(
+            flat=True,
+            children=[
+                cm.reclass.title,
+                v.Spacer(),
+                self.message,
+                v.Spacer(),
+                v.Divider(vertical=True, class_="mx-2"),
+                self.btn_save_table,
+                self.btn_load_table,
+            ],
+        )
+
+        self.progress = sw.ProgressLinear(v_model=False, height=5, color="error")
 
         # create the table elements
 
-        self.headers = [{"text": header, "value": header} for header in self.HEADERS]
-        self.set_table(dst_classes, src_classes)
+        self.headers = [
+            v.Html(
+                tag="thead",
+                children=[
+                    v.Html(
+                        tag="tr",
+                        children=[v.Html(tag="th", children=[h]) for h in self.HEADERS],
+                    ),
+                ],
+            )
+        ]
 
+        self.table = sw.SimpleTable(
+            dense=True,
+            class_="elevation-1",
+            fixed_header=True,
+            height="300px",
+        )
+
+        self.children = [self.toolbar, self.progress, self.table]
+        self.set_table({}, {})
+
+        self.model.observe(self.set_info_message, "matrix")
+        self.progress.observe(self.set_progress_color, "v_model")
+
+    def set_progress_color(self, change):
+        """set progress bar colors based on v_model trait instead of setting when
+        table changes"""
+
+        if change["new"] == 0:
+            self.progress.color = "error"
+        elif change["new"] < 100:
+            self.progress.color = "warning"
+        else:
+            self.progress.color = "success"
+
+    def set_info_message(self, change):
+        """sets info message in table header. If a destination class is empty, it will
+        return a warning message."""
+
+        total_classes = len(change["new"])
+        filled = len([clss for clss in change["new"].values() if clss])
+
+        if filled == total_classes == 0:
+            # Case when there are not source classes
+            self.message.children = []
+            self.progress.v_model = 0
+
+        elif filled < total_classes:
+            classes_msg = f"{filled} of {total_classes}"
+            self.message.children = [cm.reclass.non_complete.format(classes_msg)]
+            self.progress.v_model = round(filled / total_classes * 100)
+
+        elif filled == total_classes:
+            self.message.children = []
+            self.progress.v_model = 100
+
+    @switch("indeterminate", on_widgets=["progress"])
     def set_table(self, dst_classes, src_classes):
         """
         Rebuild the table content based on the new_classes and codes provided
 
         Args:
-            dst_classes (dict|optional): a dictionnary that represent the classes of new the new classification table as {class_code: (class_name, class_color)}. class_code must be ints and class_name str.
-            src_classes (dict|optional): the list of existing values within the input file {class_code: (class_name, class_color)}
-
-        Return:
-            self
+            dst_classes (dict|optional): a dictionnary that represent the classes of
+            new the new classification table as {class_code: (class_name, class_color)}.
+            class_code must be ints and class_name str.
+            src_classes (dict|optional): the list of existing values within the input
+            file {class_code: (class_name, class_color)}
         """
 
         # reset the matrix
+        self.progress.v_model = 0
         self.model.matrix = {code: 0 for code in src_classes.keys()}
 
         # create the select list
@@ -256,15 +357,40 @@ class ReclassifyTable(sw.DataTable):
             k: ClassSelect(dst_classes, k) for k in src_classes.keys()
         }
 
-        items = [
-            {
-                self.headers[0]: f"{code}: {item[0]}",
-                self.headers[1]: self.class_select_list[code],
-            }
+        rows = [
+            v.Html(
+                tag="tr",
+                children=[
+                    v.Html(
+                        tag="td",
+                        style_="min-width: 115px !important;",
+                        children=[f"{code}: {item[0]}"],
+                    ),
+                    v.Html(
+                        tag="td",
+                        style_="min-width: 550px !important;",
+                        children=[self.class_select_list[code]],
+                    ),
+                ],
+            )
             for code, item in src_classes.items()
         ]
 
-        self.items = items
+        # add an empty row at the end to make the table more visible when it's empty
+        rows += [
+            v.Html(
+                tag="tr",
+                children=[
+                    v.Html(tag="td", children=[""]),
+                    v.Html(
+                        tag="td",
+                        children=["" if src_classes else "No data available"],
+                    ),
+                ],
+            )
+        ]
+
+        self.table.children = self.headers + [v.Html(tag="tbody", children=rows)]
 
         # js behaviour
         [
@@ -280,8 +406,13 @@ class ReclassifyTable(sw.DataTable):
         # get the code of the class in the src classification
         code = change["owner"]._metadata["class"]
 
+        # Make a copy of matrix, so we can use it as an observable trait
+        temp_matrix = deepcopy(self.model.matrix)
+
         # bind it to classes in the dst classification
-        self.model.matrix[code] = change["new"] if change["new"] else 0
+        temp_matrix[code] = change["new"] if change["new"] else 0
+
+        self.model.matrix = temp_matrix
 
         return self
 
@@ -320,9 +451,6 @@ class ReclassifyView(sw.Card):
 
     title = None
     "sw.Cardtitle: the title of the card"
-
-    get_table_btn = None
-    "sw.Btn: the btn to load the data in the reclassification table"
 
     w_dst_class_file = None
     "sw.FileInput: widget to select the new classification system file (3 headless columns: 'code', 'desc', 'color')"
@@ -369,7 +497,6 @@ class ReclassifyView(sw.Card):
                 "Both reclassify_model.gee and reclassify_view parameters has to be equals."
                 + f"Received {enforce_aoi} for reclassify_view and {self.model.enforce_aoi} for reclassify_model."
             )
-
         # set the folders
         self.class_path = Path(class_path)
         self.out_path = Path(out_path)
@@ -378,7 +505,6 @@ class ReclassifyView(sw.Card):
         self.gee = gee
         if gee:
             su.init_ee()
-
         # create an alert to display information to the user
         self.alert = sw.Alert()
 
@@ -396,10 +522,9 @@ class ReclassifyView(sw.Card):
             [".csv"], label=ms.rec.rec.input.classif.label, folder=self.class_path
         )
 
-        self.btn_get_table = sw.Btn(
-            ms.rec.rec.input.btn,
-            "mdi-table",
-            color="success",
+        self.btn_get_table = Btn(
+            children=[cm.reclass.get_classes],
+            color="primary",
             small=True,
             class_="ml-2",
         )
@@ -422,19 +547,11 @@ class ReclassifyView(sw.Card):
             self.w_dst_class_file.select_file(dst_class).hide()
 
         self.save_dialog = SaveMatrixDialog(folder=out_path)
-        self.import_dialog = ImportMatrixDialog(folder=out_path)
-        self.import_table = sw.Btn(
-            "import",
-            "fas fa-download",
-            color="secondary",
-            small=True,
-            class_="ml-2 mr-2",
-        )
+        self.import_dialog = ImportMatrixDialog(folder=out_path, attributes={"id": "2"})
 
         self.reclassify_table = ReclassifyTable(self.model)
 
         # bind to the model
-        # bind to the 2 raster and asset as they cannot be displayed at the same time
 
         self.model.bind(self.w_dst_class_file, "dst_class_file")
 
@@ -454,36 +571,38 @@ class ReclassifyView(sw.Card):
         self.get_reclassify_table = loading_button(
             self.alert, self.btn_get_table, debug=True
         )(self.get_reclassify_table)
-        self.load_matrix_content = loading_button(
-            self.alert, self.import_table, debug=True
-        )(self.load_matrix_content)
 
         # JS Events
-        self.import_table.on_event("click", lambda *args: self.import_dialog.show())
         self.import_dialog.load_btn.on_event("click", self.load_matrix_content)
+
+        self.reclassify_table.btn_load_table.on_event(
+            "click", lambda *args: self.import_dialog.show()
+        )
+
         self.reclassify_table.btn_save_table.on_event(
             "click", lambda *args: self.save_dialog.show(self.model.matrix)
         )
-        # self.w_image.observe(self._update_band, "v_model")
+
         self.btn_get_table.on_event("click", self.get_reclassify_table)
 
-    def load_matrix_content(self, widget, event, data):
-        """Load the content of the file in the matrix. The table need to be already set to perform this operation
+        # Reset table everytime an image image collection is changed.
+        self.w_ic_select.observe(
+            lambda x: self.reclassify_table.set_table({}, {}), "v_model"
+        )
 
-        Return:
-            self
-        """
+    def load_matrix_content(self, widget, event, data):
+        """Load the content of the file in the matrix. The table need to be already set
+        to perform this operation"""
+
         self.import_dialog.value = False
         file = self.import_dialog.w_file.v_model
 
         # exit if no files are selected
         if not file:
             raise Exception("No file has been selected")
-
         # exit if no table is loaded
         if not self.model.table_created:
             raise Exception("You have to get the table before.")
-
         # load the file
         # sanity checks
         input_data = pd.read_csv(file).fillna(NO_VALUE)
@@ -494,7 +613,6 @@ class ReclassifyView(sw.Card):
             raise Exception(
                 "This file may contain non supported charaters for reclassification."
             )
-
         if len(input_data.columns) != 2:
             # Try to identify the oclumns and subset them
             if all([colname in list(input_data.columns) for colname in MATRIX_NAMES]):
@@ -503,7 +621,6 @@ class ReclassifyView(sw.Card):
                 raise Exception(
                     "This file is not a properly formatted as classification matrix"
                 )
-
         # check that the destination values are all available
         widget = list(self.reclassify_table.class_select_list.values())[0]
         classes = [i["value"] for i in widget.items]
@@ -519,7 +636,7 @@ class ReclassifyView(sw.Card):
                     str(src_code)
                 ].v_model = dst_code
 
-        self.import_dialog.w_file.reset()
+        # self.import_dialog.w_file.reset()
 
         return self
 
@@ -545,23 +662,20 @@ class ReclassifyView(sw.Card):
             self
         """
 
+        image_collection = self.w_ic_select.v_model
+
         # get the destination classes
         self.model.dst_class = self.model.get_classes()
 
         # get the src_classes
-        self.model.src_class = self.model.unique()
+        # I'm overwirting the custom
+        self.model.src_class = get_unique_classes(self.model, image_collection)
 
         # if the src_class_file is set overwrite src_class:
         if self.w_src_class_file.v_model:
             self.model.src_class = self.model.get_classes()
-
         # reset the table
         self.reclassify_table.set_table(self.model.dst_class, self.model.src_class)
-
-        # check if the duplicate_layout need to be displayed ?
-        self.duplicate_layout.class_ = "d-none"
-        if len(self.reclassify_table.children[0].children) - 1 > self.MAX_CLASS:
-            self.duplicate_layout.class_ = "d-block"
 
         return self
 
