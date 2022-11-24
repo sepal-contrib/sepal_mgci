@@ -6,7 +6,7 @@ from natsort import natsorted
 ee.Initialize()
 
 
-def get_items(list_: list):
+def subset_items(list_: list):
     """from a list return first, middle and last element"""
 
     if len(list_) < 3:
@@ -45,12 +45,12 @@ def get_unique_classes(model, image_collection):
     image_ids = (
         ee.ImageCollection(image_collection).aggregate_array("system:id").getInfo()
     )
-    image_ids = get_items(image_ids)
+    subset_ids = subset_items(image_ids)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
 
         futures = {
-            executor.submit(get_classes, image_id): image_id for image_id in image_ids
+            executor.submit(get_classes, image_id): image_id for image_id in subset_ids
         }
 
         result = {}
@@ -64,4 +64,4 @@ def get_unique_classes(model, image_collection):
         set([class_ for img_classes in result.values() for class_ in img_classes])
     )
 
-    return {v: ("no_name", "#000000") for v in natsorted(items)}
+    return {v: ("no_name", "#000000") for v in natsorted(items)}, image_ids
