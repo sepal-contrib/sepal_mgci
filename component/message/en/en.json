@@ -10,6 +10,10 @@
             "disclaimer" : "Disclaimer"
         }
     },
+    "reclass_view" : {
+        "ic_default_label" : "Default Image Collection",
+        "ic_custom_label" : "Select a custom Image Collection"
+    },
     "aoi" : {
         "legend" : {
             "total" : "Total",
@@ -47,6 +51,12 @@
             "q1":"Would you like to use a custom land use/land cover map?",
             "q2":"Do you have a reclassification matrix table in a CSV format?"
         }
+    },
+    "reclass" : {
+        "title" : "Reclassify table",
+        "get_classes" : "Get classes",
+        "no_data" : "No data",
+        "non_complete" : "You have classified {} classes. Empty classes will be classified as zero (0)."
     },
     "calculation" : {
         "sub_a" : {
@@ -96,17 +106,6 @@
             "scale" : "Pixel resolution for the output. It will affect the speed and the accuracy of the results",
             "year": "Select a year for the dashboard outputs. It will be used to label the outputs. If not provided, the reclassified band name will be used.",
             "source": "Please insert the name of the institution you belong to."
-        },
-        "individual" : {
-            "title" : "Kapos range {}",
-            "desc": {
-                    "k1":"Where elevation >= 4,500 meters",
-                    "k2":"Where elevation is between 3,500 and 4,500 meters",
-                    "k3":"Where elevation is between 2,500 and 3,500 meters",
-                    "k4":"Where elevation is between 1,500 and 2,500 meters and the slope is greather than 2%",
-                    "k5":"Where elevation is between 1,000 and 1,500 meters and the slope is greather tan 5% or local elevation range (LER 7km radius) is over 300 meters",
-                    "k6":"Where elevation is between 300 and 1,000 meters and local elevation range (7km radius) is over 300 meters"
-            }
         },
         "global_" : {
             "title" : "Overall Mountain Green Cover Index",
