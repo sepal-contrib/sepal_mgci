@@ -26,8 +26,9 @@ class MgciModel(Model):
     custom_lulc = Bool(allow_none=True).tag(sync=True)
     custom_dem_id = Unicode(allow_none=True).tag(sync=True)
 
-    # LCLU Classes (came from the reclassify model)
     lulc_classes = Dict(allow_none=True).tag(sync=True)
+    "dict: LCLU Classes. Are the target classes. In this app are fixed, not allowed to change."
+
     rsa = Bool(False, allow_none=True).tag(sync=True)
 
     # Observation variables
@@ -42,6 +43,9 @@ class MgciModel(Model):
 
     biobelt_image = None
     "ee.Image: clipped bioclimatic belt image with aoi_model.feature_collection"
+
+    matrix = Dict({}).tag(sync=True)
+    "dict: comes from reclassify_tile.model.matrix which are the {src:dst} classes"
 
     @su.need_ee
     def __init__(self, aoi_model=None):
