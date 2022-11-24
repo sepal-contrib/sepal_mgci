@@ -9,8 +9,6 @@ from component.message import cm
 from component.tile.aoi_view import AoiView
 from component.widget.legend_control import LegendControl
 
-__all__ = ["AoiTile"]
-
 
 class CustomList(sw.List):
 
@@ -209,7 +207,9 @@ class Calculation(sw.List):
 
         self.model = model
 
-        self.w_content_a = v.Select(v_model=[], multiple=True)
+        self.w_content_a = v.Select(
+            label=cm.calculation.y_report, v_model=[], multiple=True
+        )
         self.w_content_b = CustomList()
 
         self.dialog_a = EditionDialog(self.w_content_a, "sub_a")
@@ -249,8 +249,13 @@ class Calculation(sw.List):
         on model ic_items change"""
 
         if change["new"]:
-            self.w_content_a.items = change["new"]
-            self.w_content_b.populate(change["new"])
+
+            items = [
+                {"value": item.split("/")[-1], "text": item} for item in change["new"]
+            ]
+
+            self.w_content_a.items = items
+            self.w_content_b.populate(items)
 
     def get_item(self, indicator):
         """returns the specific structure required to display the bands(years) that will

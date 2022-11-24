@@ -12,7 +12,7 @@ from sepal_ui.message import ms
 from sepal_ui.model import Model
 from sepal_ui.scripts import gee
 from sepal_ui.scripts import utils as su
-from traitlets import Any, Bool, Dict, Int
+from traitlets import Any, Bool, Dict, Int, List
 
 from .parameters import NO_VALUE
 
@@ -93,8 +93,8 @@ class ReclassifyModel(Model):
     dst_gee_memory = None
     "Any: the gee output of the reclassification"
 
-    table_created = Bool(False).tag(sync=True)
-    "bool: either or not a table have been created"
+    ic_items = List([]).tag(sync=True)
+    "list: list of image ids from the image collection"
 
     def __init__(
         self,

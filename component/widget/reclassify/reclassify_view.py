@@ -667,13 +667,15 @@ class ReclassifyView(sw.Card):
         # get the destination classes
         self.model.dst_class = self.model.get_classes()
 
-        # get the src_classes
-        # I'm overwirting the custom
-        self.model.src_class = get_unique_classes(self.model, image_collection)
+        # get the src_classes and selected image collection items (aka images)
+        self.model.src_class, self.model.ic_items = get_unique_classes(
+            self.model, image_collection
+        )
 
         # if the src_class_file is set overwrite src_class:
-        if self.w_src_class_file.v_model:
-            self.model.src_class = self.model.get_classes()
+        # if self.w_src_class_file.v_model:
+        #     self.model.src_class = self.model.get_classes()
+
         # reset the table
         self.reclassify_table.set_table(self.model.dst_class, self.model.src_class)
 
