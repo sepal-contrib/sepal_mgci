@@ -7,7 +7,8 @@ from ipywidgets import Output
 from matplotlib import pyplot as plt
 from traitlets import directional_link, link
 
-import component.parameter as param
+import component.parameter.directory as DIR
+import component.parameter.module_parameter as param
 import component.parameter.report_template as rt
 import component.scripts as cs
 import component.widget as cw
@@ -182,14 +183,12 @@ class DownloadTaskView(v.Card):
         # Widgets
         title = v.CardTitle(children=[cm.dashboard.tasks.title])
         description = v.CardText(
-            children=[
-                sw.Markdown(cm.dashboard.tasks.description.format(param.TASKS_DIR))
-            ]
+            children=[sw.Markdown(cm.dashboard.tasks.description.format(DIR.TASKS_DIR))]
         )
 
         question_icon = v.Icon(children=["mdi-help-circle"], small=True)
 
-        self.w_file_input = sw.FileInput(folder=param.TASKS_DIR, extentions=[".csv"])
+        self.w_file_input = sw.FileInput(folder=DIR.TASKS_DIR, extentions=[".csv"])
 
         self.alert = sw.Alert()
         self.btn = sw.Btn(cm.dashboard.label.calculate)
@@ -290,7 +289,7 @@ class CalculationView(v.Card, sw.SepalWidget):
             # Try the process in on the fly
             try:
                 self.model.extract_summary_from_result()
-                self.dashboard_view.render_dashboard()
+                # self.dashboard_view.render_dashboard()
                 self.alert.reset()
             except Exception as e:
                 if e.args[0] == "Computation timed out.":

@@ -68,25 +68,10 @@ class ReclassifyTile(sw.Card):
         ).nest_tile()
 
         # Create a default destination classification file
-
+        # I did this because in version 0 I didn't wanted to modify view.
         self.w_reclass.w_dst_class_file.select_file(default_class["IPCC"]).hide()
         self.w_reclass.model.dst_class_file = default_class["IPCC"]
         self.w_reclass.model.dst_class = self.w_reclass.model.get_classes()
-
-        self.load_btn = self.w_reclass.import_dialog.load_btn
-        self.load_btn.disabled = True
-
-        self.w_input_matrix = v.Row(
-            class_="d-flex",
-            align="center",
-            children=[
-                v.Col(cols="1", class_="text-right", children=[self.load_btn]),
-            ],
-        )
-
-        # Insert the input map matrix widget in the reclassify view widget
-        new_items = self.w_reclass.children.copy() + [self.w_input_matrix]
-        self.w_reclass.children = new_items
 
         self.children = [
             self.w_reclass,
@@ -94,15 +79,6 @@ class ReclassifyTile(sw.Card):
 
         self.get_view()
         self.questionaire.observe(self.get_view)
-        self.w_reclass.model.observe(self.activate_load, "table_created")
-
-    def activate_load(self, change):
-        """Activate load matrix button once the user has created the table"""
-
-        if change["new"]:
-            self.load_btn.disabled = False
-        else:
-            self.load_btn.disabled = True
 
     def use_default(self):
         """Define a default asset to the w_image component from w_reclass"""
@@ -130,8 +106,6 @@ class ReclassifyTile(sw.Card):
             widget = getattr(self.w_reclass, c)
             widget.disabled = False
             su.hide_component(widget)
-
-        self.w_input_matrix.class_ = "d-none"
 
         # Would you like to use a custom land use/land cover map?
         if self.questionaire.custom_lulc:

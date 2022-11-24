@@ -6,7 +6,7 @@ import pandas as pd
 import sepal_ui.sepalwidgets as sw
 from sepal_ui.mapping import SepalMap
 
-import component.parameter as param
+import component.parameter.module_parameter as param
 from component.tile.aoi_view import AoiView
 from component.widget.legend_control import LegendControl
 
