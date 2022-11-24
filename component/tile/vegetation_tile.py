@@ -32,18 +32,16 @@ class VegetationTile(v.Layout, sw.SepalWidget):
         description = v.CardText(children=[sw.Markdown(cm.veg_layer.description)])
 
         w_questionaire = Questionaire()
-        self.map_ = sm.SepalMap()
+
         self.view = VegetationView(
             model=self.model,
             aoi_model=self.aoi_model,
-            map_=self.map_,
             questionaire=w_questionaire,
         )
 
         cards = [
             [[w_questionaire], "Questionaire"],
             [[self.view], "Classification"],
-            [[self.map_], "Visualize"],
         ]
 
         self.children = [v.Card(children=[title, description], class_="pa-2 mb-2")] + [
@@ -59,7 +57,7 @@ class VegetationTile(v.Layout, sw.SepalWidget):
 
 
 class VegetationView(v.Layout, sw.SepalWidget):
-    def __init__(self, model, aoi_model, map_, questionaire, *args, **kwargs):
+    def __init__(self, model, aoi_model, questionaire, *args, **kwargs):
 
         self._metadata = {"mount_id": "vegetation_tile"}
         self.class_ = "d-block pa-2"
@@ -69,7 +67,6 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
         self.model = model
         self.aoi_model = aoi_model
-        self.map_ = map_
         self.w_questionaire = questionaire
 
         self.reclassify_tile = rt.ReclassifyTile(
@@ -82,46 +79,23 @@ class VegetationView(v.Layout, sw.SepalWidget):
             },
         )
 
-        self.display_btn = sw.Btn("Display on map", class_="mt-2")
+        self.children = [self.reclassify_tile]
 
-        self.children = [self.reclassify_tile, self.display_btn]
-
-        # Decorate functions
-        self.display_map = loading_button(
-            alert=sw.Alert(), button=self.display_btn, debug=True
-        )(self.display_map)
-
-        self.reclassify_tile.model.observe(self.update_model_vegetation, "remaped")
-
-        # Let's bind the selected band with the model, it will be useful in the
-        # dashboard
-
-        directional_link((self.reclassify_tile.model, "band"), (self.model, "year"))
+        directional_link((self.reclassify_tile.model, "matrix"), (self.model, "matrix"))
+        directional_link(
+            (self.reclassify_tile.model, "ic_items"), (self.model, "ic_items")
+        )
         directional_link(
             (self.reclassify_tile.model, "dst_class"), (self.model, "lulc_classes")
         )
 
-        self.display_btn.on_event("click", self.display_map)
-
-    def update_mask(self, change):
-        """Once the Kapos layer is created, update the reclassify mask to restrict
-        the analysis to the mask"""
-
-        self.reclassify_tile.model.mask = self.model.kapos_mask
-
-    def update_model_vegetation(self, change):
-        """Observe reclassify model, and update the mgci model. It will store
-        the reclassified gee asset into the mgci model to perform operations.
-        """
-        if change["new"]:
-
-            self.model.vegetation_image = (
-                self.reclassify_tile.w_reclass.model.dst_gee_memory
-            )
-
     def display_map(self, *args):
         """Display reclassified raster on map. Get the reclassify visualization
-        image."""
+        image.
+
+        .. deprecated:
+            this is an orphan method. I will try to use later if requested
+        """
 
         # Manually trigger the reclassify method
         self.reclassify_tile.w_reclass.reclassify(None, None, None)
