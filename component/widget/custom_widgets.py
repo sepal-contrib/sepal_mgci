@@ -1,8 +1,8 @@
-from traitlets import link, CBool, Int
 import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
+from traitlets import CBool, Int, link
 
-__all__ = ["BoolQuestion", "Tabs"]
+__all__ = ["BoolQuestion", "Tabs", "TaskMsg"]
 
 
 class BoolQuestion(v.Flex, sw.SepalWidget):
@@ -60,3 +60,35 @@ class Tabs(v.Card):
         link((self.tabs[0], "v_model"), (self.content[0], "v_model"))
 
         super().__init__(**kwargs)
+
+
+class TaskMsg(sw.Flex):
+
+    colors = ["info", "success", "error", "warning"]
+
+    def __init__(self, msg=""):
+
+        super().__init__()
+
+        self.class_ = "d-flex"
+        self.icon = sw.Icon(children=["mdi-circle"], color="info")
+
+        self.children = [msg, v.Spacer(), self.icon]
+
+    def set_msg(self, msg):
+        """mutate and set new message by replacing"""
+
+        self.children = [msg] + self.children[1:]
+
+    def set_state(self, state_color):
+        """sets a state (color) to the icon"""
+
+        if state_color not in self.colors:
+            raise Exception(f"Invalid color, use {self.colors}")
+
+        if state_color == "success":
+            self.icon.children = ["mdi-checkbox-marked-circle"]
+        elif state_color == "warning":
+            self.icon.children = ["mdi-information"]
+
+        self.icon.color = state_color
