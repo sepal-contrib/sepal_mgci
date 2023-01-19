@@ -8,7 +8,8 @@ from sepal_ui.model import Model
 from sepal_ui.scripts.warning import SepalWarning
 from traitlets import Any, Bool, CBool, Dict, Int, List, Unicode
 
-import component.parameter as param
+import component.parameter.directory as DIR
+import component.parameter.module_parameter as param
 import component.scripts as cs
 from component.message import cm
 from component.parameter.report_template import *
@@ -24,6 +25,11 @@ class MgciModel(Model):
 
     # Custom
     custom_lulc = Bool(allow_none=True).tag(sync=True)
+    "bool: either user will provide a custom land cover layer or not"
+
+    impact_matrix = Bool(allow_none=False).tag(sync=True)
+    "bool: either user will provide a custom transition matrix (impact) or not"
+
     custom_dem_id = Unicode(allow_none=True).tag(sync=True)
 
     lulc_classes = Dict(allow_none=True).tag(sync=True)
@@ -32,8 +38,6 @@ class MgciModel(Model):
     rsa = Bool(False, allow_none=True).tag(sync=True)
 
     # Observation variables
-
-    task_file = Unicode("", allow_none=True).tag(sync=True)
 
     ic_items = List([]).tag(sync=True)
     "list: list of select.items containing image ids and image names from the image collection"
@@ -46,6 +50,24 @@ class MgciModel(Model):
 
     matrix = Dict({}).tag(sync=True)
     "dict: comes from reclassify_tile.model.matrix which are the {src:dst} classes"
+
+    transition_matrix = Any(param.TRANSITION_MATRIX).tag(sync=True)
+    "pd.DataFrame: containing at least 3 columns: from_code, to_code, impact_code"
+
+    dash_ready = Bool(False).tag(sync=True)
+    "bool: this attribute will receive the dashboard status. True when it has loaded successfully"
+
+    calc_a = Bool(True).tag(sync=True)
+    "bool: comes from Calculation swtich A. Either user wants to calculate subindicator A or not"
+
+    start_year = List([]).tag(sync=True)
+    "list: list of year(s) selected in dashboard.calculation_view.calculation.w_content_a.v_model"
+
+    calc_b = Bool(True).tag(sync=True)
+    "bool: comes from Calculation swtich B. Either user wants to calculate subindicator B or not"
+
+    end_year = Dict().tag(sync=True)
+    "list: list of year(s) selected in dashboard.calculation_view.calculation.w_content_b.v_model"
 
     @su.need_ee
     def __init__(self, aoi_model=None):
@@ -63,55 +85,94 @@ class MgciModel(Model):
         self.vegetation_image = None
         self.aoi_model = aoi_model
 
+        self.ic_items_label = None
+
         # Styled results dataframe
         self.mgci_report = None
 
         # Save the GEE reduce to region json proces
         self.reduced_process = None
 
-    def reduce_to_regions(self):
-        """
-        Reduce land use/land cover image to kapos regions using planimetric or real
-        surface area
+    def reduce_to_regions(
+        self,
+        lc_start,
+        lc_end=None,
+    ):
+        """Reduce land use/land cover image to bioclimatic belts regions using planimetric
+        or real surface area
 
         Attributes:
-            lulc (ee.Image, categorical): Input image to reduce
-            kapos (ee.Image, categorical): Input region
+            lc_start (string): first year of the report or baseline.
+            lc_end (string): last year of the report.
             aoi (ee.FeatureCollection, ee.Geometry): Region to reduce image
+
         Return:
             GEE Dicionary process (is not yet executed), with land cover class area
-            per kapos mountain range
+            per land cover (when both dates are input) and biobelts
         """
 
-        if not self.vegetation_image:
-            raise Exception(
-                "Please go to the vegetation descriptor layer and reclassify an image"
-            )
+        if not lc_start:
+            raise Exception("Please select at least one year")
 
-        lulc = self.vegetation_image.select([self.vegetation_image.bandNames().get(0)])
+        if self.matrix:
+            from_, to_ = list(zip(*self.matrix.items()))
+
+        def no_remap(image):
+            """return remapped or raw image if there's a matrix"""
+            return image.remap(from_, to_, 0) if self.matrix else image
+
+        # Define two ways of calculation, with only one date and with both
+        ee_lc_start_band = ee.Image(lc_start).bandNames().get(0)
+        ee_lc_start = ee.Image(lc_start).select([ee_lc_start_band])
+        ee_lc_start = no_remap(ee_lc_start)
 
         aoi = self.aoi_model.feature_collection.geometry()
+        clip_biobelt = ee.Image(param.BIOBELT).clip(aoi)
 
         if self.rsa:
             # When using rsa, we need to use the dem scale, otherwise
             # we will end with wrong results.
             image_area = cs.get_real_surface_area(self.dem, aoi)
-            scale = self.dem.projection().nominalScale().getInfo()
+            scale = ee_lc_start.projection().nominalScale().getInfo()
         else:
             # Otherwise, we will use the coarse scale to the output.
             image_area = ee.Image.pixelArea()
             scale = (
-                self.dem.projection()
+                ee_lc_start.projection()
                 .nominalScale()
-                .max(lulc.projection().nominalScale())
+                .max(ee_lc_start.projection().nominalScale())
                 .getInfo()
             )
 
-        self.reduced_process = (
+        if lc_end:
+
+            ee_lc_end_band = ee.Image(lc_end).bandNames().get(0)
+            ee_lc_end = ee.Image(lc_end).select([ee_lc_end_band])
+            ee_lc_end = no_remap(ee_lc_end)
+
+            return (
+                image_area.divide(param.UNITS["sqkm"][0])
+                .updateMask(clip_biobelt.mask())
+                .addBands(ee_lc_end)
+                .addBands(ee_lc_start)
+                .addBands(clip_biobelt)
+                .reduceRegion(
+                    **{
+                        "reducer": ee.Reducer.sum().group(1).group(2).group(3),
+                        "geometry": aoi,
+                        "maxPixels": 1e19,
+                        "scale": scale,
+                        "bestEffort": True,
+                        "tileScale": 4,
+                    }
+                )
+            )
+
+        return (
             image_area.divide(param.UNITS["sqkm"][0])
-            .updateMask(lulc.mask().And(self.kapos_image.mask()))
-            .addBands(lulc)
-            .addBands(self.kapos_image)
+            .updateMask(clip_biobelt.mask())
+            .addBands(ee_lc_start)
+            .addBands(clip_biobelt)
             .reduceRegion(
                 **{
                     "reducer": ee.Reducer.sum().group(1).group(2),
@@ -124,22 +185,16 @@ class MgciModel(Model):
             )
         )
 
-    def task_process(self):
-        """
-        Send the task to the GEE servers and process it in background. This will be
-        neccessary when the process is timed out.
-        """
+    def task_process(self, process, task_file, process_id):
+        """Send the task to the GEE servers and process it in background. This will be
+        neccessary when the process is timed out."""
 
-        # Create an unique name (to search after in Drive)
-        unique_preffix = su.random_string(4).upper()
-        filename = f"{unique_preffix}_{self.aoi_model.name}_{self.year}.csv"
+        task_name = Path(f"{task_file.name}_{process_id}")
 
         task = ee.batch.Export.table.toDrive(
             **{
-                "collection": ee.FeatureCollection(
-                    [ee.Feature(None, self.reduced_process)]
-                ),
-                "description": Path(filename).stem,
+                "collection": ee.FeatureCollection([ee.Feature(None, process)]),
+                "description": str(task_name),
                 "fileFormat": "CSV",
             }
         )
@@ -147,27 +202,32 @@ class MgciModel(Model):
         task.start()
 
         # Create a file containing the task id to track when the process is done.
+        with open(task_file.with_suffix(".csv"), "a") as file:
+            file.write(f"{process_id}, {task.id}" + "\n")
 
-        task_id_file = param.TASKS_DIR / filename
-        task_id_file.write_text(f"{filename}, {task.id}")
+    def download_from_task_file(self, task_id, tasks_file, task_filename):
+        """Download csv file result from GDrive
 
-        return filename, task.id, str(task_id_file)
-
-    def download_from_task_file(self, task_file):
-        """Download result from task file"""
+        Args:
+            task_id (str): id of the task tasked in GEE.
+            tasks_file (Path): path file containing all task_id, task_name
+            task_filename (str): name of the task file to be downloaded.
+        """
 
         gdrive = cs.GDrive()
-
-        # Read and get the first row (it shouldn't be mroeo than one)
-        filename, task_id = pd.read_csv(task_file, header=None).values.tolist()[0]
 
         # Check if the task is completed
         task = gdrive.get_task(task_id.strip())
 
         if task.state == "COMPLETED":
 
-            tmp_result_file = Path(param.TASKS_DIR, f"tmp_{filename}")
-            gdrive.download_file(filename, tmp_result_file)
+            tmp_result_folder = Path(DIR.TASKS_DIR, Path(tasks_file.name).stem)
+            tmp_result_folder.mkdir(exist_ok=True)
+
+            tmp_result_file = tmp_result_folder / task_filename
+            print(task_filename)
+            gdrive.download_file(task_filename, tmp_result_file)
+
             return tmp_result_file
 
         elif task.state == "FAILED":
@@ -178,186 +238,12 @@ class MgciModel(Model):
                 f"The task '{Path(filename).stem}' state is: {task.state}."
             )
 
-    def extract_summary_from_result(self, from_task=False):
-        """
-        From the gee result dictionary, extract the values and give a proper
-        format in a pd.DataFrame.
+    def read_tasks_file(self, tasks_file):
+        """read tasks file"""
 
-        Args:
-            from_task (bool, optional): Wheter the extraction will be from a results
-            file coming from a task or directly from the fly.
-        """
+        if not tasks_file.exists():
+            raise Exception("You have to download and select a task file.")
 
-        if from_task:
-            if not self.task_file:
-                raise Exception("You have to download and select a task file.")
+        tasks_df = pd.read_csv(tasks_file, header=None).astype(str)
 
-            # Dowload from file
-            result_file = self.download_from_task_file(self.task_file)
-            result_ = cs.read_from_task(result_file)
-            result_file.unlink()
-
-        else:
-            result_ = self.reduced_process.getInfo()
-
-        class_area_per_kapos = {}
-        for group in result_["groups"]:
-
-            # initialize classes key with zero area
-            temp_group_dict = {class_: 0 for class_ in param.DISPLAY_CLASSES}
-
-            for nested_group in group["groups"]:
-
-                if nested_group["group"] not in param.DISPLAY_CLASSES:
-                    # attach its area to "other classes (6)"
-                    # TODO: add warning?
-                    temp_group_dict[6] = temp_group_dict[6] + nested_group["sum"]
-                else:
-                    temp_group_dict[nested_group["group"]] = nested_group["sum"]
-
-            # Sort dictionary by its key
-            temp_group_dict = {
-                k: v
-                for k, v in sorted(temp_group_dict.items(), key=lambda item: item[0])
-            }
-
-            class_area_per_kapos[group["group"]] = temp_group_dict
-
-        # kapos classes are the rows and lulc are the columns
-        df = pd.DataFrame.from_dict(class_area_per_kapos, orient="index")
-
-        # Create the kapos class even if is not present in the dataset.
-        for kapos_range in list(range(1, 7)):
-            if not kapos_range in df.index:
-                df.loc[kapos_range] = 0
-
-        df.sort_index(inplace=True)
-        df["green_area"] = df[param.GREEN_CLASSES].sum(axis=1)
-        df["krange_area"] = df[param.DISPLAY_CLASSES].sum(axis=1)
-        df["mgci"] = df["green_area"] / df["krange_area"]
-        df.fillna(0, inplace=True)
-
-        self.summary_df = df
-
-    def get_mgci(self, krange=None):
-        """Get the MGCI for the overall area or for the Kapos Range if krange
-        is specified
-
-        Args:
-            krange (int): Kapos range [1-6].
-        """
-
-        if krange:
-            mgci = (self.summary_df.loc[krange]["mgci"]) * 100
-        else:
-            mgci = (
-                self.summary_df["green_area"].sum()
-                / self.summary_df["krange_area"].sum()
-            ) * 100
-
-        return round(mgci, 2)
-
-    def get_report(self):
-        """From the summary df, create a styled df to align format with the
-        report"""
-
-        # The following format respects
-        # https://github.com/dfguerrerom/sepal_mgci/issues/23
-
-        if self.summary_df is None:
-            raise Exception(cm.dashboard.alert.no_summary)
-
-        # Create a df with the report columns
-        base_df = pd.DataFrame(columns=BASE_COLS)
-
-        vegetation_names = {k: v[0] for k, v in self.lulc_classes.items()}
-        vegetation_columns = list(vegetation_names.values())
-
-        # Create the base columns for the statistics dataframe
-        stats_df = self.summary_df.copy()
-        # Replace 0 vals with "N" according with requirements.
-        stats_df.replace(0, NO_VALUE, inplace=True)
-        stats_df.rename(columns=vegetation_names, inplace=True)
-        stats_df[INDICATOR] = INDICATOR_NUM
-        stats_df[GEOAREANAM] = cs.get_geoarea(self.aoi_model)[0]
-        stats_df[GEOAREACODE] = cs.get_geoarea(self.aoi_model)[1]
-        stats_df[TIMEPERIOD] = self.year
-        stats_df[TIMEDETAIL] = self.year
-        stats_df[SOURCE] = self.source
-        stats_df[NATURE] = CUSTOM_ if self.custom_lulc == True else GLOBAL_
-        stats_df[REPORTING] = REPORTING_VALUE
-        stats_df[MOUNTAINCLASS] = "C" + stats_df.mgci.index.astype(str)
-        stats_df = stats_df.reset_index()
-
-        # We have to create three tables
-        # ER_MTN_GRNCVI
-        def get_mgci_report():
-            """Returns df with MGC index for every mountain range"""
-
-            # Merge dataframes
-            mgci_df = pd.merge(
-                base_df, stats_df.rename(columns={"mgci": VALUE}), how="right"
-            )
-
-            # Rename
-            mgci_df[VALUE] = stats_df.mgci
-            mgci_df[SERIESDESC] = SERIESDESC_GRNCVI
-            mgci_df[UNITSNAME] = UNITSNAME_GRNCVI
-            mgci_df[SERIESCOD] = SERIESCOD_GRNCVI
-
-            return mgci_df[BASE_COLS]
-
-        # ER_MTN_GRNCOV
-        def get_green_cov_report():
-            """Returns df with green cover and total mountain area for every mountain
-            range"""
-
-            unit = param.UNITS["sqkm"][1]
-
-            green_area_df = pd.merge(base_df, stats_df, how="right")
-            green_area_df[VALUE] = stats_df.green_area
-            green_area_df[SERIESDESC] = SERIESDESC_GRNCOV_1.format(unit=unit)
-            green_area_df[SERIESCOD] = SERIESCOD_GRNCOV_1
-
-            mountain_area_df = pd.merge(base_df, stats_df, how="right")
-            mountain_area_df[VALUE] = stats_df.krange_area
-            mountain_area_df[SERIESDESC] = SERIESDESC_GRNCOV_2.format(unit=unit)
-            mountain_area_df[SERIESCOD] = SERIESCOD_GRNCOV_2
-
-            greencov_df = pd.concat([green_area_df, mountain_area_df])
-
-            greencov_df[UNITSNAME] = "SQKM"
-
-            return greencov_df[BASE_COLS].sort_values(by=[MOUNTAINCLASS])
-
-        def get_land_cov_report():
-            """Returns df with land cover area per every mountain range"""
-
-            landcov_df = base_df.copy()
-
-            melt_df = (
-                pd.melt(
-                    stats_df,
-                    id_vars=[
-                        col
-                        for col in stats_df.columns.to_list()
-                        if col not in vegetation_columns
-                    ],
-                    value_vars=vegetation_columns,
-                )
-                .sort_values(by=[MOUNTAINCLASS])
-                .rename(columns={"variable": LULCCLASS, "value": VALUE})
-            )
-            # Merge dataframes
-
-            unit = param.UNITS["sqkm"][1]
-
-            landcov_df = pd.merge(base_df, melt_df, how="right")
-            landcov_df[SERIESDESC] = SERIESDESC_TTL.format(unit=unit)
-            landcov_df[UNITSNAME] = "SQKM"
-            landcov_df[SERIESCOD] = SERIESCOD_TTL
-
-            # Return in order
-            return landcov_df[BASE_COLS_TOTL].sort_values(by=[MOUNTAINCLASS, LULCCLASS])
-
-        return [get_mgci_report(), get_green_cov_report(), get_land_cov_report()]
+        return tasks_df
