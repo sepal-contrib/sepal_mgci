@@ -1,4 +1,6 @@
+import concurrent.futures
 from pathlib import Path
+from time import sleep
 
 import ipyvuetify as v
 import sepal_ui.scripts.utils as su
@@ -64,7 +66,7 @@ class ReportView(v.Card):
             cm.dashboard.report.disabled_alert, type_="warning"
         )
 
-        self.btn = sw.Btn(cm.dashboard.label.download, class_="ml-2", disabled=True)
+        self.btn = sw.Btn(cm.dashboard.label.download, class_="ml-2", disabled=False)
 
         self.w_year = v.TextField(
             label=cm.dashboard.label.year,
@@ -112,11 +114,11 @@ class ReportView(v.Card):
             ),
             t_year,
             t_source,
-            self.alert,
             self.btn,
+            self.alert,
         ]
 
-        self.btn.on_event("click", self.download_results)
+        self.btn.on_event("click", self.export_results)
 
         # We need a two-way-binding for the year
         link((self.w_year, "v_model"), (self.model, "year"))
@@ -135,34 +137,17 @@ class ReportView(v.Card):
             self.alert.add_msg(cm.dashboard.report.disabled_alert, type_="warning")
 
     @su.loading_button(debug=True)
-    def download_results(self, *args):
+    def export_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 
-        # Generate three reports
-        reports = self.model.get_report()
+        self.alert.add_msg(f"Exporting tables...")
+
         m49 = cs.get_geoarea(self.model.aoi_model)[1]
-
-        report_filenames = [
-            f"{rt.SERIESCOD_GRNCVI}_{m49}.xlsx",
-            f"{rt.SERIESCOD_GRNCOV_1}_{m49}.xlsx",
-            f"{rt.SERIESCOD_TTL}_{m49}.xlsx",
-        ]
-
         report_folder = cs.get_report_folder(self.model)
+        cs.export_reports(self.model, report_folder)
 
-        for (
-            report,
-            report_filename,
-        ) in zip(*[reports, report_filenames]):
-
-            report.to_excel(
-                str(Path(report_folder, report_filename)),
-                sheet_name=report_filename,
-                index=False,
-            )
         self.alert.add_msg(
-            f"The reports were successfully exported in {report_folder}",
-            type_="success",
+            f"Reporting tables successfull exported {report_folder}", type_="success"
         )
 
 
@@ -195,15 +180,65 @@ class DownloadTaskView(v.Card):
 
         self.children = [title, description, self.w_file_input, self.btn, self.alert]
 
-        self.btn.on_event("click", self.render_dashboard)
-
-        self.model.bind(self.w_file_input, "task_file")
+        self.btn.on_event("click", self.run_statistics)
 
     @su.loading_button(debug=True)
-    def render_dashboard(self, widget, event, data):
+    def run_statistics(self, widget, event, data):
 
-        self.dashboard_view.clear()
-        self.dashboard_view.render_dashboard(from_task=True)
+        # Get and read file
+        tasks_file = Path(self.w_file_input.v_model)
+        tasks_df = self.model.read_tasks_file(tasks_file)
+
+        def extract_from_tasks_file(tasks_file, process_id, task_id):
+            """From the gee result dictionary, extract the values and give a proper
+            format in a pd.DataFrame.
+
+            Args:
+                process (ee.reduceRegion): ee process (without execution).
+                task_file (path, str): full path of task file containing task_id(s)
+            """
+
+            # re-build the filename
+            task_filename = f"{tasks_file.stem}_{process_id}.csv"
+
+            # Dowload from file
+            msg = cw.TaskMsg(f"Calculating {process_id}..")
+            self.alert.append_msg(msg)
+
+            result_file = self.model.download_from_task_file(
+                task_id, tasks_file, task_filename
+            )
+
+            result = cs.read_from_csv(result_file, process_id)
+            sleep(0.5)
+            msg.set_msg(f"Calculating {process_id}... Done!.")
+            msg.set_state("success")
+
+            return result
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+
+            futures = {
+                executor.submit(
+                    extract_from_tasks_file,
+                    tasks_file,
+                    row.iloc[0].strip(),
+                    row.iloc[1].strip(),
+                ): row.iloc[0].strip()
+                for idx, row in tasks_df.iterrows()
+            }
+
+            self.model.results, results = {}, {}
+
+            for future in concurrent.futures.as_completed(futures):
+
+                future_name = futures[future]
+                results[future_name] = future.result()
+
+            self.model.results = results
+
+        # self.dashboard_view.clear()
+        # self.dashboard_view.render_dashboard(from_task=True)
 
 
 class CalculationView(v.Card, sw.SepalWidget):
@@ -267,8 +302,7 @@ class CalculationView(v.Card, sw.SepalWidget):
     def run_statistics(self, widget, event, data):
         """Start the calculation of the statistics. It will start the process on the fly
         or making a task in the background depending if the rsa is selected or if the
-        computation is taking so long.
-        """
+        computation is taking so long."""
         # Clear previous loaded results
         self.dashboard_view.clear()
 
@@ -278,38 +312,96 @@ class CalculationView(v.Card, sw.SepalWidget):
             else cm.dashboard.label.plan
         )
 
+        if not any([self.model.calc_a, self.model.calc_b]):
+            raise Exception(cm.calculation.error.no_subind)
+        else:
+            if all([not self.model.start_year, not self.model.end_year]):
+                raise Exception(cm.calculation.error.no_years)
+
         # Calculate regions
-        self.alert.add_msg(cm.dashboard.alert.computing.format(area_type))
 
-        # It will create the process and store it in reduced_process from model
-        self.model.reduce_to_regions()
+        head_msg = sw.Flex(children=[cm.dashboard.alert.computing.format(area_type)])
 
-        if not self.model.rsa:
+        self.alert.add_msg(head_msg)
+
+        def deferred_calculation(year, task_filename):
+            """perform the computation on the fly or fallback to gee background
+
+            args:
+                year (list(list)) : list of year list to perform calculation
+                task_filename: name of the task file (result ids will be append to the file)
+            """
+
+            msg = cw.TaskMsg(f"Calculating {year}..")
+            self.alert.append_msg(msg)
+
+            start_year = self.model.ic_items_label[year[0]]
+            process_id = "_".join(year)
+
+            if len(year) > 1:
+                end_year = self.model.ic_items_label[year[1]]
+                process = self.model.reduce_to_regions(start_year, end_year)
+
+            else:
+                process = self.model.reduce_to_regions(start_year)
 
             # Try the process in on the fly
             try:
-                self.model.extract_summary_from_result()
-                # self.dashboard_view.render_dashboard()
-                self.alert.reset()
+                raise (Exception(""))
+                result = process.getInfo()
+
+                msg.set_msg(f"Calculating {process_id}... Done.")
+                msg.set_state("success")
+
+                return result
+
             except Exception as e:
-                if e.args[0] == "Computation timed out.":
-                    name, task_id, task_id_file = self.model.task_process()
-                    self.alert.children = [
-                        sw.Markdown(
-                            cm.dashboard.alert.tasks_failed.format(
-                                Path(name).stem, task_id_file
-                            )
-                        )
-                    ]
+
+                if e.args[0] != "Computation timed out.":
+
+                    # Create an unique name (to search after in Drive)
+                    self.model.task_process(process, task_filename, process_id)
+                    msg.set_msg(f"Calculating {process_id}... Tasked.")
+                    msg.set_state("warning")
+
                 else:
                     raise Exception(f"There was an error {e}")
-        else:
-            name, task_id, task_id_file = self.model.task_process()
-            self.alert.children = [
-                sw.Markdown(
-                    cm.dashboard.alert.tasks_rsa.format(Path(name).stem, task_id_file)
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+
+            years = cs.get_years(self.model.start_year, self.model.end_year)
+            unique_preffix = su.random_string(4).upper()
+
+            # Create only one file to store all task ids for the current session.
+            task_file = DIR.TASKS_DIR / f"Task_result_{unique_preffix}"
+
+            futures = {
+                executor.submit(deferred_calculation, year, task_file): "_".join(year)
+                for year in years
+            }
+
+            self.results, results = {}, {}
+            # As we don't know which task was completed first, we have to save them in a
+            # key(grid_size) : value (future.result()) format
+            for future in concurrent.futures.as_completed(futures):
+
+                future_name = futures[future]
+                results[future_name] = future.result()
+
+            # If result is None, we assume the computation was tasked
+
+            if not all(results.values()):
+                task_filename = task_file.with_suffix(".csv")
+                self.alert.append_msg(
+                    f"The computation has been tasked {task_filename} "
                 )
-            ]
+
+            elif all(result.values()):
+                self.results = results
+                self.alert.append_msg(f"The computation has been performed.")
+
+            else:
+                self.alert.append_msg(f"There was an error in one of the steps")
 
 
 class DashboardView(v.Card, sw.SepalWidget):
