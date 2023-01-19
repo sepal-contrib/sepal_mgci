@@ -1,1 +1,0 @@
-Notebooks 1-to-5: (1) Reduce landcover transitions using GEE for two dates, read nested results from GEE, un-nest, and create subindicators (2-5).
