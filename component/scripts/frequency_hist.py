@@ -15,6 +15,11 @@ def subset_items(list_: list):
         return list((set([list_[0]] + [list_[int(len(list_) / 2)]] + [list_[-1]])))
 
 
+def get_image_collection_ids(image_collection):
+    """returns image collection ids"""
+    return ee.ImageCollection(image_collection).aggregate_array("system:id").getInfo()
+
+
 def get_unique_classes(model, image_collection):
     """perfroms multiple (3) reductions over the image collection to luckly get all the
     classes. When no. images in image_collection <3, we extract all the classes in each
@@ -42,9 +47,7 @@ def get_unique_classes(model, image_collection):
 
         return values
 
-    image_ids = (
-        ee.ImageCollection(image_collection).aggregate_array("system:id").getInfo()
-    )
+    image_ids = get_image_collection_ids(image_collection)
     subset_ids = subset_items(image_ids)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
@@ -64,4 +67,4 @@ def get_unique_classes(model, image_collection):
         set([class_ for img_classes in result.values() for class_ in img_classes])
     )
 
-    return {v: ("no_name", "#000000") for v in natsorted(items)}, image_ids
+    return {v: ("no_name", "#000000") for v in natsorted(items)}

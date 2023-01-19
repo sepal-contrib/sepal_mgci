@@ -11,9 +11,8 @@ from sepal_ui.scripts.decorator import switch
 from sepal_ui.scripts.utils import loading_button
 from traitlets import Unicode
 
+import component.scripts.frequency_hist as scripts
 from component.message import cm
-from component.parameter.module_parameter import LULC_DEFAULT
-from component.scripts.frequency_hist import get_unique_classes
 
 from .parameters import MATRIX_NAMES, NO_VALUE
 from .reclassify_model import ReclassifyModel
@@ -240,6 +239,8 @@ class ReclassifyTable(sw.Layout):
     def __init__(self, model, **kwargs):
 
         self.class_ = "d-block"
+        self.attributes = {"id": "reclassify_table"}
+
         # create the table
         super().__init__(**kwargs)
 
@@ -265,7 +266,7 @@ class ReclassifyTable(sw.Layout):
             children=[
                 cm.reclass.title,
                 v.Spacer(),
-                self.message,
+                "Transition matrix",
                 v.Spacer(),
                 v.Divider(vertical=True, class_="mx-2"),
                 self.btn_save_table,
@@ -513,11 +514,6 @@ class ReclassifyView(sw.Card):
             children=[sw.Html(tag="h2", children=[ms.rec.rec.title])]
         )
 
-        # create the input widgets
-        self.w_input_title = sw.Html(
-            tag="h2", children=[ms.rec.rec.input.title], class_="mt-5"
-        )
-
         self.w_src_class_file = sw.FileInput(
             [".csv"], label=ms.rec.rec.input.classif.label, folder=self.class_path
         )
@@ -527,10 +523,13 @@ class ReclassifyView(sw.Card):
             color="primary",
             small=True,
             class_="ml-2",
-        )
+            attributes={"id": "btn_get_table"},
+        ).hide()
 
         self.w_ic_select = sw.AssetSelect(
-            types=["IMAGE_COLLECTION"], default_asset=[str(LULC_DEFAULT)]
+            types=["IMAGE_COLLECTION"],
+            label=cm.reclass_view.ic_default_label,
+            disabled=True,
         )
 
         w_asset_selection = v.Flex(
@@ -549,7 +548,7 @@ class ReclassifyView(sw.Card):
         self.save_dialog = SaveMatrixDialog(folder=out_path)
         self.import_dialog = ImportMatrixDialog(folder=out_path, attributes={"id": "2"})
 
-        self.reclassify_table = ReclassifyTable(self.model)
+        self.reclassify_table = ReclassifyTable(self.model).hide()
 
         # bind to the model
 
@@ -559,8 +558,6 @@ class ReclassifyView(sw.Card):
         self.children = [
             self.title,
             w_asset_selection,
-            self.w_input_title,
-            self.w_dst_class_file,
             self.alert,
             self.reclassify_table,
             self.save_dialog,
@@ -586,9 +583,15 @@ class ReclassifyView(sw.Card):
         self.btn_get_table.on_event("click", self.get_reclassify_table)
 
         # Reset table everytime an image image collection is changed.
-        self.w_ic_select.observe(
-            lambda x: self.reclassify_table.set_table({}, {}), "v_model"
-        )
+
+        self.w_ic_select.observe(self.set_ids, "v_model")
+
+    def set_ids(self, change):
+        """set image collection ids to ic_items model attribute on change. set empty
+        table"""
+
+        self.model.ic_items = scripts.get_image_collection_ids(change["new"])
+        self.reclassify_table.set_table({}, {})
 
     def load_matrix_content(self, widget, event, data):
         """Load the content of the file in the matrix. The table need to be already set
@@ -668,9 +671,7 @@ class ReclassifyView(sw.Card):
         self.model.dst_class = self.model.get_classes()
 
         # get the src_classes and selected image collection items (aka images)
-        self.model.src_class, self.model.ic_items = get_unique_classes(
-            self.model, image_collection
-        )
+        self.model.src_class = scripts.get_unique_classes(self.model, image_collection)
 
         # if the src_class_file is set overwrite src_class:
         # if self.w_src_class_file.v_model:

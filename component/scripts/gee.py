@@ -1,10 +1,10 @@
-import ee
 import io
-import numpy as np
-from googleapiclient.http import MediaIoBaseDownload
-from apiclient import discovery
-
 import logging
+
+import ee
+import numpy as np
+from apiclient import discovery
+from googleapiclient.http import MediaIoBaseDownload
 
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 
@@ -32,7 +32,7 @@ class GDrive:
             service.files()
             .list(
                 q="mimeType='text/csv'",
-                pageSize=5,
+                pageSize=10,
                 fields="nextPageToken, files(id, name)",
             )
             .execute()
@@ -72,6 +72,26 @@ class GDrive:
         fo.write(fh.getvalue())
         fo.close()
 
+        return True
+
+    def download_file(self, filename, output_file):
+
+        success, fId = self.get_id(filename)
+        if success == 0:
+            raise Exception("File not found")
+
+        request = self.service.files().get_media(fileId=fId[0])
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while done is False:
+            status, done = downloader.next_chunk()
+        if status:
+            fo = open(output_file, "wb")
+            fo.write(fh.getvalue())
+            fo.close()
+        else:
+            raise Exception("Download Failed")
         return True
 
     def delete_file(self, filename):
