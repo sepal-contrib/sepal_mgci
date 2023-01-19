@@ -11,6 +11,7 @@ import component.parameter.directory as dir_
 import component.parameter.module_parameter as param
 import component.widget as cw
 from component.message import cm
+from component.widget.transition_matrix import TransitionMatrix
 
 from . import reclassify_tile as rt
 
@@ -55,6 +56,8 @@ class VegetationTile(v.Layout, sw.SepalWidget):
         # Save the answer in the model. It will be used in the report
         directional_link((w_questionaire, "custom_lulc"), (self.model, "custom_lulc"))
 
+        self.view.reclassify_tile.use_default()
+
 
 class VegetationView(v.Layout, sw.SepalWidget):
     def __init__(self, model, aoi_model, questionaire, *args, **kwargs):
@@ -70,7 +73,6 @@ class VegetationView(v.Layout, sw.SepalWidget):
         self.w_questionaire = questionaire
 
         self.reclassify_tile = rt.ReclassifyTile(
-            self.w_questionaire,
             results_dir=dir_.CLASS_DIR,
             save=False,
             aoi_model=self.aoi_model,
@@ -79,7 +81,16 @@ class VegetationView(v.Layout, sw.SepalWidget):
             },
         )
 
-        self.children = [self.reclassify_tile]
+        self.w_reclass = self.reclassify_tile.w_reclass
+
+        self.transition_view = TransitionMatrix(self.model)
+        self.transition_view.impact_matrix = True
+        self.children = [
+            cw.Tabs(
+                ["Land cover classification", "Impact matrix"],
+                [self.reclassify_tile, self.transition_view],
+            )
+        ]
 
         directional_link((self.reclassify_tile.model, "matrix"), (self.model, "matrix"))
         directional_link(
@@ -88,6 +99,55 @@ class VegetationView(v.Layout, sw.SepalWidget):
         directional_link(
             (self.reclassify_tile.model, "dst_class"), (self.model, "lulc_classes")
         )
+
+        self.w_questionaire.observe(self.get_reclassify_view)
+
+        self.model.observe(self.set_default_asset, "dash_ready")
+
+    def set_default_asset(self, change):
+        """listen dash_ready model attribute and change w_ic_select default v_model. It
+        will help to fill up the dialog baseline and report years for the very first
+        time"""
+
+        if change["new"]:
+            self.reclassify_tile.w_reclass.w_ic_select.v_model = str(param.LULC_DEFAULT)
+            self.reclassify_tile.use_default()
+
+    def get_reclassify_view(self, change=None):
+        """Observe the questionaire answers and display the proper view of the
+        reclassify widget"""
+
+        # Would you like to use a custom land use/land cover map?
+        if self.w_questionaire.custom_lulc:
+
+            # Do you have a custom land cover transition matrix (.csv)?
+            if not self.w_questionaire.impact_matrix:
+
+                self.w_reclass.w_ic_select.label = cm.reclass_view.ic_custom_label
+                self.w_reclass.w_ic_select.disabled = False
+                self.w_reclass.reclassify_table.set_table({}, {})
+
+                self.w_reclass.get_children("btn_get_table").show()
+                self.w_reclass.get_children("reclassify_table").show()
+                self.transition_view.impact_matrix = True
+
+            else:
+                self.w_reclass.get_children("reclassify_table").hide()
+                self.w_reclass.get_children("btn_get_table").hide()
+
+                # Hide impact matrix and add a loader to load csv matrix
+                self.transition_view.impact_matrix = False
+
+        else:
+
+            self.w_reclass.w_ic_select.label = cm.reclass_view.ic_default_label
+            self.w_reclass.w_ic_select.v_model = param.LULC_DEFAULT
+            self.w_reclass.w_ic_select.disabled = True
+
+            self.w_reclass.get_children("btn_get_table").hide()
+            self.w_reclass.get_children("reclassify_table").hide()
+            self.transition_view.impact_matrix = True
+            self.reclassify_tile.use_default()
 
     def display_map(self, *args):
         """Display reclassified raster on map. Get the reclassify visualization
@@ -135,12 +195,13 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
 
 class Questionaire(v.Layout, sw.SepalWidget):
-    """Vegetation questionaire. Do some questions to the user, save the answers
+    """
+    Vegetation questionaire. Do some questions to the user, save the answers
     in the traits and use them later to display the proper Vegetation View
-
     """
 
     custom_lulc = CBool().tag(sync=True)
+    impact_matrix = CBool().tag(sync=True)
 
     def __init__(self, *args, **kwargs):
 
@@ -149,6 +210,19 @@ class Questionaire(v.Layout, sw.SepalWidget):
         super().__init__(*args, **kwargs)
 
         self.w_custom_lulc = cw.BoolQuestion(cm.veg_layer.questionaire.q1)
-        self.children = [self.w_custom_lulc]
+        self.w_class_file = cw.BoolQuestion(cm.veg_layer.questionaire.q2).hide()
+
+        self.children = [self.w_custom_lulc, self.w_class_file]
 
         link((self.w_custom_lulc, "v_model"), (self, "custom_lulc"))
+        link((self.w_class_file, "v_model"), (self, "impact_matrix"))
+
+    @observe("custom_lulc")
+    def toggle_question(self, change):
+        """Toggle second question, based on the first answer"""
+
+        if change["new"]:
+            self.w_class_file.show()
+        else:
+            self.w_class_file.v_model = False
+            self.w_class_file.hide()
