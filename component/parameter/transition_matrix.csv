@@ -1,5 +1,5 @@
 from,from_code,to,to_code,impact,impact_code
-Artificial surfaces,1,Artificial surfaces ,1,Stable,0
+Artificial surfaces,1,Artificial surfaces,1,Stable,0
 Artificial surfaces,1,Cropland,2,Improving,1
 Artificial surfaces,1,Grassland,3,Improving,1
 Artificial surfaces,1,Tree-covered areas,4,Improving,1
@@ -9,7 +9,7 @@ Artificial surfaces,1,Sparsely natural vegetated areas,7,Improving,1
 Artificial surfaces,1,Barren land,8,Improving,1
 Artificial surfaces,1,Permanent snow and glaciers,9,Improving,1
 Artificial surfaces,1,Water bodies,10,Improving,1
-Cropland,2,Artificial surfaces ,1,Degradation,-1
+Cropland,2,Artificial surfaces,1,Degradation,-1
 Cropland,2,Cropland,2,Stable,0
 Cropland,2,Grassland,3,Improving,1
 Cropland,2,Tree-covered areas,4,Improving,1
@@ -19,7 +19,7 @@ Cropland,2,Sparsely natural vegetated areas,7,Degradation,-1
 Cropland,2,Barren land,8,Degradation,-1
 Cropland,2,Permanent snow and glaciers,9,Improving,1
 Cropland,2,Water bodies,10,Stable,0
-Grassland,3,Artificial surfaces ,1,Degradation,-1
+Grassland,3,Artificial surfaces,1,Degradation,-1
 Grassland,3,Cropland,2,Degradation,-1
 Grassland,3,Grassland,3,Stable,0
 Grassland,3,Tree-covered areas,4,Improving,1
@@ -29,7 +29,7 @@ Grassland,3,Sparsely natural vegetated areas,7,Degradation,-1
 Grassland,3,Barren land,8,Degradation,-1
 Grassland,3,Permanent snow and glaciers,9,Improving,1
 Grassland,3,Water bodies,10,Stable,0
-Tree-covered areas,4,Artificial surfaces ,1,Degradation,-1
+Tree-covered areas,4,Artificial surfaces,1,Degradation,-1
 Tree-covered areas,4,Cropland,2,Degradation,-1
 Tree-covered areas,4,Grassland,3,Degradation,-1
 Tree-covered areas,4,Tree-covered areas,4,Stable,0
@@ -39,7 +39,7 @@ Tree-covered areas,4,Sparsely natural vegetated areas,7,Degradation,-1
 Tree-covered areas,4,Barren land,8,Degradation,-1
 Tree-covered areas,4,Permanent snow and glaciers,9,Improving,1
 Tree-covered areas,4,Water bodies,10,Stable,0
-Shrub-covered areas,5,Artificial surfaces ,1,Degradation,-1
+Shrub-covered areas,5,Artificial surfaces,1,Degradation,-1
 Shrub-covered areas,5,Cropland,2,Degradation,-1
 Shrub-covered areas,5,Grassland,3,Degradation,-1
 Shrub-covered areas,5,Tree-covered areas,4,Improving,1
@@ -49,7 +49,7 @@ Shrub-covered areas,5,Sparsely natural vegetated areas,7,Degradation,-1
 Shrub-covered areas,5,Barren land,8,Degradation,-1
 Shrub-covered areas,5,Permanent snow and glaciers,9,Improving,1
 Shrub-covered areas,5,Water bodies,10,Stable,0
-"Herbaceous or shrub vegetation, aquatic or regularly flooded",6,Artificial surfaces ,1,Degradation,-1
+"Herbaceous or shrub vegetation, aquatic or regularly flooded",6,Artificial surfaces,1,Degradation,-1
 "Herbaceous or shrub vegetation, aquatic or regularly flooded",6,Cropland,2,Degradation,-1
 "Herbaceous or shrub vegetation, aquatic or regularly flooded",6,Grassland,3,Degradation,-1
 "Herbaceous or shrub vegetation, aquatic or regularly flooded",6,Tree-covered areas,4,Degradation,-1
@@ -59,7 +59,7 @@ Shrub-covered areas,5,Water bodies,10,Stable,0
 "Herbaceous or shrub vegetation, aquatic or regularly flooded",6,Barren land,8,Degradation,-1
 "Herbaceous or shrub vegetation, aquatic or regularly flooded",6,Permanent snow and glaciers,9,Improving,1
 "Herbaceous or shrub vegetation, aquatic or regularly flooded",6,Water bodies,10,Stable,0
-Sparsely natural vegetated areas,7,Artificial surfaces ,1,Degradation,-1
+Sparsely natural vegetated areas,7,Artificial surfaces,1,Degradation,-1
 Sparsely natural vegetated areas,7,Cropland,2,Degradation,-1
 Sparsely natural vegetated areas,7,Grassland,3,Improving,1
 Sparsely natural vegetated areas,7,Tree-covered areas,4,Improving,1
@@ -69,7 +69,7 @@ Sparsely natural vegetated areas,7,Sparsely natural vegetated areas,7,Stable,0
 Sparsely natural vegetated areas,7,Barren land,8,Degradation,-1
 Sparsely natural vegetated areas,7,Permanent snow and glaciers,9,Improving,1
 Sparsely natural vegetated areas,7,Water bodies,10,Stable,0
-Barren land,8,Artificial surfaces ,1,Degradation,-1
+Barren land,8,Artificial surfaces,1,Degradation,-1
 Barren land,8,Cropland,2,Improving,1
 Barren land,8,Grassland,3,Improving,1
 Barren land,8,Tree-covered areas,4,Improving,1
@@ -79,7 +79,7 @@ Barren land,8,Sparsely natural vegetated areas,7,Improving,1
 Barren land,8,Barren land,8,Stable,0
 Barren land,8,Permanent snow and glaciers,9,Improving,1
 Barren land,8,Water bodies,10,Stable,0
-Permanent snow and glaciers,9,Artificial surfaces ,1,Degradation,-1
+Permanent snow and glaciers,9,Artificial surfaces,1,Degradation,-1
 Permanent snow and glaciers,9,Cropland,2,Degradation,-1
 Permanent snow and glaciers,9,Grassland,3,Degradation,-1
 Permanent snow and glaciers,9,Tree-covered areas,4,Degradation,-1
@@ -89,13 +89,13 @@ Permanent snow and glaciers,9,Sparsely natural vegetated areas,7,Degradation,-1
 Permanent snow and glaciers,9,Barren land,8,Degradation,-1
 Permanent snow and glaciers,9,Permanent snow and glaciers,9,Stable,0
 Permanent snow and glaciers,9,Water bodies,10,Degradation,-1
-Water bodies,10,Artificial surfaces ,1,Degradation ,-1
-Water bodies,10,Cropland,2,Degradation ,-1
-Water bodies,10,Grassland,3,Degradation ,-1
-Water bodies,10,Tree-covered areas,4,Degradation ,-1
-Water bodies,10,Shrub-covered areas,5,Degradation ,-1
-Water bodies,10,"Herbaceous or shrub vegetation, aquatic or regularly flooded",6,Degradation ,-1
-Water bodies,10,Sparsely natural vegetated areas,7,Degradation ,-1
-Water bodies,10,Barren land,8,Degradation ,-1
+Water bodies,10,Artificial surfaces,1,Degradation,-1
+Water bodies,10,Cropland,2,Degradation,-1
+Water bodies,10,Grassland,3,Degradation,-1
+Water bodies,10,Tree-covered areas,4,Degradation,-1
+Water bodies,10,Shrub-covered areas,5,Degradation,-1
+Water bodies,10,"Herbaceous or shrub vegetation, aquatic or regularly flooded",6,Degradation,-1
+Water bodies,10,Sparsely natural vegetated areas,7,Degradation,-1
+Water bodies,10,Barren land,8,Degradation,-1
 Water bodies,10,Permanent snow and glaciers,9,Improving,1
 Water bodies,10,Water bodies,10,Stable,0

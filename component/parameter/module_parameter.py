@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pandas as pd
 from sepal_ui import color
 
 from component.message import cm
@@ -54,8 +55,6 @@ CUSTOM_AOI_ITEMS = [
 
 BIOBELT = "users/xavidelamo/SDG1542_Mntn_BioclimaticBelts"
 LULC_DEFAULT = "users/amitghosh/sdg_module/esa/cci_landcover"
-# LULC_DEFAULT = "users/amitghosh/sdg_module/esa_cci_lc_1992_2019"
-
 DEM_DEFAULT = "CGIAR/SRTM90_V4"
 
 # Define the translation matrix between ESA and MGCI LC classes
@@ -64,8 +63,26 @@ LC_MAP_MATRIX = Path(__file__).parent / "lc_map_matrix.csv"
 # Define the default classes that will be loaded as target in the reclassify tile
 LC_CLASSES = Path(__file__).parent / "lc_classification.csv"
 
+# Define the default classes that will be loaded as target in the reclassify tile
+TRANSITION_MATRIX_FILE = Path(__file__).parent / "transition_matrix.csv"
+
+# Description of bioclimatic belts codes
+BIOBELTS_DESC = Path(__file__).parent / "biobelts_label.csv"
+
 UNITS = {
     # acronym: [factor, name]
     "ha": [10000, "hectares"],
     "sqkm": [1000000, "square kilometers"],
 }
+
+
+LC_COLOR = pd.read_csv(LC_CLASSES, index_col=0)
+
+TRANSITION_MATRIX = pd.read_csv(TRANSITION_MATRIX_FILE)
+
+# Get the unique values from the transition matrix table.
+impact_table = (
+    TRANSITION_MATRIX.groupby(["impact", "impact_code"])
+    .count()
+    .reset_index()[["impact", "impact_code"]]
+)
