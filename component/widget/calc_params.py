@@ -2,196 +2,12 @@ from copy import deepcopy
 
 import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
-from traitlets import Bool, Dict, Int, List
+from traitlets import Bool, Dict, Int, List, directional_link
 
 import component.parameter as param
 from component.message import cm
 from component.tile.aoi_view import AoiView
 from component.widget.legend_control import LegendControl
-
-
-class CustomList(sw.List):
-
-    counter = Int(1).tag(syc=True)
-    max_ = Int(4 - 1).tag(syc=True)
-    v_model = Dict({}).tag(syc=True)
-    items = List([]).tag(sync=True)
-
-    def __init__(self):
-
-        super().__init__()
-
-        self.add_btn = v.Icon(children=["mdi-plus"])
-        self.children = self.get_element(single=True)
-        self.add_btn.on_event("click", self.add_element)
-
-    def remove_element(self, *args, id_):
-        """Removes element from the current list"""
-
-        self.children = [
-            chld for chld in self.children if chld not in self.get_children(id_)
-        ]
-
-        tmp_vmodel = deepcopy(self.v_model)
-
-        tmp_vmodel.pop(id_, None)
-
-        self.v_model = tmp_vmodel
-
-        self.counter -= 1
-
-    def add_element(self, *args):
-        """Creates a new element and append to the current list"""
-
-        if self.counter <= self.max_:
-            self.counter += 1
-            self.children = self.children + self.get_element()
-
-    def update_model(self, data, id_, pos):
-        """update v_model content based on select changes"""
-
-        tmp_vmodel = deepcopy(self.v_model)
-
-        if not id_ in tmp_vmodel:
-            tmp_vmodel[id_] = {}
-        tmp_vmodel[id_][pos] = data["new"]
-
-        self.v_model = tmp_vmodel
-
-    def get_element(self, single=False):
-        """creates a double select widget with add and remove buttons. To allow user
-        calculate subindicator B and also perform multiple calculations at once"""
-
-        id_ = self.counter
-
-        sub_btn = v.Icon(children=["mdi-minus"])
-        sub_btn.on_event("click", lambda *args: self.remove_element(*args, id_=id_))
-
-        actions = (
-            [v.ListItemAction(children=[self.add_btn])]
-            if single
-            else [
-                v.ListItemAction(
-                    children=[self.add_btn],
-                ),
-                v.ListItemAction(
-                    children=[sub_btn],
-                ),
-            ]
-        )
-
-        w_basep = v.Select(
-            v_model=False,
-            attributes={"id": f"base_{id_}"},
-            label=cm.calculation.y_base,
-            items=self.items,
-        )
-        w_reportp = v.Select(
-            v_model=False,
-            attributes={"id": f"report_{id_}"},
-            label=cm.calculation.y_report,
-            items=self.items,
-        )
-
-        w_basep.observe(
-            lambda chg: self.update_model(chg, id_=id_, pos="base"), "v_model"
-        )
-        w_reportp.observe(
-            lambda chg: self.update_model(chg, id_=id_, pos="report"), "v_model"
-        )
-
-        item = [
-            v.ListItem(
-                attributes={"id": id_},
-                class_="ma-0 pa-0",
-                children=[
-                    v.ListItemContent(
-                        attributes={"id": "selects"}, children=[w_basep, w_reportp]
-                    ),
-                ]
-                + actions,
-            ),
-            v.Divider(
-                attributes={"id": id_},
-            ),
-        ]
-
-        return item
-
-    def get_select_elements(self):
-        """receive v.select items, save in object (to be reused by new elements) and
-        fill the current one ones in the view"""
-
-        item_content_chlds = self.get_children("selects")
-
-        # Manage the special case when there is only one item.
-        if not isinstance(item_content_chlds, list):
-            item_content_chlds = [item_content_chlds]
-        return [select for item in item_content_chlds for select in item.children]
-
-    def populate(self, items):
-        """receive v.select items, save in object (to be reused by new elements) and
-        fill the current one ones in the view"""
-
-        self.items = items
-
-        select_wgts = self.get_select_elements()
-
-        [setattr(select, "items", items) for select in select_wgts]
-
-    def reset(self):
-        """remove all selected values form selection widgets"""
-
-        select_wgts = self.get_select_elements()
-
-        [setattr(select, "v_model", False) for select in select_wgts]
-
-
-class EditionDialog(sw.Dialog):
-    def __init__(self, content, indicator):
-
-        self.v_model = False
-        self.scrollable = True
-        self.max_width = 650
-        self.style_ = "overflow-x: hidden;"
-
-        super().__init__()
-
-        self.attributes = {"id": f"dialg_{indicator}"}
-        self.content = content
-
-        close_btn = sw.Btn("OK", small=True)
-        clean_btn = v.Icon(children=["mdi-broom"])
-
-        self.children = [
-            sw.Card(
-                max_width=650,
-                min_height=420,
-                class_="pa-4",
-                children=[
-                    v.CardTitle(
-                        children=[
-                            cm.calculation[indicator].title,
-                            v.Spacer(),
-                            clean_btn,
-                        ]
-                    ),
-                    self.content,
-                    v.CardActions(children=[v.Spacer(), close_btn]),
-                ],
-            ),
-        ]
-
-        close_btn.on_event("click", lambda *args: setattr(self, "v_model", False))
-        clean_btn.on_event("click", self.reset_event)
-
-    def reset_event(self, *args):
-        """search within the content and trigger reset method"""
-
-        if self.attributes["id"] == "dialg_sub_a":
-            self.content.v_model = []
-        else:
-            self.content.reset()
 
 
 class Calculation(sw.List):
@@ -200,6 +16,8 @@ class Calculation(sw.List):
     with an editing icon that will display the corresponding editing dialogs"""
 
     indicators = ["sub_a", "sub_b"]
+    ready = Bool(False).tag(sync=True)
+    "bool: traitlet to alert model that this element has loaded."
 
     def __init__(self, model):
 
@@ -208,9 +26,13 @@ class Calculation(sw.List):
         self.model = model
 
         self.w_content_a = v.Select(
-            label=cm.calculation.y_report, v_model=[], multiple=True
+            label=cm.calculation.y_report,
+            v_model=[],
+            multiple=True,
+            items=self.model.ic_items,
         )
-        self.w_content_b = CustomList()
+
+        self.w_content_b = CustomList(items=self.model.ic_items)
 
         self.dialog_a = EditionDialog(self.w_content_a, "sub_a")
         self.dialog_b = EditionDialog(self.w_content_b, "sub_b")
@@ -227,6 +49,21 @@ class Calculation(sw.List):
         self.w_content_b.observe(
             lambda change: self.get_chips(change, "sub_b"), "v_model"
         )
+
+        directional_link((self, "ready"), (self.model, "dash_ready"))
+        directional_link((self.w_content_a, "v_model"), (self.model, "start_year"))
+        directional_link((self.w_content_b, "v_model"), (self.model, "end_year"))
+
+        # Link switches to the model
+        directional_link(
+            (self.get_children("switch_sub_a"), "v_model"), (self.model, "calc_a")
+        )
+
+        directional_link(
+            (self.get_children("switch_sub_b"), "v_model"), (self.model, "calc_b")
+        )
+
+        self.ready = True
 
     def reset_event(self, data, indicator):
         """search within the content and trigger reset method"""
@@ -250,6 +87,14 @@ class Calculation(sw.List):
 
         if change["new"]:
 
+            self.dialog_a.reset_event()
+            self.dialog_b.reset_event()
+
+            # Create a dictionary to store items with name as key and id as value
+            self.model.ic_items_label = {
+                item.split("/")[-1]: item for item in self.model.ic_items
+            }
+
             items = [
                 {"value": item.split("/")[-1], "text": item} for item in change["new"]
             ]
@@ -261,12 +106,17 @@ class Calculation(sw.List):
         """returns the specific structure required to display the bands(years) that will
         be used to calculate each of the specific subindicator"""
 
-        switch = sw.Switch(attributes={"id": f"swit_{indicator}"}, v_model=True)
+        switch = sw.Switch(attributes={"id": f"switch_{indicator}"}, v_model=True)
         switch.observe(
             lambda chg: self.reset_event(chg["new"], indicator=indicator), "v_model"
         )
 
-        pencil = sw.Icon(children=["mdi-pencil"], attributes={"id": f"pen_{indicator}"})
+        pencil = v.Btn(
+            children=[sw.Icon(children=["mdi-pencil"])],
+            icon=True,
+            attributes={"id": f"pen_{indicator}"},
+        )
+
         pencil.on_event(
             "click", lambda *args: self.open_dialog(indicator=f"{indicator}")
         )
@@ -367,3 +217,193 @@ class Calculation(sw.List):
         chips = [val for period in multichips for val in period][:-1]
 
         span.children = chips
+
+
+class CustomList(sw.List):
+
+    counter = Int(1).tag(syc=True)
+    "int: control number to check how many subb pairs are loaded"
+    max_ = Int(4 - 1).tag(syc=True)
+    "int: maximun number of sub indicator pairs to be displayed in UI"
+    v_model = Dict({}).tag(syc=True)
+    "dict: where key is the consecutive number of pairs, and values are the baseline and reporting period"
+    items = List([]).tag(sync=True)
+    "list: image collection items to be loaded in each select pair"
+
+    def __init__(self, items=[]):
+
+        self.items = items
+
+        super().__init__()
+
+        self.add_btn = v.Btn(children=[v.Icon(children=["mdi-plus"])], icon=True)
+        self.children = self.get_element(single=True)
+        self.add_btn.on_event("click", self.add_element)
+
+    def remove_element(self, *args, id_):
+        """Removes element from the current list"""
+
+        self.children = [
+            chld for chld in self.children if chld not in self.get_children(id_)
+        ]
+
+        tmp_vmodel = deepcopy(self.v_model)
+        tmp_vmodel.pop(id_, None)
+
+        self.v_model = tmp_vmodel
+
+        self.counter -= 1
+
+    def add_element(self, *args):
+        """Creates a new element and append to the current list"""
+
+        if self.counter <= self.max_:
+            self.counter += 1
+            self.children = self.children + self.get_element()
+
+    def update_model(self, data, id_, pos):
+        """update v_model content based on select changes"""
+
+        tmp_vmodel = deepcopy(self.v_model)
+
+        if not id_ in tmp_vmodel:
+            tmp_vmodel[id_] = {}
+        tmp_vmodel[id_][pos] = data["new"]
+
+        self.v_model = tmp_vmodel
+
+    def get_element(self, single=False):
+        """creates a double select widget with add and remove buttons. To allow user
+        calculate subindicator B and also perform multiple calculations at once"""
+
+        id_ = self.counter
+
+        sub_btn = v.Btn(children=[v.Icon(children=["mdi-minus"])], icon=True)
+        sub_btn.on_event("click", lambda *args: self.remove_element(*args, id_=id_))
+
+        actions = (
+            [v.ListItemAction(children=[self.add_btn])]
+            if single
+            else [
+                v.ListItemAction(
+                    children=[self.add_btn],
+                ),
+                v.ListItemAction(
+                    children=[sub_btn],
+                ),
+            ]
+        )
+
+        w_basep = v.Select(
+            v_model=False,
+            attributes={"id": f"base_{id_}"},
+            label=cm.calculation.y_base,
+            items=self.items,
+        )
+        w_reportp = v.Select(
+            v_model=False,
+            attributes={"id": f"report_{id_}"},
+            label=cm.calculation.y_report,
+            items=self.items,
+        )
+
+        w_basep.observe(
+            lambda chg: self.update_model(chg, id_=id_, pos="base"), "v_model"
+        )
+        w_reportp.observe(
+            lambda chg: self.update_model(chg, id_=id_, pos="report"), "v_model"
+        )
+
+        item = [
+            v.ListItem(
+                attributes={"id": id_},
+                class_="ma-0 pa-0",
+                children=[
+                    v.ListItemContent(
+                        attributes={"id": "selects"}, children=[w_basep, w_reportp]
+                    ),
+                ]
+                + actions,
+            ),
+            v.Divider(
+                attributes={"id": id_},
+            ),
+        ]
+
+        return item
+
+    def get_select_elements(self):
+        """receive v.select items, save in object (to be reused by new elements) and
+        fill the current one ones in the view"""
+
+        item_content_chlds = self.get_children("selects")
+
+        # Manage the special case when there is only one item.
+        if not isinstance(item_content_chlds, list):
+            item_content_chlds = [item_content_chlds]
+
+        return [select for item in item_content_chlds for select in item.children]
+
+    def populate(self, items):
+        """receive v.select items, save in object (to be reused by new elements) and
+        fill the current one ones in the view"""
+
+        self.items = items
+
+        select_wgts = self.get_select_elements()
+
+        [setattr(select, "items", items) for select in select_wgts]
+
+    def reset(self):
+        """remove all selected values form selection widgets"""
+
+        select_wgts = self.get_select_elements()
+
+        [setattr(select, "v_model", False) for select in select_wgts]
+
+
+class EditionDialog(sw.Dialog):
+    def __init__(self, content, indicator):
+
+        self.v_model = False
+        self.scrollable = True
+        self.max_width = 650
+        self.style_ = "overflow-x: hidden;"
+
+        super().__init__()
+
+        self.attributes = {"id": f"dialg_{indicator}"}
+        self.content = content
+
+        close_btn = sw.Btn("OK", small=True)
+        clean_btn = v.Btn(children=[v.Icon(children=["mdi-broom"])], icon=True)
+
+        self.children = [
+            sw.Card(
+                max_width=650,
+                min_height=420,
+                class_="pa-4",
+                children=[
+                    v.CardTitle(
+                        children=[
+                            cm.calculation[indicator].title,
+                            v.Spacer(),
+                            clean_btn,
+                        ]
+                    ),
+                    self.content,
+                    v.CardActions(children=[v.Spacer(), close_btn]),
+                ],
+            ),
+        ]
+
+        close_btn.on_event("click", lambda *args: setattr(self, "v_model", False))
+        clean_btn.on_event("click", self.reset_event)
+
+    def reset_event(self, *args):
+        """search within the content and trigger reset method"""
+
+        if self.attributes["id"] == "dialg_sub_a":
+            self.content.v_model = []
+        else:
+            self.content.reset()
