@@ -49,7 +49,7 @@
         },
         "questionaire" : {
             "q1":"Would you like to use a custom land use/land cover map?",
-            "q2":"Do you have a reclassification matrix table in a CSV format?"
+            "q2":"Do you have a custom land cover transition matrix (.csv)?"
         }
     },
     "reclass" : {
@@ -70,7 +70,11 @@
             "desc_disabled" : "The subindicator B will not be calculated. To activate its processing, click the top right switch in this card and select the target layer(s)."
         },
         "y_base" : "Baseline period (year)",
-        "y_report" : "Reporting period (year)"
+        "y_report" : "Reporting period (year)",
+        "error" : {
+            "no_subind" : "You have to select at least one indicator.",
+            "no_years" : "You have to select at least one layer (year)."
+        }
     },
     "dashboard":{
         "title" : "MGCI calculation",
