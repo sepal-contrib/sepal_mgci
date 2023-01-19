@@ -49,7 +49,7 @@ class ClassTable(sw.DataTable):
         # and set them in the top slot of the table
         self.edit_btn = sw.Btn(
             ms.rec.table.btn.edit,
-            icon="fas fa-pencil-alt",
+            icon="fa-solid fa-pencil-alt",
             class_="ml-2 mr-2",
             color="secondary",
             small=True,
