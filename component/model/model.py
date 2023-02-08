@@ -43,7 +43,7 @@ class MgciModel(Model):
     "list: list of select.items containing image ids and image names from the image collection"
 
     # Results
-    summary_df = Any(allow_none=True).tag(sync=True)
+    # summary_df = Any(allow_none=True).tag(sync=True)
 
     biobelt_image = None
     "ee.Image: clipped bioclimatic belt image with aoi_model.feature_collection"
@@ -68,6 +68,9 @@ class MgciModel(Model):
 
     end_year = Dict().tag(sync=True)
     "list: list of year(s) selected in dashboard.calculation_view.calculation.w_content_b.v_model"
+
+    done = Bool(True).tag(sync=True)
+    "bool: bool trait to indicate that MGCI calculation has been performed. It will be listen by different widgets (i.e.dashboard tile)."
 
     @su.need_ee
     def __init__(self, aoi_model=None):

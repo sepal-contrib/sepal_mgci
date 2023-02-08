@@ -10,7 +10,7 @@ from traitlets import Int
 from component.scripts.biobelt import add_belt_map
 
 
-class AoiView(sw.Layout):
+class AoiView(sw.Card):
     """Custom aoi view to display biobelt layer and lagend in the map as soon as the
     image"""
 
@@ -73,7 +73,10 @@ class AoiView(sw.Layout):
     def __init__(
         self, methods="ALL", map_=None, gee=True, folder=None, model=None, **kwargs
     ):
-        self.class_ = "d-block"
+        self.class_ = "d-block pa-2 py-4"
+
+        self.min_width = "462px"
+        self.max_width = "462px"
 
         # set ee dependencie
         self.ee = gee
@@ -179,7 +182,6 @@ class AoiView(sw.Layout):
                 self.map_.add_layer(self.model.get_ipygeojson())
 
             self.map_.hide_dc()
-
         add_belt_map(self.model, self.map_)
 
         # tell the rest of the apps that the aoi have been updated

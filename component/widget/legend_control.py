@@ -1,6 +1,6 @@
+import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
 from ipyleaflet import WidgetControl
-from ipywidgets import HTML
 from sepal_ui.message import ms
 from sepal_ui.scripts import utils as su
 from traitlets import Bool, Dict, Unicode, observe
@@ -161,14 +161,15 @@ class LegendControl(WidgetControl):
         h = size / 2
 
         return [
-            HTML(
-                f"""
-                    <th>
-                        <svg width='{w}' height='{h}'>
-                        <rect width='{w}' height='{h}' style='fill:{su.to_colors(color)};
-                        stroke-width:1;stroke:rgb(255,255,255)'/>
-                        </svg>
-                    </th>
-                """
+            v.Html(
+                tag="svg",
+                attributes={"width": w, "height": h},
+                children=[
+                    v.Html(
+                        tag="rect",
+                        attributes={"width": w, "height": h},
+                        style_=f"fill:{su.to_colors(color)}; stroke-width:1; stroke:rgb(255,255,255)",
+                    )
+                ],
             )
         ]

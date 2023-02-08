@@ -1,9 +1,7 @@
 import ee
-
-ee.Initialize()
-
 import pandas as pd
 import sepal_ui.sepalwidgets as sw
+from ipyleaflet import WidgetControl
 from sepal_ui.mapping import SepalMap
 
 import component.parameter.module_parameter as param
@@ -12,17 +10,23 @@ from component.widget.legend_control import LegendControl
 
 __all__ = ["AoiTile"]
 
+ee.Initialize()
+
 
 class AoiTile(sw.Layout):
     """Custo AOI Tile"""
 
-    def __init__(self, methods="ALL", gee=True):
+    def __init__(self):
+
+        self.class_ = "d-block"
+        self._metadata = {"mount_id": "aoi_tile"}
 
         super().__init__()
 
-        # create the map
-        self.map_ = SepalMap(dc=True, gee=gee)
+        self.map_ = SepalMap(gee=True)
         self.map_.dc.hide()
+        self.map_.layout.height = "750px"
+        self.map_.min_zoom = 2
 
         self.view = AoiView(
             map_=self.map_,
@@ -34,10 +38,13 @@ class AoiTile(sw.Layout):
         self.view.w_method.items = param.CUSTOM_AOI_ITEMS
         self.view.w_admin_0.items = self.get_m49()
 
-        self.children = [
-            sw.Flex(xs12=True, md5=True, class_="pa-5", children=[self.view]),
-            sw.Flex(xs12=True, md7=True, class_="pa-1", children=[self.map_]),
-        ]
+        aoi_control = WidgetControl(
+            widget=self.view, position="topleft", transparent_bg=True
+        )
+
+        self.map_.add(aoi_control)
+
+        self.children = [self.map_]
 
     def get_m49(self):
         """Display only the countries that matches with m49"""
