@@ -56,11 +56,13 @@ class Calculation(sw.List):
 
         # Link switches to the model
         directional_link(
-            (self.get_children("switch_sub_a"), "v_model"), (self.model, "calc_a")
+            (self.get_children(id_="switch_sub_a")[0], "v_model"),
+            (self.model, "calc_a"),
         )
 
         directional_link(
-            (self.get_children("switch_sub_b"), "v_model"), (self.model, "calc_b")
+            (self.get_children(id_="switch_sub_b")[0], "v_model"),
+            (self.model, "calc_b"),
         )
 
         self.ready = True
@@ -73,13 +75,13 @@ class Calculation(sw.List):
         else:
             self.w_content_b.reset()
 
-        self.get_children(f"desc_{indicator}").children = (
+        self.get_children(id_=f"desc_{indicator}")[0].children = (
             [cm.calculation[indicator].desc_disabled]
             if not data
             else [cm.calculation[indicator].desc_active]
         )
 
-        self.get_children(f"pen_{indicator}").disabled = not data
+        self.get_children(id_=f"pen_{indicator}")[0].disabled = not data
 
     def populate_years(self, change):
         """function to trigger and send population methods from a and b content based
@@ -167,14 +169,14 @@ class Calculation(sw.List):
     def open_dialog(self, *args, indicator):
         """Change the v_model value of subindicators edition dialogs to display them"""
 
-        dialog = self.get_children(f"dialg_{indicator}")
+        dialog = self.get_children(id_=f"dialg_{indicator}")[0]
         dialog.v_model = True
 
     def get_chips(self, change, indicator):
         """get chips that will be inserted in the list elements and corresponds
         to the bands(years) selected for each of subindicator"""
 
-        span = self.get_children(f"span_{indicator}")
+        span = self.get_children(id_=f"span_{indicator}")
 
         if not change.get("new", None):
             span.children = [""]
@@ -244,7 +246,7 @@ class CustomList(sw.List):
         """Removes element from the current list"""
 
         self.children = [
-            chld for chld in self.children if chld not in self.get_children(id_)
+            chld for chld in self.children if chld not in self.get_children(id_=id_)
         ]
 
         tmp_vmodel = deepcopy(self.v_model)
@@ -336,7 +338,7 @@ class CustomList(sw.List):
         """receive v.select items, save in object (to be reused by new elements) and
         fill the current one ones in the view"""
 
-        item_content_chlds = self.get_children("selects")
+        item_content_chlds = self.get_children(id_="selects")
 
         # Manage the special case when there is only one item.
         if not isinstance(item_content_chlds, list):

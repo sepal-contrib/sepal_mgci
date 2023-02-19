@@ -54,7 +54,7 @@ class AoiTile(sw.Layout):
 
         # Read AOI gaul dataframe
         gaul_dataset = (
-            pd.read_csv(self.view.model.FILE[1])
+            pd.read_parquet(self.view.model.FILE[1])
             .drop_duplicates(subset=self.view.model.CODE[1].format(0))
             .sort_values(self.view.model.NAME[1].format(0))
             .rename(columns={"ISO 3166-1 alpha-3": "iso31661"})
@@ -62,9 +62,9 @@ class AoiTile(sw.Layout):
 
         # Get only the gaul contries present in the m49
         m49_dataset = gaul_dataset[gaul_dataset.iso31661.isin(m49_countries.iso31661)]
-        gaul_codes = m49_dataset.ADM0_CODE.to_list()
+        gaul_codes = m49_dataset.ADM0_CODE.astype(str).to_list()
 
-        # Subset new items
+        # Remove countries that are not present in gaul_dataset
         m49_items = [
             item for item in self.view.w_admin_0.items if item["value"] in gaul_codes
         ]

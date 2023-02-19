@@ -1,94 +1,125 @@
 from datetime import datetime as dt
+from pathlib import Path
+from typing import Dict, List, Optional, Union
 
+import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
+import traitlets as t
+from sepal_ui import mapping as sm
 from sepal_ui.aoi.aoi_model import AoiModel
 from sepal_ui.aoi.aoi_view import AdminField, MethodSelect
 from sepal_ui.message import ms
+from sepal_ui.scripts import decorator as sd
 from sepal_ui.scripts import utils as su
-from traitlets import Int
+from typing_extensions import Self
 
 from component.scripts.biobelt import add_belt_map
 
 
 class AoiView(sw.Card):
-    """Custom aoi view to display biobelt layer and lagend in the map as soon as the
-    image"""
 
     # ##########################################################################
     # ###                             widget parameters                      ###
     # ##########################################################################
 
-    updated = Int(0).tag(sync=True)
-    "int: traitlets triggered every time a AOI is selected"
+    updated: t.Int = t.Int(0).tag(sync=True)
+    "Traitlets triggered every time a AOI is selected"
 
-    ee = True
-    "bool: either or not he aoi_view is connected to gee"
+    gee: bool = True
+    "Either or not he aoi_view is connected to gee"
 
-    folder = None
-    "str: the folder name used in GEE related component, mainly used for debugging"
+    folder: Union[str, Path] = ""
+    "The folder name used in GEE related component, mainly used for debugging"
 
-    model = None
-    "sepal_ui.aoi.AoiModel: the model to create the AOI from the selected parameters"
+    model: Optional[AoiModel] = None
+    "The model to create the AOI from the selected parameters"
+
+    map_style: Optional[dict] = None
+    "The predifined style of the aoi on the map"
 
     # ##########################################################################
     # ###                            the embeded widgets                     ###
     # ##########################################################################
 
-    map_ = None
-    "sepal_ui.mapping.SepalMap: the map to draw the AOI"
+    map_: Optional[sm.SepalMap] = None
+    "The map to draw the AOI"
 
-    w_method = None
-    "widget: the widget to select the method"
+    aoi_dc: Optional[sm.DrawControl] = None
+    "the drawing control associated with DRAW method"
 
-    components = None
-    "dict: the followingwidgets used to define AOI"
+    w_method: Optional[MethodSelect] = None
+    "The widget to select the method"
 
-    w_admin_0 = None
-    "widget: the widget used to select admin level 0"
+    components: Dict[str, v.VuetifyWidget] = {}
+    "The followingwidgets used to define AOI"
 
-    w_admin_1 = None
-    "widget: the widget used to select admin level 1"
+    w_admin_0: Optional[AdminField] = None
+    "The widget used to select admin level 0"
 
-    w_admin_2 = None
-    "widget: the widget used to select admin level 2"
+    w_admin_1: Optional[AdminField] = None
+    "The widget used to select admin level 1"
 
-    w_vector = None
-    "widget: the widget used to select vector shapes"
+    w_admin_2: Optional[AdminField] = None
+    "The widget used to select admin level 2"
 
-    w_points = None
-    "widget: the widget used to select points files"
+    w_vector: Optional[sw.VectorField] = None
+    "The widget used to select vector shapes"
 
-    w_draw = None
-    "widget: the widget used to select the name of a drawn shape (only if :code:`map_ != None`)"
+    w_points: Optional[sw.LoadTableField] = None
+    "The widget used to select points files"
 
-    w_asset = None
-    "widget: the widget used to select asset name of a featureCollection (only if :code:`gee == True`)"
+    w_draw: Optional[sw.TextField] = None
+    "The widget used to select the name of a drawn shape (only if :code:`map_ != None`)"
 
-    btn = None
-    "sw.Btn: a default btn"
+    w_asset: Optional[sw.AssetSelect] = None
+    "The widget used to select asset name of a featureCollection (only if :code:`gee == True`)"
 
-    alert = None
-    "sw.Alert: a alert to display message to the end user"
+    btn: Optional[sw.Btn] = None
+    "A default btn"
+
+    alert: Optional[sw.Alert] = None
+    "A alert to display message to the end user"
 
     def __init__(
-        self, methods="ALL", map_=None, gee=True, folder=None, model=None, **kwargs
-    ):
-        self.class_ = "d-block pa-2 py-4"
+        self,
+        methods: Union[str, List[str]] = "ALL",
+        map_: Optional[sm.SepalMap] = None,
+        gee: bool = True,
+        folder: Union[str, Path] = "",
+        model: Optional[AoiModel] = None,
+        map_style: Optional[dict] = None,
+        **kwargs,
+    ) -> None:
+        r"""
+        Versatile card object to deal with the aoi selection. multiple selection method are available (see the MethodSelector object) and the widget can be fully customizable. Can also be bound to ee (ee==True) or not (ee==False).
 
+        Args:
+            methods: the methods to use in the widget, default to 'ALL'. Available: {'ADMIN0', 'ADMIN1', 'ADMIN2', 'SHAPE', 'DRAW', 'POINTS', 'ASSET', 'ALL'}
+            map\_: link the aoi_view to a custom SepalMap to display the output, default to None
+            gee: wether to bind to ee or not
+            vector: the path to the default vector object
+            admin: the administrative code of the default selection. Need to be GADM if :code:`ee==False` and GAUL 2015 if :code:`ee==True`.
+            asset: the default asset. Can only work if :code:`ee==True`
+            map_style: the predifined style of the aoi. It's by default using a "success" ``sepal_ui.color`` with 0.5 transparent fill color. It can be completly replace by a fully qualified `style dictionnary <https://ipyleaflet.readthedocs.io/en/latest/layers/geo_json.html>`__. Use the ``sepal_ui.color`` object to define any color to remain compatible with light and dark theme.
+        """
+        self.class_ = "d-block pa-2 py-4"
         self.min_width = "462px"
         self.max_width = "462px"
 
         # set ee dependencie
-        self.ee = gee
+        self.gee = gee
         self.folder = folder
-
-        gee is False or su.init_ee()
+        if gee is True:
+            su.init_ee()
 
         # get the model
         self.model = model or AoiModel(gee=gee, folder=folder, **kwargs)
 
         # get the map if filled
         self.map_ = map_
+
+        # get the aoi geoJSON style
+        self.map_style = map_style
 
         # create the method widget
         self.w_method = MethodSelect(methods, gee=gee, map_=map_)
@@ -99,7 +130,6 @@ class AoiView(sw.Card):
         self.w_admin_2 = AdminField(2, self.w_admin_1, gee=gee)
         self.w_vector = sw.VectorField(label=ms.aoi_sel.vector)
         self.w_points = sw.LoadTableField(label=ms.aoi_sel.points)
-        self.w_draw = sw.TextField(label=ms.aoi_sel.aoi_name)
 
         # group them together with the same key as the select_method object
         self.components = {
@@ -108,7 +138,6 @@ class AoiView(sw.Card):
             "ADMIN2": self.w_admin_2,
             "SHAPE": self.w_vector,
             "POINTS": self.w_points,
-            "DRAW": self.w_draw,
         }
 
         # hide them all
@@ -125,22 +154,29 @@ class AoiView(sw.Card):
             .bind(self.w_vector, "vector_json")
             .bind(self.w_points, "point_json")
             .bind(self.w_method, "method")
-            .bind(self.w_draw, "name")
         )
 
         # defint the asset select separately. If no gee is set up we don't want any
-        # gee based widget to be requested. If it's the case, application that does
-        # not support GEE
+        # gee based widget to be requested. If it's the case, application that does not support GEE
         # will crash if the user didn't authenticate
-        if self.ee:
+        if self.gee:
             self.w_asset = sw.VectorField(
                 label=ms.aoi_sel.asset, gee=True, folder="", types=["TABLE"]
-            ).hide()
+            )
+            self.w_asset.hide()
             self.components["ASSET"] = self.w_asset
-            self.model.bind(self.w_asset, "asset_name")
+            self.model.bind(self.w_asset, "asset_json")
+
+        # define DRAW option separately as it will only work if the map is set
+        if self.map_:
+            self.w_draw = sw.TextField(label=ms.aoi_sel.aoi_name).hide()
+            self.components["DRAW"] = self.w_draw
+            self.model.bind(self.w_draw, "name")
+            self.aoi_dc = sm.DrawControl(self.map_)
+            self.aoi_dc.hide()
 
         # add a validation btn
-        self.btn = sw.Btn(ms.aoi_sel.btn)
+        self.btn = sw.Btn(msg=ms.aoi_sel.btn)
 
         # create the widget
         self.children = (
@@ -156,56 +192,46 @@ class AoiView(sw.Card):
         # reset te aoi_model
         self.model.clear_attributes()
 
-    @su.loading_button(debug=True)
-    def _update_aoi(self, widget, event, data):
-        """load the object in the model & update the map (if possible)"""
-
+    @sd.loading_button(debug=True)
+    def _update_aoi(self, *args) -> Self:
+        """load the object in the model & update the map (if possible)."""
         # read the information from the geojson datas
         if self.map_:
-            self.map_.remove_all()
-            self.model.geo_json = self.map_.dc.to_json()
-
-        if hasattr(self.map_, "legend"):
-            self.map_.legend.legend_dict = {}
+            self.model.geo_json = self.aoi_dc.to_json()
 
         # update the model
         self.model.set_object()
+        self.alert.add_msg(ms.aoi_sel.complete, "success")
 
         # update the map
         if self.map_:
             self.map_.remove_layer("aoi", none_ok=True)
             self.map_.zoom_bounds(self.model.total_bounds())
+            self.map_.add_layer(self.model.get_ipygeojson(self.map_style))
 
-            if self.ee:
-                self.map_.add_ee_layer(self.model.feature_collection, {}, name="aoi")
-            else:
-                self.map_.add_layer(self.model.get_ipygeojson())
+            self.aoi_dc.hide()
 
-            self.map_.hide_dc()
         add_belt_map(self.model, self.map_)
 
         # tell the rest of the apps that the aoi have been updated
         self.updated += 1
 
-        self.alert.add_msg(ms.aoi_sel.complete, "success")
-
         return self
 
-    def reset(self):
-        """clear the aoi_model from input and remove the layer from the map (if existing)"""
-
+    def reset(self) -> Self:
+        """clear the aoi_model from input and remove the layer from the map (if existing)."""
         # reset the view of the widgets
         self.w_method.v_model = None
 
         # clear the map
-        self.map_ is None or self.map_.remove_layer("aoi", none_ok=True)
+        if self.map_ is not None:
+            self.map_.remove_layer("aoi", none_ok=True)
 
         return self
 
-    @su.switch("loading", on_widgets=["w_method"])
-    def _activate(self, change):
-        """activate the adapted widgets"""
-
+    @sd.switch("loading", on_widgets=["w_method"])
+    def _activate(self, change: dict) -> None:
+        """activate the adapted widgets."""
         # clear and hide the alert
         self.alert.reset()
 
@@ -219,9 +245,9 @@ class AoiView(sw.Card):
         # clear the geo_json saved features to start from scratch
         if self.map_:
             if change["new"] == "DRAW":
-                self.map_.dc.show()
+                self.aoi_dc.show()
             else:
-                self.map_.dc.hide()
+                self.aoi_dc.hide()
 
         # activate the correct widget
         w = next((w for k, w in self.components.items() if k == change["new"]), None)
