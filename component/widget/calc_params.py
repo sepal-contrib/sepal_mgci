@@ -4,15 +4,12 @@ import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
 from traitlets import Bool, Dict, Int, List, directional_link
 
-import component.parameter as param
+import component.parameter.module_parameter as param
 from component.message import cm
-from component.tile.aoi_view import AoiView
-from component.widget.legend_control import LegendControl
 
 
 class Calculation(sw.List):
-    """Card to display and/or edit the bands(years) that will be used to calculate the
-    statistics for each indicator. It is composed of two cards for subA y subB each
+    """Card to display and/or edit the bands(years) that will be used to calculate thes statistics for each indicator. It is composed of two cards for subA y subB each
     with an editing icon that will display the corresponding editing dialogs"""
 
     indicators = ["sub_a", "sub_b"]
@@ -25,11 +22,8 @@ class Calculation(sw.List):
 
         self.model = model
 
-        self.w_content_a = v.Select(
-            label=cm.calculation.y_report,
-            v_model=[],
-            multiple=True,
-            items=self.model.ic_items,
+        self.w_content_a = CustomList(
+            label=cm.calculation.y_report, unique=True, items=self.model.ic_items
         )
 
         self.w_content_b = CustomList(items=self.model.ic_items)
@@ -56,12 +50,12 @@ class Calculation(sw.List):
 
         # Link switches to the model
         directional_link(
-            (self.get_children(id_="switch_sub_a")[0], "v_model"),
+            (self.get_children("switch_sub_a"), "v_model"),
             (self.model, "calc_a"),
         )
 
         directional_link(
-            (self.get_children(id_="switch_sub_b")[0], "v_model"),
+            (self.get_children("switch_sub_b"), "v_model"),
             (self.model, "calc_b"),
         )
 
@@ -75,13 +69,13 @@ class Calculation(sw.List):
         else:
             self.w_content_b.reset()
 
-        self.get_children(id_=f"desc_{indicator}")[0].children = (
+        self.get_children(f"desc_{indicator}").children = (
             [cm.calculation[indicator].desc_disabled]
             if not data
             else [cm.calculation[indicator].desc_active]
         )
 
-        self.get_children(id_=f"pen_{indicator}")[0].disabled = not data
+        self.get_children(f"pen_{indicator}").disabled = not data
 
     def populate_years(self, change):
         """function to trigger and send population methods from a and b content based
@@ -169,14 +163,14 @@ class Calculation(sw.List):
     def open_dialog(self, *args, indicator):
         """Change the v_model value of subindicators edition dialogs to display them"""
 
-        dialog = self.get_children(id_=f"dialg_{indicator}")[0]
+        dialog = self.get_children(f"dialg_{indicator}")
         dialog.v_model = True
 
     def get_chips(self, change, indicator):
         """get chips that will be inserted in the list elements and corresponds
         to the bands(years) selected for each of subindicator"""
 
-        span = self.get_children(id_=f"span_{indicator}")
+        span = self.get_children(f"span_{indicator}")
 
         if not change.get("new", None):
             span.children = [""]
@@ -231,10 +225,15 @@ class CustomList(sw.List):
     "dict: where key is the consecutive number of pairs, and values are the baseline and reporting period"
     items = List([]).tag(sync=True)
     "list: image collection items to be loaded in each select pair"
+    unique = False
+    "bool: if true, only the base period will be added to the list"
 
-    def __init__(self, items=[]):
+    def __init__(self, items=[], unique=False, label=""):
 
+        self.label = label
         self.items = items
+        self.unique = unique
+        self.years = param.YEARS
 
         super().__init__()
 
@@ -246,7 +245,7 @@ class CustomList(sw.List):
         """Removes element from the current list"""
 
         self.children = [
-            chld for chld in self.children if chld not in self.get_children(id_=id_)
+            chld for chld in self.children if chld not in self.get_children(id_)
         ]
 
         tmp_vmodel = deepcopy(self.v_model)
@@ -297,24 +296,57 @@ class CustomList(sw.List):
         )
 
         w_basep = v.Select(
+            class_="mr-2",
             v_model=False,
             attributes={"id": f"base_{id_}"},
             label=cm.calculation.y_base,
             items=self.items,
         )
-        w_reportp = v.Select(
+
+        w_basep_ref = v.Select(
             v_model=False,
-            attributes={"id": f"report_{id_}"},
-            label=cm.calculation.y_report,
-            items=self.items,
+            style_="max-width: 125px;",
+            attributes={"id": f"base_ref_{id_}"},
+            label=cm.calculation.match_year,
+            items=self.years,
+        )
+
+        w_basep_container = v.Flex(
+            class_="d-flex flex-row",
+            children=[w_basep, w_basep_ref],
         )
 
         w_basep.observe(
             lambda chg: self.update_model(chg, id_=id_, pos="base"), "v_model"
         )
-        w_reportp.observe(
-            lambda chg: self.update_model(chg, id_=id_, pos="report"), "v_model"
-        )
+
+        if not self.unique:
+
+            # only display report widgets if unique is True
+            w_reportp = v.Select(
+                class_="mr-3",
+                v_model=False,
+                attributes={"id": f"report_{id_}"},
+                label=cm.calculation.y_report,
+                items=self.items,
+            )
+
+            w_reportp_ref = v.Select(
+                style_="max-width: 125px;",
+                v_model=False,
+                attributes={"id": f"report_ref_{id_}"},
+                label=cm.calculation.match_year,
+                items=self.years,
+            )
+            # Create a vflex container to hold base and reference select widgets
+            w_reportp_container = v.Flex(
+                class_="d-flex flex-row",
+                children=[w_reportp, w_reportp_ref],
+            )
+
+            w_reportp.observe(
+                lambda chg: self.update_model(chg, id_=id_, pos="report"), "v_model"
+            )
 
         item = [
             v.ListItem(
@@ -322,7 +354,12 @@ class CustomList(sw.List):
                 class_="ma-0 pa-0",
                 children=[
                     v.ListItemContent(
-                        attributes={"id": "selects"}, children=[w_basep, w_reportp]
+                        attributes={"id": "selects"}, children=[w_basep_container]
+                    )
+                    if self.unique
+                    else v.ListItemContent(
+                        attributes={"id": "selects"},
+                        children=[w_basep_container, w_reportp_container],
                     ),
                 ]
                 + actions,
@@ -338,7 +375,7 @@ class CustomList(sw.List):
         """receive v.select items, save in object (to be reused by new elements) and
         fill the current one ones in the view"""
 
-        item_content_chlds = self.get_children(id_="selects")
+        item_content_chlds = self.get_children("selects")
 
         # Manage the special case when there is only one item.
         if not isinstance(item_content_chlds, list):
@@ -405,7 +442,4 @@ class EditionDialog(sw.Dialog):
     def reset_event(self, *args):
         """search within the content and trigger reset method"""
 
-        if self.attributes["id"] == "dialg_sub_a":
-            self.content.v_model = []
-        else:
-            self.content.reset()
+        self.content.reset()

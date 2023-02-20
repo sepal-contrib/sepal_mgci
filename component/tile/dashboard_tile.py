@@ -2,6 +2,7 @@ import ipyvuetify as v
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
 
+from component.frontend import custom_css
 from component.message import cm
 from component.scripts.scripts import parse_result
 from component.widget.statistics_card import StatisticCard

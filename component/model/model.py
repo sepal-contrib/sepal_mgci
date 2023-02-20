@@ -60,8 +60,8 @@ class MgciModel(Model):
     calc_a = Bool(True).tag(sync=True)
     "bool: comes from Calculation swtich A. Either user wants to calculate subindicator A or not"
 
-    start_year = List([]).tag(sync=True)
-    "list: list of year(s) selected in dashboard.calculation_view.calculation.w_content_a.v_model"
+    start_year = Dict({}).tag(sync=True)
+    "dict: list of year(s) selected in dashboard.calculation_view.calculation.w_content_a.v_model"
 
     calc_b = Bool(True).tag(sync=True)
     "bool: comes from Calculation swtich B. Either user wants to calculate subindicator B or not"

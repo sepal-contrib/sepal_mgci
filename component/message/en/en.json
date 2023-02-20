@@ -74,7 +74,8 @@
         "error" : {
             "no_subind" : "You have to select at least one indicator.",
             "no_years" : "You have to select at least one layer (year)."
-        }
+        },
+        "match_year" : "Corresponding year"
     },
     "dashboard":{
         "title" : "MGCI calculation",

@@ -31,7 +31,6 @@ class CalculationTile(v.Layout, sw.SepalWidget):
 
         self.calculation_view = CalculationView(self.model)
         self.download_task_view = DownloadTaskView(self.model)
-
         self.report_view = ReportView(self.model)
 
         self.children = [
