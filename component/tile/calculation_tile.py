@@ -5,13 +5,10 @@ from time import sleep
 import ipyvuetify as v
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
-from ipywidgets import Output
-from matplotlib import pyplot as plt
-from traitlets import directional_link, link
+from traitlets import link
 
 import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
-import component.parameter.report_template as rt
 import component.scripts as cs
 import component.widget as cw
 from component.message import cm
@@ -21,7 +18,6 @@ __all__ = ["CalculationTile"]
 
 class CalculationTile(v.Layout, sw.SepalWidget):
     def __init__(self, model, *args, **kwargs):
-
         self.class_ = "d-block"
         self._metadata = {"mount_id": "calculation_tile"}
 
@@ -52,7 +48,6 @@ class CalculationTile(v.Layout, sw.SepalWidget):
 
 class CalculationView(v.Card, sw.SepalWidget):
     def __init__(self, model, rsa=False, *args, **kwargs):
-
         """Dashboard tile to calculate and resume the zonal statistics for the
         vegetation layer by kapos ranges.
 
@@ -71,7 +66,7 @@ class CalculationView(v.Card, sw.SepalWidget):
         title = v.CardTitle(children=[cm.dashboard.title])
         description = v.CardText(children=[cm.dashboard.description])
 
-        question_icon = v.Icon(children=["mdi-help-circle"], small=True)
+        v.Icon(children=["mdi-help-circle"], small=True)
 
         # widgets
         self.w_use_rsa = v.Switch(
@@ -161,9 +156,7 @@ class CalculationView(v.Card, sw.SepalWidget):
                 return result
 
             except Exception as e:
-
                 if e.args[0] != "Computation timed out.":
-
                     # Create an unique name (to search after in Drive)
                     self.model.task_process(process, task_filename, process_id)
                     msg.set_msg(f"Calculating {process_id}... Tasked.")
@@ -173,7 +166,6 @@ class CalculationView(v.Card, sw.SepalWidget):
                     raise Exception(f"There was an error {e}")
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
-
             self.model.done = False
 
             years = cs.get_years(self.model.start_year, self.model.end_year)
@@ -191,7 +183,6 @@ class CalculationView(v.Card, sw.SepalWidget):
             # As we don't know which task was completed first, we have to save them in a
             # key(grid_size) : value (future.result()) format
             for future in concurrent.futures.as_completed(futures):
-
                 future_name = futures[future]
                 results[future_name] = future.result()
 
@@ -207,12 +198,12 @@ class CalculationView(v.Card, sw.SepalWidget):
                 self.model.results = results
                 self.model.done = True
                 self.alert.append_msg(
-                    f"The computation has been performed.", type_="success"
+                    "The computation has been performed.", type_="success"
                 )
 
             else:
                 self.alert.append_msg(
-                    f"There was an error in one of the steps", type_="error"
+                    "There was an error in one of the steps", type_="error"
                 )
 
 
@@ -235,7 +226,7 @@ class DownloadTaskView(v.Card):
             children=[sw.Markdown(cm.dashboard.tasks.description.format(DIR.TASKS_DIR))]
         )
 
-        question_icon = v.Icon(children=["mdi-help-circle"], small=True)
+        v.Icon(children=["mdi-help-circle"], small=True)
 
         self.w_file_input = sw.FileInput(folder=DIR.TASKS_DIR, extentions=[".csv"])
 
@@ -248,7 +239,6 @@ class DownloadTaskView(v.Card):
 
     @su.loading_button(debug=True)
     def run_statistics(self, widget, event, data):
-
         # Get and read file
         tasks_file = Path(self.w_file_input.v_model)
         tasks_df = self.model.read_tasks_file(tasks_file)
@@ -281,7 +271,6 @@ class DownloadTaskView(v.Card):
             return result
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
-
             self.model.done = False
 
             futures = {
@@ -297,7 +286,6 @@ class DownloadTaskView(v.Card):
             self.model.results, results = {}, {}
 
             for future in concurrent.futures.as_completed(futures):
-
                 future_name = futures[future]
                 results[future_name] = future.result()
 
@@ -307,7 +295,6 @@ class DownloadTaskView(v.Card):
 
 class ReportView(v.Card):
     def __init__(self, model, *args, **kwargs):
-
         self.class_ = "pa-2"
         super().__init__(*args, **kwargs)
 
@@ -391,9 +378,9 @@ class ReportView(v.Card):
     def export_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 
-        self.alert.add_msg(f"Exporting tables...")
+        self.alert.add_msg("Exporting tables...")
 
-        m49 = cs.get_geoarea(self.model.aoi_model)[1]
+        cs.get_geoarea(self.model.aoi_model)[1]
         report_folder = cs.get_report_folder(self.model)
         cs.export_reports(self.model, report_folder)
 

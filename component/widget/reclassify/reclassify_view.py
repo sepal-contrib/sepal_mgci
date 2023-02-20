@@ -51,7 +51,6 @@ class ImportMatrixDialog(sw.Dialog):
     file = Unicode("").tag(sync=True)
 
     def __init__(self, folder, **kwargs):
-
         # create the 3 widgets
         title = sw.CardTitle(children=["Load reclassification matrix"])
         self.w_file = sw.FileInput(
@@ -85,7 +84,6 @@ class ImportMatrixDialog(sw.Dialog):
         self.value = False
 
     def show(self):
-
         self.value = True
 
 
@@ -98,7 +96,6 @@ class SaveMatrixDialog(sw.Dialog):
     """
 
     def __init__(self, folder=Path.home(), **kwargs):
-
         # save the matrix
         self._matrix = {}
         self.folder = Path(folder)
@@ -200,7 +197,6 @@ class ClassSelect(sw.Select):
     """
 
     def __init__(self, new_codes, old_code, **kwargs):
-
         # set default parameters
         self.items = [
             {"text": f"{code}: {item[0]}", "value": code}
@@ -237,7 +233,6 @@ class ReclassifyTable(sw.Layout):
     HEADERS = ms.rec.rec.headers
 
     def __init__(self, model, **kwargs):
-
         self.class_ = "d-block"
         self.attributes = {"id": "reclassify_table"}
 
@@ -473,7 +468,6 @@ class ReclassifyView(sw.Card):
         enforce_aoi=False,
         **kwargs,
     ):
-
         # create metadata to make it compatible with the framwork app system
         self._metadata = {"mount_id": "reclassify_tile"}
 

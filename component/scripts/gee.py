@@ -13,7 +13,6 @@ __all__ = ["GDrive"]
 
 class GDrive:
     def __init__(self):
-
         self.initialize = ee.Initialize()
         self.credentials = ee.Credentials()
         self.service = discovery.build(
@@ -24,7 +23,6 @@ class GDrive:
         )
 
     def get_items(self):
-
         service = self.service
 
         # get list of files
@@ -42,7 +40,6 @@ class GDrive:
         return items
 
     def get_id(self, filename):
-
         items = self.get_items()
         # extract list of names and id and find the wanted file
         namelist = np.array([items[i]["name"] for i in range(len(items))])
@@ -55,7 +52,6 @@ class GDrive:
             return (1, idlist[file_pos])
 
     def download_file(self, filename, output_file):
-
         # get file id
         success, fId = self.get_id(filename)
         if success == 0:
@@ -75,7 +71,6 @@ class GDrive:
         return True
 
     def download_file(self, filename, output_file):
-
         success, fId = self.get_id(filename)
         if success == 0:
             raise Exception("File not found")
@@ -95,7 +90,6 @@ class GDrive:
         return True
 
     def delete_file(self, filename):
-
         # get file id
         success, fId = self.get_id(self.get_items(), filename)
 

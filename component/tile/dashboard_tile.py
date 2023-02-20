@@ -2,7 +2,6 @@ import ipyvuetify as v
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
 
-from component.frontend import custom_css
 from component.message import cm
 from component.scripts.scripts import parse_result
 from component.widget.statistics_card import StatisticCard
@@ -10,7 +9,6 @@ from component.widget.statistics_card import StatisticCard
 
 class DashboardTile(sw.Card):
     def __init__(self, model, rsa=False, *args, **kwargs):
-
         self.class_ = "my-4"
         self._metadata = {"mount_id": "dashboard_tile"}
 
@@ -41,7 +39,6 @@ class DashboardTile(sw.Card):
         self.model.observe(self.get_years, "done")
 
     def get_years(self, change):
-
         if change["new"]:
             # Search year, consider it might be in yyyy_yyyy format.
             years = [

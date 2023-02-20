@@ -1,15 +1,10 @@
 from pathlib import Path
 
-import ipyvuetify as v
 import pandas as pd
-import sepal_ui.scripts.utils as su
 from sepal_ui import sepalwidgets as sw
-from sepal_ui.message import ms
 from sepal_ui.reclassify.parameters import *
-from traitlets import link
 
 import component.parameter.module_parameter as param
-from component.message import cm
 from component.widget import reclassify as rec
 
 __all__ = ["ReclassifyTile"]

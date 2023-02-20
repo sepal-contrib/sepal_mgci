@@ -6,7 +6,6 @@ import ee
 import pandas as pd
 from sepal_ui import color
 
-import component.parameter as param
 from component.message import cm
 from component.parameter.module_parameter import BIOBELT, BIOBELT_LEGEND, BIOBELT_VIS
 from component.widget.legend_control import LegendControl
@@ -15,7 +14,6 @@ ee.Initialize()
 
 
 def unnest(group):
-
     d_group = ee.Dictionary(group)
     return ee.List([[ee.String(d_group.get("group"))], [d_group.get("sum")]]).flatten()
 

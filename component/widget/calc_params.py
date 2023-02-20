@@ -17,7 +17,6 @@ class Calculation(sw.List):
     "bool: traitlet to alert model that this element has loaded."
 
     def __init__(self, model):
-
         super().__init__()
 
         self.model = model
@@ -65,7 +64,7 @@ class Calculation(sw.List):
     def reset_event(self, data, indicator):
         """search within the content and trigger reset method"""
 
-        if indicator in f"dialg_sub_a":
+        if indicator in "dialg_sub_a":
             self.w_content_a.v_model = []
         else:
             self.w_content_b.reset()
@@ -83,7 +82,6 @@ class Calculation(sw.List):
         on model ic_items change"""
 
         if change["new"]:
-
             self.dialog_a.reset_event()
             self.dialog_b.reset_event()
 
@@ -197,10 +195,8 @@ class Calculation(sw.List):
             ]
 
         else:
-
             multichips = []
             for val in data.values():
-
                 base_y = val.get("base", {}).get("year", "...") or "..."
                 report_y = val.get("report", {}).get("year", "...") or "..."
 
@@ -234,7 +230,6 @@ class Calculation(sw.List):
 
 
 class CustomList(sw.List):
-
     counter = Int(1).tag(syc=True)
     "int: control number to check how many subb pairs are loaded"
     max_ = Int(4 - 1).tag(syc=True)
@@ -247,7 +242,6 @@ class CustomList(sw.List):
     "bool: if true, only the base period will be added to the list"
 
     def __init__(self, items=[], unique=False, label=""):
-
         self.label = label
         self.items = items
         self.unique = unique
@@ -344,7 +338,6 @@ class CustomList(sw.List):
         )
 
         if not self.unique:
-
             # only display report widgets if unique is True
             w_reportp = v.Select(
                 class_="mr-3",
@@ -422,7 +415,6 @@ class CustomList(sw.List):
 
 class EditionDialog(sw.Dialog):
     def __init__(self, custom_list, indicator):
-
         self.v_model = False
         self.scrollable = True
         self.max_width = 650

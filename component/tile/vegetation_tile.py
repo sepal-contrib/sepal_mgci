@@ -1,10 +1,6 @@
-from pathlib import Path
-
 import ipyvuetify as v
-import sepal_ui.mapping as sm
 import sepal_ui.sepalwidgets as sw
 from ipywidgets import Layout
-from sepal_ui.scripts.utils import loading_button
 from traitlets import CBool, directional_link, link, observe
 
 import component.parameter.directory as dir_
@@ -20,7 +16,6 @@ __all__ = ["VegetationTile", "Questionaire"]
 
 class VegetationTile(v.Layout, sw.SepalWidget):
     def __init__(self, model, aoi_model, *args, **kwargs):
-
         self._metadata = {"mount_id": "vegetation_tile"}
         self.class_ = "d-block pa-2"
 
@@ -61,7 +56,6 @@ class VegetationTile(v.Layout, sw.SepalWidget):
 
 class VegetationView(v.Layout, sw.SepalWidget):
     def __init__(self, model, aoi_model, questionaire, *args, **kwargs):
-
         self._metadata = {"mount_id": "vegetation_tile"}
         self.class_ = "d-block pa-2"
         # self.min_height = "400px"
@@ -119,10 +113,8 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
         # Would you like to use a custom land use/land cover map?
         if self.w_questionaire.custom_lulc:
-
             # Do you have a custom land cover transition matrix (.csv)?
             if not self.w_questionaire.impact_matrix:
-
                 self.w_reclass.w_ic_select.label = cm.reclass_view.ic_custom_label
                 self.w_reclass.w_ic_select.disabled = False
                 self.w_reclass.reclassify_table.set_table({}, {})
@@ -139,7 +131,6 @@ class VegetationView(v.Layout, sw.SepalWidget):
                 self.transition_view.impact_matrix = False
 
         else:
-
             self.w_reclass.w_ic_select.label = cm.reclass_view.ic_default_label
             self.w_reclass.w_ic_select.v_model = param.LULC_DEFAULT
             self.w_reclass.w_ic_select.disabled = True
@@ -204,7 +195,6 @@ class Questionaire(v.Layout, sw.SepalWidget):
     impact_matrix = CBool().tag(sync=True)
 
     def __init__(self, *args, **kwargs):
-
         self.class_ = "d-block"
 
         super().__init__(*args, **kwargs)

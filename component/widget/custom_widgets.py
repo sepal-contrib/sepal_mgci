@@ -6,11 +6,9 @@ __all__ = ["BoolQuestion", "Tabs", "TaskMsg"]
 
 
 class BoolQuestion(v.Flex, sw.SepalWidget):
-
     v_model = CBool(False).tag(sync=True)
 
     def __init__(self, question, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
 
         bool_radios = v.RadioGroup(
@@ -28,11 +26,9 @@ class BoolQuestion(v.Flex, sw.SepalWidget):
 
 
 class Tabs(v.Card):
-
     current = Int(0).tag(sync=True)
 
     def __init__(self, titles, content, **kwargs):
-
         self.background_color = "primary"
         self.dark = True
 
@@ -63,11 +59,9 @@ class Tabs(v.Card):
 
 
 class TaskMsg(sw.Flex):
-
     colors = ["info", "success", "error", "warning"]
 
     def __init__(self, msg=""):
-
         super().__init__()
 
         self.class_ = "d-flex"
