@@ -37,6 +37,7 @@ class Calculation(sw.List):
         ]
 
         self.model.observe(self.populate_years, "ic_items")
+
         self.w_content_a.observe(
             lambda change: self.get_chips(change, "sub_a"), "v_model"
         )
@@ -95,7 +96,7 @@ class Calculation(sw.List):
                 {"value": item.split("/")[-1], "text": item} for item in change["new"]
             ]
 
-            self.w_content_a.items = items
+            self.w_content_a.populate(items)
             self.w_content_b.populate(items)
 
     def get_item(self, indicator):
@@ -170,6 +171,7 @@ class Calculation(sw.List):
         """get chips that will be inserted in the list elements and corresponds
         to the bands(years) selected for each of subindicator"""
 
+        # Get the space where the elements will be inserted
         span = self.get_children(f"span_{indicator}")
 
         if not change.get("new", None):
@@ -178,16 +180,29 @@ class Calculation(sw.List):
 
         data = change["new"]
 
+        base_years = [val["base"].get("year", "...") for val in data.values()]
+
         if indicator == "sub_a":
-            multichips = [[v.Chip(small=True, children=[year]), ", "] for year in data]
+            multichips = [
+                # Set chip red color if the year is empty
+                [
+                    v.Chip(
+                        color="secondary" if year != "..." else "error",
+                        small=True,
+                        children=[year],
+                    ),
+                    ", ",
+                ]
+                for year in base_years
+            ]
 
         else:
 
             multichips = []
-            for period, val in data.items():
+            for val in data.values():
 
-                base_y = val.get("base", "...") or "..."
-                report_y = val.get("report", "...") or "..."
+                base_y = val.get("base", {}).get("year", "...") or "..."
+                report_y = val.get("report", {}).get("year", "...") or "..."
 
                 if not all([base_y != "...", base_y != "..."]):
                     continue
@@ -195,6 +210,9 @@ class Calculation(sw.List):
                 multichips.append(
                     [
                         v.Chip(
+                            color="error"
+                            if any([base_y == "...", report_y == "..."])
+                            else "secondary",
                             small=True,
                             draggable=True,
                             children=[
@@ -233,7 +251,6 @@ class CustomList(sw.List):
         self.label = label
         self.items = items
         self.unique = unique
-        self.years = param.YEARS
 
         super().__init__()
 
@@ -262,14 +279,23 @@ class CustomList(sw.List):
             self.counter += 1
             self.children = self.children + self.get_element()
 
-    def update_model(self, data, id_, pos):
+    def update_model(self, data, id_, pos, target):
         """update v_model content based on select changes"""
 
         tmp_vmodel = deepcopy(self.v_model)
 
-        if not id_ in tmp_vmodel:
-            tmp_vmodel[id_] = {}
-        tmp_vmodel[id_][pos] = data["new"]
+        # set a default value for the key if it doesn't exist
+        # do this for each level of the dict
+        # so we can set the value for the target key
+        tmp_vmodel.setdefault(id_, {}).setdefault(pos, {})[target] = str(data["new"])
+
+        # if not id_ in tmp_vmodel:
+        #     tmp_vmodel[id_] = {}
+
+        # if not pos in tmp_vmodel[id_]:
+        #     tmp_vmodel[id_][pos] = {}
+
+        # tmp_vmodel[id_][pos][target] = data["new"]
 
         self.v_model = tmp_vmodel
 
@@ -298,26 +324,23 @@ class CustomList(sw.List):
         w_basep = v.Select(
             class_="mr-2",
             v_model=False,
-            attributes={"id": f"base_{id_}"},
+            attributes={"id": "selects"},
             label=cm.calculation.y_base,
             items=self.items,
         )
 
-        w_basep_ref = v.Select(
-            v_model=False,
-            style_="max-width: 125px;",
-            attributes={"id": f"base_ref_{id_}"},
-            label=cm.calculation.match_year,
-            items=self.years,
-        )
-
-        w_basep_container = v.Flex(
-            class_="d-flex flex-row",
-            children=[w_basep, w_basep_ref],
+        w_base_yref = SelectYear()
+        w_basep_container = sw.Flex(
+            class_="d-flex flex-row", children=[w_basep, w_base_yref]
         )
 
         w_basep.observe(
-            lambda chg: self.update_model(chg, id_=id_, pos="base"), "v_model"
+            lambda chg: self.update_model(chg, id_=id_, pos="base", target="asset"),
+            "v_model",
+        )
+        w_base_yref.observe(
+            lambda chg: self.update_model(chg, id_=id_, pos="base", target="year"),
+            "v_model",
         )
 
         if not self.unique:
@@ -326,26 +349,27 @@ class CustomList(sw.List):
             w_reportp = v.Select(
                 class_="mr-3",
                 v_model=False,
-                attributes={"id": f"report_{id_}"},
+                attributes={"id": "selects"},
                 label=cm.calculation.y_report,
                 items=self.items,
             )
+            w_report_yref = SelectYear()
 
-            w_reportp_ref = v.Select(
-                style_="max-width: 125px;",
-                v_model=False,
-                attributes={"id": f"report_ref_{id_}"},
-                label=cm.calculation.match_year,
-                items=self.years,
-            )
-            # Create a vflex container to hold base and reference select widgets
-            w_reportp_container = v.Flex(
-                class_="d-flex flex-row",
-                children=[w_reportp, w_reportp_ref],
+            w_reportp_container = sw.Flex(
+                class_="d-flex flex-row", children=[w_reportp, w_report_yref]
             )
 
             w_reportp.observe(
-                lambda chg: self.update_model(chg, id_=id_, pos="report"), "v_model"
+                lambda chg: self.update_model(
+                    chg, id_=id_, pos="report", target="asset"
+                ),
+                "v_model",
+            )
+            w_report_yref.observe(
+                lambda chg: self.update_model(
+                    chg, id_=id_, pos="report", target="year"
+                ),
+                "v_model",
             )
 
         item = [
@@ -353,12 +377,9 @@ class CustomList(sw.List):
                 attributes={"id": id_},
                 class_="ma-0 pa-0",
                 children=[
-                    v.ListItemContent(
-                        attributes={"id": "selects"}, children=[w_basep_container]
-                    )
+                    v.ListItemContent(children=[w_basep_container])
                     if self.unique
                     else v.ListItemContent(
-                        attributes={"id": "selects"},
                         children=[w_basep_container, w_reportp_container],
                     ),
                 ]
@@ -372,16 +393,14 @@ class CustomList(sw.List):
         return item
 
     def get_select_elements(self):
-        """receive v.select items, save in object (to be reused by new elements) and
-        fill the current one ones in the view"""
+        """receive v.select items that are children of 'selects' id"""
 
-        item_content_chlds = self.get_children("selects")
+        selects = self.get_children("selects")
 
-        # Manage the special case when there is only one item.
-        if not isinstance(item_content_chlds, list):
-            item_content_chlds = [item_content_chlds]
+        if not isinstance(selects, list):
+            selects = [selects]
 
-        return [select for item in item_content_chlds for select in item.children]
+        return selects
 
     def populate(self, items):
         """receive v.select items, save in object (to be reused by new elements) and
@@ -402,7 +421,7 @@ class CustomList(sw.List):
 
 
 class EditionDialog(sw.Dialog):
-    def __init__(self, content, indicator):
+    def __init__(self, custom_list, indicator):
 
         self.v_model = False
         self.scrollable = True
@@ -412,7 +431,7 @@ class EditionDialog(sw.Dialog):
         super().__init__()
 
         self.attributes = {"id": f"dialg_{indicator}"}
-        self.content = content
+        self.custom_list = custom_list
 
         close_btn = sw.Btn("OK", small=True)
         clean_btn = v.Btn(children=[v.Icon(children=["mdi-broom"])], icon=True)
@@ -430,7 +449,7 @@ class EditionDialog(sw.Dialog):
                             clean_btn,
                         ]
                     ),
-                    self.content,
+                    self.custom_list,
                     v.CardActions(children=[v.Spacer(), close_btn]),
                 ],
             ),
@@ -442,4 +461,16 @@ class EditionDialog(sw.Dialog):
     def reset_event(self, *args):
         """search within the content and trigger reset method"""
 
-        self.content.reset()
+        self.custom_list.reset()
+
+
+class SelectYear(v.Select):
+    """Select widget to select a year, it will be always the same"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.v_model = False
+        self.style_ = "min-width: 175px; max-width: 175px"
+        self.label = cm.calculation.match_year
+        self.items = param.YEARS
