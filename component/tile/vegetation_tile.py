@@ -54,6 +54,24 @@ class VegetationTile(v.Layout, sw.SepalWidget):
         self.view.reclassify_tile.use_default()
 
 
+class ExpansionSettings(sw.ExpansionPanel):
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.title = "Settings"
+        self.expanded = False
+        self.children = [
+            v.Card(
+                class_="pa-2",
+                children=[
+                    v.CardTitle(children=["Settings"]),
+                    v.CardText(children=[sw.Markdown(cm.veg_layer.settings)]),
+                ],
+            )
+        ]
+
+
 class VegetationView(v.Layout, sw.SepalWidget):
     def __init__(self, model, aoi_model, questionaire, *args, **kwargs):
         self._metadata = {"mount_id": "vegetation_tile"}

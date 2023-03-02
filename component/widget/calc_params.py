@@ -4,12 +4,14 @@ import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
 from traitlets import Bool, Dict, Int, List, directional_link
 
+import component.frontend
 import component.parameter.module_parameter as param
 from component.message import cm
 
 
 class Calculation(sw.List):
-    """Card to display and/or edit the bands(years) that will be used to calculate thes statistics for each indicator. It is composed of two cards for subA y subB each
+    """Card to display and/or edit the bands(years) that will be used to calculate thes statistics for each indicator.
+    It is composed of two cards for subA y subB each
     with an editing icon that will display the corresponding editing dialogs"""
 
     indicators = ["sub_a", "sub_b"]
@@ -30,10 +32,14 @@ class Calculation(sw.List):
         self.dialog_a = EditionDialog(self.w_content_a, "sub_a")
         self.dialog_b = EditionDialog(self.w_content_b, "sub_b")
 
-        self.children = [self.get_item(indicator) for indicator in self.indicators] + [
+        self.children = (
+            v.Flex(
+                class_="d-flex",
+                children=[self.get_item(indicator) for indicator in self.indicators],
+            ),
             self.dialog_a,
             self.dialog_b,
-        ]
+        )
 
         self.model.observe(self.populate_years, "ic_items")
 
@@ -90,9 +96,7 @@ class Calculation(sw.List):
                 item.split("/")[-1]: item for item in self.model.ic_items
             }
 
-            items = [
-                {"value": item.split("/")[-1], "text": item} for item in change["new"]
-            ]
+            items = [{"value": item, "text": item} for item in change["new"]]
 
             self.w_content_a.populate(items)
             self.w_content_b.populate(items)
@@ -185,7 +189,7 @@ class Calculation(sw.List):
                 # Set chip red color if the year is empty
                 [
                     v.Chip(
-                        color="secondary" if year != "..." else "error",
+                        color="success" if year != "..." else "error",
                         small=True,
                         children=[year],
                     ),
@@ -208,7 +212,7 @@ class Calculation(sw.List):
                         v.Chip(
                             color="error"
                             if any([base_y == "...", report_y == "..."])
-                            else "secondary",
+                            else "success",
                             small=True,
                             draggable=True,
                             children=[
@@ -230,6 +234,7 @@ class Calculation(sw.List):
 
 
 class CustomList(sw.List):
+
     counter = Int(1).tag(syc=True)
     "int: control number to check how many subb pairs are loaded"
     max_ = Int(4 - 1).tag(syc=True)
@@ -274,7 +279,14 @@ class CustomList(sw.List):
             self.children = self.children + self.get_element()
 
     def update_model(self, data, id_, pos, target):
-        """update v_model content based on select changes"""
+        """update v_model content based on select changes.
+
+        Args:
+            data (dict): data from the select change event (change)
+            id_ (int): id of the element that triggered the change
+            pos (str): either base or report. it's the type of period
+            target (str): either asset_id or year.
+        """
 
         tmp_vmodel = deepcopy(self.v_model)
 
@@ -282,14 +294,6 @@ class CustomList(sw.List):
         # do this for each level of the dict
         # so we can set the value for the target key
         tmp_vmodel.setdefault(id_, {}).setdefault(pos, {})[target] = str(data["new"])
-
-        # if not id_ in tmp_vmodel:
-        #     tmp_vmodel[id_] = {}
-
-        # if not pos in tmp_vmodel[id_]:
-        #     tmp_vmodel[id_][pos] = {}
-
-        # tmp_vmodel[id_][pos][target] = data["new"]
 
         self.v_model = tmp_vmodel
 
