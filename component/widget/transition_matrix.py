@@ -126,17 +126,16 @@ class TransitionMatrix(sw.Layout):
 
         if change["new"]:
             self.input_impact.hide()
-            [ch.show() for ch in self.get_children("transition_matrix")]
+            [ch.show() for ch in self.get_children(id_="transition_matrix")]
 
         else:
             self.input_impact.show()
-            [ch.hide() for ch in self.get_children("transition_matrix")]
+            [ch.hide() for ch in self.get_children(id_="transition_matrix")]
 
     @switch("indeterminate", on_widgets=["progress"], targets=[False])
     def set_rows(self, df=param.TRANSITION_MATRIX):
         """create an returns matrix"""
 
-        self.get_children("transition_matrix")
         # Remove table if exists
         self.children = [
             chld for chld in self.children if not isinstance(chld, sw.SimpleTable)
@@ -173,7 +172,7 @@ class TransitionMatrix(sw.Layout):
         """disable all selectable elements in the table. As we'll have a lot of them
         create execute them as a pool executor"""
 
-        selectables = self.get_children("impact")
+        selectables = self.get_children(id_="impact")
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             executor.map(lambda s: setattr(s, "disabled", not s.disabled), selectables)

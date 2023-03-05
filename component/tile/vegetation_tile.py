@@ -137,13 +137,12 @@ class VegetationView(v.Layout, sw.SepalWidget):
                 self.w_reclass.w_ic_select.disabled = False
                 self.w_reclass.reclassify_table.set_table({}, {})
 
-                self.w_reclass.get_children("btn_get_table").show()
-                self.w_reclass.get_children("reclassify_table").show()
+                self.w_reclass.get_children(id_="btn_get_table").show()
+                self.w_reclass.get_children(id_="reclassify_table").show()
                 self.transition_view.impact_matrix = True
-
             else:
-                self.w_reclass.get_children("reclassify_table").hide()
-                self.w_reclass.get_children("btn_get_table").hide()
+                self.w_reclass.get_children(id_="reclassify_table").hide()
+                self.w_reclass.get_children(id_="btn_get_table").hide()
 
                 # Hide impact matrix and add a loader to load csv matrix
                 self.transition_view.impact_matrix = False
@@ -153,8 +152,8 @@ class VegetationView(v.Layout, sw.SepalWidget):
             self.w_reclass.w_ic_select.v_model = param.LULC_DEFAULT
             self.w_reclass.w_ic_select.disabled = True
 
-            self.w_reclass.get_children("btn_get_table").hide()
-            self.w_reclass.get_children("reclassify_table").hide()
+            self.w_reclass.get_children(id_="btn_get_table").hide()
+            self.w_reclass.get_children(id_="reclassify_table").hide()
             self.transition_view.impact_matrix = True
             self.reclassify_tile.use_default()
 
