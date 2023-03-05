@@ -56,32 +56,31 @@ class Calculation(sw.List):
 
         # Link switches to the model
         directional_link(
-            (self.get_children("switch_sub_a"), "v_model"),
+            (self.get_children(id_="switch_sub_a")[0], "v_model"),
             (self.model, "calc_a"),
         )
 
         directional_link(
-            (self.get_children("switch_sub_b"), "v_model"),
+            (self.get_children(id_="switch_sub_b")[0], "v_model"),
             (self.model, "calc_b"),
         )
 
         self.ready = True
 
-    def reset_event(self, data, indicator):
+    def reset_event(self, change, indicator):
         """search within the content and trigger reset method"""
 
-        if indicator in "dialg_sub_a":
-            self.w_content_a.v_model = []
-        else:
-            self.w_content_b.reset()
+        # get widget and reset it
+        widget = self.get_children(id_=f"dialog_{indicator}")[0]
+        widget.reset_event()
 
-        self.get_children(f"desc_{indicator}").children = (
+        self.get_children(id_=f"desc_{indicator}")[0].children = (
             [cm.calculation[indicator].desc_disabled]
-            if not data
+            if not change["new"]
             else [cm.calculation[indicator].desc_active]
         )
 
-        self.get_children(f"pen_{indicator}").disabled = not data
+        self.get_children(id_=f"pen_{indicator}")[0].disabled = not change["new"]
 
     def populate_years(self, change):
         """function to trigger and send population methods from a and b content based
@@ -107,7 +106,7 @@ class Calculation(sw.List):
 
         switch = sw.Switch(attributes={"id": f"switch_{indicator}"}, v_model=True)
         switch.observe(
-            lambda chg: self.reset_event(chg["new"], indicator=indicator), "v_model"
+            lambda change: self.reset_event(change, indicator=indicator), "v_model"
         )
 
         pencil = v.Btn(
@@ -166,15 +165,16 @@ class Calculation(sw.List):
     def open_dialog(self, *args, indicator):
         """Change the v_model value of subindicators edition dialogs to display them"""
 
-        dialog = self.get_children(f"dialg_{indicator}")
+        dialog = self.get_children(id_=f"dialog_{indicator}")[0]
         dialog.v_model = True
 
     def get_chips(self, change, indicator):
         """get chips that will be inserted in the list elements and corresponds
         to the bands(years) selected for each of subindicator"""
+        print(change["new"])
 
         # Get the space where the elements will be inserted
-        span = self.get_children(f"span_{indicator}")
+        span = self.get_children(id_=f"span_{indicator}")[0]
 
         if not change.get("new", None):
             span.children = [""]
@@ -261,7 +261,7 @@ class CustomList(sw.List):
         """Removes element from the current list"""
 
         self.children = [
-            chld for chld in self.children if chld not in self.get_children(id_)
+            chld for chld in self.children if chld not in self.get_children(id_=id_)
         ]
 
         tmp_vmodel = deepcopy(self.v_model)
@@ -389,32 +389,26 @@ class CustomList(sw.List):
 
         return item
 
-    def get_select_elements(self):
-        """receive v.select items that are children of 'selects' id"""
-
-        selects = self.get_children("selects")
-
-        if not isinstance(selects, list):
-            selects = [selects]
-
-        return selects
-
     def populate(self, items):
         """receive v.select items, save in object (to be reused by new elements) and
         fill the current one ones in the view"""
 
         self.items = items
 
-        select_wgts = self.get_select_elements()
+        select_wgts = self.get_children(id_="selects")
 
         [setattr(select, "items", items) for select in select_wgts]
 
     def reset(self):
         """remove all selected values form selection widgets"""
 
-        select_wgts = self.get_select_elements()
+        select_wgts = self.get_children(id_="selects")
+        ref_wgts = self.get_children(id_="ref_select")
 
-        [setattr(select, "v_model", False) for select in select_wgts]
+        [setattr(select, "v_model", False) for select in (select_wgts + ref_wgts)]
+
+        # And also reset the v_model
+        self.v_model = {}
 
 
 class EditionDialog(sw.Dialog):
@@ -426,11 +420,13 @@ class EditionDialog(sw.Dialog):
 
         super().__init__()
 
-        self.attributes = {"id": f"dialg_{indicator}"}
+        self.attributes = {"id": f"dialog_{indicator}"}
         self.custom_list = custom_list
 
         close_btn = sw.Btn("OK", small=True)
-        clean_btn = v.Btn(children=[v.Icon(children=["mdi-broom"])], icon=True)
+        clean_btn = sw.Btn(gliph="mdi-broom", icon=True).set_tooltip(
+            "Reset all values", bottom=True
+        )
 
         self.children = [
             sw.Card(
@@ -442,7 +438,7 @@ class EditionDialog(sw.Dialog):
                         children=[
                             cm.calculation[indicator].title,
                             v.Spacer(),
-                            clean_btn,
+                            clean_btn.with_tooltip,
                         ]
                     ),
                     self.custom_list,
@@ -470,3 +466,4 @@ class SelectYear(v.Select):
         self.style_ = "min-width: 175px; max-width: 175px"
         self.label = cm.calculation.match_year
         self.items = param.YEARS
+        self.attributes = {"id": "ref_select"}
