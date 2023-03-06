@@ -5,6 +5,9 @@ from sepal_ui import color
 
 from component.message import cm
 
+# Create a range of years from 2000 to current year
+YEARS = pd.date_range(start="1990-01-01", end="2020-01-01", freq="AS").year.tolist()
+
 # SET SOME PARAMETERS
 UPPER_THRESHOLDS = {98: "green", 95: "orange", 90: "red"}
 

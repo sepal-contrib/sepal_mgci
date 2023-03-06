@@ -47,9 +47,16 @@
             "label": "Select a Land Cover Map",
             "items" : ["Custom Land Cover Map...", "ESA Land Cover Map"]
         },
+        "customize":{
+            "title": "Customize",
+            "description" : "Customize Land Cover Map... Customize Land Cover Transition Matrix..."
+        },
+        "sub_a_title" : "Sub indicator A",
+        "sub_b_title" : "Sub indicator B",
         "questionaire" : {
-            "q1":"Would you like to use a custom land use/land cover map?",
-            "q2":"Do you have a custom land cover transition matrix (.csv)?"
+                "q1":"Would you like to use a custom land use/land cover map?",
+                "q2":"Would you like to change the default land cover transition matrix?",
+                "q3":"Do you need to reclassify the values of your land cover map?"
         }
     },
     "reclass" : {
@@ -74,7 +81,8 @@
         "error" : {
             "no_subind" : "You have to select at least one indicator.",
             "no_years" : "You have to select at least one layer (year)."
-        }
+        },
+        "match_year" : "Corresponding year"
     },
     "dashboard":{
         "title" : "MGCI calculation",

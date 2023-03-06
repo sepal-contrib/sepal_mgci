@@ -267,7 +267,6 @@ def export_reports(model, output_folder):
             sub_b_reports.append(get_sub_b_reports(parsed_df, year_s, model))
 
     for reports in sub_a_reports:
-
         [
             report[0].to_excel(
                 str(Path(output_folder, name.format(report[1]))),
@@ -280,7 +279,6 @@ def export_reports(model, output_folder):
         ]
 
     for reports in sub_b_reports:
-
         [
             report[0].to_excel(
                 str(Path(output_folder, name.format(report[1]))),

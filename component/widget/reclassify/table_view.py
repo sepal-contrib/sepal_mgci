@@ -35,7 +35,6 @@ class ClassTable(sw.DataTable):
     SCHEMA = param.SCHEMA
 
     def __init__(self, out_path=Path.home() / "downloads", **kwargs):
-
         # save the output path
         self.out_path = Path(out_path)
 
@@ -124,7 +123,7 @@ class ClassTable(sw.DataTable):
         # corresponding values with the SCHEMA.
 
         # small sanity check
-        if not len(df.columns) in [2, 3]:
+        if len(df.columns) not in [2, 3]:
             raise AssertionError(
                 f"The file is not a valid classification file as it has {len(df.columns)} columns instead of 2 or 3"
             )
@@ -203,7 +202,6 @@ class EditDialog(v.Dialog):
     TITLES = ms.rec.table.edit_dialog.titles
 
     def __init__(self, table, **kwargs):
-
         # custom attributes
         self.table = table
 
@@ -290,7 +288,6 @@ class EditDialog(v.Dialog):
 
         # change the content
         for i, item in enumerate(zip(self.widgets, data)):
-
             widget, val = item
 
             # textfield can be filled directly
@@ -299,7 +296,6 @@ class EditDialog(v.Dialog):
 
             # the color picker need to be set in every color format to work
             else:
-
                 # default to red if no value is provided
                 val = val if val else "#FF0000"
 
@@ -418,7 +414,6 @@ class SaveDialog(v.Dialog):
     reload = Int().tag(sync=True)
 
     def __init__(self, table, out_path, **kwargs):
-
         # gather the table and saving params
         self.table = table
         self.out_path = out_path
@@ -570,7 +565,6 @@ class TableView(sw.Card):
     def __init__(
         self, class_path=Path.home(), out_path=Path.home() / "downloads", **kwargs
     ):
-
         # create metadata to make it compatible with the framwork app system
         self._metadata = {"mount_id": "reclassify_tile"}
 

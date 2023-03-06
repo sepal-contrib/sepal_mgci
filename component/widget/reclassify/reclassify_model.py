@@ -106,7 +106,6 @@ class ReclassifyModel(Model):
         enforce_aoi=False,
         **kwargs,
     ):
-
         # init the model
         super().__init__(**kwargs)
 
@@ -218,12 +217,10 @@ class ReclassifyModel(Model):
 
         @su.need_ee
         def _ee_image():
-
             return ee.Image(self.src_gee).bandNames().getInfo()
 
         @su.need_ee
         def _ee_vector():
-
             columns = ee.FeatureCollection(self.src_gee).first().getInfo()["properties"]
 
             return (
@@ -233,14 +230,12 @@ class ReclassifyModel(Model):
             )
 
         def _local_image():
-
             with rio.open(self.src_local) as f:
                 bands = [i for i in range(1, f.count + 1)]
 
             return bands
 
         def _local_vector():
-
             df = gpd.read_file(self.src_local)
 
             return [c for c in df.columns.tolist() if c != "geometry"]
@@ -290,7 +285,6 @@ class ReclassifyModel(Model):
 
         @su.need_ee
         def _ee_image():
-
             # reduce the image
             image = ee.Image(self.src_gee).select(self.band)
             aoi = self.get_aoi() or image
@@ -310,7 +304,6 @@ class ReclassifyModel(Model):
 
         @su.need_ee
         def _ee_vector():
-
             collection = ee.FeatureCollection(self.src_gee)
             aoi = self.get_aoi() or collection
             geometry = aoi.geometry()
@@ -323,9 +316,7 @@ class ReclassifyModel(Model):
             return list(set(values))
 
         def _local_image():
-
             with rio.open(self.src_local) as src:
-
                 bounds = self.get_aoi().total_bounds if self.get_aoi() else src.bounds
                 data = src.read(
                     self.band, window=from_bounds(*bounds, transform=src.transform)
@@ -335,7 +326,6 @@ class ReclassifyModel(Model):
             return np.nonzero(count != 0)[0].tolist()
 
         def _local_vector():
-
             gdf = gpd.read_file(self.src_local)
             bounds = self.get_aoi().total_bounds if self.get_aoi() else gdf.total_bounds
             xmin, ymin, xmax, ymax = bounds
@@ -372,7 +362,6 @@ class ReclassifyModel(Model):
 
         @su.need_ee
         def _ee_image():
-
             if not self.src_gee:
                 raise Exception("You need to provide source asset.")
 
@@ -421,7 +410,6 @@ class ReclassifyModel(Model):
             self.dst_gee_memory = ee_image
 
             if self.save:
-
                 # export
                 params = {
                     "image": ee_image,
@@ -439,7 +427,6 @@ class ReclassifyModel(Model):
 
         @su.need_ee
         def _ee_vector():
-
             if not self.src_gee:
                 raise Exception("You need to provide source asset.")
 
@@ -469,7 +456,6 @@ class ReclassifyModel(Model):
             # add colormapping parameters
 
             if self.save:
-
                 # export
                 params = {
                     "collection": self.dst_gee_memory,
@@ -483,7 +469,6 @@ class ReclassifyModel(Model):
             return self.dst_gee
 
         def _local_image():
-
             if not self.src_local:
                 raise Exception("You need to provide source asset.")
 
@@ -493,7 +478,6 @@ class ReclassifyModel(Model):
             )
 
             with rio.open(self.src_local) as src:
-
                 bounds = self.get_aoi().total_bounds if self.get_aoi() else src.bounds
                 window = from_bounds(*bounds, transform=src.transform)
                 raw = src.read(self.band, window=window)
@@ -504,7 +488,6 @@ class ReclassifyModel(Model):
                     data += (raw == old_val) * new_val
 
                 if self.save:
-
                     profile = src.profile
                     profile.update(
                         driver="GTiff",
@@ -533,7 +516,6 @@ class ReclassifyModel(Model):
             return self.dst_local
 
         def _local_vector():
-
             if not self.src_local:
                 raise Exception("You need need to provide source asset.")
 
@@ -558,7 +540,6 @@ class ReclassifyModel(Model):
 
             # save the file
             if self.save:
-
                 gdf.to_file(self.dst_local)
 
             return self.dst_local

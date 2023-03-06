@@ -125,7 +125,6 @@ def get_pdma_landtype(parsed_df):
 def get_report(
     parsed_df: pd.DataFrame, years: list, model, land_type: Optional[bool] = False
 ) -> pd.DataFrame:
-
     if land_type:
         report_df = get_pdma_landtype(parsed_df)
         report_df["Value"] = report_df["sum"]

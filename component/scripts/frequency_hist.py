@@ -51,7 +51,6 @@ def get_unique_classes(model, image_collection):
     subset_ids = subset_items(image_ids)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-
         futures = {
             executor.submit(get_classes, image_id): image_id for image_id in subset_ids
         }
@@ -59,7 +58,6 @@ def get_unique_classes(model, image_collection):
         result = {}
 
         for future in concurrent.futures.as_completed(futures):
-
             future_name = futures[future]
             result[future_name] = future.result()
 

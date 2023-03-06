@@ -59,7 +59,6 @@ def get_real_surface_area(dem_asset, clip_geometry):
 
     def get_half_side(neighbor_name):
         def inner_subtract(sub_neig):
-
             band_name = ee.String(neighbor_name).cat(sub_neig)
 
             # Find the cellsize, depending if it's a diagonal or not
@@ -85,7 +84,6 @@ def get_real_surface_area(dem_asset, clip_geometry):
         return ee.List(SUBTRACTION_MATRIX.get(neighbor_name)).map(inner_subtract)
 
     def get_triangles_area(triangle_name, triangle_sides):
-
         semi_perimeter = (
             half_sides.select(triangle_sides).reduce(ee.Reducer.sum()).divide(2)
         )

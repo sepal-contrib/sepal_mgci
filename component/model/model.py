@@ -1,4 +1,3 @@
-import warnings
 from pathlib import Path
 
 import ee
@@ -6,17 +5,15 @@ import pandas as pd
 import sepal_ui.scripts.utils as su
 from sepal_ui.model import Model
 from sepal_ui.scripts.warning import SepalWarning
-from traitlets import Any, Bool, CBool, Dict, Int, List, Unicode
+from traitlets import Any, Bool, CBool, Dict, List, Unicode
 
 import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
 import component.scripts as cs
-from component.message import cm
 from component.parameter.report_template import *
 
 
 class MgciModel(Model):
-
     use_custom = CBool(0).tag(sync=True)
 
     # output parameters
@@ -24,26 +21,27 @@ class MgciModel(Model):
     source = Unicode("", allow_none=True).tag(sync=True)
 
     # Custom
-    custom_lulc = Bool(allow_none=True).tag(sync=True)
-    "bool: either user will provide a custom land cover layer or not"
-
     impact_matrix = Bool(allow_none=False).tag(sync=True)
     "bool: either user will provide a custom transition matrix (impact) or not"
-
-    custom_dem_id = Unicode(allow_none=True).tag(sync=True)
 
     lulc_classes = Dict(allow_none=True).tag(sync=True)
     "dict: LCLU Classes. Are the target classes. In this app are fixed, not allowed to change."
 
     rsa = Bool(False, allow_none=True).tag(sync=True)
 
-    # Observation variables
+    # Input parameters from dashboard
 
+    start_year = Dict({}).tag(sync=True)
+    "dict: list of year(s) selected in dashboard.calculation_view.calculation.w_content_a.v_model"
+
+    end_year = Dict({}).tag(sync=True)
+    "dict: list of year(s) selected in dashboard.calculation_view.calculation.w_content_b.v_model"
+
+    # Observation variables
     ic_items = List([]).tag(sync=True)
     "list: list of select.items containing image ids and image names from the image collection"
 
     # Results
-    # summary_df = Any(allow_none=True).tag(sync=True)
 
     biobelt_image = None
     "ee.Image: clipped bioclimatic belt image with aoi_model.feature_collection"
@@ -60,14 +58,8 @@ class MgciModel(Model):
     calc_a = Bool(True).tag(sync=True)
     "bool: comes from Calculation swtich A. Either user wants to calculate subindicator A or not"
 
-    start_year = List([]).tag(sync=True)
-    "list: list of year(s) selected in dashboard.calculation_view.calculation.w_content_a.v_model"
-
     calc_b = Bool(True).tag(sync=True)
     "bool: comes from Calculation swtich B. Either user wants to calculate subindicator B or not"
-
-    end_year = Dict().tag(sync=True)
-    "list: list of year(s) selected in dashboard.calculation_view.calculation.w_content_b.v_model"
 
     done = Bool(True).tag(sync=True)
     "bool: bool trait to indicate that MGCI calculation has been performed. It will be listen by different widgets (i.e.dashboard tile)."
@@ -96,11 +88,7 @@ class MgciModel(Model):
         # Save the GEE reduce to region json proces
         self.reduced_process = None
 
-    def reduce_to_regions(
-        self,
-        lc_start,
-        lc_end=None,
-    ):
+    def reduce_to_regions(self, lc_start, lc_end=None):
         """Reduce land use/land cover image to bioclimatic belts regions using planimetric
         or real surface area
 
@@ -148,7 +136,6 @@ class MgciModel(Model):
             )
 
         if lc_end:
-
             ee_lc_end_band = ee.Image(lc_end).bandNames().get(0)
             ee_lc_end = ee.Image(lc_end).select([ee_lc_end_band])
             ee_lc_end = no_remap(ee_lc_end)
@@ -223,7 +210,6 @@ class MgciModel(Model):
         task = gdrive.get_task(task_id.strip())
 
         if task.state == "COMPLETED":
-
             tmp_result_folder = Path(DIR.TASKS_DIR, Path(tasks_file.name).stem)
             tmp_result_folder.mkdir(exist_ok=True)
 

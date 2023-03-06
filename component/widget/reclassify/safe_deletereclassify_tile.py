@@ -44,7 +44,6 @@ class ReclassifyTile(sw.Tile):
         folder=None,
         **kwargs
     ):
-
         # output directory
         self.results_dir = Path(results_dir)
 

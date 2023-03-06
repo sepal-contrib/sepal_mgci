@@ -77,7 +77,6 @@ class StatisticCard(sw.Card):
         )
 
     def get_chart(self, belt_class):
-
         values = (
             self.df.groupby(["lc_class"], as_index=False).sum()
             if belt_class == "Total"

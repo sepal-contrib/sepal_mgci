@@ -6,7 +6,6 @@ from sepal_ui.mapping import SepalMap
 
 import component.parameter.module_parameter as param
 from component.tile.aoi_view import AoiView
-from component.widget.legend_control import LegendControl
 
 __all__ = ["AoiTile"]
 
@@ -17,7 +16,6 @@ class AoiTile(sw.Layout):
     """Custo AOI Tile"""
 
     def __init__(self):
-
         self.class_ = "d-block"
         self._metadata = {"mount_id": "aoi_tile"}
 

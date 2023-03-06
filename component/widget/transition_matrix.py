@@ -7,11 +7,9 @@ from sepal_ui.scripts.decorator import switch
 from traitlets import Bool, observe
 
 import component.parameter.module_parameter as param
-from component.message import cm
 
 
 class MatrixInput(v.Html):
-
     VALUES = {
         "I": (1, color.success),
         "S": (0, color.primary),
@@ -19,7 +17,6 @@ class MatrixInput(v.Html):
     }
 
     def __init__(self, line, column, model, default_value):
-
         # get the io for dynamic modification
         self.model = model
 
@@ -45,7 +42,6 @@ class MatrixInput(v.Html):
         self.val.observe(self.color_change, "v_model")
 
     def color_change(self, change):
-
         val, color = self.VALUES[change["new"]]
 
         self.style_ = f"background-color: {color}"
@@ -60,7 +56,6 @@ class MatrixInput(v.Html):
 
 
 class TransitionMatrix(sw.Layout):
-
     CLASSES = param.LC_COLOR.iloc[:, 0].tolist()
     "list: list of land cover classes names. Comes from lc_classification.csv file"
 
@@ -69,11 +64,10 @@ class TransitionMatrix(sw.Layout):
 
     disabled = Bool(False).tag(sync=True)
 
-    impact_matrix = Bool(True).tag(sync=True)
+    show_matrix = Bool(True).tag(sync=True)
     "bool: either to show or hide the impact matrix and replace by input file widget"
 
     def __init__(self, model):
-
         self.class_ = "d-block"
         self.model = model
 
@@ -126,7 +120,7 @@ class TransitionMatrix(sw.Layout):
 
         btn_clear.on_event("click", lambda *args: self.set_rows())
 
-    @observe("impact_matrix")
+    @observe("show_matrix")
     def toggle_viz(self, change):
         """toogle visualization style, show only impact matrix or input_impact_file wiedget"""
 
@@ -142,7 +136,6 @@ class TransitionMatrix(sw.Layout):
     def set_rows(self, df=param.TRANSITION_MATRIX):
         """create an returns matrix"""
 
-        table = self.get_children(id_="transition_matrix")
         # Remove table if exists
         self.children = [
             chld for chld in self.children if not isinstance(chld, sw.SimpleTable)
