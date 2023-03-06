@@ -21,26 +21,27 @@ class MgciModel(Model):
     source = Unicode("", allow_none=True).tag(sync=True)
 
     # Custom
-    custom_lulc = Bool(allow_none=True).tag(sync=True)
-    "bool: either user will provide a custom land cover layer or not"
-
     impact_matrix = Bool(allow_none=False).tag(sync=True)
     "bool: either user will provide a custom transition matrix (impact) or not"
-
-    custom_dem_id = Unicode(allow_none=True).tag(sync=True)
 
     lulc_classes = Dict(allow_none=True).tag(sync=True)
     "dict: LCLU Classes. Are the target classes. In this app are fixed, not allowed to change."
 
     rsa = Bool(False, allow_none=True).tag(sync=True)
 
-    # Observation variables
+    # Input parameters from dashboard
 
+    start_year = Dict({}).tag(sync=True)
+    "dict: list of year(s) selected in dashboard.calculation_view.calculation.w_content_a.v_model"
+
+    end_year = Dict({}).tag(sync=True)
+    "dict: list of year(s) selected in dashboard.calculation_view.calculation.w_content_b.v_model"
+
+    # Observation variables
     ic_items = List([]).tag(sync=True)
     "list: list of select.items containing image ids and image names from the image collection"
 
     # Results
-    # summary_df = Any(allow_none=True).tag(sync=True)
 
     biobelt_image = None
     "ee.Image: clipped bioclimatic belt image with aoi_model.feature_collection"
@@ -57,14 +58,8 @@ class MgciModel(Model):
     calc_a = Bool(True).tag(sync=True)
     "bool: comes from Calculation swtich A. Either user wants to calculate subindicator A or not"
 
-    start_year = Dict({}).tag(sync=True)
-    "dict: list of year(s) selected in dashboard.calculation_view.calculation.w_content_a.v_model"
-
     calc_b = Bool(True).tag(sync=True)
     "bool: comes from Calculation swtich B. Either user wants to calculate subindicator B or not"
-
-    end_year = Dict().tag(sync=True)
-    "list: list of year(s) selected in dashboard.calculation_view.calculation.w_content_b.v_model"
 
     done = Bool(True).tag(sync=True)
     "bool: bool trait to indicate that MGCI calculation has been performed. It will be listen by different widgets (i.e.dashboard tile)."
