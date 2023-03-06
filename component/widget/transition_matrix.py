@@ -64,7 +64,7 @@ class TransitionMatrix(sw.Layout):
 
     disabled = Bool(False).tag(sync=True)
 
-    impact_matrix = Bool(True).tag(sync=True)
+    show_matrix = Bool(True).tag(sync=True)
     "bool: either to show or hide the impact matrix and replace by input file widget"
 
     def __init__(self, model):
@@ -120,7 +120,7 @@ class TransitionMatrix(sw.Layout):
 
         btn_clear.on_event("click", lambda *args: self.set_rows())
 
-    @observe("impact_matrix")
+    @observe("show_matrix")
     def toggle_viz(self, change):
         """toogle visualization style, show only impact matrix or input_impact_file wiedget"""
 
