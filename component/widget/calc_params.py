@@ -1,4 +1,5 @@
 from copy import deepcopy
+from typing import Literal
 
 import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
@@ -22,12 +23,17 @@ class Calculation(sw.List):
         super().__init__()
 
         self.model = model
+        self.ready = False
 
         self.w_content_a = CustomList(
-            label=cm.calculation.y_report, unique=True, items=self.model.ic_items
+            indicator="sub_a",
+            label=cm.calculation.y_report,
+            items=self.model.ic_items_sub_a,
         )
 
-        self.w_content_b = CustomList(items=self.model.ic_items)
+        self.w_content_b = CustomList(
+            indicator="sub_b", items=self.model.ic_items_sub_b
+        )
 
         self.dialog_a = EditionDialog(self.w_content_a, "sub_a")
         self.dialog_b = EditionDialog(self.w_content_b, "sub_b")
@@ -41,7 +47,14 @@ class Calculation(sw.List):
             self.dialog_b,
         )
 
-        self.model.observe(self.populate_years, "ic_items")
+        self.model.observe(
+            lambda chg: self.populate_years(chg, indicator="ic_items_sub_a"),
+            "ic_items_sub_a",
+        )
+        self.model.observe(
+            lambda chg: self.populate_years(chg, indicator="ic_items_sub_b"),
+            "ic_items_sub_b",
+        )
 
         self.w_content_a.observe(
             lambda change: self.get_chips(change, "sub_a"), "v_model"
@@ -51,8 +64,8 @@ class Calculation(sw.List):
         )
 
         directional_link((self, "ready"), (self.model, "dash_ready"))
-        directional_link((self.w_content_a, "v_model"), (self.model, "start_year"))
-        directional_link((self.w_content_b, "v_model"), (self.model, "end_year"))
+        directional_link((self.w_content_a, "v_model"), (self.model, "sub_a_year"))
+        directional_link((self.w_content_b, "v_model"), (self.model, "sub_b_year"))
 
         # Link switches to the model
         directional_link(
@@ -64,7 +77,7 @@ class Calculation(sw.List):
             (self.get_children(id_="switch_sub_b")[0], "v_model"),
             (self.model, "calc_b"),
         )
-
+        print(self.children)
         self.ready = True
 
     def reset_event(self, change, indicator):
@@ -82,23 +95,20 @@ class Calculation(sw.List):
 
         self.get_children(id_=f"pen_{indicator}")[0].disabled = not change["new"]
 
-    def populate_years(self, change):
+    def populate_years(self, change, indicator):
         """function to trigger and send population methods from a and b content based
         on model ic_items change"""
 
-        if change["new"]:
-            self.dialog_a.reset_event()
-            self.dialog_b.reset_event()
+        if self.ready and change["new"]:
 
-            # Create a dictionary to store items with name as key and id as value
-            self.model.ic_items_label = {
-                item.split("/")[-1]: item for item in self.model.ic_items
-            }
+            dialog = self.get_children(id_=f"dialog_{indicator}")[0]
+            w_content = self.get_children(id_=f"content_{indicator}")[0]
+
+            dialog.reset_event()
 
             items = [{"value": item, "text": item} for item in change["new"]]
 
-            self.w_content_a.populate(items)
-            self.w_content_b.populate(items)
+            w_content.populate(items)
 
     def get_item(self, indicator):
         """returns the specific structure required to display the bands(years) that will
@@ -243,13 +253,17 @@ class CustomList(sw.List):
     "dict: where key is the consecutive number of pairs, and values are the baseline and reporting period"
     items = List([]).tag(sync=True)
     "list: image collection items to be loaded in each select pair"
-    unique = False
-    "bool: if true, only the base period will be added to the list"
+    indicator = None
+    "str: indicator name. sub_a or sub_b. The widget will render the corresponding subindicator"
 
-    def __init__(self, items=[], unique=False, label=""):
+    def __init__(
+        self, indicator: Literal["sub_a", "sub_b"], items: list = [], label: str = ""
+    ) -> sw.List:
+
         self.label = label
         self.items = items
-        self.unique = unique
+        self.indicator = indicator
+        self.attributes = {"id": f"content_{indicator}"}
 
         super().__init__()
 
@@ -341,8 +355,8 @@ class CustomList(sw.List):
             "v_model",
         )
 
-        if not self.unique:
-            # only display report widgets if unique is True
+        if self.indicator == "sub_b":
+            # only display report widgets when using sub_b
             w_reportp = v.Select(
                 class_="mr-3",
                 v_model=False,
@@ -375,7 +389,7 @@ class CustomList(sw.List):
                 class_="ma-0 pa-0",
                 children=[
                     v.ListItemContent(children=[w_basep_container])
-                    if self.unique
+                    if self.indicator == "sub_a"
                     else v.ListItemContent(
                         children=[w_basep_container, w_reportp_container],
                     ),

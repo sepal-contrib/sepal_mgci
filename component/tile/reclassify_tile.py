@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pandas as pd
 from sepal_ui import sepalwidgets as sw
-from sepal_ui.reclassify.parameters import *
 
 import component.parameter.module_parameter as param
+from component.reclassify.parameters import *
 from component.widget import reclassify as rec
 
 __all__ = ["ReclassifyTile"]

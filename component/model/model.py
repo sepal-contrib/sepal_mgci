@@ -24,22 +24,31 @@ class MgciModel(Model):
     impact_matrix = Bool(allow_none=False).tag(sync=True)
     "bool: either user will provide a custom transition matrix (impact) or not"
 
-    lulc_classes = Dict(allow_none=True).tag(sync=True)
-    "dict: LCLU Classes. Are the target classes. In this app are fixed, not allowed to change."
-
     rsa = Bool(False, allow_none=True).tag(sync=True)
 
     # Input parameters from dashboard
 
-    start_year = Dict({}).tag(sync=True)
+    sub_a_year = Dict({}).tag(sync=True)
     "dict: list of year(s) selected in dashboard.calculation_view.calculation.w_content_a.v_model"
 
-    end_year = Dict({}).tag(sync=True)
+    sub_b_year = Dict({}).tag(sync=True)
     "dict: list of year(s) selected in dashboard.calculation_view.calculation.w_content_b.v_model"
 
     # Observation variables
-    ic_items = List([]).tag(sync=True)
-    "list: list of select.items containing image ids and image names from the image collection"
+
+    # We need two different variables to store each subindicator assets
+
+    ic_items_sub_a = List([]).tag(sync=True)
+    "list: list of select.items containing image ids and image names selected on subindicator A"
+
+    ic_items_sub_b = List([]).tag(sync=True)
+    "list: list of select.items containing image ids and image names selected on subindicator B"
+
+    lulc_classes_sub_a = Dict(allow_none=True).tag(sync=True)
+    "dict: LCLU Classes. Are the target classes. In this app are fixed, not allowed to change."
+
+    lulc_classes_sub_b = Dict(allow_none=True).tag(sync=True)
+    "dict: LCLU Classes. Are the target classes. In this app are fixed, not allowed to change."
 
     # Results
 

@@ -105,7 +105,7 @@ class VegetationView(v.Layout, sw.SepalWidget):
         questionaire,
         indicator: Literal["sub_a", "sub_b"],
         *args,
-        **kwargs
+        **kwargs,
     ):
 
         self.class_ = "d-block pa-2"
@@ -145,14 +145,14 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
         directional_link((self.reclassify_tile.model, "matrix"), (self.model, "matrix"))
 
-        # TODO: we have to create two ic_items, one for indicator a and one for b
-        # because one user can have different inputs for each indicator?
+        # Link with model depending on the indicator
         directional_link(
-            (self.reclassify_tile.model, "ic_items"), (self.model, "ic_items")
+            (self.reclassify_tile.model, "ic_items"),
+            (self.model, f"ic_items_{self.indicator}"),
         )
-        # TODO: the same as in the previous comment
         directional_link(
-            (self.reclassify_tile.model, "dst_class"), (self.model, "lulc_classes")
+            (self.reclassify_tile.model, "dst_class"),
+            (self.model, f"lulc_classes_{self.indicator}"),
         )
 
         self.w_questionaire.observe(self.get_reclassify_view)
@@ -269,6 +269,7 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
         # Create a three band representation as this function was removed from the
         # reclassify tool
+
         reclass_model = self.reclassify_tile.w_reclass.model
 
         code, desc, color = zip(

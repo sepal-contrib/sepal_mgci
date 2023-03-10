@@ -46,7 +46,7 @@ class CalculationTile(v.Layout, sw.SepalWidget):
         ]
 
 
-class CalculationView(v.Card, sw.SepalWidget):
+class CalculationView(sw.Card):
     def __init__(self, model, rsa=False, *args, **kwargs):
         """Dashboard tile to calculate and resume the zonal statistics for the
         vegetation layer by kapos ranges.
@@ -117,7 +117,7 @@ class CalculationView(v.Card, sw.SepalWidget):
         if not any([self.model.calc_a, self.model.calc_b]):
             raise Exception(cm.calculation.error.no_subind)
         else:
-            if all([not self.model.start_year, not self.model.end_year]):
+            if all([not self.model.sub_a_year, not self.model.sub_b_year]):
                 raise Exception(cm.calculation.error.no_years)
 
         # Calculate regions
@@ -136,6 +136,9 @@ class CalculationView(v.Card, sw.SepalWidget):
 
             msg = cw.TaskMsg(f"Calculating {year}..")
             self.alert.append_msg(msg)
+
+            # TODO: Here we have to check the computation with ic_items,
+            # now it's different because we have to check the subindicators
 
             start_year = self.model.ic_items_label[year[0]]
             process_id = "_".join(year)
@@ -168,7 +171,7 @@ class CalculationView(v.Card, sw.SepalWidget):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             self.model.done = False
 
-            years = cs.get_years(self.model.start_year, self.model.end_year)
+            years = cs.get_years(self.model.sub_a_year, self.model.sub_b_year)
             unique_preffix = su.random_string(4).upper()
 
             # Create only one file to store all task ids for the current session.
@@ -239,6 +242,7 @@ class DownloadTaskView(v.Card):
 
     @su.loading_button(debug=True)
     def run_statistics(self, widget, event, data):
+
         # Get and read file
         tasks_file = Path(self.w_file_input.v_model)
         tasks_df = self.model.read_tasks_file(tasks_file)
