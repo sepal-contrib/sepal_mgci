@@ -6,6 +6,7 @@ __pycache__/
 *untitled*
 *99*
 component/scripts/new_indicator
+.vscode
 
 # C extensions
 *.so
