@@ -57,13 +57,27 @@
                 "q1":"Would you like to use a custom land use/land cover map?",
                 "q2":"Would you like to change the default land cover transition matrix?",
                 "q3":"Do you need to reclassify the values of your land cover map?"
+        },
+        "tabs" : {
+            "lc_classification" : "Land cover classification",
+            "transition_matrix" : "Transition matrix"
         }
     },
     "reclass" : {
         "title" : "Reclassify table",
         "get_classes" : "Get classes",
         "no_data" : "No data",
-        "non_complete" : "You have classified {} classes. Empty classes will be classified as zero (0)."
+        "non_complete" : "You have classified {} classes. Empty classes will be classified as zero (0).",
+        "tooltip": {
+            "save_matrix" : "Save matrix as .csv file",
+            "load_matrix" : "Load matrix from .csv file",
+            "load_target" : {
+                "btn" : "Import target land cover classes",
+                "title" : "Target land cover classes",
+                "load_btn" : "Load target classes",
+                "cancel_btn" : "Cancel"
+            }
+        }
     },
     "calculation" : {
         "sub_a" : {
@@ -131,10 +145,6 @@
                 "belt_3":"Where elevation is between 2,500 and 3,500 meters",
                 "belt_4":"Where elevation is between 1,500 and 2,500 meters and the slope is greather than 2%"
             }
-        },
-        "global_" : {
-            "title" : "Overall Mountain Green Cover Index",
-            "desc" : "The last four IPCC classes are considered as green cover in accordance to SDG Indicator 15.4.2 Metadata. All the units are shown in {}."
         }
     }
 }

@@ -5,11 +5,11 @@ import ipyvuetify as v
 import pandas as pd
 from matplotlib.colors import to_rgb
 from sepal_ui import sepalwidgets as sw
-from sepal_ui.message import ms
+from component.message import cm
 from sepal_ui.scripts import utils as su
 from traitlets import Int
 
-from component.reclassify import parameters as param
+from component.widget.reclassify import parameters as param
 
 __all__ = ["TableView"]
 
@@ -48,19 +48,19 @@ class ClassTable(sw.DataTable):
         # create the 4 CRUD btn
         # and set them in the top slot of the table
         self.edit_btn = sw.Btn(
-            ms.rec.table.btn.edit,
+            cm.rec.table.btn.edit,
             icon="fa-solid fa-pencil-alt",
             class_="ml-2 mr-2",
             color="secondary",
             small=True,
         )
         self.delete_btn = sw.Btn(
-            ms.rec.table.btn.delete, icon="fas fa-trash-alt", color="error", small=True
+            cm.rec.table.btn.delete, icon="fas fa-trash-alt", color="error", small=True
         )
         self.add_btn = sw.Btn(
-            ms.rec.table.btn.add, icon="fas fa-plus", color="success", small=True
+            cm.rec.table.btn.add, icon="fas fa-plus", color="success", small=True
         )
-        self.save_btn = sw.Btn(ms.rec.table.btn.save, icon="far fa-save", small=True)
+        self.save_btn = sw.Btn(cm.rec.table.btn.save, icon="far fa-save", small=True)
 
         slot = v.Toolbar(
             class_="d-flex mb-6",
@@ -175,7 +175,7 @@ class ClassTable(sw.DataTable):
         if not self.v_model:
             return
 
-        current_items = self.items.copy()
+        current_items = self.item.copy()
         current_items.remove(self.v_model[0])
 
         self.items = current_items
@@ -200,7 +200,7 @@ class EditDialog(v.Dialog):
         widgets (list): the list of widget to control the new element state (id, code, description, color) in this order.
     """
 
-    TITLES = ms.rec.table.edit_dialog.titles
+    TITLES = cm.rec.table.edit_dialog.titles
 
     def __init__(self, table, **kwargs):
         # custom attributes
@@ -210,23 +210,23 @@ class EditDialog(v.Dialog):
         self.title = v.CardTitle(children=[self.TITLES[0]])
 
         # Action buttons
-        self.save = sw.Btn(ms.rec.table.edit_dialog.btn.save.name)
+        self.save = sw.Btn(cm.rec.table.edit_dialog.btn.save.name)
         save_tool = sw.Tooltip(
-            self.save, ms.rec.table.edit_dialog.btn.save.tooltip, bottom=True
+            self.save, cm.rec.table.edit_dialog.btn.save.tooltip, bottom=True
         )
 
         self.modify = sw.Btn(
-            ms.rec.table.edit_dialog.btn.modify.name
+            cm.rec.table.edit_dialog.btn.modify.name
         ).hide()  # by default modify is hidden
         modify_tool = sw.Tooltip(
-            self.modify, ms.rec.table.edit_dialog.btn.modify.tooltip, bottom=True
+            self.modify, cm.rec.table.edit_dialog.btn.modify.tooltip, bottom=True
         )
 
         self.cancel = sw.Btn(
-            ms.rec.table.edit_dialog.btn.cancel.name, outlined=True, class_="ml-2"
+            cm.rec.table.edit_dialog.btn.cancel.name, outlined=True, class_="ml-2"
         )
         cancel_tool = sw.Tooltip(
-            self.cancel, ms.rec.table.edit_dialog.btn.cancel.tooltip, bottom=True
+            self.cancel, cm.rec.table.edit_dialog.btn.cancel.tooltip, bottom=True
         )
 
         actions = v.CardActions(children=[save_tool, modify_tool, cancel_tool])
@@ -428,23 +428,23 @@ class SaveDialog(v.Dialog):
 
         # build widgets
         self.w_file_name = v.TextField(
-            label=ms.rec.table.save_dialog.filename,
-            v_model=ms.rec.table.save_dialog.placeholder,
+            label=cm.rec.table.save_dialog.filename,
+            v_model=cm.rec.table.save_dialog.placeholder,
         )
 
-        self.save = sw.Btn(ms.rec.table.save_dialog.btn.save.name)
+        self.save = sw.Btn(cm.rec.table.save_dialog.btn.save.name)
         save = sw.Tooltip(
             self.save,
-            ms.rec.table.save_dialog.btn.save.tooltip,
+            cm.rec.table.save_dialog.btn.save.tooltip,
             bottom=True,
             class_="pr-2",
         )
 
         self.cancel = sw.Btn(
-            ms.rec.table.save_dialog.btn.cancel.name, outlined=True, class_="ml-2"
+            cm.rec.table.save_dialog.btn.cancel.name, outlined=True, class_="ml-2"
         )
         cancel = sw.Tooltip(
-            self.cancel, ms.rec.table.save_dialog.btn.cancel.tooltip, bottom=True
+            self.cancel, cm.rec.table.save_dialog.btn.cancel.tooltip, bottom=True
         )
 
         self.alert = sw.Alert(children=["Choose a name for the output"]).show()
@@ -454,7 +454,7 @@ class SaveDialog(v.Dialog):
             v.Card(
                 class_="pa-4",
                 children=[
-                    v.CardTitle(children=[ms.rec.table.save_dialog.title]),
+                    v.CardTitle(children=[cm.rec.table.save_dialog.title]),
                     self.w_file_name,
                     self.alert,
                     save,
@@ -494,7 +494,7 @@ class SaveDialog(v.Dialog):
         self.w_file_name.v_model = ""
 
         # the message is display after the show so that it's not cut by the display
-        self.alert.add_msg(ms.rec.table.save_dialog.info.format(self.out_path))
+        self.alert.add_msg(cm.rec.table.save_dialog.info.format(self.out_path))
 
         return self
 
@@ -581,20 +581,20 @@ class TableView(sw.Card):
 
         # set a title to the card
         self.title = v.CardTitle(
-            children=[v.Html(tag="h2", children=[ms.rec.table.title])]
+            children=[v.Html(tag="h2", children=[cm.rec.table.title])]
         )
 
         # add the widgets
         w_class_title = v.Html(
-            tag="h3", children=[ms.rec.table.classif.title], class_="mt-2"
+            tag="h3", children=[cm.rec.table.classif.title], class_="mt-2"
         )
         self.w_class_file = sw.FileInput(
             extentions=[".csv"],
-            label=ms.rec.table.classif.file_select,
+            label=cm.rec.table.classif.file_select,
             folder=self.class_path,
         )
         self.btn = sw.Btn(
-            ms.rec.table.classif.btn,
+            cm.rec.table.classif.btn,
             icon="far fa-table",
             color="success",
             outlined=True,
@@ -610,7 +610,7 @@ class TableView(sw.Card):
             ]
         )
 
-        w_table_title = v.Html(tag="h2", children=[ms.rec.table.table], class_="mt-5")
+        w_table_title = v.Html(tag="h2", children=[cm.rec.table.table], class_="mt-5")
         self.w_class_table = ClassTable(out_path=self.out_path, class_="mt-5")
 
         # create an alert to display error and outputs

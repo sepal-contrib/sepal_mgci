@@ -5,7 +5,7 @@ import ipyvuetify as v
 import pandas as pd
 import sepal_ui.sepalwidgets as sw
 from sepal_ui import color
-from sepal_ui.message import ms
+from component.message import cm
 from sepal_ui.scripts import utils as su
 from sepal_ui.scripts.decorator import switch
 from sepal_ui.scripts.utils import loading_button
@@ -13,26 +13,286 @@ from traitlets import Unicode
 
 import component.scripts.frequency_hist as scripts
 from component.message import cm
-
-from .parameters import MATRIX_NAMES, NO_VALUE
-from .reclassify_model import ReclassifyModel
+from component.widget.reclassify.parameters import MATRIX_NAMES, NO_VALUE
+from component.widget.reclassify.reclassify_model import ReclassifyModel
 
 __all__ = ["ReclassifyView"]
 
 
-class Btn(v.Btn, sw.SepalWidget):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class ReclassifyView(sw.Card):
+    """
+    Stand-alone Card object allowing the user to reclassify a input file. the input can be of any type (vector or raster) and from any source (local or GEE).
+    The user need to provide a destination classification file (table) in the following format : 3 headless columns: 'code', 'desc', 'color'. Once all the old class have been attributed to their new class the file can be exported in the source format to local memory or GEE. the output is also savec in memory for further use in the app. It can be used as a tile in a sepal_ui app. The id\_ of the tile is set to "reclassify_tile"
 
-    def toggle_loading(self):
+    Args:
+        model (ReclassifyModel): the reclassify model to manipulate the
+            classification dataset. default to a new one
+        class_path (str,optional): Folder path containing already existing
+            classes. Default to ~/
+        out_path (str,optional): the folder to save the created classifications.
+            default to ~/downloads
+        gee (bool): either or not to set :code:`gee` to True. default to False
+        dst_class (str|pathlib.Path, optional): the file to be used as destination classification. for app that require specific code system the file can be set prior and the user won't have the oportunity to change it
+        default_class (dict|optional): the default classification system to use, need to point to existing sytem: {name: absolute_path}
+        folder(str, optional): the init GEE asset folder where the asset selector should start looking (debugging purpose)
+        save (bool, optional): Whether to write/export the result or not.
+        enforce_aoi (bool, optional): either or not an aoi should be set to allow the reclassification
+    """
+
+    MAX_CLASS = 20
+    "int: the number of line in the table to trigger the display of an extra toolbar and alert"
+
+    model = None
+    "ReclassifyModel: the reclassify model to manipulate the classification dataset"
+
+    gee = None
+    "bool: either being linked to gee or not (use local file or GEE asset for the rest of the app)"
+
+    alert = None
+    "sw.Alert: the alert to display informations about computation"
+
+    title = None
+    "sw.Cardtitle: the title of the card"
+
+    w_dst_class_file = None
+    "sw.FileInput: widget to select the new classification system file (3 headless columns: 'code', 'desc', 'color')"
+
+    reclassify_table = None
+    "ReclassifyTable: the reclassification table populated via the previous widgets"
+
+    def __init__(
+        self,
+        model=None,
+        class_path=Path.home(),
+        out_path=Path.home() / "downloads",
+        gee=False,
+        dst_class=None,
+        default_class={},
+        aoi_model=None,
+        save=True,
+        folder=None,
+        enforce_aoi=False,
+        **kwargs,
+    ):
+        # create metadata to make it compatible with the framwork app system
+        self._metadata = {"mount_id": "reclassify_tile"}
+
+        # init card parameters
+        self.class_ = "pa-5"
+
+        # create the object
+        super().__init__(**kwargs)
+
+        # set up a default model
+        self.model = model or ReclassifyModel(
+            gee=gee,
+            dst_dir=out_path,
+            aoi_model=aoi_model,
+            folder=folder,
+            save=save,
+            enforce_aoi=enforce_aoi,
+        )
+
+        if enforce_aoi != self.model.enforce_aoi:
+            raise Exception(
+                "Both reclassify_model.gee and reclassify_view parameters has to be equals."
+                + f"Received {enforce_aoi} for reclassify_view and {self.model.enforce_aoi} for reclassify_model."
+            )
+        # set the folders
+        self.class_path = Path(class_path)
+        self.out_path = Path(out_path)
+
+        # save the gee binding
+        self.gee = gee
+        if gee:
+            su.init_ee()
+        # create an alert to display information to the user
+        self.alert = sw.Alert()
+
+        # set the title of the card
+        self.title = sw.CardTitle(
+            children=[sw.Html(tag="h2", children=[cm.rec.rec.title])]
+        )
+
+        self.w_src_class_file = sw.FileInput(
+            [".csv"], label=cm.rec.rec.input.classif.label, folder=self.class_path
+        )
+
+        self.btn_get_table = Btn(
+            children=[cm.reclass.get_classes],
+            color="primary",
+            small=True,
+            class_="ml-2",
+            attributes={"id": "btn_get_table"},
+        ).hide()
+
+        self.w_ic_select = sw.AssetSelect(
+            types=["IMAGE_COLLECTION"],
+            label=cm.reclass_view.ic_default_label,
+            disabled=True,
+        )
+
+        w_asset_selection = v.Flex(
+            class_="d-flex align-center",
+            children=[self.w_ic_select, self.btn_get_table],
+        )
+
+        # Create a list of buttons containing the different types of
+        # target land cover classes
+
+        self.save_dialog = SaveMatrixDialog(folder=out_path)
+        self.import_dialog = ImportMatrixDialog(folder=out_path, attributes={"id": "2"})
+        self.target_dialog = TargetClassesDialog(default_class=default_class)
+
+        self.reclassify_table = ReclassifyTable(self.model).hide()
+
+        # create the layout
+        self.children = [
+            self.title,
+            w_asset_selection,
+            self.alert,
+            self.reclassify_table,
+            self.save_dialog,
+            self.import_dialog,
+        ]
+
+        # Decorate functions
+        self.get_reclassify_table = loading_button(
+            self.alert, self.btn_get_table, debug=True
+        )(self.get_reclassify_table)
+
+        # JS Events
+        self.import_dialog.load_btn.on_event("click", self.load_matrix_content)
+
+        self.reclassify_table.btn_load_table.on_event(
+            "click", lambda *args: self.import_dialog.show()
+        )
+
+        self.reclassify_table.btn_save_table.on_event(
+            "click", lambda *args: self.save_dialog.show(self.model.matrix)
+        )
+
+        self.reclassify_table.btn_load_target.on_event(
+            "click", lambda *args: self.target_dialog.show()
+        )
+
+        self.btn_get_table.on_event("click", self.get_reclassify_table)
+
+        # Reset table everytime an image image collection is changed.
+
+        self.w_ic_select.observe(self.set_ids, "v_model")
+
+    def set_ids(self, change):
+        """set image collection ids to ic_items model attribute on change. set empty
+        table"""
+
+        self.model.ic_items = scripts.get_image_collection_ids(change["new"])
+        self.reclassify_table.set_table({}, {})
+
+    def load_matrix_content(self, widget, event, data):
+        """Load the content of the file in the matrix. The table need to be already set
+        to perform this operation"""
+
+        self.import_dialog.value = False
+        file = self.import_dialog.w_file.v_model
+
+        # exit if no files are selected
+        if not file:
+            raise Exception("No file has been selected")
+        # exit if no table is loaded
+        if not self.model.table_created:
+            raise Exception("You have to get the table before.")
+        # load the file
+        # sanity checks
+        input_data = pd.read_csv(file).fillna(NO_VALUE)
+
+        try:
+            input_data.astype("int64")
+        except Exception:
+            raise Exception(
+                "This file may contain non supported charaters for reclassification."
+            )
+        if len(input_data.columns) != 2:
+            # Try to identify the oclumns and subset them
+            if all([colname in list(input_data.columns) for colname in MATRIX_NAMES]):
+                input_data = input_data[MATRIX_NAMES]
+            else:
+                raise Exception(
+                    "This file is not a properly formatted as classification matrix"
+                )
+        # check that the destination values are all available
+        widget = list(self.reclassify_table.class_select_list.values())[0]
+        classes = [i["value"] for i in widget.items]
+        if not all(v in classes for v in input_data.dst.unique()):
+            raise Exception(
+                "Some of the destination data are not existing in the destination dataset"
+            )
+        # fill the data
+        for _, row in input_data.iterrows():
+            src_code, dst_code = row.src, row.dst
+            if str(src_code) in self.reclassify_table.class_select_list:
+                self.reclassify_table.class_select_list[
+                    str(src_code)
+                ].v_model = dst_code
+
+        # self.import_dialog.w_file.reset()
+
+        return self
+
+    @su.switch("loading", "disabled", on_widgets=["w_code"])
+    def _update_band(self, change):
+        """Update the band possibility to the available bands/properties of the input"""
+
+        # guess the file type and save it in the model
+        self.model.get_type()
+        # update the bands values
+        self.w_code.v_model = None
+        self.w_code.items = self.model.get_bands()
+
+        return self
+
+    @su.switch("table_created", on_widgets=["model"], targets=[True])
+    def get_reclassify_table(self, widget, event, data):
         """
-        Jump between two states : disabled and loading - enabled and not loading
+        Display a reclassify table which will lead the user to select
+        a local code 'from user' to a target code based on a classes file
 
         Return:
             self
         """
-        self.loading = not self.loading
-        self.disabled = self.loading
+
+        image_collection = self.w_ic_select.v_model
+
+        # get the destination classes
+        self.model.dst_class = self.model.get_classes()
+
+        # get the src_classes and selected image collection items (aka images)
+        self.model.src_class = scripts.get_unique_classes(self.model, image_collection)
+
+        self.reclassify_table.set_table(self.model.dst_class, self.model.src_class)
+
+        return self
+
+    def nest_tile(self):
+        """
+        Prepare the view to be used as a nested component in a tile.
+        the elevation will be set to 0 and the title remove from children.
+        The mount_id will also be changed to nested
+
+        Return:
+            self
+        """
+
+        # remove id
+        self._metadata["mount_id"] = "nested_tile"
+
+        # remove elevation
+        self.elevation = False
+
+        # remove title
+        without_title = self.children.copy()
+        without_title.remove(self.title)
+        self.children = without_title
 
         return self
 
@@ -187,30 +447,103 @@ class SaveMatrixDialog(sw.Dialog):
         return self
 
 
-class ClassSelect(sw.Select):
-    """
-    Custom widget to pick the value of a original class in the new classification system
+class TargetClassesDialog(sw.Dialog):
+    """Custom dialog to select target Land Cover classification classes
 
     Args:
-        new_codes(dict): the dict of the new codes to use as items {code: (name, color)}
-        code (int): the orginal code of the class
+        default_class (dict): classes and path to classes file
     """
 
-    def __init__(self, new_codes, old_code, **kwargs):
-        # set default parameters
-        self.items = [
-            {"text": f"{code}: {item[0]}", "value": code}
-            for code, item in new_codes.items()
-        ]
-        self.dense = True
-        self.multiple = False
-        self.chips = True
-        self._metadata = {"class": old_code}
-        self.v_model = None
-        self.clearable = True
+    def __init__(self, class_path, default_class: dict = {}):
 
-        # init the select
-        super().__init__(**kwargs)
+        self.class_path = class_path
+        self.v_model = False
+        self.max_width = 500
+
+        super().__init__()
+
+        title = sw.CardTitle(children=[cm.reclass.tooltip.load_target.title])
+
+        load_btn = Btn(children=["Load"], small=True).with_tooltip(
+            cm.reclass.tooltip.load_target.load_btn
+        )
+
+        cancel = Btn(children=["Cancel"], small=True).with_tooltip(
+            cm.reclass.tooltip.load_target.cancel_btn
+        )
+        actions = sw.CardActions(
+            children=[
+                v.Spacer(),
+                cancel.with_tooltip,
+                load_btn.with_tooltip,
+            ]
+        )
+
+        self.w_dst_class_file = sw.FileInput(
+            [".csv"], label=cm.rec.rec.input.classif.label, folder=self.class_path
+        )
+
+        self.btn_list = [
+            sw.Btn(
+                msg="Custom",
+                _metadata={"path": "custom"},
+                small=True,
+                class_="mr-2",
+                outlined=True,
+            )
+        ] + [
+            sw.Btn(
+                msg=f"use {name}",
+                _metadata={"path": path},
+                small=True,
+                class_="mr-2",
+                outlined=True,
+            )
+            for name, path in default_class.items()
+        ]
+
+        self.w_default = v.Flex(class_="mt-5", children=self.btn_list)
+
+        self.children = [
+            sw.Card(
+                children=[
+                    title,
+                    sw.CardText(children=[self.w_dst_class_file, self.w_default]),
+                    actions,
+                ]
+            )
+        ]
+
+        [btn.on_event("click", self._set_dst_class_file) for btn in self.btn_list]
+
+        # bind to the model
+
+        self.model.bind(self.w_dst_class_file, "dst_class_file")
+
+    def _set_dst_class_file(self, widget: v.VuetifyWidget, *args):
+        """
+        Set the destination classification according to the one selected with btn.
+
+        Alter the widgets properties to reflect this change.
+        """
+        # get the filename
+        filename = widget._metadata["path"]
+
+        if filename == "custom":
+            self.w_dst_class_file.show()
+        else:
+            self.w_dst_class_file.hide()
+            self.w_dst_class_file.select_file(filename)
+
+        # change the visibility of the btns
+        for btn in self.btn_list:
+            btn.outlined = False if btn == widget else True
+
+        return self
+
+    def show(self):
+        """show the dialog"""
+        self.value = True
 
 
 class ReclassifyTable(sw.Layout):
@@ -230,9 +563,10 @@ class ReclassifyTable(sw.Layout):
             input file and save parameters
     """
 
-    HEADERS = ms.rec.rec.headers
+    HEADERS = cm.rec.rec.headers
 
     def __init__(self, model, **kwargs):
+
         self.class_ = "d-block"
         self.attributes = {"id": "reclassify_table"}
 
@@ -242,17 +576,27 @@ class ReclassifyTable(sw.Layout):
         # save the model
         self.model = model
 
+        # Create button to save the matrix from a file
         self.btn_save_table = Btn(
             icon=True,
             children=[v.Icon(children=["mdi-content-save"])],
             color="primary",
             class_="mr-2",
-        )
+        ).set_tooltip(cm.reclass.tooltip.save_table)
+
+        # Create button to load the matrix from a file
         self.btn_load_table = Btn(
             icon=True,
             children=[v.Icon(children=["mdi-upload"])],
             color="primary",
-        )
+        ).set_tooltip(cm.reclass.tooltip.load_table)
+
+        # Create a button to load target classes
+        self.btn_load_target = Btn(
+            icon=True,
+            children=[v.Icon(children=["mdi-upload"])],
+            color="primary",
+        ).set_tooltip(cm.reclass.tooltip.load_target)
 
         self.message = sw.Html(tag="span", style_=f"color: {color.warning}")
 
@@ -261,11 +605,10 @@ class ReclassifyTable(sw.Layout):
             children=[
                 cm.reclass.title,
                 v.Spacer(),
-                "Transition matrix",
-                v.Spacer(),
                 v.Divider(vertical=True, class_="mx-2"),
-                self.btn_save_table,
-                self.btn_load_table,
+                self.btn_load_target.with_tooltip,
+                self.btn_save_table.with_tooltip,
+                self.btn_load_table.with_tooltip,
             ],
         )
 
@@ -413,288 +756,44 @@ class ReclassifyTable(sw.Layout):
         return self
 
 
-class ReclassifyView(sw.Card):
+class ClassSelect(sw.Select):
     """
-    Stand-alone Card object allowing the user to reclassify a input file. the input can be of any type (vector or raster) and from any source (local or GEE).
-    The user need to provide a destination classification file (table) in the following format : 3 headless columns: 'code', 'desc', 'color'. Once all the old class have been attributed to their new class the file can be exported in the source format to local memory or GEE. the output is also savec in memory for further use in the app. It can be used as a tile in a sepal_ui app. The id\_ of the tile is set to "reclassify_tile"
+    Custom widget to pick the value of a original class in the new classification system
 
     Args:
-        model (ReclassifyModel): the reclassify model to manipulate the
-            classification dataset. default to a new one
-        class_path (str,optional): Folder path containing already existing
-            classes. Default to ~/
-        out_path (str,optional): the folder to save the created classifications.
-            default to ~/downloads
-        gee (bool): either or not to set :code:`gee` to True. default to False
-        dst_class (str|pathlib.Path, optional): the file to be used as destination classification. for app that require specific code system the file can be set prior and the user won't have the oportunity to change it
-        default_class (dict|optional): the default classification system to use, need to point to existing sytem: {name: absolute_path}
-        folder(str, optional): the init GEE asset folder where the asset selector should start looking (debugging purpose)
-        save (bool, optional): Whether to write/export the result or not.
-        enforce_aoi (bool, optional): either or not an aoi should be set to allow the reclassification
+        new_codes(dict): the dict of the new codes to use as items {code: (name, color)}
+        code (int): the orginal code of the class
     """
 
-    MAX_CLASS = 20
-    "int: the number of line in the table to trigger the display of an extra toolbar and alert"
+    def __init__(self, new_codes, old_code, **kwargs):
+        # set default parameters
+        self.items = [
+            {"text": f"{code}: {item[0]}", "value": code}
+            for code, item in new_codes.items()
+        ]
+        self.dense = True
+        self.multiple = False
+        self.chips = True
+        self._metadata = {"class": old_code}
+        self.v_model = None
+        self.clearable = True
 
-    model = None
-    "ReclassifyModel: the reclassify model to manipulate the classification dataset"
-
-    gee = None
-    "bool: either being linked to gee or not (use local file or GEE asset for the rest of the app)"
-
-    alert = None
-    "sw.Alert: the alert to display informations about computation"
-
-    title = None
-    "sw.Cardtitle: the title of the card"
-
-    w_dst_class_file = None
-    "sw.FileInput: widget to select the new classification system file (3 headless columns: 'code', 'desc', 'color')"
-
-    reclassify_table = None
-    "ReclassifyTable: the reclassification table populated via the previous widgets"
-
-    def __init__(
-        self,
-        model=None,
-        class_path=Path.home(),
-        out_path=Path.home() / "downloads",
-        gee=False,
-        dst_class=None,
-        default_class={},
-        aoi_model=None,
-        save=True,
-        folder=None,
-        enforce_aoi=False,
-        **kwargs,
-    ):
-        # create metadata to make it compatible with the framwork app system
-        self._metadata = {"mount_id": "reclassify_tile"}
-
-        # init card parameters
-        self.class_ = "pa-5"
-
-        # create the object
+        # init the select
         super().__init__(**kwargs)
 
-        # set up a default model
-        self.model = model or ReclassifyModel(
-            gee=gee,
-            dst_dir=out_path,
-            aoi_model=aoi_model,
-            folder=folder,
-            save=save,
-            enforce_aoi=enforce_aoi,
-        )
 
-        if enforce_aoi != self.model.enforce_aoi:
-            raise Exception(
-                "Both reclassify_model.gee and reclassify_view parameters has to be equals."
-                + f"Received {enforce_aoi} for reclassify_view and {self.model.enforce_aoi} for reclassify_model."
-            )
-        # set the folders
-        self.class_path = Path(class_path)
-        self.out_path = Path(out_path)
+class Btn(v.Btn, sw.SepalWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        # save the gee binding
-        self.gee = gee
-        if gee:
-            su.init_ee()
-        # create an alert to display information to the user
-        self.alert = sw.Alert()
-
-        # set the title of the card
-        self.title = sw.CardTitle(
-            children=[sw.Html(tag="h2", children=[ms.rec.rec.title])]
-        )
-
-        self.w_src_class_file = sw.FileInput(
-            [".csv"], label=ms.rec.rec.input.classif.label, folder=self.class_path
-        )
-
-        self.btn_get_table = Btn(
-            children=[cm.reclass.get_classes],
-            color="primary",
-            small=True,
-            class_="ml-2",
-            attributes={"id": "btn_get_table"},
-        ).hide()
-
-        self.w_ic_select = sw.AssetSelect(
-            types=["IMAGE_COLLECTION"],
-            label=cm.reclass_view.ic_default_label,
-            disabled=True,
-        )
-
-        w_asset_selection = v.Flex(
-            class_="d-flex align-center",
-            children=[self.w_ic_select, self.btn_get_table],
-        )
-
-        if not dst_class:
-            self.w_dst_class_file = sw.FileInput(
-                [".csv"], label=ms.rec.rec.input.classif.label, folder=self.class_path
-            ).hide()
-        else:
-            # We could save a little of time without creating this
-            self.w_dst_class_file.select_file(dst_class).hide()
-
-        self.save_dialog = SaveMatrixDialog(folder=out_path)
-        self.import_dialog = ImportMatrixDialog(folder=out_path, attributes={"id": "2"})
-
-        self.reclassify_table = ReclassifyTable(self.model).hide()
-
-        # bind to the model
-
-        self.model.bind(self.w_dst_class_file, "dst_class_file")
-
-        # create the layout
-        self.children = [
-            self.title,
-            w_asset_selection,
-            self.alert,
-            self.reclassify_table,
-            self.save_dialog,
-            self.import_dialog,
-        ]
-
-        # Decorate functions
-        self.get_reclassify_table = loading_button(
-            self.alert, self.btn_get_table, debug=True
-        )(self.get_reclassify_table)
-
-        # JS Events
-        self.import_dialog.load_btn.on_event("click", self.load_matrix_content)
-
-        self.reclassify_table.btn_load_table.on_event(
-            "click", lambda *args: self.import_dialog.show()
-        )
-
-        self.reclassify_table.btn_save_table.on_event(
-            "click", lambda *args: self.save_dialog.show(self.model.matrix)
-        )
-
-        self.btn_get_table.on_event("click", self.get_reclassify_table)
-
-        # Reset table everytime an image image collection is changed.
-
-        self.w_ic_select.observe(self.set_ids, "v_model")
-
-    def set_ids(self, change):
-        """set image collection ids to ic_items model attribute on change. set empty
-        table"""
-
-        self.model.ic_items = scripts.get_image_collection_ids(change["new"])
-        self.reclassify_table.set_table({}, {})
-
-    def load_matrix_content(self, widget, event, data):
-        """Load the content of the file in the matrix. The table need to be already set
-        to perform this operation"""
-
-        self.import_dialog.value = False
-        file = self.import_dialog.w_file.v_model
-
-        # exit if no files are selected
-        if not file:
-            raise Exception("No file has been selected")
-        # exit if no table is loaded
-        if not self.model.table_created:
-            raise Exception("You have to get the table before.")
-        # load the file
-        # sanity checks
-        input_data = pd.read_csv(file).fillna(NO_VALUE)
-
-        try:
-            input_data.astype("int64")
-        except Exception:
-            raise Exception(
-                "This file may contain non supported charaters for reclassification."
-            )
-        if len(input_data.columns) != 2:
-            # Try to identify the oclumns and subset them
-            if all([colname in list(input_data.columns) for colname in MATRIX_NAMES]):
-                input_data = input_data[MATRIX_NAMES]
-            else:
-                raise Exception(
-                    "This file is not a properly formatted as classification matrix"
-                )
-        # check that the destination values are all available
-        widget = list(self.reclassify_table.class_select_list.values())[0]
-        classes = [i["value"] for i in widget.items]
-        if not all(v in classes for v in input_data.dst.unique()):
-            raise Exception(
-                "Some of the destination data are not existing in the destination dataset"
-            )
-        # fill the data
-        for _, row in input_data.iterrows():
-            src_code, dst_code = row.src, row.dst
-            if str(src_code) in self.reclassify_table.class_select_list:
-                self.reclassify_table.class_select_list[
-                    str(src_code)
-                ].v_model = dst_code
-
-        # self.import_dialog.w_file.reset()
-
-        return self
-
-    @su.switch("loading", "disabled", on_widgets=["w_code"])
-    def _update_band(self, change):
-        """Update the band possibility to the available bands/properties of the input"""
-
-        # guess the file type and save it in the model
-        self.model.get_type()
-        # update the bands values
-        self.w_code.v_model = None
-        self.w_code.items = self.model.get_bands()
-
-        return self
-
-    @su.switch("table_created", on_widgets=["model"], targets=[True])
-    def get_reclassify_table(self, widget, event, data):
+    def toggle_loading(self):
         """
-        Display a reclassify table which will lead the user to select
-        a local code 'from user' to a target code based on a classes file
+        Jump between two states : disabled and loading - enabled and not loading
 
         Return:
             self
         """
-
-        image_collection = self.w_ic_select.v_model
-
-        # get the destination classes
-        self.model.dst_class = self.model.get_classes()
-
-        # get the src_classes and selected image collection items (aka images)
-        self.model.src_class = scripts.get_unique_classes(self.model, image_collection)
-
-        # if the src_class_file is set overwrite src_class:
-        # if self.w_src_class_file.v_model:
-        #     self.model.src_class = self.model.get_classes()
-
-        # reset the table
-        self.reclassify_table.set_table(self.model.dst_class, self.model.src_class)
-
-        return self
-
-    def nest_tile(self):
-        """
-        Prepare the view to be used as a nested component in a tile.
-        the elevation will be set to 0 and the title remove from children.
-        The mount_id will also be changed to nested
-
-        Return:
-            self
-        """
-
-        # remove id
-        self._metadata["mount_id"] = "nested_tile"
-
-        # remove elevation
-        self.elevation = False
-
-        # remove title
-        without_title = self.children.copy()
-        without_title.remove(self.title)
-        self.children = without_title
+        self.loading = not self.loading
+        self.disabled = self.loading
 
         return self

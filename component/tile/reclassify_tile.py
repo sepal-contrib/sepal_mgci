@@ -43,6 +43,7 @@ class ReclassifyTile(sw.Card):
             folder=folder,
             save=save,
             enforce_aoi=True,
+            dst_class_file=param.LC_CLASSES,
         )
 
         # set the tabs elements
@@ -58,8 +59,9 @@ class ReclassifyTile(sw.Card):
 
         # Create a default destination classification file
         # I did this because in version 0 I didn't wanted to modify view.
-        self.w_reclass.w_dst_class_file.select_file(default_class["IPCC"]).hide()
-        self.w_reclass.model.dst_class_file = default_class["IPCC"]
+        # self.w_reclass.w_dst_class_file.select_file(default_class["IPCC"]).hide()
+        # self.w_reclass.model.dst_class_file = default_class["IPCC"]
+        
         self.w_reclass.model.dst_class = self.w_reclass.model.get_classes()
 
         self.children = [self.w_reclass]

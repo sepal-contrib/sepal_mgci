@@ -48,11 +48,11 @@ class Calculation(sw.List):
         )
 
         self.model.observe(
-            lambda chg: self.populate_years(chg, indicator="ic_items_sub_a"),
+            lambda chg: self.populate_years(chg, indicator="sub_a"),
             "ic_items_sub_a",
         )
         self.model.observe(
-            lambda chg: self.populate_years(chg, indicator="ic_items_sub_b"),
+            lambda chg: self.populate_years(chg, indicator="sub_b"),
             "ic_items_sub_b",
         )
 
@@ -77,7 +77,6 @@ class Calculation(sw.List):
             (self.get_children(id_="switch_sub_b")[0], "v_model"),
             (self.model, "calc_b"),
         )
-        print(self.children)
         self.ready = True
 
     def reset_event(self, change, indicator):
@@ -103,9 +102,7 @@ class Calculation(sw.List):
 
             dialog = self.get_children(id_=f"dialog_{indicator}")[0]
             w_content = self.get_children(id_=f"content_{indicator}")[0]
-
             dialog.reset_event()
-
             items = [{"value": item, "text": item} for item in change["new"]]
 
             w_content.populate(items)
@@ -181,7 +178,6 @@ class Calculation(sw.List):
     def get_chips(self, change, indicator):
         """get chips that will be inserted in the list elements and corresponds
         to the bands(years) selected for each of subindicator"""
-        print(change["new"])
 
         # Get the space where the elements will be inserted
         span = self.get_children(id_=f"span_{indicator}")[0]

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional, Union
 
 import ee
 import geopandas as gpd
@@ -8,13 +9,14 @@ import rasterio as rio
 from matplotlib.colors import to_rgba
 from natsort import natsorted
 from rasterio.windows import from_bounds
-from sepal_ui.message import ms
+from traitlets import Any, Bool, Dict, Int, List
+
 from sepal_ui.model import Model
 from sepal_ui.scripts import gee
 from sepal_ui.scripts import utils as su
-from traitlets import Any, Bool, Dict, Int, List
 
-from .parameters import NO_VALUE
+from component.message import cm
+from component.widget.reclassify.parameters import NO_VALUE
 
 __all__ = ["ReclassifyModel"]
 
@@ -104,10 +106,13 @@ class ReclassifyModel(Model):
         folder=None,
         save=True,
         enforce_aoi=False,
+        dst_class_file: Union([str, Path]) = None,
         **kwargs,
     ):
         # init the model
         super().__init__(**kwargs)
+
+        self.dst_class_file = dst_class_file
 
         # save the folder where the results should be stored
         # only used for local export
@@ -151,16 +156,14 @@ class ReclassifyModel(Model):
                 {code: (name, color)}
         """
 
-        file = self.dst_class_file
-
-        if not file:
+        if not self.dst_class_file:
             raise AttributeError("missing file")
 
-        path = Path(file)
+        path = Path(self.dst_class_file)
         if not path.is_file():
-            raise Exception(f"{file} is not existing")
+            raise Exception(f"{self.dst_class_file} is not existing")
 
-        df = pd.read_csv(file, header=None)
+        df = pd.read_csv(self.dst_class_file, header=None)
 
         # dst_class_file should be set on the model csv output of the custom view
         # 3 column: 1: code, 2: name, 3: color
@@ -559,7 +562,7 @@ class ReclassifyModel(Model):
         self.remaped += 1
 
         if self.save:
-            return ms.rec.rec.export[self.gee][self.input_type].format(res)
+            return cm.rec.rec.export[self.gee][self.input_type].format(res)
 
         return "Asset successfully reclassified."
 

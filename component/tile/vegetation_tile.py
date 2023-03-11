@@ -132,12 +132,12 @@ class VegetationView(v.Layout, sw.SepalWidget):
         self.transition_view.hide()
 
         sub_a_tabs = cw.Tabs(
-            ["Land cover classification"],
+            [cm.veg_layer.tabs.lc_classification],
             [self.reclassify_tile],
         )
 
         sub_b_tabs = cw.Tabs(
-            ["Land cover classification", "Impact matrix"],
+            [cm.veg_layer.tabs.lc_classification, cm.veg_layer.tabs.transition_matrix],
             [self.reclassify_tile, self.transition_view],
         )
 
@@ -182,75 +182,54 @@ class VegetationView(v.Layout, sw.SepalWidget):
         custom classes and the transition matrix.
         """
 
-        if self.indicator == "sub_a":
+        custom_lulc = self.w_questionaire.ans_custom_lulc
+        transition_matrix = self.w_questionaire.ans_transition_matrix
+        need_reclassify = self.w_questionaire.ans_need_reclassify
 
-            # Would you like to use a custom land use/land cover map?
-            if self.w_questionaire.ans_custom_lulc:
+        self.w_reclass.w_ic_select.disabled = not custom_lulc
+        self.w_reclass.w_ic_select.label = cm.reclass_view.ic_custom_label
 
-                self.w_reclass.w_ic_select.label = cm.reclass_view.ic_custom_label
-                self.w_reclass.w_ic_select.disabled = False
-                self.w_reclass.reclassify_table.set_table({}, {})
-
-                self.w_reclass.get_children(id_="btn_get_table")[0].show()
-                self.w_reclass.get_children(id_="reclassify_table")[0].show()
-
-            else:
-                self.w_reclass.w_ic_select.label = cm.reclass_view.ic_default_label
-                self.w_reclass.w_ic_select.v_model = param.LULC_DEFAULT
-                self.w_reclass.w_ic_select.disabled = True
-
-                self.w_reclass.get_children(id_="btn_get_table")[0].hide()
-                self.w_reclass.get_children(id_="reclassify_table")[0].hide()
-                self.reclassify_tile.use_default()
+        # Would you like to use a custom land use/land cover map?
+        if custom_lulc:
+            hide_show = sw.SepalWidget.show
+            self.w_reclass.reclassify_table.set_table({}, {})
         else:
+            hide_show = sw.SepalWidget.hide
+            self.w_reclass.w_ic_select.v_model = param.LULC_DEFAULT
+            self.reclassify_tile.use_default()
+
+        hide_show(self.w_reclass.get_children(id_="btn_get_table")[0])
+        hide_show(self.w_reclass.get_children(id_="reclassify_table")[0])
+
+        if self.indicator == "sub_b":
+
             # Would you like to use a custom land use/land cover map?
-            if self.w_questionaire.ans_custom_lulc:
+            if custom_lulc:
 
-                self.w_reclass.w_ic_select.label = cm.reclass_view.ic_custom_label
-                self.w_reclass.w_ic_select.disabled = False
-                self.w_reclass.reclassify_table.set_table({}, {})
-
-                # Do you need to reclassify LC values?
-                if self.w_questionaire.ans_transition_matrix:
-
-                    self.w_reclass.get_children(id_="reclassify_table")[0].show()
-                    self.w_reclass.get_children(id_="btn_get_table")[0].show()
+                # Would you like to change the default land cover transition matrix??
+                if need_reclassify:
 
                     # Hide transition matrix
                     self.transition_view.show_matrix = False
 
-                    # TODO: add a loader to load csv matrix
+                    # TODO: add a loader to load different types of target LC classes
 
                 else:
-
-                    # Hide reclassify table
-                    self.w_reclass.get_children(id_="reclassify_table")[0].hide()
                     self.w_reclass.get_children(id_="btn_get_table")[0].hide()
+                    self.w_reclass.get_children(id_="reclassify_table")[0].hide()
 
                     # Hide transition matrix
                     self.transition_view.show_matrix = False
-
-                    # TODO: add a loader to load csv matrix
             else:
+
                 # Q2: Would you like to change the transition matrix?
-
-                if self.w_questionaire.ans_transition_matrix:
-
-                    # Hide reclassify table
-                    self.w_reclass.get_children(id_="reclassify_table")[0].hide()
-                    self.w_reclass.get_children(id_="btn_get_table")[0].hide()
-
+                if transition_matrix:
                     # Show transition matrix
                     self.transition_view.show()
                     self.transition_view.show_matrix = True
                     self.transition_view.disabled = False
 
                 else:
-
-                    # Hide reclassify table
-                    self.w_reclass.get_children(id_="reclassify_table")[0].hide()
-                    self.w_reclass.get_children(id_="btn_get_table")[0].hide()
-
                     # show transition matrix but disabled
                     self.transition_view.show()
                     self.transition_view.show_matrix = True
