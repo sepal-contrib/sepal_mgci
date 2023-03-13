@@ -106,7 +106,7 @@ class ReclassifyModel(Model):
         folder=None,
         save=True,
         enforce_aoi=False,
-        dst_class_file: Union([str, Path]) = None,
+        dst_class_file=None,
         **kwargs,
     ):
         # init the model

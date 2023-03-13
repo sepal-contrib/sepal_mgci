@@ -77,6 +77,9 @@
                 "load_btn" : "Load target classes",
                 "cancel_btn" : "Cancel"
             }
+        },
+        "target_dialog" : {
+            "description" : "This module allows users to modify the default target land cover classes used in the reclassification process. The module is set to use the standard 10 IPCC classes by default, but for sub indicator B, users have the option to either use these default classes or create their own custom classification. To use the custom classification option, simply select the 'custom' button and upload a file containing the target classifications that will be used in the reclassification table."
         }
     },
     "calculation" : {

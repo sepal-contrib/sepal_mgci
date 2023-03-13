@@ -8,6 +8,7 @@ import component.scripts as cs
 # isort: off
 from component.parameter.index_parameters import sub_a_cols, sub_a_landtype_cols
 
+# TODO: change this for user selections
 lc_map_matrix = pd.read_csv(param.LC_MAP_MATRIX)
 belt_table = pd.read_csv(param.BIOBELTS_DESC)
 lulc_table = pd.read_csv(param.LC_CLASSES)

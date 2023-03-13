@@ -8,7 +8,7 @@ import traitlets as t
 from sepal_ui import mapping as sm
 from sepal_ui.aoi.aoi_model import AoiModel
 from sepal_ui.aoi.aoi_view import AdminField, MethodSelect
-from component.message import cm
+from sepal_ui.message import ms
 from sepal_ui.scripts import decorator as sd
 from sepal_ui.scripts import utils as su
 from typing_extensions import Self

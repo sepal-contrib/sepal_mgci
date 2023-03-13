@@ -7,14 +7,15 @@ import sepal_ui.sepalwidgets as sw
 from sepal_ui import color
 from component.message import cm
 from sepal_ui.scripts import utils as su
-from sepal_ui.scripts.decorator import switch
-from sepal_ui.scripts.utils import loading_button
+from sepal_ui.scripts.decorator import switch, loading_button
 from traitlets import Unicode
 
 import component.scripts.frequency_hist as scripts
 from component.message import cm
+import component.parameter.directory as dir_
 from component.widget.reclassify.parameters import MATRIX_NAMES, NO_VALUE
 from component.widget.reclassify.reclassify_model import ReclassifyModel
+import component.parameter.directory as dir_
 
 __all__ = ["ReclassifyView"]
 
@@ -54,9 +55,6 @@ class ReclassifyView(sw.Card):
     title = None
     "sw.Cardtitle: the title of the card"
 
-    w_dst_class_file = None
-    "sw.FileInput: widget to select the new classification system file (3 headless columns: 'code', 'desc', 'color')"
-
     reclassify_table = None
     "ReclassifyTable: the reclassification table populated via the previous widgets"
 
@@ -64,7 +62,7 @@ class ReclassifyView(sw.Card):
         self,
         model=None,
         class_path=Path.home(),
-        out_path=Path.home() / "downloads",
+        out_path=dir_.MATRIX_DIR,
         gee=False,
         dst_class=None,
         default_class={},
@@ -140,11 +138,15 @@ class ReclassifyView(sw.Card):
         # Create a list of buttons containing the different types of
         # target land cover classes
 
+        self.reclassify_table = ReclassifyTable(self.model).hide()
+
         self.save_dialog = SaveMatrixDialog(folder=out_path)
         self.import_dialog = ImportMatrixDialog(folder=out_path, attributes={"id": "2"})
-        self.target_dialog = TargetClassesDialog(default_class=default_class)
-
-        self.reclassify_table = ReclassifyTable(self.model).hide()
+        self.target_dialog = TargetClassesDialog(
+            model=self.model,
+            reclassify_table=self.reclassify_table,
+            default_class=default_class,
+        )
 
         # create the layout
         self.children = [
@@ -154,6 +156,7 @@ class ReclassifyView(sw.Card):
             self.reclassify_table,
             self.save_dialog,
             self.import_dialog,
+            self.target_dialog,
         ]
 
         # Decorate functions
@@ -316,8 +319,8 @@ class ImportMatrixDialog(sw.Dialog):
         self.w_file = sw.FileInput(
             label="filename", folder=folder, attributes={"id": "1"}
         )
-        self.load_btn = Btn(children=["Load"], small=True)
-        cancel = Btn(children=["Cancel"], small=True)
+        self.load_btn = sw.Btn(msg="Load", small=True, color="secondary")
+        cancel = sw.Btn(msg="Cancel", small=True, color="secondary")
         actions = sw.CardActions(
             children=[
                 v.Spacer(),
@@ -363,8 +366,8 @@ class SaveMatrixDialog(sw.Dialog):
         # create the widgets
         title = sw.CardTitle(children=["Save matrix"])
         self.w_file = sw.TextField(label="Set a matrix file name: ", v_model=None)
-        btn = Btn(children=["Save"], small=True)
-        cancel = Btn(children=["Cancel"], small=True)
+        btn = sw.Btn(msg="Save", small=True, color="secondary")
+        cancel = sw.Btn(msg="Cancel", small=True, color="secondary")
         actions = sw.CardActions(
             children=[
                 v.Spacer(),
@@ -451,47 +454,47 @@ class TargetClassesDialog(sw.Dialog):
     """Custom dialog to select target Land Cover classification classes
 
     Args:
-        default_class (dict): classes and path to classes file
+        default_class (dict): classes and path to default classes files (multiple classifications)
+        reclassify_table (ReclassifyTable): used to call set_target_classes method from here.
     """
 
-    def __init__(self, class_path, default_class: dict = {}):
+    def __init__(self, model, reclassify_table, default_class: dict = {}):
 
-        self.class_path = class_path
-        self.v_model = False
-        self.max_width = 500
+        self.attributes = {"id": "target_classes_dialog"}
+        self.model = model
+        self.reclassify_table = reclassify_table
 
         super().__init__()
 
+        self.value = False
+        self.max_width = 750
+
+        # Create an alert to display errors
+        self.alert = sw.Alert()
+
         title = sw.CardTitle(children=[cm.reclass.tooltip.load_target.title])
+        description = cm.reclass.target_dialog.description
 
-        load_btn = Btn(children=["Load"], small=True).with_tooltip(
-            cm.reclass.tooltip.load_target.load_btn
-        )
+        load_btn = sw.Btn(msg="Load", small=True, color="secondary")
+        cancel_btn = sw.Btn(msg="Cancel", small=True, color="secondary")
 
-        cancel = Btn(children=["Cancel"], small=True).with_tooltip(
-            cm.reclass.tooltip.load_target.cancel_btn
-        )
         actions = sw.CardActions(
             children=[
                 v.Spacer(),
-                cancel.with_tooltip,
-                load_btn.with_tooltip,
+                cancel_btn,
+                load_btn,
             ]
         )
 
+        # from default_class dictionary get the first value (it's the path of the default)
+        dst_class_file = list(default_class.values())[0]
+
         self.w_dst_class_file = sw.FileInput(
-            [".csv"], label=cm.rec.rec.input.classif.label, folder=self.class_path
+            [".csv"], label=cm.rec.rec.input.classif.label, folder=dir_.RESULTS_DIR
         )
+        self.w_dst_class_file.select_file(dst_class_file)
 
         self.btn_list = [
-            sw.Btn(
-                msg="Custom",
-                _metadata={"path": "custom"},
-                small=True,
-                class_="mr-2",
-                outlined=True,
-            )
-        ] + [
             sw.Btn(
                 msg=f"use {name}",
                 _metadata={"path": path},
@@ -500,6 +503,14 @@ class TargetClassesDialog(sw.Dialog):
                 outlined=True,
             )
             for name, path in default_class.items()
+        ] + [
+            sw.Btn(
+                msg="Custom",
+                _metadata={"path": "custom"},
+                small=True,
+                class_="mr-2",
+                outlined=True,
+            )
         ]
 
         self.w_default = v.Flex(class_="mt-5", children=self.btn_list)
@@ -508,17 +519,41 @@ class TargetClassesDialog(sw.Dialog):
             sw.Card(
                 children=[
                     title,
-                    sw.CardText(children=[self.w_dst_class_file, self.w_default]),
-                    actions,
+                    sw.CardText(
+                        class_="pa-4",
+                        children=[
+                            description,
+                            self.w_default,
+                            self.w_dst_class_file,
+                            self.alert,
+                            actions,
+                        ],
+                    ),
                 ]
             )
         ]
 
+        # Events
         [btn.on_event("click", self._set_dst_class_file) for btn in self.btn_list]
+        
+        self.btn_list[0].fire_event("click", None)
 
-        # bind to the model
+        cancel_btn.on_event("click", self._cancel)
 
+        # bind selected file (containing destination classes) with model
         self.model.bind(self.w_dst_class_file, "dst_class_file")
+
+        load_btn.on_event("click", self.set_dst_items_event)
+
+        # Decorate set_dst_items_event with loading button
+        self.set_dst_items_event = loading_button(alert=self.alert, button=load_btn)(
+            self.set_dst_items_event
+        )
+
+    def set_dst_items_event(self, *args):
+        """Set the event to update the destination class file"""
+
+        self.reclassify_table.set_target_classes()
 
     def _set_dst_class_file(self, widget: v.VuetifyWidget, *args):
         """
@@ -540,6 +575,10 @@ class TargetClassesDialog(sw.Dialog):
             btn.outlined = False if btn == widget else True
 
         return self
+
+    def _cancel(self, *args):
+        """close the dialog"""
+        self.value = False
 
     def show(self):
         """show the dialog"""
@@ -577,26 +616,27 @@ class ReclassifyTable(sw.Layout):
         self.model = model
 
         # Create button to save the matrix from a file
-        self.btn_save_table = Btn(
+        self.btn_save_table = sw.Btn(
+            gliph="mdi-content-save",
             icon=True,
-            children=[v.Icon(children=["mdi-content-save"])],
             color="primary",
             class_="mr-2",
-        ).set_tooltip(cm.reclass.tooltip.save_table)
+        ).set_tooltip(cm.reclass.tooltip.save_matrix, bottom=True)
 
         # Create button to load the matrix from a file
-        self.btn_load_table = Btn(
+        self.btn_load_table = sw.Btn(
+            gliph="mdi-upload",
             icon=True,
-            children=[v.Icon(children=["mdi-upload"])],
             color="primary",
-        ).set_tooltip(cm.reclass.tooltip.load_table)
+        ).set_tooltip(cm.reclass.tooltip.load_matrix, bottom=True)
 
         # Create a button to load target classes
-        self.btn_load_target = Btn(
+        self.btn_load_target = sw.Btn(
+            gliph="mdi-table",
             icon=True,
-            children=[v.Icon(children=["mdi-upload"])],
             color="primary",
-        ).set_tooltip(cm.reclass.tooltip.load_target)
+            attributes={"id": "btn_load_target"},
+        ).set_tooltip(cm.reclass.tooltip.load_target.btn, bottom=True).hide()
 
         self.message = sw.Html(tag="span", style_=f"color: {color.warning}")
 
@@ -641,6 +681,7 @@ class ReclassifyTable(sw.Layout):
         self.model.observe(self.set_info_message, "matrix")
         self.progress.observe(self.set_progress_color, "v_model")
 
+
     def set_progress_color(self, change):
         """set progress bar colors based on v_model trait instead of setting when
         table changes"""
@@ -672,6 +713,40 @@ class ReclassifyTable(sw.Layout):
         elif filled == total_classes:
             self.message.children = []
             self.progress.v_model = 100
+
+    def set_target_classes(self):
+        """Get all select_select_target_class widgets and set their items.
+
+        It will receive target items coming from TargetClassesDialog and set them
+        to all select_select_target_class widgets.
+
+        This method is called when the user clicks on the "Load target classes" button
+        and in the TargetClassesDialog.
+
+        Remember that this methos has to be called only when there is a dst_classes file
+        selected and therefore part of the model.
+        """
+
+        # Get all select_select_target_class widgets
+        select_target_classes = self.get_children(id_="select_target_class")
+
+        # Check that there are widgets
+        if select_target_classes:
+
+            # Get target classes from model
+            self.model.dst_class = self.model.get_classes()
+
+            # Create items from self.model.get_classes()
+
+            target_classes_items = [
+                {"text": f"{code} - {name}", "value": code}
+                for code, (name, _) in self.model.dst_class.items()
+            ]
+
+            # Set items to all widgets
+            for select in select_target_classes:
+                select.v_model = 0
+                select.items = target_classes_items
 
     @switch("indeterminate", on_widgets=["progress"])
     def set_table(self, dst_classes, src_classes):
@@ -775,6 +850,7 @@ class ClassSelect(sw.Select):
         self.multiple = False
         self.chips = True
         self._metadata = {"class": old_code}
+        self.attributes = {"id": "select_target_class"}
         self.v_model = None
         self.clearable = True
 

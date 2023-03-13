@@ -122,7 +122,7 @@ class VegetationView(v.Layout, sw.SepalWidget):
             save=False,
             aoi_model=self.aoi_model,
             default_class={
-                "IPCC": str(param.LC_CLASSES),
+                "IPCC": str(dir_.LOCAL_LC_CLASSES),
             },
         )
 
@@ -211,10 +211,10 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
                     # Hide transition matrix
                     self.transition_view.show_matrix = False
-
-                    # TODO: add a loader to load different types of target LC classes
+                    self.w_reclass.reclassify_table.btn_load_target.show()
 
                 else:
+                    self.w_reclass.reclassify_table.btn_load_target.hide()
                     self.w_reclass.get_children(id_="btn_get_table")[0].hide()
                     self.w_reclass.get_children(id_="reclassify_table")[0].hide()
 
