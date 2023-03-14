@@ -57,6 +57,7 @@ class CalculationView(sw.Card):
         """
 
         self.class_ = "pa-2"
+        self.attributes = {"id": "calculation_view"}
 
         super().__init__(*args, **kwargs)
 
@@ -102,7 +103,7 @@ class CalculationView(sw.Card):
         self.btn.on_event("click", self.run_statistics)
 
     @su.loading_button(debug=True)
-    def run_statistics(self, widget, event, data):
+    def run_statistics(self, *args):
         """Start the calculation of the statistics. It will start the process on the fly
         or making a task in the background depending if the rsa is selected or if the
         computation is taking so long."""
@@ -137,18 +138,15 @@ class CalculationView(sw.Card):
             msg = cw.TaskMsg(f"Calculating {year}..")
             self.alert.append_msg(msg)
 
-            # TODO: Here we have to check the computation with ic_items,
-            # now it's different because we have to check the subindicators
-
-            start_year = self.model.ic_items_label[year[0]]
-            process_id = "_".join(year)
+            start_year = list(year[0].values())[0]
+            process_id = "_".join(cs.years_from_dict(year))
 
             if len(year) > 1:
-                end_year = self.model.ic_items_label[year[1]]
-                process = self.model.reduce_to_regions(start_year, end_year)
+                end_year = list(year[1].values())[0]
+                process = self.model.reduce_to_regions("sub_b", start_year, end_year)
 
             else:
-                process = self.model.reduce_to_regions(start_year)
+                process = self.model.reduce_to_regions("sub_a", start_year)
 
             # Try the process in on the fly
             try:
@@ -169,16 +167,25 @@ class CalculationView(sw.Card):
                     raise Exception(f"There was an error {e}")
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
+
             self.model.done = False
 
-            years = cs.get_years(self.model.sub_a_year, self.model.sub_b_year)
+            years = cs.get_years(
+                self.model.sub_a_year,
+                self.model.sub_b_year,
+                self.model.matrix_sub_a,
+                self.model.matrix_sub_b,
+            )
+
             unique_preffix = su.random_string(4).upper()
 
             # Create only one file to store all task ids for the current session.
             task_file = DIR.TASKS_DIR / f"Task_result_{unique_preffix}"
 
             futures = {
-                executor.submit(deferred_calculation, year, task_file): "_".join(year)
+                executor.submit(deferred_calculation, year, task_file): "_".join(
+                    cs.years_from_dict(year)
+                )
                 for year in years
             }
 
@@ -303,6 +310,7 @@ class ReportView(v.Card):
         super().__init__(*args, **kwargs)
 
         self.model = model
+        self.attributes = {"id": "report_view"}
 
         self.alert = sw.Alert().add_msg(
             cm.dashboard.report.disabled_alert, type_="warning"

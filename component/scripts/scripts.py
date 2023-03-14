@@ -1,6 +1,7 @@
 import random
 import re
 from pathlib import Path
+import warnings
 
 import ipyvuetify as v
 import pandas as pd
@@ -20,6 +21,7 @@ __all__ = [
     "get_years",
     "read_from_csv",
     "export_reports",
+    "years_from_dict",
 ]
 
 
@@ -122,6 +124,97 @@ def get_years(start_year, end_year):
         if year not in flatten_subb_years:
             subb_years += [[year]]
     return subb_years
+
+
+def get_years(
+    sub_a_year: list, sub_b_year: list, matrix_sub_a, matrix_sub_b
+) -> list([dict]):
+    """Extract years from sub_a and sub_b years dictionaries.
+
+    It will receive two dictionaries with the following structure:
+
+    sub_a_year = {
+        1: {
+            "base": {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1992",
+                "year": "1992",
+            }
+        },
+    }
+
+    sub_b_year = {
+        1: {
+            "base": {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1992",
+                "year": "1992",
+            },
+            "report": {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1994",
+                "year": "1994",
+            },
+        }
+    }
+
+    Returns: list of years with the following structure:
+
+        years = [
+            [{1992:"users/amitghosh/sdg_module/esa/cci_landcover/1992"}],
+            [
+                {1992:"users/amitghosh/sdg_module/esa/cci_landcover/1992"}
+                {1994:"users/amitghosh/sdg_module/esa/cci_landcover/1994"},
+            ]
+        ]
+
+    """
+
+    sub_b_years = []
+    for pair in sub_b_year.values():
+        x = []
+        for values in pair.values():
+            x.append({values["year"]: values["asset"]})
+        sub_b_years.append(x)
+
+    sub_a_years = []
+    for year in sub_a_year.values():
+        base = year["base"]
+        sub_a_years.append({base["year"]: base["asset"]})
+
+    # raise a warning if matrix_sub_a and matrix_sub_b are not the same
+    if matrix_sub_a != matrix_sub_b:
+        warnings.warn(
+            "The reclassification matrix for subindicator A and B are not the same. "
+            "This may cause unexpected results."
+        )
+        years = sub_b_years + [[y] for y in sub_a_years]
+
+        return years
+
+    else:
+        years = sub_b_years
+        for year in sub_a_years:
+            # check if sub_a_year is already in one of sub_b_years pairs
+            if year not in [x for y in years for x in y]:
+                years.append([year])
+
+        return years
+
+
+def years_from_dict(years: list) -> list:
+    """Extract years from a list of dictionaries.
+
+    Args:
+        years (list): A list of dictionaries with the following structure:
+
+        years = [
+            {1992:"users/amitghosh/sdg_module/esa/cci_landcover/1992"}
+            {1994:"users/amitghosh/sdg_module/esa/cci_landcover/1994"},
+        ]
+
+    Returns:
+        list: A list of years.
+
+    """
+    return [year for y in [list(year.keys()) for year in years] for year in y]
 
 
 def parse_result(result, single=False):

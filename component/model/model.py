@@ -38,6 +38,12 @@ class MgciModel(Model):
 
     # We need two different variables to store each subindicator assets
 
+    lc_asset_sub_a = Unicode(allow_none=True).tag(sync=True)
+    "str: asset id of the land cover image selected on subindicator A"
+
+    lc_asset_sub_b = Unicode(allow_none=True).tag(sync=True)
+    "str: asset id of the land cover image selected on subindicator B"
+
     ic_items_sub_a = List([]).tag(sync=True)
     "list: list of select.items containing image ids and image names selected on subindicator A"
 
@@ -100,11 +106,12 @@ class MgciModel(Model):
         # Save the GEE reduce to region json proces
         self.reduced_process = None
 
-    def reduce_to_regions(self, lc_start, lc_end=None):
+    def reduce_to_regions(self, indicator, lc_start, lc_end=None):
         """Reduce land use/land cover image to bioclimatic belts regions using planimetric
         or real surface area
 
         Attributes:
+            indicator (str): either 'sub_a' or 'sub_b'
             lc_start (string): first year of the report or baseline.
             lc_end (string): last year of the report.
             aoi (ee.FeatureCollection, ee.Geometry): Region to reduce image
@@ -117,12 +124,16 @@ class MgciModel(Model):
         if not lc_start:
             raise Exception("Please select at least one year")
 
-        if self.matrix:
-            from_, to_ = list(zip(*self.matrix.items()))
+        matrix = getattr(self, f"matrix_{indicator}")
 
         def no_remap(image):
             """return remapped or raw image if there's a matrix"""
-            return image.remap(from_, to_, 0) if self.matrix else image
+
+            if matrix:
+                from_, to_ = list(zip(*matrix.items()))
+                return image.remap(from_, to_, 0)
+
+            return image
 
         # Define two ways of calculation, with only one date and with both
         ee_lc_start_band = ee.Image(lc_start).bandNames().get(0)
@@ -147,7 +158,8 @@ class MgciModel(Model):
                 .getInfo()
             )
 
-        if lc_end:
+        if indicator == "sub_b":
+
             ee_lc_end_band = ee.Image(lc_end).bandNames().get(0)
             ee_lc_end = ee.Image(lc_end).select([ee_lc_end_band])
             ee_lc_end = no_remap(ee_lc_end)
