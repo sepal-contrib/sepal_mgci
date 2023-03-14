@@ -126,6 +126,7 @@ class VegetationView(v.Layout, sw.SepalWidget):
             default_class={
                 "IPCC": str(dir_.LOCAL_LC_CLASSES),
             },
+            id_=indicator,
         )
 
         self.w_reclass = self.reclassify_tile.w_reclass
@@ -144,6 +145,11 @@ class VegetationView(v.Layout, sw.SepalWidget):
         )
 
         self.children = [sub_a_tabs if self.indicator == "sub_a" else sub_b_tabs]
+
+        directional_link(
+            (self.reclassify_tile.model, "src_gee"),
+            (self.model, f"lc_asset_{self.indicator}"),
+        )
 
         directional_link(
             (self.reclassify_tile.model, "matrix"),

@@ -7,7 +7,7 @@ import sepal_ui.sepalwidgets as sw
 from sepal_ui import color
 from sepal_ui.scripts import utils as su
 from sepal_ui.scripts.decorator import loading_button, switch
-from traitlets import Unicode
+from traitlets import Unicode, directional_link
 
 import component.parameter.directory as dir_
 import component.scripts.frequency_hist as scripts
@@ -68,10 +68,12 @@ class ReclassifyView(sw.Card):
         save=True,
         folder=None,
         enforce_aoi=False,
+        id_="",
         **kwargs,
     ):
         # create metadata to make it compatible with the framwork app system
         self._metadata = {"mount_id": "reclassify_tile"}
+        self.attributes = {"id": f"reclassify_view_{id_}"}
 
         # init card parameters
         self.class_ = "pa-5"
@@ -179,8 +181,10 @@ class ReclassifyView(sw.Card):
 
         self.btn_get_table.on_event("click", self.get_reclassify_table)
 
-        # Reset table everytime an image image collection is changed.
+        # link feature collection asset selection with model
+        directional_link((self.w_ic_select, "v_model"), (self.model, "src_gee"))
 
+        # Reset table everytime an image image collection is changed.
         self.w_ic_select.observe(self.set_ids, "v_model")
 
     def set_ids(self, change):
