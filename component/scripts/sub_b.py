@@ -8,6 +8,8 @@ import component.scripts as cs
 # isort: off
 from component.parameter.index_parameters import sub_b_landtype_cols, sub_b_perc_cols
 
+
+# TODO: Change them for user selections
 transition_table = pd.read_csv(param.TRANSITION_MATRIX_FILE)
 belt_table = pd.read_csv(param.BIOBELTS_DESC)
 

@@ -45,18 +45,21 @@ class MgciModel(Model):
     "list: list of select.items containing image ids and image names selected on subindicator B"
 
     lulc_classes_sub_a = Dict(allow_none=True).tag(sync=True)
-    "dict: LCLU Classes. Are the target classes. In this app are fixed, not allowed to change."
+    "dict: LCLU Classes. Are the target classes from subindicator A. Fixed."
 
     lulc_classes_sub_b = Dict(allow_none=True).tag(sync=True)
-    "dict: LCLU Classes. Are the target classes. In this app are fixed, not allowed to change."
+    "dict: LCLU Classes. Are the target classes from subindicator B."
+
+    matrix_sub_a = Dict({}).tag(sync=True)
+    "dict: comes from reclassify_tile.viewa.model.matrix which are the {src:dst} classes"
+
+    matrix_sub_b = Dict({}).tag(sync=True)
+    "dict: comes from reclassify_tile.viewb.model.matrix which are the {src:dst} classes"
 
     # Results
 
     biobelt_image = None
     "ee.Image: clipped bioclimatic belt image with aoi_model.feature_collection"
-
-    matrix = Dict({}).tag(sync=True)
-    "dict: comes from reclassify_tile.model.matrix which are the {src:dst} classes"
 
     transition_matrix = Any(param.TRANSITION_MATRIX).tag(sync=True)
     "pd.DataFrame: containing at least 3 columns: from_code, to_code, impact_code"

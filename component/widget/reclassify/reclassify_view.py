@@ -5,17 +5,15 @@ import ipyvuetify as v
 import pandas as pd
 import sepal_ui.sepalwidgets as sw
 from sepal_ui import color
-from component.message import cm
 from sepal_ui.scripts import utils as su
-from sepal_ui.scripts.decorator import switch, loading_button
+from sepal_ui.scripts.decorator import loading_button, switch
 from traitlets import Unicode
 
+import component.parameter.directory as dir_
 import component.scripts.frequency_hist as scripts
 from component.message import cm
-import component.parameter.directory as dir_
 from component.widget.reclassify.parameters import MATRIX_NAMES, NO_VALUE
 from component.widget.reclassify.reclassify_model import ReclassifyModel
-import component.parameter.directory as dir_
 
 __all__ = ["ReclassifyView"]
 
@@ -535,7 +533,7 @@ class TargetClassesDialog(sw.Dialog):
 
         # Events
         [btn.on_event("click", self._set_dst_class_file) for btn in self.btn_list]
-        
+
         self.btn_list[0].fire_event("click", None)
 
         cancel_btn.on_event("click", self._cancel)
@@ -550,10 +548,12 @@ class TargetClassesDialog(sw.Dialog):
             self.set_dst_items_event
         )
 
-    def set_dst_items_event(self, *args):
+    def set_dst_items_event(self, *_):
         """Set the event to update the destination class file"""
 
         self.reclassify_table.set_target_classes()
+        self.value = False
+        print("closed?")
 
     def _set_dst_class_file(self, widget: v.VuetifyWidget, *args):
         """
@@ -631,12 +631,16 @@ class ReclassifyTable(sw.Layout):
         ).set_tooltip(cm.reclass.tooltip.load_matrix, bottom=True)
 
         # Create a button to load target classes
-        self.btn_load_target = sw.Btn(
-            gliph="mdi-table",
-            icon=True,
-            color="primary",
-            attributes={"id": "btn_load_target"},
-        ).set_tooltip(cm.reclass.tooltip.load_target.btn, bottom=True).hide()
+        self.btn_load_target = (
+            sw.Btn(
+                gliph="mdi-table",
+                icon=True,
+                color="primary",
+                attributes={"id": "btn_load_target"},
+            )
+            .set_tooltip(cm.reclass.tooltip.load_target.btn, bottom=True)
+            .hide()
+        )
 
         self.message = sw.Html(tag="span", style_=f"color: {color.warning}")
 
@@ -680,7 +684,6 @@ class ReclassifyTable(sw.Layout):
 
         self.model.observe(self.set_info_message, "matrix")
         self.progress.observe(self.set_progress_color, "v_model")
-
 
     def set_progress_color(self, change):
         """set progress bar colors based on v_model trait instead of setting when
@@ -730,11 +733,11 @@ class ReclassifyTable(sw.Layout):
         # Get all select_select_target_class widgets
         select_target_classes = self.get_children(id_="select_target_class")
 
+        # Get target classes from model
+        self.model.dst_class = self.model.get_classes()
+
         # Check that there are widgets
         if select_target_classes:
-
-            # Get target classes from model
-            self.model.dst_class = self.model.get_classes()
 
             # Create items from self.model.get_classes()
 

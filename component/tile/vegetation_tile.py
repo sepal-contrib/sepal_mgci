@@ -96,6 +96,8 @@ class ExpansionIndicator(sw.ExpansionPanel):
             ),
         ]
 
+        # Bind Vegetation view lulc classes with model
+
 
 class VegetationView(v.Layout, sw.SepalWidget):
     def __init__(
@@ -143,13 +145,16 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
         self.children = [sub_a_tabs if self.indicator == "sub_a" else sub_b_tabs]
 
-        directional_link((self.reclassify_tile.model, "matrix"), (self.model, "matrix"))
+        directional_link(
+            (self.reclassify_tile.model, "matrix"),
+            (self.model, f"matrix_{self.indicator}"),
+        )
 
-        # Link with model depending on the indicator
         directional_link(
             (self.reclassify_tile.model, "ic_items"),
             (self.model, f"ic_items_{self.indicator}"),
         )
+
         directional_link(
             (self.reclassify_tile.model, "dst_class"),
             (self.model, f"lulc_classes_{self.indicator}"),
