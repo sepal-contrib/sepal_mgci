@@ -25,13 +25,15 @@ class ReclassifyTile(sw.Card):
         aoi_model=None,
         folder=None,
         save=False,
+        id_="",
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
 
         # output directory
         self.results_dir = Path(results_dir)
+        self.attributes = {"id": f"reclassify_tile_{id_}"}
 
         self.aoi_model = aoi_model
 
@@ -55,6 +57,7 @@ class ReclassifyTile(sw.Card):
             aoi_model=aoi_model,
             folder=folder,
             enforce_aoi=True,
+            id_=id_,
         ).nest_tile()
 
         # Create a default destination classification file
