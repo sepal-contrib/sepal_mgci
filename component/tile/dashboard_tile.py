@@ -2,6 +2,7 @@ import ipyvuetify as v
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
 
+import component.widget as cw
 from component.message import cm
 from component.scripts.scripts import parse_result
 from component.widget.statistics_card import StatisticCard
@@ -18,23 +19,18 @@ class DashboardTile(sw.Card):
         self.alert = sw.Alert()
         self.df = None
 
-        self.year_select = sw.Select(label="Select a target year", v_model=None)
-        self.btn = sw.Btn("Calculate", class_="ml-2")
+        dash_view_a = DashViewA(self.model)
+        dash_view_b = DashViewB(self.model)
+
+        dash_tabs = cw.Tabs(
+            ["Sub indicator A", "Sub indicator B"],
+            [dash_view_a, dash_view_b],
+        )
 
         self.children = [
             sw.CardTitle(children=["Results dashboard"]),
-            sw.CardText(
-                children=[
-                    sw.Flex(
-                        class_="d-flex align-center",
-                        children=[self.year_select, self.btn],
-                    ),
-                    self.alert,
-                ]
-            ),
+            sw.CardText(children=[self.alert, dash_tabs]),
         ]
-
-        self.btn.on_event("click", self.render_dashboard)
 
         self.model.observe(self.get_years, "done")
 
@@ -52,7 +48,20 @@ class DashboardTile(sw.Card):
         self.clear()
         self.year_select.items = years
 
-    @su.switch("loading")
+
+class DashViewA(sw.Layout):
+    def __init__(self, model, *args, **kwargs):
+
+        self.attributes = {"id": "dashboard_view_sub_a"}
+        self.model = model
+        self.children = []
+
+        super().__init__(*args, **kwargs)
+
+        self.year_select = sw.Select(label="Select a target year", v_model=None)
+        self.btn = sw.Btn("Calculate", class_="ml-2")
+        self.btn.on_event("click", self.render_dashboard)
+
     @su.loading_button(debug=True)
     def render_dashboard(self, *args):
         """create the corresponding parsed dataframe based on the selected year.
@@ -89,10 +98,10 @@ class DashboardTile(sw.Card):
             for belt_class in list(df["belt_class"].unique())
         ]
 
-        statistics = v.Layout(
+        statistics = sw.Layout(
+            attributes={"name": "render_sub_a"},
             class_="d-block",
             children=[w_overall] + w_individual,
-            _metadata={"name": "statistics"},
         )
 
         new_items = self.children + [statistics]
@@ -104,8 +113,19 @@ class DashboardTile(sw.Card):
         """Check if there is a previusly displayed dashboard and clear it, and
         reset the modeul summary"""
 
-        for chld in self.children:
-            if isinstance(chld._metadata, dict):
-                if "statistics" in chld._metadata.values():
-                    self.children = self.children[:-1][:]
-                    break
+        if self.get_children(id_="render_sub_a"):
+            self.children = [
+                chld
+                for chld in self.children
+                if chld.attributes["name"] != "render_sub_a"
+            ]
+
+
+class DashViewB(sw.Layout):
+    def __init__(self, model, *args, **kwargs):
+
+        self.attributes = {"id": "dashboard_view_sub_b"}
+        self.model = model
+        self.children = []
+
+        super().__init__(*args, **kwargs)

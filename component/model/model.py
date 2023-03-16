@@ -244,11 +244,11 @@ class MgciModel(Model):
             return tmp_result_file
 
         elif task.state == "FAILED":
-            raise Exception(f"The task {Path(filename).stem} failed.")
+            raise Exception(f"The task {Path(task_filename).stem} failed.")
 
         else:
             raise SepalWarning(
-                f"The task '{Path(filename).stem}' state is: {task.state}."
+                f"The task '{Path(task_filename).stem}' state is: {task.state}."
             )
 
     def read_tasks_file(self, tasks_file):
