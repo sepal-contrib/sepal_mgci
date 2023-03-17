@@ -1,7 +1,6 @@
 import random
 import re
 from pathlib import Path
-import warnings
 
 import ipyvuetify as v
 import pandas as pd
@@ -21,7 +20,7 @@ __all__ = [
     "get_years",
     "read_from_csv",
     "export_reports",
-    "years_from_dict",
+    "calculate_breakpoints",
 ]
 
 
@@ -66,7 +65,6 @@ def get_report_folder(mgci_model):
     # Create a folder to store multiple year reports from the same area
     report_folder = DIR.REPORTS_DIR / f"MGCI_{mgci_model.aoi_model.name}"
     report_folder.mkdir(parents=True, exist_ok=True)
-
     return report_folder
 
 
@@ -124,97 +122,6 @@ def get_years(start_year, end_year):
         if year not in flatten_subb_years:
             subb_years += [[year]]
     return subb_years
-
-
-def get_years(
-    sub_a_year: list, sub_b_year: list, matrix_sub_a, matrix_sub_b
-) -> list([dict]):
-    """Extract years from sub_a and sub_b years dictionaries.
-
-    It will receive two dictionaries with the following structure:
-
-    sub_a_year = {
-        1: {
-            "base": {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1992",
-                "year": "1992",
-            }
-        },
-    }
-
-    sub_b_year = {
-        1: {
-            "base": {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1992",
-                "year": "1992",
-            },
-            "report": {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1994",
-                "year": "1994",
-            },
-        }
-    }
-
-    Returns: list of years with the following structure:
-
-        years = [
-            [{1992:"users/amitghosh/sdg_module/esa/cci_landcover/1992"}],
-            [
-                {1992:"users/amitghosh/sdg_module/esa/cci_landcover/1992"}
-                {1994:"users/amitghosh/sdg_module/esa/cci_landcover/1994"},
-            ]
-        ]
-
-    """
-
-    sub_b_years = []
-    for pair in sub_b_year.values():
-        x = []
-        for values in pair.values():
-            x.append({values["year"]: values["asset"]})
-        sub_b_years.append(x)
-
-    sub_a_years = []
-    for year in sub_a_year.values():
-        base = year["base"]
-        sub_a_years.append({base["year"]: base["asset"]})
-
-    # raise a warning if matrix_sub_a and matrix_sub_b are not the same
-    if matrix_sub_a != matrix_sub_b:
-        warnings.warn(
-            "The reclassification matrix for subindicator A and B are not the same. "
-            "This may cause unexpected results."
-        )
-        years = sub_b_years + [[y] for y in sub_a_years]
-
-        return years
-
-    else:
-        years = sub_b_years
-        for year in sub_a_years:
-            # check if sub_a_year is already in one of sub_b_years pairs
-            if year not in [x for y in years for x in y]:
-                years.append([year])
-
-        return years
-
-
-def years_from_dict(years: list) -> list:
-    """Extract years from a list of dictionaries.
-
-    Args:
-        years (list): A list of dictionaries with the following structure:
-
-        years = [
-            {1992:"users/amitghosh/sdg_module/esa/cci_landcover/1992"}
-            {1994:"users/amitghosh/sdg_module/esa/cci_landcover/1994"},
-        ]
-
-    Returns:
-        list: A list of years.
-
-    """
-    return [year for y in [list(year.keys()) for year in years] for year in y]
 
 
 def parse_result(result, single=False):
@@ -288,6 +195,78 @@ def read_from_csv(task_file, process_id):
     )
 
     return eval(line)
+
+
+def calculate_breakpoints(user_input_years):
+    """Calculate the breakpoints for the user input years.
+
+    The objective is to get a dictionary with reporting year as key and
+    all the years that are relevant for the reporting year as value.
+
+    Example:
+    user_input_years = [2000, 2005, 2010, 2012, 2015, 2018, 2021]
+
+    will return: {
+        (2000, 2005): [2000, 2005],
+        (2005, 2010): [2005, 2010],
+        (2010, 2015): [2010, 2012, 2015],
+        (2015, 2018): [2015, 2018],
+        (2018, 2021): [2018, 2021],
+    }
+    """
+
+    breakpoints = {}
+
+    report_intervals = [2000, 2005, 2010, 2015] + list(range(2018, 2050, 3))
+
+    # filter report intervals that are relevant for the user input
+    report_intervals = [
+        interval
+        for interval in report_intervals
+        if interval >= min(user_input_years) and interval <= max(user_input_years)
+    ]
+
+    # Create a list of tuples with the lower and upper bound of the interval
+    intervals = list(zip(report_intervals[:-1], report_intervals[1:]))
+
+    for interval in intervals:
+
+        lower, upper = interval
+
+        # get all years that falls in the interval
+        years_in_interval = [
+            year for year in user_input_years if year == lower or year == upper
+        ]
+
+        # If lower bound is not in the interval, find the maximum
+        # year that is smaller than the lower bound
+        if lower not in years_in_interval:
+            # get the maximum year that is smaller than the lower bound
+            before_lower = max(
+                (year for year in user_input_years if year < lower), default=None
+            )
+            after_lower = min(
+                (year for year in user_input_years if year > lower), default=None
+            )
+            years_in_interval.extend([before_lower, after_lower])
+
+        # If upper bound is not in the interval, find the minimum
+        # year that is larger than the upper bound
+        if upper not in years_in_interval:
+            # get the minimum year that is larger than the upper bound
+            after_higher = min(
+                [year for year in user_input_years if year > upper], default=None
+            )
+            before_higher = max(
+                [year for year in user_input_years if year < upper], default=None
+            )
+            years_in_interval.extend([before_higher, after_higher])
+
+        # Add the interval and the years that are relevant for the interval
+        # skip None and remove duplicates
+        breakpoints[interval] = sorted(set([y for y in years_in_interval if y]))
+
+    return breakpoints
 
 
 def get_sub_a_reports(parsed_df, year_s, model):

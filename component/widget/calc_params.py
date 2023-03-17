@@ -7,6 +7,7 @@ from traitlets import Bool, Dict, Int, List, directional_link
 
 import component.frontend
 import component.parameter.module_parameter as param
+import component.scripts.scripts as cs
 from component.message import cm
 
 
@@ -117,9 +118,10 @@ class Calculation(sw.List):
         )
 
         pencil = v.Btn(
-            children=[sw.Icon(children=["mdi-pencil"])],
+            children=[sw.Icon(children=["mdi-layers-plus"])],
             icon=True,
             attributes={"id": f"pen_{indicator}"},
+            class_="mr-2",
         )
 
         pencil.on_event(
@@ -136,6 +138,7 @@ class Calculation(sw.List):
                                     children=[
                                         cm.calculation[indicator].title,
                                         v.Spacer(),
+                                        pencil,
                                         switch,
                                     ]
                                 ),
@@ -159,7 +162,7 @@ class Calculation(sw.List):
                         )
                     ]
                 ),
-                v.ListItemAction(children=[pencil]),
+                # v.ListItemAction(children=[pencil]),
             ]
         )
 
@@ -206,23 +209,21 @@ class Calculation(sw.List):
 
         else:
             multichips = []
-            for val in data.values():
-                base_y = val.get("base", {}).get("year", "...") or "..."
-                report_y = val.get("report", {}).get("year", "...") or "..."
+            int_years = [int(y) for y in base_years]
+            reporting_years = cs.calculate_breakpoints(int_years)
 
-                if not all([base_y != "...", base_y != "..."]):
-                    continue
+            for reporting_y in reporting_years.keys():
+
+                base_y, report_y = reporting_y
 
                 multichips.append(
                     [
                         v.Chip(
-                            color="error"
-                            if any([base_y == "...", report_y == "..."])
-                            else "success",
+                            color="success",
                             small=True,
                             draggable=True,
                             children=[
-                                base_y + " AND " + report_y,
+                                str(base_y) + " AND " + str(report_y),
                             ],
                         ),
                         ", ",
@@ -243,7 +244,7 @@ class CustomList(sw.List):
 
     counter = Int(1).tag(syc=True)
     "int: control number to check how many subb pairs are loaded"
-    max_ = Int(4 - 1).tag(syc=True)
+    max_ = Int(10 - 1).tag(syc=True)
     "int: maximun number of sub indicator pairs to be displayed in UI"
     v_model = Dict({}).tag(syc=True)
     "dict: where key is the consecutive number of pairs, and values are the baseline and reporting period"
@@ -351,7 +352,8 @@ class CustomList(sw.List):
             "v_model",
         )
 
-        if self.indicator == "sub_b":
+        # I will skip double select for sub_b
+        if self.indicator == "sub_x":
             # only display report widgets when using sub_b
             w_reportp = v.Select(
                 class_="mr-3",
@@ -384,11 +386,12 @@ class CustomList(sw.List):
                 attributes={"id": id_},
                 class_="ma-0 pa-0",
                 children=[
-                    v.ListItemContent(children=[w_basep_container])
-                    if self.indicator == "sub_a"
-                    else v.ListItemContent(
+                    v.ListItemContent(
                         children=[w_basep_container, w_reportp_container],
-                    ),
+                    )
+                    # I'm gonna skip the report select for sub_b
+                    if self.indicator == "sub_x"
+                    else v.ListItemContent(children=[w_basep_container]),
                 ]
                 + actions,
             ),
@@ -473,7 +476,7 @@ class SelectYear(v.Select):
         super().__init__(*args, **kwargs)
 
         self.v_model = False
-        self.style_ = "min-width: 175px; max-width: 175px"
+        self.style_ = "min-width: 105px; max-width: 105px"
         self.label = cm.calculation.match_year
         self.items = param.YEARS
         self.attributes = {"id": "ref_select"}

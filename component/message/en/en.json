@@ -85,13 +85,15 @@
     "calculation" : {
         "sub_a" : {
             "title" : "Sub indicator A",
-            "desc_active" : "You are about to calculate the subindicator A.",
-            "desc_disabled" : "The subindicator A will not be calculated. To activate its processing, click the top right switch in this card and select the target layer(s)."
+            "desc_active" : "Based on the data you've provided, the module can generate reports for the following years. Please note that if a year is missing, the module will employ linear interpolation to estimate the values for that year.",
+            "desc_disabled" : "The subindicator A will not be calculated. To activate its processing, click the top right switch in this card and select the target layer(s).",
+            "desc_no_data" : "You have activated the subindicator A, use the 'Add layer' button to select the target layer(s)."
         },
         "sub_b" : {
             "title" : "Sub indicator B",
-            "desc_active" : "You are about to calculate the subindicator B.",
-            "desc_disabled" : "The subindicator B will not be calculated. To activate its processing, click the top right switch in this card and select the target layer(s)."
+            "desc_active" : "Based on the data you've provided, the module can generate reports for the following years. Please note that if a year is missing, the module will employ linear interpolation to estimate the values for that year.",
+            "desc_disabled" : "The subindicator B will not be calculated. To activate its processing, click the top right switch in this card and select the target layer(s).",
+            "desc_no_data" : "You have activated the subindicator A, use the 'Add layer' button to select the target layer(s)."
         },
         "y_base" : "Baseline period (year)",
         "y_report" : "Reporting period (year)",
