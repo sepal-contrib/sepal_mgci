@@ -112,6 +112,7 @@ class Calculation(sw.List):
         """returns the specific structure required to display the bands(years) that will
         be used to calculate each of the specific subindicator"""
 
+        alert = sw.Alert(attributes={"id": f"alert_{indicator}"}).hide()
         switch = sw.Switch(attributes={"id": f"switch_{indicator}"}, v_model=True)
         switch.observe(
             lambda change: self.reset_event(change, indicator=indicator), "v_model"
@@ -151,11 +152,13 @@ class Calculation(sw.List):
                                                 cm.calculation[indicator].desc_active
                                             ],
                                         ),
-                                        v.Spacer(),
+                                        v.Spacer(class_="my-2"),
                                         v.Html(
+                                            class_="mt-2",
                                             tag="span",
                                             attributes={"id": f"span_{indicator}"},
                                         ),
+                                        alert,
                                     ]
                                 ),
                             ]
@@ -184,6 +187,7 @@ class Calculation(sw.List):
 
         # Get the space where the elements will be inserted
         span = self.get_children(id_=f"span_{indicator}")[0]
+        alert = self.get_children(id_=f"alert_{indicator}")[0]
 
         if not change.get("new", None):
             span.children = [""]
@@ -193,51 +197,49 @@ class Calculation(sw.List):
 
         base_years = [val["base"].get("year", "...") for val in data.values()]
 
-        if indicator == "sub_a":
-            multichips = [
-                # Set chip red color if the year is empty
+        int_years = [int(y) for y in base_years if y]
+        reporting_years = cs.calculate_breakpoints(int_years)
+
+        if base_years and not reporting_years:
+            str_base_y = ", ".join(base_years)
+            alert.add_msg(
+                (
+                    f"With {str_base_y} you cannot report any year. Please provide"
+                    " years that are at least 5 years apart."
+                ),
+                type_="warning",
+            )
+        else:
+            alert.hide()
+
+        multichips = []
+
+        for reporting_y in reporting_years.keys():
+
+            _, report_y = reporting_y
+
+            multichips.append(
                 [
                     v.Chip(
-                        color="success" if year != "..." else "error",
+                        color="success",
                         small=True,
-                        children=[year],
+                        draggable=True,
+                        children=[
+                            str(report_y),
+                        ],
                     ),
                     ", ",
                 ]
-                for year in base_years
-            ]
+            )
 
-        else:
-            multichips = []
-            int_years = [int(y) for y in base_years]
-            reporting_years = cs.calculate_breakpoints(int_years)
-
-            for reporting_y in reporting_years.keys():
-
-                base_y, report_y = reporting_y
-
-                multichips.append(
-                    [
-                        v.Chip(
-                            color="success",
-                            small=True,
-                            draggable=True,
-                            children=[
-                                str(base_y) + " AND " + str(report_y),
-                            ],
-                        ),
-                        ", ",
-                    ]
-                )
-
-            if not multichips:
-                span.children = [""]
-                return
+        if not multichips:
+            span.children = [""]
+            return
 
         # Flat list and always remove the last element (the comma)
         chips = [val for period in multichips for val in period][:-1]
 
-        span.children = chips
+        span.children = ["Reporting years: "] + chips
 
 
 class CustomList(sw.List):
@@ -246,7 +248,7 @@ class CustomList(sw.List):
     "int: control number to check how many subb pairs are loaded"
     max_ = Int(10 - 1).tag(syc=True)
     "int: maximun number of sub indicator pairs to be displayed in UI"
-    v_model = Dict({}).tag(syc=True)
+    v_model = Dict({}, allow_none=True).tag(syc=True)
     "dict: where key is the consecutive number of pairs, and values are the baseline and reporting period"
     items = List([]).tag(sync=True)
     "list: image collection items to be loaded in each select pair"
@@ -418,7 +420,7 @@ class CustomList(sw.List):
         select_wgts = self.get_children(id_="selects")
         ref_wgts = self.get_children(id_="ref_select")
 
-        [setattr(select, "v_model", False) for select in (select_wgts + ref_wgts)]
+        [setattr(select, "v_model", None) for select in (select_wgts + ref_wgts)]
 
         # And also reset the v_model
         self.v_model = {}
