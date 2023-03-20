@@ -90,38 +90,128 @@ def get_geoarea(aoi_model):
         return aoi_model.name, ""
 
 
-def get_years(start_year, end_year):
-    """
-    Returns a nested list of years based on the input start and end years.
+def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
+    """Returns a nested list of years (asset) based on the input start and end years.
+
+    In order to minimize the number of calculations, assets that are present
+    in both models are only calculated once (using reduction with both years)
+    (example 1) as long as matrix_a and matrix_b are the same. If they are
+    different, then the assets are calculated reparately (example 2).
 
     Args:
-        start_year (list): A list of strings representing the start years.
-        end_year (dict): A dictionary containing the end years, where the
-            keys are a consecutive number and the values are dictionaries
-            with 'base' and 'report' keys.
+        sub_a_year (dict): model dictionary containing sub A dialog v_model
+        sub_b_year (dict): model dictionary containing sub B dialog v_model
+        matrix_a (dict): reclassification matrix from model A
+        matrix_b (dict): reclassification matrix from model B
+
 
     Returns:
-        list: A nested list of years.
+        list: A list with individual years (for indicator A) and nested list
+            of years [[start, end], ...,[start, end]] (for indicator B)
 
-    Example:
-        start_year = ['1992', '1993', '1994']
-        end_year = {
-            1: {'base': '1993', 'report': '1993'},
-            2: {'base': '1995', 'report': '1996'}
+    Example 1:
+        sub_a_year = {
+            1: {'asset': 'asset_x/2020',year': '2010'},
+            2: {'asset': 'asset_x/2015',year': '2015'},
+            3: {'asset': 'asset_x/2020',year': '2020'},
         }
-        get_years(start_year, end_year)
 
-        returns: [['1993', '1993'], ['1995', '1996'], ['1992'], ['1994']]
+        sub_b_year = {
+            1: {'asset': 'asset_x/2020',year': '2020'},
+            2: {'asset': 'asset_x/2015',year': '2015'},
+        }
+
+        returns: [[asset_x/2010], [asset_x/2020, asset_x/2015]]
+
+    Example 2:
+        sub_a_year = {
+            1: {'asset': 'asset_x/2020',year': '2020'},
+            2: {'asset': 'asset_x/2015',year': '2015'},
+        }
+
+        sub_b_year = {
+            1: {'asset': 'asset_y/2020',year': '2020'},
+            2: {'asset': 'asset_y/2015',year': '2015'},
+        }
+        returns: [[asset_x/2015], [asset_x/2020] [asset_y/2020', asset_y/2015]]
+
     """
 
-    subb_years = [list(sub.values()) for sub in end_year.values()]
+    # get only years that we are interested on
 
-    flatten_subb_years = [year for sub_year in subb_years for year in sub_year]
+    {
+        (2005, 2010): [
+            {
+                "year": 2004,
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2005",
+            },
+            {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1992",
+                "year": 2022,
+            },
+        ],
+        (2010, 2015): [
+            {
+                "year": 2004,
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2005",
+            },
+            {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1992",
+                "year": 2022,
+            },
+        ],
+    }
 
-    for year in start_year:
-        if year not in flatten_subb_years:
-            subb_years += [[year]]
-    return subb_years
+    # from years_b there are three cases:
+    # 1. a reporting period has 4 years, in that case we need to calculate
+    #    the reduction with first and second year, and second and third year.
+    # 2. a reporting period has 3 years, this case is special because we
+    #    have two options: calculate the reduction with first and second year,
+    #    or second and third year. The option selected will be the one that
+    #    has the reporting period at the end or beginning of the asset list.
+    #    for example, if the reporting period is 2010-2015, and the asset list
+    #    is [2009, 2011, 2015], then we will calculate the reduction with
+    #    2011-2015, while if the asset list is [2010, 2013, 2016], then we will
+    #    calculate the reduction with 2010-2013.
+    # 3. a reporting period has 2 years, in that case we need to calculate
+    #    the reduction with first and second year.
+
+    years_a = calculate_breakpoints(sub_a_year)
+    years_b = calculate_breakpoints(sub_b_year)
+
+    if years_b:
+        # create a list of years to calculate the reduction
+        years_to_calculate = []
+        for period, year in years_b.items():
+            if len(year) == 4:
+                years_to_calculate.append(year[:2])
+                years_to_calculate.append(year[1:])
+            elif len(year) == 3:
+                if year[0] in period:
+                    years_to_calculate.append(year[:2])
+                    years_to_calculate.append([year[:-1]])
+                else:
+                    years_to_calculate.append(year[1:])
+                    years_to_calculate.append([year[0]])
+            elif len(year) == 2:
+                years_to_calculate.append(year)
+            else:
+                raise ValueError("Invalid year format")
+
+    # remove duplicates knowing that years are dictionaries
+    years_to_calculate = [
+        dict(t) for t in {tuple(d.items()) for d in years_to_calculate}
+    ]
+    years_to_calculate = [list(d.values()) for d in years_to_calculate]
+
+    # for years in a we need to calculate the reduction individually for each
+    # year, but to minimize the number of calculations, we will only calculate
+    # the reduction for years that are not present in years_b.
+    # Remember that years_b is a nested list, so we need to flatten it first.
+
+    for year in years_a:
+        if year not in [item for sublist in years_b for item in sublist]:
+            years_to_calculate.append([year])
 
 
 def parse_result(result, single=False):
@@ -203,27 +293,22 @@ def calculate_breakpoints(user_input_years):
     The objective is to get a dictionary with reporting year as key and
     all the years that are relevant for the reporting year as value.
 
-    Example:
-    user_input_years = [2000, 2005, 2010, 2012, 2015, 2018, 2021]
-
-    will return: {
-        (2000, 2005): [2000, 2005],
-        (2005, 2010): [2005, 2010],
-        (2010, 2015): [2010, 2012, 2015],
-        (2015, 2018): [2015, 2018],
-        (2018, 2021): [2018, 2021],
-    }
     """
+
+    if not user_input_years:
+        return []
 
     breakpoints = {}
 
     report_intervals = [2000, 2005, 2010, 2015] + list(range(2018, 2050, 3))
 
+    user_years = [val.get("year") for val in user_input_years.values()]
+
     # filter report intervals that are relevant for the user input
     report_intervals = [
         interval
         for interval in report_intervals
-        if interval >= min(user_input_years) and interval <= max(user_input_years)
+        if interval >= min(user_years) and interval <= max(user_years)
     ]
 
     # Create a list of tuples with the lower and upper bound of the interval
@@ -232,10 +317,13 @@ def calculate_breakpoints(user_input_years):
     for interval in intervals:
 
         lower, upper = interval
+        print(lower, upper)
 
         # get all years that falls in the interval
         years_in_interval = [
-            year for year in user_input_years if year == lower or year == upper
+            year
+            for year in user_input_years.values()
+            if year.get("year") == lower or year.get("year") == upper
         ]
 
         # If lower bound is not in the interval, find the maximum
@@ -243,10 +331,22 @@ def calculate_breakpoints(user_input_years):
         if lower not in years_in_interval:
             # get the maximum year that is smaller than the lower bound
             before_lower = max(
-                (year for year in user_input_years if year < lower), default=None
+                [
+                    year
+                    for year in user_input_years.values()
+                    if year.get("year") < lower
+                ],
+                key=lambda x: x.get("year"),
+                default=None,
             )
             after_lower = min(
-                (year for year in user_input_years if year > lower), default=None
+                [
+                    year
+                    for year in user_input_years.values()
+                    if year.get("year") > lower
+                ],
+                key=lambda x: x.get("year"),
+                default=None,
             )
             years_in_interval.extend([before_lower, after_lower])
 
@@ -255,16 +355,33 @@ def calculate_breakpoints(user_input_years):
         if upper not in years_in_interval:
             # get the minimum year that is larger than the upper bound
             after_higher = min(
-                [year for year in user_input_years if year > upper], default=None
+                [
+                    year
+                    for year in user_input_years.values()
+                    if year.get("year") > upper
+                ],
+                key=lambda x: x.get("year"),
+                default=None,
             )
             before_higher = max(
-                [year for year in user_input_years if year < upper], default=None
+                [
+                    year
+                    for year in user_input_years.values()
+                    if year.get("year") < upper
+                ],
+                key=lambda x: x.get("year"),
+                default=None,
             )
             years_in_interval.extend([before_higher, after_higher])
 
         # Add the interval and the years that are relevant for the interval
         # skip None and remove duplicates
-        breakpoints[interval] = sorted(set([y for y in years_in_interval if y]))
+        unique_values = []
+        for value in years_in_interval:
+            if value not in unique_values and value:
+                unique_values.append(value)
+
+        breakpoints[interval] = unique_values
 
     return breakpoints
 

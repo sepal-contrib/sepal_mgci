@@ -112,8 +112,8 @@ class MgciModel(Model):
 
         Attributes:
             indicator (str): either 'sub_a' or 'sub_b'
-            lc_start (string): first year of the report or baseline.
-            lc_end (string): last year of the report.
+            lc_start (string): first year (asset id) of the report or baseline.
+            lc_end (string): last year (asset id) of the report.
             aoi (ee.FeatureCollection, ee.Geometry): Region to reduce image
 
         Return:

@@ -190,15 +190,15 @@ class Calculation(sw.List):
         alert = self.get_children(id_=f"alert_{indicator}")[0]
 
         if not change.get("new", None):
+            alert.reset()
             span.children = [""]
             return
 
         data = change["new"]
 
-        base_years = [val["base"].get("year", "...") for val in data.values()]
+        base_years = [str(val.get("year", "...")) for val in data.values()]
 
-        int_years = [int(y) for y in base_years if y]
-        reporting_years = cs.calculate_breakpoints(int_years)
+        reporting_years = cs.calculate_breakpoints(data)
 
         if base_years and not reporting_years:
             str_base_y = ", ".join(base_years)
@@ -291,22 +291,25 @@ class CustomList(sw.List):
             self.counter += 1
             self.children = self.children + self.get_element()
 
-    def update_model(self, data, id_, pos, target):
+    def update_model(self, data, id_, target):
         """update v_model content based on select changes.
 
         Args:
             data (dict): data from the select change event (change)
             id_ (int): id of the element that triggered the change
-            pos (str): either base or report. it's the type of period
-            target (str): either asset_id or year.
+            target (str): either asset or year.
         """
+
+        if not data["new"]:
+            return
 
         tmp_vmodel = deepcopy(self.v_model)
 
         # set a default value for the key if it doesn't exist
         # do this for each level of the dict
         # so we can set the value for the target key
-        tmp_vmodel.setdefault(id_, {}).setdefault(pos, {})[target] = str(data["new"])
+        value = str(data["new"]) if target == "asset" else int(data["new"])
+        tmp_vmodel.setdefault(id_, {})[target] = value
 
         self.v_model = tmp_vmodel
 
@@ -346,11 +349,11 @@ class CustomList(sw.List):
         )
 
         w_basep.observe(
-            lambda chg: self.update_model(chg, id_=id_, pos="base", target="asset"),
+            lambda chg: self.update_model(chg, id_=id_, target="asset"),
             "v_model",
         )
         w_base_yref.observe(
-            lambda chg: self.update_model(chg, id_=id_, pos="base", target="year"),
+            lambda chg: self.update_model(chg, id_=id_, target="year"),
             "v_model",
         )
 
@@ -371,15 +374,11 @@ class CustomList(sw.List):
             )
 
             w_reportp.observe(
-                lambda chg: self.update_model(
-                    chg, id_=id_, pos="report", target="asset"
-                ),
+                lambda chg: self.update_model(chg, id_=id_, target="asset"),
                 "v_model",
             )
             w_report_yref.observe(
-                lambda chg: self.update_model(
-                    chg, id_=id_, pos="report", target="year"
-                ),
+                lambda chg: self.update_model(chg, id_=id_, target="year"),
                 "v_model",
             )
 
