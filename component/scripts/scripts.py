@@ -21,6 +21,7 @@ __all__ = [
     "read_from_csv",
     "export_reports",
     "calculate_breakpoints",
+    "years_from_dict",
 ]
 
 
@@ -90,6 +91,34 @@ def get_geoarea(aoi_model):
         return aoi_model.name, ""
 
 
+def remove_duplicated_years(breakpoints):
+    """Remove duplicated years from a list of years"""
+
+    # remove duplicates knowing that years are dictionaries
+    converted_list = [
+        frozenset(frozenset(d.items()) for d in sublist) for sublist in breakpoints
+    ]
+
+    # Remove duplicates by using a set comprehension and then convert back to a list
+    # of lists of dictionaries. Sort them by year.
+    return [
+        sorted(list(dict(d) for d in fs), key=lambda d: d.get("year"))
+        for fs in set(converted_list)
+    ]
+
+
+def years_from_dict(year_dict):
+    """Extract yeras from a get_years dictionary.
+
+    It will be used to label and display the progress in the alerts.
+
+    Args:
+        year_dict (dict): dictionary with years coming from get_years function
+    """
+
+    return "_".join([str(year.get("year")) for year in year_dict])
+
+
 def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
     """Returns a nested list of years (asset) based on the input start and end years.
 
@@ -109,21 +138,7 @@ def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
         list: A list with individual years (for indicator A) and nested list
             of years [[start, end], ...,[start, end]] (for indicator B)
 
-    Example 1:
-        sub_a_year = {
-            1: {'asset': 'asset_x/2020',year': '2010'},
-            2: {'asset': 'asset_x/2015',year': '2015'},
-            3: {'asset': 'asset_x/2020',year': '2020'},
-        }
-
-        sub_b_year = {
-            1: {'asset': 'asset_x/2020',year': '2020'},
-            2: {'asset': 'asset_x/2015',year': '2015'},
-        }
-
-        returns: [[asset_x/2010], [asset_x/2020, asset_x/2015]]
-
-    Example 2:
+    Example:
         sub_a_year = {
             1: {'asset': 'asset_x/2020',year': '2020'},
             2: {'asset': 'asset_x/2015',year': '2015'},
@@ -137,31 +152,6 @@ def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
 
     """
 
-    # get only years that we are interested on
-
-    {
-        (2005, 2010): [
-            {
-                "year": 2004,
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2005",
-            },
-            {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1992",
-                "year": 2022,
-            },
-        ],
-        (2010, 2015): [
-            {
-                "year": 2004,
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2005",
-            },
-            {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1992",
-                "year": 2022,
-            },
-        ],
-    }
-
     # from years_b there are three cases:
     # 1. a reporting period has 4 years, in that case we need to calculate
     #    the reduction with first and second year, and second and third year.
@@ -171,47 +161,56 @@ def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
     #    has the reporting period at the end or beginning of the asset list.
     #    for example, if the reporting period is 2010-2015, and the asset list
     #    is [2009, 2011, 2015], then we will calculate the reduction with
-    #    2011-2015, while if the asset list is [2010, 2013, 2016], then we will
-    #    calculate the reduction with 2010-2013.
+    #    2009-2011, while if the asset list is [2010, 2013, 2016], then we will
+    #    calculate the reduction with 2013-2016.
     # 3. a reporting period has 2 years, in that case we need to calculate
     #    the reduction with first and second year.
 
     years_a = calculate_breakpoints(sub_a_year)
     years_b = calculate_breakpoints(sub_b_year)
 
-    if years_b:
-        # create a list of years to calculate the reduction
-        years_to_calculate = []
-        for period, year in years_b.items():
-            if len(year) == 4:
+    # create a list of years to calculate the reduction
+    years_to_calculate = []
+    for period, year in years_b.items():
+        if len(year) == 4:
+            years_to_calculate.append(year[:2])
+            years_to_calculate.append(year[1:])
+        elif len(year) == 3:
+            if year[0] in period:
+                years_to_calculate.append(year[0])
+                years_to_calculate.append([year[1:]])
+            elif year[-1] in period:
                 years_to_calculate.append(year[:2])
-                years_to_calculate.append(year[1:])
-            elif len(year) == 3:
-                if year[0] in period:
-                    years_to_calculate.append(year[:2])
-                    years_to_calculate.append([year[:-1]])
-                else:
-                    years_to_calculate.append(year[1:])
-                    years_to_calculate.append([year[0]])
-            elif len(year) == 2:
-                years_to_calculate.append(year)
+                years_to_calculate.append([year[-1]])
             else:
-                raise ValueError("Invalid year format")
+                raise ValueError("Invalid reporting period.")
+        elif len(year) == 2:
+            years_to_calculate.append(year)
+        else:
+            raise ValueError("Invalid year format")
 
-    # remove duplicates knowing that years are dictionaries
-    years_to_calculate = [
-        dict(t) for t in {tuple(d.items()) for d in years_to_calculate}
-    ]
-    years_to_calculate = [list(d.values()) for d in years_to_calculate]
+    # remove duplicated years
+    years_to_calculate = remove_duplicated_years(years_to_calculate)
 
-    # for years in a we need to calculate the reduction individually for each
-    # year, but to minimize the number of calculations, we will only calculate
-    # the reduction for years that are not present in years_b.
-    # Remember that years_b is a nested list, so we need to flatten it first.
+    if matrix_a == matrix_b:
+        # Add years from years_a that are not present in years_b
+        for breakp_years in years_a.values():
+            # flatten years_a list
+            for year in breakp_years:
+                if year not in [
+                    item for sublist in years_to_calculate for item in sublist
+                ]:
+                    years_to_calculate.append([year])
 
-    for year in years_a:
-        if year not in [item for sublist in years_b for item in sublist]:
-            years_to_calculate.append([year])
+        return years_to_calculate
+
+    else:
+        # Add all years from years_a individually
+        return years_to_calculate + [
+            [year]
+            for sublist in remove_duplicated_years(years_a.values())
+            for year in sublist
+        ]
 
 
 def parse_result(result, single=False):
@@ -295,10 +294,10 @@ def calculate_breakpoints(user_input_years):
 
     """
 
-    if not user_input_years:
-        return []
-
     breakpoints = {}
+
+    if not user_input_years:
+        return breakpoints
 
     report_intervals = [2000, 2005, 2010, 2015] + list(range(2018, 2050, 3))
 
@@ -317,7 +316,6 @@ def calculate_breakpoints(user_input_years):
     for interval in intervals:
 
         lower, upper = interval
-        print(lower, upper)
 
         # get all years that falls in the interval
         years_in_interval = [

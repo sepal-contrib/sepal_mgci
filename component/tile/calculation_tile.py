@@ -134,15 +134,16 @@ class CalculationView(sw.Card):
                 year (list(list)) : list of year list to perform calculation
                 task_filename: name of the task file (result ids will be append to the file)
             """
-
-            msg = cw.TaskMsg(f"Calculating {year}..")
+            print(year)
+            process_id = cs.years_from_dict(year)
+            msg = cw.TaskMsg(f"Calculating {process_id}..")
             self.alert.append_msg(msg)
 
-            start_year = list(year[0].values())[0]
-            process_id = "_".join(cs.years_from_dict(year))
+            start_year = year[0].get("asset")
 
             if len(year) > 1:
-                end_year = list(year[1].values())[0]
+
+                end_year = year[1].get("asset")
                 process = self.model.reduce_to_regions("sub_b", start_year, end_year)
 
             else:
@@ -183,9 +184,9 @@ class CalculationView(sw.Card):
             task_file = DIR.TASKS_DIR / f"Task_result_{unique_preffix}"
 
             futures = {
-                executor.submit(deferred_calculation, year, task_file): "_".join(
-                    cs.years_from_dict(year)
-                )
+                executor.submit(
+                    deferred_calculation, year, task_file
+                ): cs.years_from_dict(year)
                 for year in years
             }
 
