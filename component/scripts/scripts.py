@@ -101,14 +101,22 @@ def remove_duplicated_years(breakpoints):
 
     # Remove duplicates by using a set comprehension and then convert back to a list
     # of lists of dictionaries. Sort them by year.
+    # return [
+    #     sorted(list(dict(d) for d in fs), key=lambda d: d.get("year"))
+    #     for fs in set(converted_list)
+    # ]
+
     return [
-        sorted(list(dict(d) for d in fs), key=lambda d: d.get("year"))
+        sorted(
+            list(dict(sorted(d, key=lambda x: x[0])) for d in fs),
+            key=lambda d: d.get("year"),
+        )
         for fs in set(converted_list)
     ]
 
 
 def years_from_dict(year_dict):
-    """Extract yeras from a get_years dictionary.
+    """Extract years from a get_years dictionary.
 
     It will be used to label and display the progress in the alerts.
 
@@ -117,6 +125,62 @@ def years_from_dict(year_dict):
     """
 
     return "_".join([str(year.get("year")) for year in year_dict])
+
+
+def get_interpolation_years(breaking_points):
+    """Get interpolation years (assets) from the breaking points.
+
+    Based on the breaking points, it will return a list of years (assets)
+    that will be used to interpolate the sub indicator.
+
+    There are three posible cases:
+
+     1. a reporting period has 4 years, in that case we need to calculate
+        the reduction with first and second year, and second and third year.
+
+     2. a reporting period has 3 years, this case is special because we
+        have two options: calculate the reduction with first and second year,
+        or second and third year. The option selected will be the one that
+        has the reporting period at the end or beginning of the asset list.
+        for example, if the reporting period is 2010-2015, and the asset list
+        is [2009, 2011, 2015], then we will calculate the reduction with
+        2009-2011, while if the asset list is [2010, 2013, 2016], then we will
+        calculate the reduction with 2013-2016.
+
+     3. a reporting period has 2 years, in that case we need to calculate
+        the reduction with first and second year.
+    """
+
+    # create a list of years to calculate the reduction
+    years_to_calculate = []
+    for period, year in breaking_points.items():
+        if len(year) == 4:
+            years_to_calculate.append(year[:2])
+            years_to_calculate.append(year[1:])
+        elif len(year) == 3:
+            if year[0].get("year") in period:
+                years_to_calculate.append([year[0]])
+                years_to_calculate.append(year[1:])
+            elif year[-1].get("year") in period:
+                years_to_calculate.append(year[:2])
+                years_to_calculate.append([year[-1]])
+            else:
+                raise ValueError("Invalid reporting period.")
+        elif len(year) == 2:
+            years_to_calculate.append(year)
+        else:
+            raise ValueError("Invalid year format")
+
+    # remove duplicated years
+    years_to_calculate = remove_duplicated_years(years_to_calculate)
+
+    return sorted(
+        [
+            sorted(segment, key=lambda x: x.get("year"))
+            for segment in years_to_calculate
+        ],
+        key=lambda x: [y.get("year") for y in x],
+    )
 
 
 def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
@@ -152,45 +216,11 @@ def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
 
     """
 
-    # from years_b there are three cases:
-    # 1. a reporting period has 4 years, in that case we need to calculate
-    #    the reduction with first and second year, and second and third year.
-    # 2. a reporting period has 3 years, this case is special because we
-    #    have two options: calculate the reduction with first and second year,
-    #    or second and third year. The option selected will be the one that
-    #    has the reporting period at the end or beginning of the asset list.
-    #    for example, if the reporting period is 2010-2015, and the asset list
-    #    is [2009, 2011, 2015], then we will calculate the reduction with
-    #    2009-2011, while if the asset list is [2010, 2013, 2016], then we will
-    #    calculate the reduction with 2013-2016.
-    # 3. a reporting period has 2 years, in that case we need to calculate
-    #    the reduction with first and second year.
-
     years_a = calculate_breakpoints(sub_a_year)
     years_b = calculate_breakpoints(sub_b_year)
 
-    # create a list of years to calculate the reduction
-    years_to_calculate = []
-    for period, year in years_b.items():
-        if len(year) == 4:
-            years_to_calculate.append(year[:2])
-            years_to_calculate.append(year[1:])
-        elif len(year) == 3:
-            if year[0] in period:
-                years_to_calculate.append(year[0])
-                years_to_calculate.append([year[1:]])
-            elif year[-1] in period:
-                years_to_calculate.append(year[:2])
-                years_to_calculate.append([year[-1]])
-            else:
-                raise ValueError("Invalid reporting period.")
-        elif len(year) == 2:
-            years_to_calculate.append(year)
-        else:
-            raise ValueError("Invalid year format")
-
-    # remove duplicated years
-    years_to_calculate = remove_duplicated_years(years_to_calculate)
+    # Only get interpolation years from subindicator B
+    years_to_calculate = get_interpolation_years(years_b)
 
     if matrix_a == matrix_b:
         # Add years from years_a that are not present in years_b
@@ -324,9 +354,11 @@ def calculate_breakpoints(user_input_years):
             if year.get("year") == lower or year.get("year") == upper
         ]
 
+        only_years = [year.get("year") for year in years_in_interval]
+
         # If lower bound is not in the interval, find the maximum
         # year that is smaller than the lower bound
-        if lower not in years_in_interval:
+        if lower not in only_years:
             # get the maximum year that is smaller than the lower bound
             before_lower = max(
                 [
@@ -350,7 +382,7 @@ def calculate_breakpoints(user_input_years):
 
         # If upper bound is not in the interval, find the minimum
         # year that is larger than the upper bound
-        if upper not in years_in_interval:
+        if upper not in only_years:
             # get the minimum year that is larger than the upper bound
             after_higher = min(
                 [
@@ -414,7 +446,8 @@ def export_reports(model, output_folder):
     It separates the reports into two categories: sub_a_reports and sub_b_reports.
     For each group in the results, it performs the following steps:
         - Splits the group name by "_" to get the year(s)
-        - If there is only one year, it parses the result and appends the sub_a_report to the sub_a_reports list
+        - If there is only one year, it parses the result and appends the sub_a_report
+            to the sub_a_reports list
         - If there are multiple years, it parses the result and for each year:
             - Groups the parsed dataframe by belt_class and target_lc
             - Renames the target_lc column to lc_class
@@ -423,7 +456,8 @@ def export_reports(model, output_folder):
 
     :param model: The model object containing the results to be exported
     :type model: object
-    :return: A tuple containing two lists, the first one is sub_a_reports and the second one is sub_b_reports
+    :return: A tuple containing two lists, the first one is sub_a_reports and the second
+        one is sub_b_reports
     :rtype: tuple
     """
 
