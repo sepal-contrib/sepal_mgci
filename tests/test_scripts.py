@@ -15,7 +15,7 @@ def test_get_years():
         2: {"asset": "asset_y/2015", "year": 2015},
     }
 
-    years = get_years(sub_a_year, sub_b_year, {}, {})
+    years = cs.get_years(sub_a_year, sub_b_year, {}, {})
 
     assert years == [
         [
@@ -37,7 +37,7 @@ def test_get_years():
         2: {"asset": "asset_x/2015", "year": 2015},
     }
 
-    years = get_years(sub_a_year, sub_b_year, {}, {})
+    years = cs.get_years(sub_a_year, sub_b_year, {}, {})
     assert years == [
         [
             {"asset": "asset_x/2015", "year": 2015},
@@ -46,3 +46,27 @@ def test_get_years():
         [{"asset": "asset_x/2010", "year": 2010}],
         [{"asset": "asset_x/2004", "year": 2004}],
     ]
+
+
+def test_get_result_from_year():
+
+    results = {"2018_2021": {}, "2005": {}, "2011": {}, "2009": {}, "2015": {}}
+
+    assert cs.get_result_from_year(results, int("2018"), "sub_b") == {
+        "2018_2021": results["2018_2021"]
+    }
+    assert cs.get_result_from_year(results, int("2021"), "sub_b") == {
+        "2018_2021": results["2018_2021"]
+    }
+    assert cs.get_result_from_year(results, int("2005"), "sub_a") == {
+        "2005": results["2005"]
+    }
+    assert cs.get_result_from_year(results, int("2011"), "sub_a") == {
+        "2011": results["2011"]
+    }
+    assert cs.get_result_from_year(results, int("2009"), "sub_a") == {
+        "2009": results["2009"]
+    }
+    assert cs.get_result_from_year(results, int("2015"), "sub_a") == {
+        "2015": results["2015"]
+    }
