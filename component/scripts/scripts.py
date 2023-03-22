@@ -3,7 +3,9 @@ import re
 from pathlib import Path
 
 import ipyvuetify as v
+import numpy as np
 import pandas as pd
+from scipy.interpolate import interp1d
 
 import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
@@ -22,6 +24,7 @@ __all__ = [
     "export_reports",
     "calculate_breakpoints",
     "years_from_dict",
+    "get_result_from_year",
 ]
 
 
@@ -241,6 +244,97 @@ def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
             for sublist in remove_duplicated_years(years_a.values())
             for year in sublist
         ]
+
+
+def get_result_from_year(results, year, indicator):
+    """Return the results for the given year.
+
+    It will use the results dictionary to get the results for the requested
+    year. If the year is not found, it will raise an exception.
+    """
+
+    str_year = str(year)
+
+    individual_yrs = [y for y in results.keys() if len(y.split("_")) == 1]
+    double_years = [y for y in results.keys() if len(y.split("_")) == 2]
+
+    # Check that indicator is sub_a and year is in individual years
+    if indicator == "sub_a" and any([str_year in yr for yr in individual_yrs]):
+        return parse_result(results[str_year]["groups"], single=True)
+
+    # Otherwise, check that year is in double years
+    in_double = [str_year in yr for yr in double_years]
+
+    if any(in_double):
+        # There is no way that there are more than 2 years in double_years
+        assert sum(in_double) == 1, "More than 2 years in double_years"
+        idx = in_double.index(True)
+
+        if indicator == "sub_a":
+            # If we are in sub_a, we need to extract target year from double years
+            parsed_df = parse_result(results[double_years[idx]]["groups"])
+
+            # Get the name of the column that contains the target year
+            target_lc = ["from_lc", "to_lc"][
+                double_years[idx].split("_").index(str_year)
+            ]
+
+            cols = ["belt_class", target_lc]
+            parsed_df = parsed_df.groupby(cols, as_index=False).sum()[cols + ["sum"]]
+            parsed_df = parsed_df.rename(columns={target_lc: "lc_class"})
+
+            return parsed_df
+
+        return parse_result(results[double_years[idx]]["groups"])
+
+    raise Exception(
+        f"{str_year} not found in results, are you sure indicator is correct?"
+    )
+
+
+def interpolate_sub_a_data(results, year1, year2, target_year):
+    """Interpolate sub A data between two years.
+
+    Args:
+        results (pd.DataFrame): results DataFrame coming from parse_result
+        year1 (int): first year
+        year2 (int): second year
+        target_year (int): target year
+    """
+
+    if not year2 > year1:
+        raise Exception("year2 has to be higher than year 1")
+
+    if not (year1 < target_year < year2):
+        raise Exception("target year has to be in between year1 and year 2")
+
+    df1 = get_result_from_year(results, year1, "sub_a")
+    df2 = get_result_from_year(results, year2, "sub_a")
+
+    # Ensure both dataframes have the same structure
+    if not (df1.columns == df2.columns).all():
+        raise Exception("Dataframes must have the same columns")
+
+    # Merge dataframes on belt_class and lc_class
+    # This will ensure that the dataframes have the same structure
+    merged_df = df1.merge(df2, on=["belt_class", "lc_class"])
+
+    # Perform linear interpolation between y1 and y2
+    # I've used this function because later we can change the interpolation
+    # method without having to change the rest of the code
+
+    interp_func = interp1d(
+        [year1, year2], np.vstack([merged_df["sum_x"], merged_df["sum_y"]]), axis=0
+    )
+
+    # Get the interpolated data for the requested year
+    interpolated_data = interp_func(target_year)
+
+    # Create a new DataFrame with the interpolated data
+    df_interpolated = merged_df[["belt_class", "lc_class"]].copy()
+    df_interpolated["sum"] = interpolated_data
+
+    return df_interpolated
 
 
 def parse_result(result, single=False):
