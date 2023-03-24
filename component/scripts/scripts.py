@@ -22,7 +22,7 @@ __all__ = [
     "get_years",
     "read_from_csv",
     "export_reports",
-    "calculate_breakpoints",
+    "get_sub_a_break_points",
     "years_from_dict",
     "get_result_from_year",
 ]
@@ -219,8 +219,8 @@ def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
 
     """
 
-    years_a = calculate_breakpoints(sub_a_year)
-    years_b = calculate_breakpoints(sub_b_year)
+    years_a = get_sub_a_break_points(sub_a_year)
+    years_b = get_sub_b_break_points(sub_b_year)
 
     # Only get interpolation years from subindicator B
     years_to_calculate = get_interpolation_years(years_b)
@@ -410,7 +410,7 @@ def read_from_csv(task_file, process_id):
     return eval(line)
 
 
-def calculate_breakpoints(user_input_years):
+def get_sub_b_break_points(user_input_years):
     """Calculate the breakpoints for the user input years.
 
     The objective is to get a dictionary with reporting year as key and
@@ -427,7 +427,7 @@ def calculate_breakpoints(user_input_years):
 
     user_years = [val.get("year") for val in user_input_years.values()]
 
-    # filter report intervals that are relevant for the user input
+    # filter report intervals that are relevant given the user input years
     report_intervals = [
         interval
         for interval in report_intervals
@@ -508,6 +508,76 @@ def calculate_breakpoints(user_input_years):
         breakpoints[interval] = unique_values
 
     return breakpoints
+
+
+def get_sub_a_break_points(user_input_years):
+    """Get the break points for Sub-A.
+
+    It will get the years that can be reported using the user input years. In case
+    the user input years are not in the reporting years, it will get the closest from
+    below and above, it will use this breakpoints to interpolate the values.
+
+    Args:
+        user_input_years: A list of user input years.
+
+    Returns:
+        A dictionary of break points.
+    """
+    # get a list of the years from the user input
+    user_years = [val.get("year") for val in user_input_years.values()]
+
+    # filter report intervals that are relevant given the user input years
+    reporting_years = [
+        report_year
+        for report_year in [2000, 2005, 2010, 2015] + list(range(2018, 2050, 3))
+        if report_year >= min(user_years) and report_year <= max(user_years)
+    ]
+
+    break_points = {}
+
+    for report_year in reporting_years:
+        # if the report year is in the list of user input years
+        if report_year in user_years:
+            # save the year to the break points
+            break_points[report_year] = [
+                year
+                for year in user_input_years.values()
+                if year.get("year") == report_year
+            ]
+
+        else:
+            # get years that will be used to interpolate
+            # get minimum year that is larger than the report year
+            after_report_year = min(
+                [
+                    year
+                    for year in user_input_years.values()
+                    if year.get("year") > report_year
+                ],
+                key=lambda x: x.get("year"),
+                default=None,
+            )
+
+            # get maximum year that is smaller than the report year
+            before_report_year = max(
+                [
+                    year
+                    for year in user_input_years.values()
+                    if year.get("year") < report_year
+                ],
+                key=lambda x: x.get("year"),
+                default=None,
+            )
+
+            # if both years exist
+            if before_report_year and after_report_year:
+                # save the years to the break points
+                break_points[report_year] = [before_report_year, after_report_year]
+
+            else:
+                break_points[report_year] = None
+
+    return break_points
 
 
 def get_sub_a_reports(parsed_df, year_s, model):

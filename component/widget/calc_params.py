@@ -185,6 +185,9 @@ class Calculation(sw.List):
         """get chips that will be inserted in the list elements and corresponds
         to the bands(years) selected for each of subindicator"""
 
+        if indicator == "sub_b":
+            return
+
         # Get the space where the elements will be inserted
         span = self.get_children(id_=f"span_{indicator}")[0]
         alert = self.get_children(id_=f"alert_{indicator}")[0]
@@ -198,7 +201,7 @@ class Calculation(sw.List):
 
         base_years = [str(val.get("year", "...")) for val in data.values()]
 
-        reporting_years = cs.calculate_breakpoints(data)
+        reporting_years = cs.get_sub_a_break_points(data)
 
         if base_years and not reporting_years:
             str_base_y = ", ".join(base_years)
@@ -216,8 +219,6 @@ class Calculation(sw.List):
 
         for reporting_y in reporting_years.keys():
 
-            _, report_y = reporting_y
-
             multichips.append(
                 [
                     v.Chip(
@@ -225,7 +226,7 @@ class Calculation(sw.List):
                         small=True,
                         draggable=True,
                         children=[
-                            str(report_y),
+                            str(reporting_y),
                         ],
                     ),
                     ", ",
