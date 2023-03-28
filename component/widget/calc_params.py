@@ -292,25 +292,30 @@ class CustomList(sw.List):
             self.counter += 1
             self.children = self.children + self.get_element()
 
-    def update_model(self, data, id_, target):
+    def update_model(self, data, id_, target, type_=None):
         """update v_model content based on select changes.
 
         Args:
             data (dict): data from the select change event (change)
             id_ (int): id of the element that triggered the change
             target (str): either asset or year.
+            type_ (str, optional): baseline or reporting. Defaults to None.
         """
 
         if not data["new"]:
             return
 
         tmp_vmodel = deepcopy(self.v_model)
-
-        # set a default value for the key if it doesn't exist
-        # do this for each level of the dict
-        # so we can set the value for the target key
         value = str(data["new"]) if target == "asset" else int(data["new"])
-        tmp_vmodel.setdefault(id_, {})[target] = value
+
+        if self.indicator == "sub_a":
+            # set a default value for the key if it doesn't exist
+            # do this for each level of the dict
+            # so we can set the value for the target key
+            tmp_vmodel.setdefault(id_, {})[target] = value
+
+        else:
+            tmp_vmodel.setdefault(id_, {}).setdefault(type_, {})[target] = value
 
         self.v_model = tmp_vmodel
 
@@ -359,7 +364,7 @@ class CustomList(sw.List):
         )
 
         # I will skip double select for sub_b
-        if self.indicator == "sub_x":
+        if self.indicator == "sub_b":
             # only display report widgets when using sub_b
             w_reportp = v.Select(
                 class_="mr-3",
@@ -392,7 +397,7 @@ class CustomList(sw.List):
                         children=[w_basep_container, w_reportp_container],
                     )
                     # I'm gonna skip the report select for sub_b
-                    if self.indicator == "sub_x"
+                    if self.indicator == "sub_b"
                     else v.ListItemContent(children=[w_basep_container]),
                 ]
                 + actions,
