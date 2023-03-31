@@ -242,6 +242,9 @@ class Calculation(sw.List):
 
         span.children = ["Reporting years: "] + chips
 
+        # Send reporting years to the model so it can be listened by dashboard
+        self.model.reporting_a_years = reporting_years.keys()
+
 
 class CustomList(sw.List):
 
@@ -255,6 +258,8 @@ class CustomList(sw.List):
     "list: image collection items to be loaded in each select pair"
     indicator = None
     "str: indicator name. sub_a or sub_b. The widget will render the corresponding subindicator"
+    ids = List([]).tag(sync=True)
+    "list: list of ids of the elements that are currently loaded in the list"
 
     def __init__(
         self, indicator: Literal["sub_a", "sub_b"], items: list = [], label: str = ""
@@ -273,6 +278,9 @@ class CustomList(sw.List):
 
     def remove_element(self, *args, id_):
         """Removes element from the current list"""
+
+        # remove id from self.ids
+        self.ids = [val for val in self.ids if val != id_]
 
         self.children = [
             chld for chld in self.children if chld not in self.get_children(id_=id_)
@@ -325,6 +333,8 @@ class CustomList(sw.List):
 
         id_ = self.counter
 
+        self.ids.append(id_)
+
         sub_btn = v.Btn(children=[v.Icon(children=["mdi-minus"])], icon=True)
         sub_btn.on_event("click", lambda *args: self.remove_element(*args, id_=id_))
 
@@ -342,7 +352,7 @@ class CustomList(sw.List):
         )
 
         w_basep = v.Select(
-            class_="mr-2",
+            class_="mr-2 max-width-200",
             v_model=False,
             attributes={"id": "selects"},
             label=cm.calculation.y_base,
@@ -355,36 +365,30 @@ class CustomList(sw.List):
         )
 
         w_basep.observe(
-            lambda chg: self.update_model(chg, id_=id_, target="asset"),
+            lambda chg: self.update_model(chg, id_=id_, target="asset", type_="base"),
             "v_model",
         )
         w_base_yref.observe(
-            lambda chg: self.update_model(chg, id_=id_, target="year"),
+            lambda chg: self.update_model(chg, id_=id_, target="year", type_="base"),
             "v_model",
         )
 
         # I will skip double select for sub_b
         if self.indicator == "sub_b":
             # only display report widgets when using sub_b
-            w_reportp = v.Select(
-                class_="mr-3",
-                v_model=False,
-                attributes={"id": "selects"},
-                label=cm.calculation.y_report,
-                items=self.items,
-            )
-            w_report_yref = SelectYear()
 
-            w_reportp_container = sw.Flex(
-                class_="d-flex flex-row", children=[w_reportp, w_report_yref]
-            )
+            sub_b_content = CustomListB(w_basep_container, items=self.items)
 
-            w_reportp.observe(
-                lambda chg: self.update_model(chg, id_=id_, target="asset"),
+            sub_b_content.w_reportp.observe(
+                lambda chg: self.update_model(
+                    chg, id_=id_, target="asset", type_="report"
+                ),
                 "v_model",
             )
-            w_report_yref.observe(
-                lambda chg: self.update_model(chg, id_=id_, target="year"),
+            sub_b_content.w_report_yref.observe(
+                lambda chg: self.update_model(
+                    chg, id_=id_, target="year", type_="report"
+                ),
                 "v_model",
             )
 
@@ -393,10 +397,7 @@ class CustomList(sw.List):
                 attributes={"id": id_},
                 class_="ma-0 pa-0",
                 children=[
-                    v.ListItemContent(
-                        children=[w_basep_container, w_reportp_container],
-                    )
-                    # I'm gonna skip the report select for sub_b
+                    sub_b_content
                     if self.indicator == "sub_b"
                     else v.ListItemContent(children=[w_basep_container]),
                 ]
@@ -425,6 +426,8 @@ class CustomList(sw.List):
         select_wgts = self.get_children(id_="selects")
         ref_wgts = self.get_children(id_="ref_select")
 
+        [self.remove_element(id_=id) for id in self.ids if id != 1]
+
         [setattr(select, "v_model", None) for select in (select_wgts + ref_wgts)]
 
         # And also reset the v_model
@@ -452,6 +455,7 @@ class EditionDialog(sw.Dialog):
             sw.Card(
                 max_width=650,
                 min_height=420,
+                style_="height: 100%;",
                 class_="pa-4",
                 children=[
                     v.CardTitle(
@@ -479,11 +483,102 @@ class EditionDialog(sw.Dialog):
 class SelectYear(v.Select):
     """Select widget to select a year, it will be always the same"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, label=cm.calculation.match_year, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.v_model = False
-        self.style_ = "min-width: 105px; max-width: 105px"
-        self.label = cm.calculation.match_year
+        self.style_ = "min-width: 125px; max-width: 125px"
+        self.label = label
         self.items = param.YEARS
         self.attributes = {"id": "ref_select"}
+
+
+class CustomListB(sw.ListItemContent):
+    def __init__(self, w_basep_container, items, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.items = items
+
+        self.w_basep_container = w_basep_container
+
+        self.w_report_yr = sw.Select(
+            label=cm.calculation.y_report,
+            style_="min-width: 200px; max-width: 2005px",
+            attributes={"id": "selects"},
+            items=param.REPORT_INTERVALS[2:],
+            v_model=False,
+        )
+
+        self.w_reportp = v.Select(
+            class_="mr-3 ",
+            v_model=False,
+            attributes={"id": "selects"},
+            label=cm.calculation.y_report,
+            items=self.items,
+        )
+
+        self.w_report_yref = SelectYear()
+
+        self.w_reportp_container = sw.Flex(
+            class_="d-flex flex-row", children=[self.w_reportp, self.w_report_yref]
+        )
+
+        span_base = v.Html(
+            tag="span", class_="mr-2", children=["...."], attributes={"id": "span_base"}
+        )
+        span_report = v.Html(
+            tag="span",
+            class_="mr-2",
+            children=["...."],
+            attributes={"id": "span_report"},
+        )
+
+        self.children = [
+            sw.Card(
+                children=[
+                    sw.CardTitle(children=[sw.Spacer(), self.w_report_yr]),
+                    sw.CardText(
+                        children=[
+                            sw.Flex(
+                                class_="d-flex align-center",
+                                children=[span_base, self.w_basep_container],
+                            ),
+                            sw.Flex(
+                                class_="d-flex align-center",
+                                children=[span_report, self.w_reportp_container],
+                            ),
+                        ]
+                    ),
+                ]
+            )
+        ]
+
+        _ = [
+            setattr(chld, "label", cm.calculation.y_actual)
+            for chld in self.get_children(id_="ref_select")
+        ]
+
+        self.w_report_yr.observe(self.fill_span_values, "v_model")
+
+    def fill_span_values(self, change):
+        """set the values of the span elements.
+
+        They will change according with the w_report_yr selected.
+
+        """
+
+        val = change["new"]
+
+        if val:
+
+            span_base = self.get_children(id_="span_base")[0]
+            span_report = self.get_children(id_="span_report")[0]
+
+            # from REPORT_INTERVALS, get the index of the selected value and
+            # substract 1 to get the previous value
+
+            current = param.REPORT_INTERVALS.index(val)
+            previous = param.REPORT_INTERVALS[max(0, current - 1)]
+
+            span_report.children = [f"{val}:"]
+            span_base.children = [f"{previous}:"]

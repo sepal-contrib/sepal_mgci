@@ -13,6 +13,12 @@ YEARS = pd.date_range(
 YEARS.sort(reverse=True)
 "list: list of years used in calculation dialogs to match asset selection"
 
+# Get current year
+current_year = pd.Timestamp.now().year
+
+REPORT_INTERVALS = [2000, 2005, 2010, 2015] + list(range(2018, current_year + 1, 3))
+"list: list of years used in the report to match asset selection"
+
 # SET SOME PARAMETERS
 UPPER_THRESHOLDS = {98: "green", 95: "orange", 90: "red"}
 

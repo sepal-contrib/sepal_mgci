@@ -25,6 +25,7 @@ __all__ = [
     "get_sub_a_break_points",
     "years_from_dict",
     "get_result_from_year",
+    "get_sub_b_years",
 ]
 
 
@@ -220,10 +221,8 @@ def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
     """
 
     years_a = get_sub_a_break_points(sub_a_year)
-    years_b = get_sub_b_break_points(sub_b_year)
 
-    # Only get interpolation years from subindicator B
-    years_to_calculate = get_interpolation_years(years_b)
+    years_to_calculate = get_sub_b_years(sub_b_year)
 
     if matrix_a == matrix_b:
         # Add years from years_a that are not present in years_b
@@ -246,12 +245,26 @@ def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
         ]
 
 
-def get_result_from_year(results, year, indicator):
+def get_result_from_year(model, year, indicator):
     """Return the results for the given year.
 
     It will use the results dictionary to get the results for the requested
-    year. If the year is not found, it will raise an exception.
+    year.
+
+    If indicator sub a es required, it will first try to search it within the individual
+    years, and if it is not found, it will search it within the double years. If there's
+    not a match, it will try to interpolate the results.
+
+    Args:
+        results (dict): dictionary with results coming from model
+        year (int): year to get the results from
+        indicator (str): indicator to get the results from
+        same_asset_matrix (bool): if matrix and asset are the same
     """
+
+    results = model.results
+    same_asset_matrix = model.same_asset_matrix
+    reporting_a_years = model.reporting_a_years
 
     str_year = str(year)
 
@@ -260,6 +273,7 @@ def get_result_from_year(results, year, indicator):
 
     # Check that indicator is sub_a and year is in individual years
     if indicator == "sub_a" and any([str_year in yr for yr in individual_yrs]):
+        print("here")
         return parse_result(results[str_year]["groups"], single=True)
 
     # Otherwise, check that year is in double years
@@ -270,8 +284,10 @@ def get_result_from_year(results, year, indicator):
         assert sum(in_double) == 1, "More than 2 years in double_years"
         idx = in_double.index(True)
 
-        if indicator == "sub_a":
+        # We can only try to get year from double years if indicator same_asset_matrix
+        if indicator == "sub_a" and same_asset_matrix:
             # If we are in sub_a, we need to extract target year from double years
+            print("here2")
             parsed_df = parse_result(results[double_years[idx]]["groups"])
 
             # Get the name of the column that contains the target year
@@ -284,19 +300,32 @@ def get_result_from_year(results, year, indicator):
             parsed_df = parsed_df.rename(columns={target_lc: "lc_class"})
 
             return parsed_df
+        elif indicator == "sub_b":
+            print("here3")
+            return parse_result(results[double_years[idx]]["groups"])
 
-        return parse_result(results[double_years[idx]]["groups"])
+    # Try to get the year by interpolating between two years only if we are in sub_a
+    if indicator == "sub_a":
+        print("here 4")
+        assert (
+            int(year) in reporting_a_years
+        ), "You're not suppose to be asking for this year"
+
+        year1 = model.reporting_a_years[int(year)][0]["year"]
+        year2 = model.reporting_a_years[int(year)][1]["year"]
+
+        return interpolate_sub_a_data(model, year1, year2, year)
 
     raise Exception(
         f"{str_year} not found in results, are you sure indicator is correct?"
     )
 
 
-def interpolate_sub_a_data(results, year1, year2, target_year):
+def interpolate_sub_a_data(model, year1, year2, target_year):
     """Interpolate sub A data between two years.
 
     Args:
-        results (pd.DataFrame): results DataFrame coming from parse_result
+        mode (MGCIModel): MGCI model containing results from calculation
         year1 (int): first year
         year2 (int): second year
         target_year (int): target year
@@ -308,8 +337,8 @@ def interpolate_sub_a_data(results, year1, year2, target_year):
     if not (year1 < target_year < year2):
         raise Exception("target year has to be in between year1 and year 2")
 
-    df1 = get_result_from_year(results, year1, "sub_a")
-    df2 = get_result_from_year(results, year2, "sub_a")
+    df1 = get_result_from_year(model, year1, "sub_a")
+    df2 = get_result_from_year(model, year2, "sub_a")
 
     # Ensure both dataframes have the same structure
     if not (df1.columns == df2.columns).all():
@@ -416,6 +445,11 @@ def get_sub_b_break_points(user_input_years):
     The objective is to get a dictionary with reporting year as key and
     all the years that are relevant for the reporting year as value.
 
+    .. deprecated:: 0.2.0
+
+        This function is deprecated and will be removed in the next release.
+        Use :func:`get_sub_b_break_points` instead.
+
     """
 
     breakpoints = {}
@@ -423,7 +457,7 @@ def get_sub_b_break_points(user_input_years):
     if not user_input_years:
         return breakpoints
 
-    report_intervals = [2000, 2005, 2010, 2015] + list(range(2018, 2050, 3))
+    report_intervals = param.REPORT_INTERVALS
 
     user_years = [val.get("year") for val in user_input_years.values()]
 
@@ -510,6 +544,17 @@ def get_sub_b_break_points(user_input_years):
     return breakpoints
 
 
+def get_sub_b_years(user_input_years):
+
+    # extract tuple of years from user input
+
+    reporting_years = []
+    for user_tuple in user_input_years.values():
+        reporting_years.append([user_tuple.get("base"), user_tuple.get("report")])
+
+    return reporting_years
+
+
 def get_sub_a_break_points(user_input_years):
     """Get the break points for Sub-A.
 
@@ -529,7 +574,7 @@ def get_sub_a_break_points(user_input_years):
     # filter report intervals that are relevant given the user input years
     reporting_years = [
         report_year
-        for report_year in [2000, 2005, 2010, 2015] + list(range(2018, 2050, 3))
+        for report_year in param.REPORT_INTERVALS
         if report_year >= min(user_years) and report_year <= max(user_years)
     ]
 

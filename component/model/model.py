@@ -62,6 +62,12 @@ class MgciModel(Model):
     matrix_sub_b = Dict({}).tag(sync=True)
     "dict: comes from reclassify_tile.viewb.model.matrix which are the {src:dst} classes"
 
+    reporting_a_years = Dict({}).tag(sync=True)
+    """list: list of reporting years based on user selection. It's calculated when chips are created and it's used to alert dashboard of which years are available for statistics"""
+
+    same_asset_matrix = Bool(False).tag(sync=True)
+    "bool: True if both subindicator A and B have the same matrix and same asset. It will be used to control the interpolation process. If True, get_result_from_year can search the requested year in double_years, otherwise it will search in single_years and if it's not found, it will interpolate"
+
     # Results
 
     biobelt_image = None

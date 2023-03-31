@@ -97,6 +97,7 @@
         },
         "y_base" : "Baseline period (year)",
         "y_report" : "Reporting period (year)",
+        "y_actual" : "Actual year",
         "error" : {
             "no_subind" : "You have to select at least one indicator.",
             "no_years" : "You have to select at least one layer (year)."

@@ -26,7 +26,7 @@ class StatisticCard(sw.Card):
 
         super().__init__(*args, **kwargs)
 
-        self._metadata = {"name": "statistics"}
+        self.attributes = {"id": "statistics"}
         self.class_ = "ma-4"
         self.row = True
 
@@ -77,6 +77,7 @@ class StatisticCard(sw.Card):
         )
 
     def get_chart(self, belt_class):
+
         values = (
             self.df.groupby(["lc_class"], as_index=False).sum()
             if belt_class == "Total"
@@ -93,8 +94,8 @@ class StatisticCard(sw.Card):
         labels, colors = zip(
             *[
                 (
-                    self.model.lulc_classes[str(int(class_))][0],
-                    self.model.lulc_classes[str(int(class_))][1],
+                    self.model.lulc_classes_sub_a[class_][0],
+                    self.model.lulc_classes_sub_a[class_][1],
                 )
                 for class_ in values["lc_class"]
             ]

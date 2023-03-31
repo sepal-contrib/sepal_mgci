@@ -121,6 +121,10 @@ class CalculationView(sw.Card):
             if all([not self.model.sub_a_year, not self.model.sub_b_year]):
                 raise Exception(cm.calculation.error.no_years)
 
+        # TODO: Check that user years are consistent:
+        # - for sub_b: there cannot be repeated reporting years
+        # - for sub_a: check that reporting is higher than baseline
+
         # Calculate regions
 
         head_msg = sw.Flex(children=[cm.dashboard.alert.computing.format(area_type)])
@@ -170,6 +174,13 @@ class CalculationView(sw.Card):
         with concurrent.futures.ThreadPoolExecutor() as executor:
 
             self.model.done = False
+
+            # set same_year_matrix variable from model, it will be used when quering the
+            # dashboard
+            self.model.same_asset_matrix = all(
+                [self.model.matrix_sub_a, self.model.matrix_sub_b],
+                [self.model.lc_asset_sub_a, self.model.lc_asset_sub_b],
+            )
 
             years = cs.get_years(
                 self.model.sub_a_year,
