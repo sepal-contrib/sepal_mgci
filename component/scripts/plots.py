@@ -1,61 +1,234 @@
+# -*- coding: utf-8 -*-
+"""
+Produces Sankey Diagrams with matplotlib to show the transition in land cover.
+adopted from : Sankey by  Anneya Golob & marcomanz & pierre-sassoulas & jorwoods
+from https://github.com/anazalea/pySankey
+"""
+
+from collections import defaultdict
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-from plotly import graph_objects as go
-
-# Define a function that receives a dataframe and returns a sankey diagram
 
 
-def create_sankey(df):
-    # Define a dummy dataframe that shows Land cover transitions from 2000 to 2010
+def sankey(df, colorDict=None, aspect=4, rightColor=False, fontsize=14):
+    """
+    Sankey Diagram for showing land cover transitions
+    Inputs:
+        df = pandas dataframe with first column as left, second column as right and third colum as leftWeight
+        colorDict = Dictionary of colors to use for each label
+            {'label':'color'}
+        aspect = vertical extent of the diagram in units of horizontal extent
+        rightColor = If true, each strip in the diagram will be be colored
+                    according to its left label
+    Ouput: fig, ax
+    """
+    left = df[df.columns[0]]
+    right = df[df.columns[1]]
+    leftWeight = df["sum"]
+    rightWeight = []
 
-    df = pd.DataFrame(
+    leftLabels = []
+    rightLabels = []
+    # Check weights
+    if len(leftWeight) == 0:
+        leftWeight = np.ones(len(left))
+
+    if len(rightWeight) == 0:
+        rightWeight = leftWeight
+
+    fig, ax = plt.subplots(figsize=(4, 6))
+
+    # Create Dataframe
+    if isinstance(left, pd.Series):
+        left = left.reset_index(drop=True)
+    if isinstance(right, pd.Series):
+        right = right.reset_index(drop=True)
+    dataFrame = pd.DataFrame(
         {
-            "label": [
-                "A1",
-                "A2",
-                "A2",
-                "B1",
-                "B1",
-                "B1",
-                "B2",
-                "B2",
-                "B2",
-                "C1",
-                "C1",
-                "C1",
-                "C2",
-                "C2",
-                "C2",
-                "C3",
-                "C3",
-                "C3",
-            ],
-            "source": [0, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6],
-            "target": [1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7],
-            # define a value for each link
-            "value": [8, 2, 4, 8, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
-        }
+            "left": left,
+            "right": right,
+            "leftWeight": leftWeight,
+            "rightWeight": rightWeight,
+        },
+        index=range(len(left)),
     )
 
-    fig = go.Figure(
-        data=[
-            go.Sankey(
-                node=dict(
-                    pad=15,
-                    thickness=20,
-                    line=dict(color="black", width=0.5),
-                    label=df["label"],
-                ),
-                link=dict(
-                    source=df[
-                        "source"
-                    ],  # indices correspond to labels, eg A1, A2, A2, B1, ...
-                    target=df["target"],
-                    value=df["value"],
-                ),
+    if len(dataFrame[(dataFrame.left.isnull()) | (dataFrame.right.isnull())]):
+        raise ValueError("Sankey graph does not support null values.")
+
+    # Identify all labels that appear 'left' or 'right'
+
+    # Identify left labels
+    if len(leftLabels) == 0:
+        leftLabels = pd.Series(dataFrame.left.unique()).unique()
+
+    # Identify right labels
+    if len(rightLabels) == 0:
+        rightLabels = pd.Series(dataFrame.right.unique()).unique()
+
+    # If no colorDict given
+    if colorDict is None:
+        raise ValueError("specify a colour palette")
+
+    # Determine widths of individual strips
+    ns_l = defaultdict()
+    ns_r = defaultdict()
+    for leftLabel in leftLabels:
+        leftDict = {}
+        rightDict = {}
+        for rightLabel in rightLabels:
+            leftDict[rightLabel] = dataFrame[
+                (dataFrame.left == leftLabel) & (dataFrame.right == rightLabel)
+            ].leftWeight.sum()
+            rightDict[rightLabel] = dataFrame[
+                (dataFrame.left == leftLabel) & (dataFrame.right == rightLabel)
+            ].rightWeight.sum()
+        ns_l[leftLabel] = leftDict
+        ns_r[leftLabel] = rightDict
+
+    # Determine positions of left label patches and total widths
+    leftWidths = defaultdict()
+    for i, leftLabel in enumerate(leftLabels):
+        myD = {}
+        myD["left"] = dataFrame[dataFrame.left == leftLabel].leftWeight.sum()
+        if i == 0:
+            myD["bottom"] = 0
+            myD["top"] = myD["left"]
+            topEdge = myD["top"]
+        else:
+            myD["bottom"] = (
+                leftWidths[leftLabels[i - 1]]["top"] + 0.02 * dataFrame.leftWeight.sum()
             )
-        ]
+            myD["top"] = myD["bottom"] + myD["left"]
+            topEdge = myD["top"]
+        leftWidths[leftLabel] = myD
+
+    # Determine positions of right label patches and total widths
+    rightWidths = defaultdict()
+    for i, rightLabel in enumerate(rightLabels):
+        myD = {}
+        myD["right"] = dataFrame[dataFrame.right == rightLabel].rightWeight.sum()
+        if i == 0:
+            myD["bottom"] = 0
+            myD["top"] = myD["right"]
+            topEdge = myD["top"]
+        else:
+            myD["bottom"] = (
+                rightWidths[rightLabels[i - 1]]["top"]
+                + 0.02 * dataFrame.rightWeight.sum()
+            )
+            myD["top"] = myD["bottom"] + myD["right"]
+            topEdge = myD["top"]
+        rightWidths[rightLabel] = myD
+
+    # Total vertical extent of diagram
+    xMax = topEdge / aspect
+
+    # Draw vertical bars on left and right of each  label's section & print label
+    for leftLabel in leftLabels:
+        ax.fill_between(
+            [-0.02 * xMax, 0],
+            2 * [leftWidths[leftLabel]["bottom"]],
+            2 * [leftWidths[leftLabel]["bottom"] + leftWidths[leftLabel]["left"]],
+            color=colorDict[leftLabel],
+            alpha=0.99,
+        )
+        ax.text(
+            -0.05 * xMax,
+            leftWidths[leftLabel]["bottom"] + 0.5 * leftWidths[leftLabel]["left"],
+            leftLabel,
+            {"ha": "right", "va": "center"},
+            fontsize=fontsize,
+        )
+    for rightLabel in rightLabels:
+        ax.fill_between(
+            [xMax, 1.02 * xMax],
+            2 * [rightWidths[rightLabel]["bottom"]],
+            2 * [rightWidths[rightLabel]["bottom"] + rightWidths[rightLabel]["right"]],
+            color=colorDict[rightLabel],
+            alpha=0.99,
+        )
+        ax.text(
+            1.05 * xMax,
+            rightWidths[rightLabel]["bottom"] + 0.5 * rightWidths[rightLabel]["right"],
+            rightLabel,
+            {"ha": "left", "va": "center"},
+            fontsize=fontsize,
+        )
+
+    # Plot strips
+    for leftLabel in leftLabels:
+        for rightLabel in rightLabels:
+            labelColor = leftLabel
+            if rightColor:
+                labelColor = rightLabel
+            if (
+                len(
+                    dataFrame[
+                        (dataFrame.left == leftLabel) & (dataFrame.right == rightLabel)
+                    ]
+                )
+                > 0
+            ):
+                # Create array of y values for each strip, half at left value,
+                # half at right, convolve
+                ys_d = np.array(
+                    50 * [leftWidths[leftLabel]["bottom"]]
+                    + 50 * [rightWidths[rightLabel]["bottom"]]
+                )
+                ys_d = np.convolve(ys_d, 0.05 * np.ones(20), mode="valid")
+                ys_d = np.convolve(ys_d, 0.05 * np.ones(20), mode="valid")
+                ys_u = np.array(
+                    50 * [leftWidths[leftLabel]["bottom"] + ns_l[leftLabel][rightLabel]]
+                    + 50
+                    * [rightWidths[rightLabel]["bottom"] + ns_r[leftLabel][rightLabel]]
+                )
+                ys_u = np.convolve(ys_u, 0.05 * np.ones(20), mode="valid")
+                ys_u = np.convolve(ys_u, 0.05 * np.ones(20), mode="valid")
+
+                # Update bottom edges at each label so next strip starts at the right place
+                leftWidths[leftLabel]["bottom"] += ns_l[leftLabel][rightLabel]
+                rightWidths[rightLabel]["bottom"] += ns_r[leftLabel][rightLabel]
+                ax.fill_between(
+                    np.linspace(0, xMax, len(ys_d)),
+                    ys_d,
+                    ys_u,
+                    alpha=0.65,
+                    color=colorDict[labelColor],
+                )
+    ax.axis("off")
+    ax.set_title(
+        f"Land cover transitions from {df.columns[0]} to {df.columns[1]}",
+        fontweight="bold",
+    )
+    left, width = -0.001, 0.5
+    bottom, height = 0.25, 0.5
+    right = left + width
+    top = bottom + height
+
+    ax.text(
+        left,
+        0.5 * (bottom + top),
+        df.columns[0],
+        horizontalalignment="right",
+        verticalalignment="center",
+        rotation="vertical",
+        alpha=0.15,
+        fontsize=50,
+        transform=ax.transAxes,
+    )
+    ax.text(
+        1.100,
+        0.5 * (bottom + top),
+        df.columns[1],
+        horizontalalignment="right",
+        verticalalignment="center",
+        rotation="vertical",
+        alpha=0.15,
+        fontsize=50,
+        transform=ax.transAxes,
     )
 
-    fig.update_layout(title_text="Transition Land Cover", font_size=10)
-
-    return fig
+    return (fig, ax)

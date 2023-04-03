@@ -300,7 +300,7 @@ class CustomList(sw.List):
             self.counter += 1
             self.children = self.children + self.get_element()
 
-    def update_model(self, data, id_, target, type_=None):
+    def update_model(self, data, id_, target, year, type_=None):
         """update v_model content based on select changes.
 
         Args:
@@ -323,7 +323,9 @@ class CustomList(sw.List):
             tmp_vmodel.setdefault(id_, {})[target] = value
 
         else:
-            tmp_vmodel.setdefault(id_, {}).setdefault(type_, {})[target] = value
+            tmp_vmodel.setdefault(id_, {}).setdefault(year, {}).setdefault(type_, {})[
+                target
+            ] = value
 
         self.v_model = tmp_vmodel
 
@@ -373,7 +375,6 @@ class CustomList(sw.List):
             "v_model",
         )
 
-        # I will skip double select for sub_b
         if self.indicator == "sub_b":
             # only display report widgets when using sub_b
 
@@ -390,6 +391,12 @@ class CustomList(sw.List):
                     chg, id_=id_, target="year", type_="report"
                 ),
                 "v_model",
+            )
+
+            sub_b_content.w_report_yr.observe(
+                lambda chg: self.update_model(
+                    chg, id_=id_, target="year", type_="year"
+                ),
             )
 
         item = [
