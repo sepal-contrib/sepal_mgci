@@ -3,7 +3,7 @@ from typing import Literal
 
 import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
-from traitlets import Bool, Dict, Int, List, directional_link
+from traitlets import Bool, CInt, Dict, Int, List, directional_link, link
 
 import component.frontend
 import component.parameter.module_parameter as param
@@ -183,10 +183,12 @@ class Calculation(sw.List):
 
     def get_chips(self, change, indicator):
         """get chips that will be inserted in the list elements and corresponds
-        to the bands(years) selected for each of subindicator"""
+        to the bands(years) selected for each of subindicator.
 
-        if indicator == "sub_b":
-            return
+
+        Args:
+            change["new"]: It's the v_model from CustomList component, it will contain the user selection for each of the subindicators.
+        """
 
         # Get the space where the elements will be inserted
         span = self.get_children(id_=f"span_{indicator}")[0]
@@ -195,9 +197,17 @@ class Calculation(sw.List):
         if not change.get("new", None):
             alert.reset()
             span.children = [""]
+            self.model.reporting_years_sub_b = []
+            self.model.reporting_years_sub_a = {}
             return
 
         data = change["new"]
+
+        if indicator == "sub_b":
+            self.model.reporting_years_sub_b = [
+                next(iter(list(y.keys()))) for y in list(data.values())
+            ]
+            return
 
         base_years = [str(val.get("year", "...")) for val in data.values()]
 
@@ -243,7 +253,7 @@ class Calculation(sw.List):
         span.children = ["Reporting years: "] + chips
 
         # Send reporting years to the model so it can be listened by dashboard
-        self.model.reporting_a_years = reporting_years.keys()
+        self.model.reporting_years_sub_a = reporting_years
 
 
 class CustomList(sw.List):
@@ -300,7 +310,7 @@ class CustomList(sw.List):
             self.counter += 1
             self.children = self.children + self.get_element()
 
-    def update_model(self, data, id_, target, year, type_=None):
+    def update_model(self, data, id_, target=None):
         """update v_model content based on select changes.
 
         Args:
@@ -314,18 +324,17 @@ class CustomList(sw.List):
             return
 
         tmp_vmodel = deepcopy(self.v_model)
-        value = str(data["new"]) if target == "asset" else int(data["new"])
 
         if self.indicator == "sub_a":
+            value = str(data["new"]) if target == "asset" else int(data["new"])
             # set a default value for the key if it doesn't exist
             # do this for each level of the dict
-            # so we can set the value for the target key
+            # so we can set the value for the target
+            # key
             tmp_vmodel.setdefault(id_, {})[target] = value
 
         else:
-            tmp_vmodel.setdefault(id_, {}).setdefault(year, {}).setdefault(type_, {})[
-                target
-            ] = value
+            tmp_vmodel[id_] = data["new"]
 
         self.v_model = tmp_vmodel
 
@@ -367,36 +376,21 @@ class CustomList(sw.List):
         )
 
         w_basep.observe(
-            lambda chg: self.update_model(chg, id_=id_, target="asset", type_="base"),
+            lambda chg: self.update_model(chg, id_=id_, target="asset"),
             "v_model",
         )
         w_base_yref.observe(
-            lambda chg: self.update_model(chg, id_=id_, target="year", type_="base"),
+            lambda chg: self.update_model(chg, id_=id_, target="year"),
             "v_model",
         )
 
         if self.indicator == "sub_b":
+
             # only display report widgets when using sub_b
+            sub_b_content = CustomListB(items=self.items)
 
-            sub_b_content = CustomListB(w_basep_container, items=self.items)
-
-            sub_b_content.w_reportp.observe(
-                lambda chg: self.update_model(
-                    chg, id_=id_, target="asset", type_="report"
-                ),
-                "v_model",
-            )
-            sub_b_content.w_report_yref.observe(
-                lambda chg: self.update_model(
-                    chg, id_=id_, target="year", type_="report"
-                ),
-                "v_model",
-            )
-
-            sub_b_content.w_report_yr.observe(
-                lambda chg: self.update_model(
-                    chg, id_=id_, target="year", type_="year"
-                ),
+            sub_b_content.observe(
+                lambda chg: self.update_model(chg, id_=id_), "v_model"
             )
 
         item = [
@@ -490,44 +484,84 @@ class EditionDialog(sw.Dialog):
 class SelectYear(v.Select):
     """Select widget to select a year, it will be always the same"""
 
-    def __init__(self, label=cm.calculation.match_year, *args, **kwargs):
+    def __init__(self, label=cm.calculation.match_year, attributes={}, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.v_model = False
         self.style_ = "min-width: 125px; max-width: 125px"
         self.label = label
         self.items = param.YEARS
-        self.attributes = {"id": "ref_select"}
+        self.attributes = attributes or {"id": "ref_select"}
 
 
 class CustomListB(sw.ListItemContent):
-    def __init__(self, w_basep_container, items, *args, **kwargs):
+
+    v_model = Dict(allow_none=True).tag(sync=True)
+
+    def __init__(self, items, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.items = items
-
-        self.w_basep_container = w_basep_container
+        self.attributes = {"id": "custom_list_sub_b"}
 
         self.w_report_yr = sw.Select(
             label=cm.calculation.y_report,
             style_="min-width: 200px; max-width: 2005px",
-            attributes={"id": "selects"},
+            attributes={"id": "selects", "name": "report_year"},
             items=param.REPORT_INTERVALS[2:],
             v_model=False,
         )
 
-        self.w_reportp = v.Select(
+        w_basep = v.Select(
+            class_="mr-2 max-width-200",
+            v_model=False,
+            attributes={
+                "id": "selects",
+                "type": "base",
+                "target": "asset",
+                "clean": True,
+            },
+            label=cm.calculation.y_base,
+            items=self.items,
+        )
+
+        w_base_yref = SelectYear(
+            attributes={
+                "id": "ref_select",
+                "type": "base",
+                "target": "year",
+                "clean": True,
+            }
+        )
+
+        w_basep_container = sw.Flex(
+            class_="d-flex flex-row", children=[w_basep, w_base_yref]
+        )
+
+        w_reportp = v.Select(
             class_="mr-3 ",
             v_model=False,
-            attributes={"id": "selects"},
+            attributes={
+                "id": "selects",
+                "type": "report",
+                "target": "asset",
+                "clean": True,
+            },
             label=cm.calculation.y_report,
             items=self.items,
         )
 
-        self.w_report_yref = SelectYear()
+        w_report_yref = SelectYear(
+            attributes={
+                "id": "ref_select",
+                "type": "report",
+                "target": "year",
+                "clean": True,
+            }
+        )
 
-        self.w_reportp_container = sw.Flex(
-            class_="d-flex flex-row", children=[self.w_reportp, self.w_report_yref]
+        w_reportp_container = sw.Flex(
+            class_="d-flex flex-row", children=[w_reportp, w_report_yref]
         )
 
         span_base = v.Html(
@@ -548,11 +582,11 @@ class CustomListB(sw.ListItemContent):
                         children=[
                             sw.Flex(
                                 class_="d-flex align-center",
-                                children=[span_base, self.w_basep_container],
+                                children=[span_base, w_basep_container],
                             ),
                             sw.Flex(
                                 class_="d-flex align-center",
-                                children=[span_report, self.w_reportp_container],
+                                children=[span_report, w_reportp_container],
                             ),
                         ]
                     ),
@@ -567,12 +601,46 @@ class CustomListB(sw.ListItemContent):
 
         self.w_report_yr.observe(self.fill_span_values, "v_model")
 
+        w_basep.observe(self.set_v_model, "v_model")
+        w_base_yref.observe(self.set_v_model, "v_model")
+
+        w_reportp.observe(self.set_v_model, "v_model")
+        w_report_yref.observe(self.set_v_model, "v_model")
+
+        # Set default value for reporting year as the first item
+        # set after linking the observers
+        self.w_report_yr.v_model = self.w_report_yr.items[0]
+
+    def set_v_model(self, change):
+        """set the v_model of the w_reportp"""
+
+        tmp_vmodel = deepcopy(self.v_model)
+
+        year = self.w_report_yr.v_model
+
+        if year:
+
+            type_ = change["owner"].attributes.get("type")
+            target = change["owner"].attributes.get("target")
+            value = change["owner"].v_model
+
+            tmp_vmodel.setdefault(year, {}).setdefault(type_, {})[target] = value
+
+        self.v_model = tmp_vmodel
+
     def fill_span_values(self, change):
         """set the values of the span elements.
 
         They will change according with the w_report_yr selected.
 
         """
+
+        [
+            setattr(w, "v_model", None)
+            for w in self.get_children(attr="clean", value=True)
+        ]
+
+        self.v_model = {}
 
         val = change["new"]
 
