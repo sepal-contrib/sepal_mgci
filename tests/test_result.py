@@ -1,3 +1,5 @@
+import component.scripts as cs
+
 results = {
     "2022_2020": {
         "groups": [
@@ -286,23 +288,62 @@ sub_a_year = {
 
 sub_b_year = {
     1: {
-        "base": {
-            "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1992",
-            "year": 2022,
-        },
-        "report": {
-            "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1994",
-            "year": 2020,
+        2022: {
+            "base": {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1992",
+                "year": 2022,
+            },
+            "report": {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1994",
+                "year": 2020,
+            },
         },
     },
     2: {
-        "base": {
-            "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1994",
-            "year": 2010,
-        },
-        "report": {
-            "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1996",
-            "year": 2015,
+        2015: {
+            "base": {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1994",
+                "year": 2010,
+            },
+            "report": {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1996",
+                "year": 2015,
+            },
         },
     },
 }
+
+
+def test_get_sub_b_years():
+
+    expected_result = [
+        [
+            {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1992",
+                "year": 2022,
+            },
+            {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1994",
+                "year": 2020,
+            },
+        ],
+        [
+            {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1994",
+                "year": 2010,
+            },
+            {
+                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/1996",
+                "year": 2015,
+            },
+        ],
+    ]
+
+    assert cs.get_sub_b_years(sub_b_year) == expected_result
+
+
+def test_get_sub_b_years_labels(sub_b_year):
+
+    expected_result = {2022: "2022_2020", 2015: "2010_2015"}
+
+    assert cs.get_sub_b_years_labels == expected_result
