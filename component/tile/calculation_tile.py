@@ -27,19 +27,16 @@ class CalculationTile(v.Layout, sw.SepalWidget):
 
         self.calculation_view = CalculationView(self.model)
         self.download_task_view = DownloadTaskView(self.model)
-        self.report_view = ReportView(self.model)
 
         self.children = [
             cw.Tabs(
                 titles=[
                     "Calculation",
                     "Calculation from Task",
-                    "Export results",
                 ],
                 content=[
                     self.calculation_view,
                     self.download_task_view,
-                    self.report_view,
                 ],
                 class_="mb-2",
             ),
@@ -125,6 +122,8 @@ class CalculationView(sw.Card):
         # - for sub_b: there cannot be repeated reporting years
         # - for sub_a: check that reporting is higher than baseline
 
+        # TODO: assert that sub_a_matrix only have 10 classes
+
         # Calculate regions
 
         head_msg = sw.Flex(children=[cm.dashboard.alert.computing.format(area_type)])
@@ -178,8 +177,12 @@ class CalculationView(sw.Card):
             # set same_year_matrix variable from model, it will be used when quering the
             # dashboard
             self.model.same_asset_matrix = all(
-                [self.model.matrix_sub_a, self.model.matrix_sub_b],
-                [self.model.lc_asset_sub_a, self.model.lc_asset_sub_b],
+                [
+                    self.model.matrix_sub_a,
+                    self.model.matrix_sub_b,
+                    self.model.lc_asset_sub_a,
+                    self.model.lc_asset_sub_b,
+                ],
             )
 
             years = cs.get_years(
@@ -314,100 +317,3 @@ class DownloadTaskView(v.Card):
 
             self.model.results = results
             self.model.done = True
-
-
-class ReportView(v.Card):
-    def __init__(self, model, *args, **kwargs):
-        self.class_ = "pa-2"
-        super().__init__(*args, **kwargs)
-
-        self.model = model
-        self.attributes = {"id": "report_view"}
-
-        self.alert = sw.Alert().add_msg(
-            cm.dashboard.report.disabled_alert, type_="warning"
-        )
-
-        self.btn = sw.Btn(cm.dashboard.label.download, class_="ml-2", disabled=False)
-
-        self.w_year = v.TextField(
-            label=cm.dashboard.label.year,
-            v_model=self.model.year,
-            type="string",
-        )
-
-        self.w_source = v.TextField(
-            label=cm.dashboard.label.source,
-            v_model=self.model.source,
-            type="string",
-        )
-
-        question_icon = v.Icon(children=["mdi-help-circle"], small=True)
-
-        # Create tooltip
-        t_year = v.Flex(
-            class_="d-flex",
-            children=[
-                self.w_year,
-                sw.Tooltip(
-                    question_icon, cm.dashboard.help.year, left=True, max_width=300
-                ),
-            ],
-        )
-
-        t_source = v.Flex(
-            class_="d-flex",
-            children=[
-                self.w_source,
-                sw.Tooltip(
-                    question_icon, cm.dashboard.help.source, left=True, max_width=300
-                ),
-            ],
-        )
-
-        self.children = [
-            v.CardTitle(children=[cm.dashboard.report.title]),
-            v.CardText(
-                children=[
-                    sw.Markdown(
-                        cm.dashboard.report.description.format(*param.UNITS["sqkm"][1])
-                    )
-                ]
-            ),
-            t_year,
-            t_source,
-            self.btn,
-            self.alert,
-        ]
-
-        self.btn.on_event("click", self.export_results)
-
-        # We need a two-way-binding for the year
-        link((self.w_year, "v_model"), (self.model, "year"))
-
-        self.model.bind(self.w_source, "source")
-        self.model.observe(self.activate_download, "summary_df")
-
-    def activate_download(self, change):
-        """Verify if the summary_df is created, and activate button"""
-
-        if change["new"] is not None:
-            self.btn.disabled = False
-            self.alert.reset()
-        else:
-            self.btn.disabled = True
-            self.alert.add_msg(cm.dashboard.report.disabled_alert, type_="warning")
-
-    @su.loading_button(debug=True)
-    def export_results(self, *args):
-        """Write the results on a comma separated values file, or an excel file"""
-
-        self.alert.add_msg("Exporting tables...")
-
-        cs.get_geoarea(self.model.aoi_model)[1]
-        report_folder = cs.get_report_folder(self.model)
-        cs.export_reports(self.model, report_folder)
-
-        self.alert.add_msg(
-            f"Reporting tables successfull exported {report_folder}", type_="success"
-        )

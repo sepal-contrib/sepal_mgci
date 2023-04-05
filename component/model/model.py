@@ -62,7 +62,10 @@ class MgciModel(Model):
     matrix_sub_b = Dict({}).tag(sync=True)
     "dict: comes from reclassify_tile.viewb.model.matrix which are the {src:dst} classes"
 
-    reporting_a_years = Dict({}).tag(sync=True)
+    reporting_years_sub_a = Dict({}).tag(sync=True)
+    """dict: Dict list of reporting years based on user selection. It's calculated when chips are created and it's used to alert dashboard of which years are available for statistics"""
+
+    reporting_years_sub_b = List([]).tag(sync=True)
     """list: list of reporting years based on user selection. It's calculated when chips are created and it's used to alert dashboard of which years are available for statistics"""
 
     same_asset_matrix = Bool(False).tag(sync=True)
