@@ -8,45 +8,61 @@ import component.scripts as cs
 # isort: off
 from component.parameter.index_parameters import sub_a_cols, sub_a_landtype_cols
 
-# TODO: change this for user selections
-lc_map_matrix = pd.read_csv(param.LC_MAP_MATRIX)
-belt_table = pd.read_csv(param.BIOBELTS_DESC)
-lulc_table = pd.read_csv(param.LC_CLASSES)
-
-
-def get_belt_desc(row):
-    """return bioclimatic belt description"""
-
-    desc = belt_table[belt_table.code == row["belt_class"]]["desc"]
-    return desc.values[0] if len(desc) else "Total"
-
-
-def get_lc_desc(row):
-    """return landcover description"""
-    desc = lulc_table[lulc_table.code == row["lc_class"]]["desc"]
-
-    return desc.values[0] if len(desc) else "All"
+from component.scripts.report_scripts import (
+    fill_parsed_df,
+    get_belt_desc,
+    get_lc_desc,
+    LC_MAP_MATRIX,
+)
 
 
 def get_mgci_landtype(parsed_df):
-    """
-    This function takes in a parsed DataFrame as an input and returns a concatenated
-    DataFrame that includes the calculation of belt area and grouping by
-    land cover class (lc_class) and belt class.
+    """Takes in a parsed DataFrame as an input and returns a concatenated
+    DataFrame that includes the calculation of belt area and group them by
+    land cover class (lc_class) and belt_class.
+
+    Table2_1542a_LandCoverType
     """
 
-    df = parsed_df.copy()
+    df = fill_parsed_df(parsed_df.copy())
+
+    # Add is_green column to the dataframe based on lc_class.
+    df["is_green"] = df.apply(
+        lambda row: LC_MAP_MATRIX.loc[LC_MAP_MATRIX.target_code == row["lc_class"]][
+            "green"
+        ].iloc[0],
+        axis=1,
+    )
+
+    # Get area of "green" classes and group them by belt_class
+    green_cover = (
+        df[df.is_green == 1]
+        .groupby(["belt_class"])
+        .sum()
+        .reset_index()[["belt_class", "sum"]]
+    )
+
+    # Add total area of green cover for all belt_classes
+    total_green = pd.DataFrame(columns=["belt_class", "sum"])
+    total_green.loc[0] = ["Total", green_cover["sum"].sum()]
+
+    green_cover = pd.concat([green_cover, total_green])
+
+    # Add lc_class
+    green_cover["lc_class"] = "Green Cover"
+
+    # with latest changes, we don't need to calculate belt area
 
     # Calculate belt area
-    belt_area_df = df.groupby(["belt_class"]).sum().reset_index()[["belt_class", "sum"]]
-    belt_area_df["lc_class"] = "All"
+    # belt_area_df = df.groupby(["belt_class"]).sum().reset_index()[["belt_class", "sum"]]
+    # belt_area_df["lc_class"] = "All"
 
-    land_type_df = pd.concat([df, belt_area_df])
+    # land_type_df = pd.concat([df, belt_area_df])
 
     by_lc_df = df.groupby(["lc_class"]).sum().reset_index()[["lc_class", "sum"]]
     by_lc_df["belt_class"] = "Total"
 
-    return pd.concat([land_type_df, by_lc_df])
+    return pd.concat([df, by_lc_df, green_cover])
 
 
 def get_mgci(parsed_df: pd.DataFrame) -> pd.DataFrame:
@@ -56,13 +72,15 @@ def get_mgci(parsed_df: pd.DataFrame) -> pd.DataFrame:
     adds a column "is_green" to the dataframe based on the lc_map_matrix, calculates the
     green and non-green areas, and calculates the mgci value. The function then returns
     a new dataframe with the belts and their respective mgci values.
+
+    Table3_1542a_MGCI
     """
 
-    df = parsed_df.copy()
+    df = fill_parsed_df(parsed_df.copy())
 
     # Adds is_green column to the dataframe based on lc_class.
     df["is_green"] = df.apply(
-        lambda row: lc_map_matrix.loc[lc_map_matrix.target_code == row["lc_class"]][
+        lambda row: LC_MAP_MATRIX.loc[LC_MAP_MATRIX.target_code == row["lc_class"]][
             "green"
         ].iloc[0],
         axis=1,
@@ -130,32 +148,44 @@ def get_report(
     """
 
     if land_type:
+        # Table2_1542a_LandCoverType
         report_df = get_mgci_landtype(parsed_df)
-        report_df["Value"] = report_df["sum"]
-        report_df["Units"] = "SQKM_PA"
-        report_df["Land Type"] = report_df.apply(get_lc_desc, axis=1)
+        report_df["OBS_VALUE"] = report_df["sum"]
+        report_df["OBS_VALUE_RSA"] = "TBD"  # TODO: check if we can report RSA
+        report_df["UNIT_MEASURE"] = "KM2"
+        report_df["UNIT_MULT"] = "TBD"
+        report_df["LAND_COVER"] = report_df.apply(get_lc_desc, axis=1)
         output_cols = sub_a_landtype_cols
     else:
+        # Table3_1542a_MGCI
         report_df = get_mgci(parsed_df)
-        report_df["Value"] = report_df.mgci
-        report_df["Units"] = "PERCENT"
+        report_df["OBS_VALUE"] = report_df.mgci
+        report_df["OBS_VALUE_RSA"] = "TBD"  # TODO: check if we can report RSA
+        report_df["UNIT_MEASURE"] = "PT"
+        report_df["UNIT_MULT"] = "TBD"
         output_cols = sub_a_cols
 
     # The following cols are equal for both tables
-    report_df["SeriesID"] = 1
-    report_df["SeriesDescription"] = "Mountain Green Cover Index"
+    report_df["Indicator"] = "15.4.2"
+    report_df["SeriesID"] = "TBD"
+    report_df["SERIES"] = "TBD"
+    report_df["SeriesDesc"] = "TBD"
     report_df["GeoAreaName"] = cs.get_geoarea(model.aoi_model)[0]
-    report_df["GeoAreaCode"] = cs.get_geoarea(model.aoi_model)[1]
-    report_df["TimePeriod"] = year
-    report_df["Time_Detail"] = year
-    report_df["Source"] = "Food and Agriculture Organisation of United Nations (FAO)"
-    report_df["FootNote"] = "FAO estimate"
-    report_df["Nature"] = "G"
-    report_df["Reporting Type"] = "G"
-    report_df["Observation Status"] = "A"
-    report_df["Bioclimatic Belt"] = report_df.apply(get_belt_desc, axis=1)
-    report_df["ISOalpha3"] = "nan"
-    report_df["Type"] = "Region"
-    report_df["SeriesCode"] = "ER_MTN_GRNCVI"
+    report_df["REF_AREA"] = cs.get_geoarea(model.aoi_model)[1]
+    report_df["TIME_PERIOD"] = year  # TODO: CHANGE THIS
+    report_df["TIME_DETAIL"] = year  # TODO: CHANGE THIS
+    report_df[
+        "SOURCE_DETAIL"
+    ] = "Food and Agriculture Organisation of United Nations (FAO)"  # TODO: Capture from user's input
+    report_df["COMMENT_OBS"] = "FAO estimate"
+    report_df["NATURE"] = ""  # TODO: CREATE cs.get_nature()
+    report_df["OBS_STATUS"] = ""  # TODO: CREATE cs.get_obs_status()
+    report_df["BIOCLIMATIC_BELT"] = report_df.apply(get_belt_desc, axis=1)
 
-    return report_df[output_cols], year
+    # fill NaN values with 0
+    report_df.fillna(0, inplace=True)
+
+    if land_type:
+        assert len(report_df) == 55, "Report should have 55 rows"
+
+    return report_df[output_cols].reset_index(drop=True), year
