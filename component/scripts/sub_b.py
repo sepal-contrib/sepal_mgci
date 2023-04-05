@@ -8,38 +8,12 @@ import component.scripts as cs
 # isort: off
 from component.parameter.index_parameters import sub_b_landtype_cols, sub_b_perc_cols
 
+from component.scripts.report_scripts import get_impact, get_impact_desc, get_belt_desc
+
 
 # TODO: Change them for user selections
 transition_table = pd.read_csv(param.TRANSITION_MATRIX_FILE)
 belt_table = pd.read_csv(param.BIOBELTS_DESC)
-
-
-def get_impact(row):
-    """Return the type of the impact based on the initial and last class"""
-
-    # Check that both
-    if not all([row["from_lc"], row["to_lc"]]):
-        return 0
-
-    return transition_table[
-        (transition_table.from_code == row["from_lc"])
-        & (transition_table.to_code == row["to_lc"])
-    ]["impact_code"].values[0]
-
-
-def get_impact_desc(row):
-    """Return impact description based on its code"""
-    desc = transition_table[transition_table.impact_code == row["impact"]]["impact"]
-
-    return desc.values[0] if len(desc) else "All"
-
-
-def get_belt_desc(row):
-    """return bioclimatic belt description"""
-
-    desc = belt_table[belt_table.code == row["belt_class"]]["desc"]
-
-    return desc.values[0] if len(desc) else "Total"
 
 
 def get_pdma(parsed_df):
