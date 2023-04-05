@@ -26,6 +26,8 @@ __all__ = [
     "years_from_dict",
     "get_result_from_year",
     "get_sub_b_years",
+    "get_sub_b_years_labels",
+    "parse_result",
 ]
 
 
@@ -252,7 +254,8 @@ def get_result_from_year(model, year, indicator):
     year.
 
     If indicator sub a es required, it will first try to search it within the individual
-    years, and if it is not found, it will search it within the double years. If there's
+    years, and if it is not found, it will search it within the double years (if
+    same_asset_matrix == True). If there's
     not a match, it will try to interpolate the results.
 
     Args:
@@ -264,7 +267,7 @@ def get_result_from_year(model, year, indicator):
 
     results = model.results
     same_asset_matrix = model.same_asset_matrix
-    reporting_a_years = model.reporting_a_years
+    reporting_years_sub_a = model.reporting_years_sub_a
 
     str_year = str(year)
 
@@ -273,13 +276,13 @@ def get_result_from_year(model, year, indicator):
 
     # Check that indicator is sub_a and year is in individual years
     if indicator == "sub_a" and any([str_year in yr for yr in individual_yrs]):
-        print("here")
         return parse_result(results[str_year]["groups"], single=True)
 
     # Otherwise, check that year is in double years
     in_double = [str_year in yr for yr in double_years]
 
     if any(in_double):
+
         # There is no way that there are more than 2 years in double_years
         assert sum(in_double) == 1, "More than 2 years in double_years"
         idx = in_double.index(True)
@@ -287,7 +290,6 @@ def get_result_from_year(model, year, indicator):
         # We can only try to get year from double years if indicator same_asset_matrix
         if indicator == "sub_a" and same_asset_matrix:
             # If we are in sub_a, we need to extract target year from double years
-            print("here2")
             parsed_df = parse_result(results[double_years[idx]]["groups"])
 
             # Get the name of the column that contains the target year
@@ -300,19 +302,19 @@ def get_result_from_year(model, year, indicator):
             parsed_df = parsed_df.rename(columns={target_lc: "lc_class"})
 
             return parsed_df
+
         elif indicator == "sub_b":
-            print("here3")
             return parse_result(results[double_years[idx]]["groups"])
 
-    # Try to get the year by interpolating between two years only if we are in sub_a
+    # If we're here, it means that we didn't find the year in individual or double years
     if indicator == "sub_a":
-        print("here 4")
         assert (
-            int(year) in reporting_a_years
+            int(year) in reporting_years_sub_a
         ), "You're not suppose to be asking for this year"
 
-        year1 = model.reporting_a_years[int(year)][0]["year"]
-        year2 = model.reporting_a_years[int(year)][1]["year"]
+        # Try to get the year by interpolating between two years only if we are in sub_a
+        year1 = model.reporting_years_sub_a[int(year)][0]["year"]
+        year2 = model.reporting_years_sub_a[int(year)][1]["year"]
 
         return interpolate_sub_a_data(model, year1, year2, year)
 
@@ -545,14 +547,68 @@ def get_sub_b_break_points(user_input_years):
 
 
 def get_sub_b_years(user_input_years):
+    """Extract years from user input.
+
+    This functions extracts all the assets in the form of
+    [{asset:xx, year:xx}, ...] from the user input.
+    """
 
     # extract tuple of years from user input
-
     reporting_years = []
-    for user_tuple in user_input_years.values():
-        reporting_years.append([user_tuple.get("base"), user_tuple.get("report")])
+    for user_year in user_input_years.values():
+        for user_tuple in user_year.values():
+            reporting_years.append([user_tuple.get("base"), user_tuple.get("report")])
 
     return reporting_years
+
+
+def get_sub_b_years_labels(sub_b_year):
+    """Returns string label for sub_b indicator.
+
+    It gets the input user years for indicator sub b and parses the
+    years for each reporting period as the same way as it is set in
+    model.results dictionary.
+
+    If user is reporting year 2015, with 2009 and 2014, and 2018 with 2014 and 2017,
+    the function will return a dictionary with the following structure:
+
+    .. code-block:: python
+
+        {
+            2015: "2009_2014",
+            2018: "2014_2017"
+        }
+
+    This fucntion will be used in the dashboard to display the results from the user
+    selection.
+
+    """
+
+    yrs = {}
+    for date in sub_b_year.values():
+        for period in date.values():
+            report_year = next(iter(list(date.keys())))
+
+            if "base" not in period or "report" not in period:
+                raise Exception(
+                    f"You have not provided a base and report period for {report_year}"
+                )
+
+            if "year" not in period.get("base") or "year" not in period.get("report"):
+                raise Exception(
+                    f"You have not provided an actual year for {report_year}"
+                )
+
+            yr_tuple = [
+                str(period.get("base").get("year")),
+                str(period.get("report").get("year")),
+            ]
+
+            label_yrs = "_".join(yr_tuple)
+
+            yrs[report_year] = label_yrs
+
+    return yrs
 
 
 def get_sub_a_break_points(user_input_years):
