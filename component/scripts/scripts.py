@@ -1,15 +1,18 @@
 import random
 import re
 from pathlib import Path
+from typing import Dict, List, Tuple, Union
 
 import ipyvuetify as v
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
+from sepal_ui.aoi.aoi_model import AoiModel
 
 import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
 import component.scripts as cs
+from component.model.model import Model as MGCIModel
 from component.scripts import sub_a, sub_b
 
 __all__ = [
@@ -25,13 +28,13 @@ __all__ = [
     "get_sub_a_break_points",
     "years_from_dict",
     "get_result_from_year",
-    "get_sub_b_years",
+    "get_sub_b_break_points",
     "get_sub_b_years_labels",
     "parse_result",
 ]
 
 
-def create_avatar(mgci):
+def create_avatar(mgci: float) -> v.Avatar:
     """Creates a circular avatar containing the MGCI value"""
     color = cs.get_mgci_color(mgci)
 
@@ -41,7 +44,7 @@ def create_avatar(mgci):
     return v.Avatar(color=color, size="150", children=[overall_mgci_html])
 
 
-def human_format(num, round_to=2):
+def human_format(num: float, round_to: int = 2) -> str:
     magnitude = 0
     while abs(num) >= 1000:
         magnitude += 1
@@ -51,11 +54,11 @@ def human_format(num, round_to=2):
     )
 
 
-def get_random_color():
+def get_random_color() -> str:
     return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
 
-def get_mgci_color(mgci):
+def get_mgci_color(mgci: float) -> str:
     """Return color based on a given MGCI scale"""
 
     thresholds = sorted(param.UPPER_THRESHOLDS, reverse=True)
@@ -66,7 +69,7 @@ def get_mgci_color(mgci):
     return param.UPPER_THRESHOLDS[threshold]
 
 
-def get_report_folder(mgci_model):
+def get_report_folder(mgci_model: MGCIModel) -> Path:
     """Get output report folder path"""
 
     # Create a folder to store multiple year reports from the same area
@@ -75,7 +78,7 @@ def get_report_folder(mgci_model):
     return report_folder
 
 
-def get_geoarea(aoi_model):
+def get_geoarea(aoi_model: AoiModel) -> Tuple[str, str]:
     """Create the geo area name to the excel report"""
 
     if aoi_model.method in ["ADMIN0", "ADMIN1", "ADMIN2"]:
@@ -97,7 +100,9 @@ def get_geoarea(aoi_model):
         return aoi_model.name, ""
 
 
-def remove_duplicated_years(breakpoints):
+def remove_duplicated_years(
+    breakpoints: List[List[Dict[str, Union[int, float]]]]
+) -> List[List[Dict[str, Union[int, float]]]]:
     """Remove duplicated years from a list of years"""
 
     # remove duplicates knowing that years are dictionaries
@@ -121,7 +126,7 @@ def remove_duplicated_years(breakpoints):
     ]
 
 
-def years_from_dict(year_dict):
+def years_from_dict(year_dict: dict) -> str:
     """Extract years from a get_years dictionary.
 
     It will be used to label and display the progress in the alerts.
@@ -133,7 +138,10 @@ def years_from_dict(year_dict):
     return "_".join([str(year.get("year")) for year in year_dict])
 
 
-def get_interpolation_years(breaking_points):
+def get_interpolation_years(
+    breaking_points: Dict[str, List[Dict[str, str]]]
+) -> List[List[Dict[str, str]]]:
+
     """Get interpolation years (assets) from the breaking points.
 
     Based on the breaking points, it will return a list of years (assets)
@@ -156,9 +164,8 @@ def get_interpolation_years(breaking_points):
      3. a reporting period has 2 years, in that case we need to calculate
         the reduction with first and second year.
     """
-
     # create a list of years to calculate the reduction
-    years_to_calculate = []
+    years_to_calculate: list[list[dict[str, str]]] = []
     for period, year in breaking_points.items():
         if len(year) == 4:
             years_to_calculate.append(year[:2])
@@ -189,7 +196,10 @@ def get_interpolation_years(breaking_points):
     )
 
 
-def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
+def get_years(
+    sub_a_year: int, sub_b_year: int, matrix_a: str, matrix_b: str
+) -> List[List[int]]:
+    years_a = get_sub_a_break_points(sub_a_year)
     """Returns a nested list of years (asset) based on the input start and end years.
 
     In order to minimize the number of calculations, assets that are present
@@ -221,10 +231,7 @@ def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
         returns: [[asset_x/2015], [asset_x/2020] [asset_y/2020', asset_y/2015]]
 
     """
-
-    years_a = get_sub_a_break_points(sub_a_year)
-
-    years_to_calculate = get_sub_b_years(sub_b_year)
+    years_to_calculate = get_sub_b_break_points(sub_b_year)
 
     if matrix_a == matrix_b:
         # Add years from years_a that are not present in years_b
@@ -247,7 +254,9 @@ def get_years(sub_a_year, sub_b_year, matrix_a, matrix_b):
         ]
 
 
-def get_result_from_year(model, year, indicator):
+def get_result_from_year(
+    model: MGCIModel, year: int, indicator: str
+) -> Union[pd.DataFrame, None]:
     """Return the results for the given year.
 
     It will use the results dictionary to get the results for the requested
@@ -264,7 +273,6 @@ def get_result_from_year(model, year, indicator):
         indicator (str): indicator to get the results from
         same_asset_matrix (bool): if matrix and asset are the same
     """
-
     results = model.results
     same_asset_matrix = model.same_asset_matrix
     reporting_years_sub_a = model.reporting_years_sub_a
@@ -323,7 +331,9 @@ def get_result_from_year(model, year, indicator):
     )
 
 
-def interpolate_sub_a_data(model, year1, year2, target_year):
+def interpolate_sub_a_data(
+    model: MGCIModel, year1: int, year2: int, target_year: int
+) -> pd.DataFrame:
     """Interpolate sub A data between two years.
 
     Args:
@@ -368,7 +378,7 @@ def interpolate_sub_a_data(model, year1, year2, target_year):
     return df_interpolated
 
 
-def parse_result(result, single=False):
+def parse_result(result: dict, single: bool = False) -> pd.DataFrame:
     """
     This function parses the nest result to create a exploded dataframe.
     The input format should be of type:
@@ -421,7 +431,7 @@ def parse_result(result, single=False):
     return df
 
 
-def read_from_csv(task_file, process_id):
+def read_from_csv(task_file, process_id) -> dict:
     """read csv format from feature collection exportation in gee
 
     Args:
@@ -441,120 +451,18 @@ def read_from_csv(task_file, process_id):
     return eval(line)
 
 
-def get_sub_b_break_points(user_input_years):
-    """Calculate the breakpoints for the user input years.
-
-    The objective is to get a dictionary with reporting year as key and
-    all the years that are relevant for the reporting year as value.
-
-    .. deprecated:: 0.2.0
-
-        This function is deprecated and will be removed in the next release.
-        Use :func:`get_sub_b_break_points` instead.
-
-    """
-
-    breakpoints = {}
-
-    if not user_input_years:
-        return breakpoints
-
-    report_intervals = param.REPORT_INTERVALS
-
-    user_years = [val.get("year") for val in user_input_years.values()]
-
-    # filter report intervals that are relevant given the user input years
-    report_intervals = [
-        interval
-        for interval in report_intervals
-        if interval >= min(user_years) and interval <= max(user_years)
-    ]
-
-    # Create a list of tuples with the lower and upper bound of the interval
-    intervals = list(zip(report_intervals[:-1], report_intervals[1:]))
-
-    for interval in intervals:
-
-        lower, upper = interval
-
-        # get all years that falls in the interval
-        years_in_interval = [
-            year
-            for year in user_input_years.values()
-            if year.get("year") == lower or year.get("year") == upper
-        ]
-
-        only_years = [year.get("year") for year in years_in_interval]
-
-        # If lower bound is not in the interval, find the maximum
-        # year that is smaller than the lower bound
-        if lower not in only_years:
-            # get the maximum year that is smaller than the lower bound
-            before_lower = max(
-                [
-                    year
-                    for year in user_input_years.values()
-                    if year.get("year") < lower
-                ],
-                key=lambda x: x.get("year"),
-                default=None,
-            )
-            after_lower = min(
-                [
-                    year
-                    for year in user_input_years.values()
-                    if year.get("year") > lower
-                ],
-                key=lambda x: x.get("year"),
-                default=None,
-            )
-            years_in_interval.extend([before_lower, after_lower])
-
-        # If upper bound is not in the interval, find the minimum
-        # year that is larger than the upper bound
-        if upper not in only_years:
-            # get the minimum year that is larger than the upper bound
-            after_higher = min(
-                [
-                    year
-                    for year in user_input_years.values()
-                    if year.get("year") > upper
-                ],
-                key=lambda x: x.get("year"),
-                default=None,
-            )
-            before_higher = max(
-                [
-                    year
-                    for year in user_input_years.values()
-                    if year.get("year") < upper
-                ],
-                key=lambda x: x.get("year"),
-                default=None,
-            )
-            years_in_interval.extend([before_higher, after_higher])
-
-        # Add the interval and the years that are relevant for the interval
-        # skip None and remove duplicates
-        unique_values = []
-        for value in years_in_interval:
-            if value not in unique_values and value:
-                unique_values.append(value)
-
-        breakpoints[interval] = unique_values
-
-    return breakpoints
-
-
-def get_sub_b_years(user_input_years):
+def get_sub_b_break_points(
+    user_input_years: Dict[str, Dict[str, Dict[str, int]]]
+) -> List[List[int]]:
     """Extract years from user input.
 
     This functions extracts all the assets in the form of
-    [{asset:xx, year:xx}, ...] from the user input.
+    [{asset:xx, year:xx}, ...] from the user input, to easier manipulataion.
+
     """
 
     # extract tuple of years from user input
-    reporting_years = []
+    reporting_years: List[List[int]] = []
     for user_year in user_input_years.values():
         for user_tuple in user_year.values():
             reporting_years.append([user_tuple.get("base"), user_tuple.get("report")])
@@ -562,7 +470,7 @@ def get_sub_b_years(user_input_years):
     return reporting_years
 
 
-def get_sub_b_years_labels(sub_b_year):
+def get_sub_b_years_labels(sub_b_year: Dict) -> Dict:
     """Returns string label for sub_b indicator.
 
     It gets the input user years for indicator sub b and parses the
@@ -611,7 +519,7 @@ def get_sub_b_years_labels(sub_b_year):
     return yrs
 
 
-def get_sub_a_break_points(user_input_years):
+def get_sub_a_break_points(user_input_years: list) -> dict:
     """Get the break points for Sub-A.
 
     It will get the years that can be reported using the user input years. In case
@@ -681,7 +589,9 @@ def get_sub_a_break_points(user_input_years):
     return break_points
 
 
-def get_sub_a_reports(parsed_df, year_s, model):
+def get_sub_a_reports(
+    parsed_df: pd.DataFrame, year_s: str, model: MGCIModel
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     SubIndA_MGCI
     SubIndA_LandType
@@ -693,7 +603,9 @@ def get_sub_a_reports(parsed_df, year_s, model):
     return mgci_report, mgci_land_type_report
 
 
-def get_sub_b_reports(parsed_df, year_s, model):
+def get_sub_b_reports(
+    parsed_df: pd.DataFrame, year_s: str, model: MGCIModel
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     SubIndB_pdma
     SubIndB_pdma_TransitionType
@@ -705,7 +617,7 @@ def get_sub_b_reports(parsed_df, year_s, model):
     return pdma_perc_report, pdma_land_type_report
 
 
-def export_reports(model, output_folder):
+def export_reports(model: MGCIModel, output_folder) -> None:
     """
     This function exports the reports of the model's results (calculation).
     It separates the reports into two categories: sub_a_reports and sub_b_reports.
@@ -726,31 +638,32 @@ def export_reports(model, output_folder):
     :rtype: tuple
     """
 
+    mtn_reports = []
     sub_a_reports = []
     sub_b_reports = []
 
-    for group_name, result in model.results.items():
-        # Split the group name by "_" to get the year(s)
-        year_s = group_name.split("_")
+    # Instead of looping over all "results" in the model, we
+    # only loop over the ones that are of our interest.
+    # use model.reporting_years_sub_b and model.reporting_years_sub_a
 
-        if len(year_s) == 1:
-            # Only process requested years
-            parsed_df = parse_result(result, single=True)
-            sub_a_reports.append(get_sub_a_reports(parsed_df, year_s[0], model))
-        else:
-            parsed_df = parse_result(result)
+    sub_a_years = list(model.reporting_years_sub_a.keys())
+    sub_b_years = model.reporting_years_sub_b
 
-            for year in year_s:
-                target_lc = ["from_lc", "to_lc"][year_s.index(year)]
-                parsed_df_year = (
-                    parsed_df.groupby(["belt_class", target_lc], as_index=False)
-                    .sum()
-                    .copy()
-                )
-                parsed_df_year.rename(columns={target_lc: "lc_class"}, inplace=True)
+    for year in sub_a_years:
+        print(f"Reporting {year} for sub_a")
+        parsed_df = cs.get_result_from_year(model, year, "sub_a")
+        sub_a_reports.append(get_sub_a_reports(parsed_df, year, model))
 
-                sub_a_reports.append(get_sub_a_reports(parsed_df_year, year, model))
-            sub_b_reports.append(get_sub_b_reports(parsed_df, year_s, model))
+        # TODO: add mntn_reports
+        mtn_reports.append(get_mtn_report(parsed_df, year, model))
+
+    for year in sub_b_years:
+        print(f"Reporting {year} for sub_b")
+        # Get year label for the report
+        year_lbl = cs.get_sub_b_years_labels(model.sub_b_year)[year]
+        print(year_lbl)
+        parsed_df = cs.get_result_from_year(model, year_lbl, "sub_b")
+        sub_b_reports.append(get_sub_b_reports(parsed_df, year, model))
 
     for reports in sub_a_reports:
         [
