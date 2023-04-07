@@ -109,8 +109,7 @@
         "description" : "Calculate the Mountain Green Cover Index dashboard, the result will include an overall index for all the Kapos mountain classes and also a more detailed index for each of these classes.",
         "report" : {
             "title":"Download report",
-            "description": "By exporting tables, the app will create three outputs. <ul><li>ER_MTN_GRNCOV: Mountain green cover area ({1}).</li><li>ER_MTN_GRNCVI: Mountain Green Cover Index.</li><li>ER_MTN_TOTL: Total mountain area (in {1})</li>",
-            "disabled_alert" : "The export button will be available once you have calculated the MGCI report."
+            "description": "The module will use the data that has been calculated to produce the following tables.<ul><li>Table1_MountainArea</li><li>Table2_1542a_LandCoverType</li><li>Table3_1542a_MGCI</li><li>Table4_1542b_pdma_area</li><li>Table5_1542b_pdma_pt</li></ul>"
         },
         "tasks" : {
             "title":"MGCI calculation on background",
