@@ -1,11 +1,13 @@
 import concurrent.futures
 
 import ipyvuetify as v
+import pandas as pd
 import sepal_ui.sepalwidgets as sw
 from sepal_ui import color
 from sepal_ui.scripts.decorator import switch
 from traitlets import Bool, observe
 
+import component.parameter.directory as dir_
 import component.parameter.module_parameter as param
 
 
@@ -110,27 +112,144 @@ class TransitionMatrix(sw.Layout):
             indeterminate=False,
         )
 
-        self.input_impact = sw.FileInput(".csv").hide()
+        # Create input file widget wrapped in a layout
+        self.input_impact = sw.FileInput(
+            ".csv", folder=dir_.TRANSITION_DIR, root=dir_.RESULTS_DIR
+        )
+        self.input_impact_layout = sw.Card(
+            attributes={"id": "custom_inputs"},
+            row=True,
+            children=[
+                sw.CardTitle(children=["transition file"]),
+                sw.CardText(
+                    children=[
+                        "Select a custom transition file containing all the possible transitions in your custom data. The file must contain the following columns: from_code, to_code, impact_code, columns names have to be exactly the same.",
+                        self.input_impact,
+                    ]
+                ),
+            ],
+        ).hide()
+
+        self.input_green = sw.FileInput(
+            ".csv", folder=dir_.TRANSITION_DIR, root=dir_.RESULTS_DIR
+        )
+        self.input_green_layout = sw.Card(
+            attributes={"id": "custom_inputs"},
+            row=True,
+            children=[
+                sw.CardTitle(children=["Green non green file"]),
+                sw.CardText(
+                    children=[
+                        "Select a custom green non green file containing all your custom land cover classes and its corresponding green/non green classification. The file must contain the following columns: lc_class and green. Columns names have to be exactly the same.",
+                        self.input_green,
+                    ]
+                ),
+            ],
+        ).hide()
+
+        self.input_impact.observe(
+            lambda chg: self.read_inputs(change=chg, type_="impact"), "v_model"
+        )
+        self.input_green.observe(
+            lambda chg: self.read_inputs(change=chg, type_="green"), "v_model"
+        )
 
         # create the simple table
         super().__init__()
 
-        self.children = [toolbar, self.progress, self.input_impact]
+        self.children = [
+            toolbar,
+            self.progress,
+            self.input_impact_layout,
+            self.input_green_layout,
+        ]
         self.set_rows()
 
         btn_clear.on_event("click", lambda *args: self.set_rows())
+
+        # Link custom inputs with model
 
     @observe("show_matrix")
     def toggle_viz(self, change):
         """toogle visualization style, show only impact matrix or input_impact_file wiedget"""
 
         if change["new"]:
-            self.input_impact.hide()
+
+            # hide inputs to custom transition matrix and custom green/non green
+            [ch.hide() for ch in self.get_children(id_="custom_inputs")]
+
             [ch.show() for ch in self.get_children(id_="transition_matrix")]
 
         else:
-            self.input_impact.show()
+            # show inputs to custom transition matrix and custom green/non green
+            [ch.show() for ch in self.get_children(id_="custom_inputs")]
+
             [ch.hide() for ch in self.get_children(id_="transition_matrix")]
+
+    def read_inputs(self, change, type_):
+        """Read user inputs from custom transition matrix and custom green/non green"""
+
+        # Get TextField from change widget
+        text_field_msg = change["owner"].children[-1]
+        text_field_msg.error_messages = []
+
+        try:
+            df = pd.read_csv(change["new"])
+        except pd.errors.ParserError:
+            # Raise a more specific error for when the file cannot be parsed as a csv
+            error_msg = "The file could not be read. Please check that the file is a valid csv file"
+            text_field_msg.error_messages = error_msg
+            raise ValueError(error_msg)
+
+        except FileNotFoundError:
+            # Raise a more specific error for when the file cannot be found
+            error_msg = "The file could not be found. Please check the file path."
+            text_field_msg.error_messages = error_msg
+            raise ValueError(error_msg)
+
+        # Define column requirements for each type
+        column_requirements = {
+            "impact": {
+                "required_cols": ["from_code", "to_code", "impact_code"],
+                "int_cols": ["from_code", "to_code", "impact_code"],
+                "allowed_values": {"impact_code": [0, -1, 1]},
+            },
+            "green": {
+                "required_cols": ["lc_class", "green"],
+                "int_cols": ["lc_class", "green"],
+                "allowed_values": {"green": [0, 1]},
+            },
+        }
+
+        # Get column requirements for the given type
+        req_cols = column_requirements.get(type_, {}).get("required_cols", [])
+        allowed_values = column_requirements.get(type_, {}).get("allowed_values", {})
+
+        # Check that the file contains the required columns
+        if not set(req_cols).issubset(df.columns):
+            error_msg = (
+                f"The file must contain the following columns: {', '.join(req_cols)}"
+            )
+            text_field_msg.error_messages = error_msg
+            raise ValueError(error_msg)
+
+        # Check that all values are integers
+        for col in df.columns:
+            if not pd.api.types.is_integer_dtype(df[col]):
+
+                error_msg = f"The {col} column must contain only integer values."
+                text_field_msg.error_messages = error_msg
+                raise ValueError(error_msg)
+
+        print(allowed_values)
+        # Check that there are no values outside the allowed values in the column requirements
+        for col, allowed_vals in allowed_values.items():
+            if not set(df[col].unique()).issubset(allowed_vals):
+
+                join_vals = ", ".join([str(val) for val in allowed_vals])
+                error_msg = f"The {col} column must contain only the following values: {join_vals}"
+                text_field_msg.error_messages = error_msg
+                raise ValueError(error_msg)
 
     @switch("indeterminate", on_widgets=["progress"], targets=[False])
     def set_rows(self, df=param.TRANSITION_MATRIX):

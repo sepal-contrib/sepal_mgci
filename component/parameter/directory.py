@@ -1,5 +1,6 @@
-from pathlib import Path
 import shutil
+from pathlib import Path
+
 import component.parameter.module_parameter as param
 
 __all__ = [
@@ -20,6 +21,9 @@ CLASS_DIR = RESULTS_DIR / "custom_classifications"
 MATRIX_DIR = RESULTS_DIR / "reclass_matrix"
 "Path: location where custom mapper matrix are stored"
 
+TRANSITION_DIR = RESULTS_DIR / "custom_transition"
+"Path: location where custom transition matrix and green_non_green files are stored"
+
 
 REPORTS_DIR = RESULTS_DIR / "reports"
 TASKS_DIR = RESULTS_DIR / "tasks"
@@ -29,6 +33,7 @@ CLASS_DIR.mkdir(parents=True, exist_ok=True)
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 MATRIX_DIR.mkdir(parents=True, exist_ok=True)
 TASKS_DIR.mkdir(parents=True, exist_ok=True)
+TRANSITION_DIR.mkdir(parents=True, exist_ok=True)
 
 # As soon as the folders are created, copy the default classification files
 
