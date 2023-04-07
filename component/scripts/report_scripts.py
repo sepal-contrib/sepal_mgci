@@ -15,7 +15,7 @@ LC_CLASSES = pd.read_csv(param.LC_CLASSES)
 def get_belt_desc(row):
     """return bioclimatic belt description"""
 
-    if not row["belt_class"] in (BELT_TABLE.belt_class.unique()):
+    if not row["belt_class"] in set(BELT_TABLE.belt_class.unique()):
         return row["belt_class"]
 
     desc = BELT_TABLE[BELT_TABLE.belt_class == row["belt_class"]]["desc"]
@@ -26,7 +26,7 @@ def get_belt_desc(row):
 def get_lc_desc(row):
     """return landcover description"""
 
-    if not row["lc_class"] in (LC_CLASSES.lc_class.unique()):
+    if not row["lc_class"] in set(LC_CLASSES.lc_class.unique()):
         return row["lc_class"]
 
     desc = LC_CLASSES[LC_CLASSES.lc_class == row["lc_class"]]["desc"]
@@ -74,6 +74,7 @@ def get_impact(row, transition_table):
 
 def get_impact_desc(row, transition_table):
     """Return impact description based on its code"""
+
     desc = transition_table[transition_table.impact_code == row["impact"]]["impact"]
 
     return desc.values[0] if len(desc) else "All"

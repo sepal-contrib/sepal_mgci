@@ -66,9 +66,10 @@ def get_mgci_landtype(parsed_df):
 
 
 def get_mgci(parsed_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    This function takes a dataframe as input and calculates the MGCI (Mountain Green
-    Cover Index) for each belt class. It groups the data by "belt_class" and "is_green",
+    """Calculates the MGCI (Mountain Green
+    Cover Index) for each belt class.
+
+    It groups the data by "belt_class" and "is_green",
     adds a column "is_green" to the dataframe based on the lc_map_matrix, calculates the
     green and non-green areas, and calculates the mgci value. The function then returns
     a new dataframe with the belts and their respective mgci values.
@@ -172,8 +173,8 @@ def get_report(
     report_df["SeriesDesc"] = "TBD"
     report_df["GeoAreaName"] = cs.get_geoarea(model.aoi_model)[0]
     report_df["REF_AREA"] = cs.get_geoarea(model.aoi_model)[1]
-    report_df["TIME_PERIOD"] = year  # TODO: CHANGE THIS
-    report_df["TIME_DETAIL"] = year  # TODO: CHANGE THIS
+    report_df["TIME_PERIOD"] = year
+    report_df["TIME_DETAIL"] = year
     report_df[
         "SOURCE_DETAIL"
     ] = "Food and Agriculture Organisation of United Nations (FAO)"  # TODO: Capture from user's input

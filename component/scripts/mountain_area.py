@@ -19,28 +19,6 @@ LC_CLASSES = pd.read_csv(param.LC_CLASSES)
 "pd.Dataframe: fixed land cover classes, description and colors"
 
 
-def get_belt_desc(row):
-    """return bioclimatic belt description"""
-
-    if not row["belt_class"] in set(BELT_TABLE.belt_class.unique()):
-        return row["belt_class"]
-
-    desc = BELT_TABLE[BELT_TABLE.belt_class == row["belt_class"]]["desc"]
-
-    return desc.values[0]
-
-
-def get_lc_desc(row):
-    """return landcover description"""
-
-    if not row["lc_class"] in set(LC_CLASSES.lc_class.unique()):
-        return row["lc_class"]
-
-    desc = LC_CLASSES[LC_CLASSES.lc_class == row["lc_class"]]["desc"]
-
-    return desc.values[0]
-
-
 def get_mountain_area(parsed_df):
     """Takes in a parsed DataFrame as an input and returns a DataFrame that
     gets the area for each belt class and a total area for all belt classes.
@@ -82,8 +60,8 @@ def get_report(parsed_df: pd.DataFrame, year: int, model) -> pd.DataFrame:
     report_df["SeriesDesc"] = "TBD"
     report_df["GeoAreaName"] = cs.get_geoarea(model.aoi_model)[0]
     report_df["REF_AREA"] = cs.get_geoarea(model.aoi_model)[1]
-    report_df["TIME_PERIOD"] = year  # TODO: CHANGE THIS
-    report_df["TIME_DETAIL"] = year  # TODO: CHANGE THIS
+    report_df["TIME_PERIOD"] = year
+    report_df["TIME_DETAIL"] = year
     report_df[
         "SOURCE_DETAIL"
     ] = "Food and Agriculture Organisation of United Nations (FAO)"  # TODO: Capture from user's input
