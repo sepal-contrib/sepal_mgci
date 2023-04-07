@@ -53,12 +53,14 @@ class DashView(sw.Layout):
         self.alert = sw.Alert()
 
         self.year_select = sw.Select(label="Select a target year", v_model=None)
+        self.belt_select = sw.Select(label="Select a belt", v_model=None)
+
         self.btn = sw.Btn("Calculate", class_="ml-2")
 
         self.children = [
             sw.Flex(
                 class_="d-flex align-center",
-                children=[self.year_select, self.btn],
+                children=[self.year_select, self.belt_select, self.btn],
             ),
             self.alert,
         ]
@@ -68,6 +70,32 @@ class DashView(sw.Layout):
         self.model.observe(self.set_years, f"reporting_years_{self.indicator}")
 
         self.btn.on_event("click", self.render_dashboard)
+
+        self.year_select.observe(self.set_belt_items, "v_model")
+        self.belt_select.observe(self.set_sankey_df, "v_model")
+
+    def set_belt_items(self, change):
+        """Set the belt items in the belt_select widget based on the year selected"""
+
+        look_up_year = change["new"]
+
+        self.sub_b_label = cs.get_sub_b_years_labels(self.model.sub_b_year)[
+            look_up_year
+        ]
+        self.df = cs.get_result_from_year(self.model, self.sub_b_label, "sub_b")
+
+        # Get all belts that are available for the selected year
+
+        self.belt_select.items = list(self.df.belt_class.unique())
+
+    def set_sankey_df(self, change):
+        """Set the sankey dataframe based on the year and belt selected"""
+
+        self.df_sankey = (
+            self.df[self.df.belt_class == change["new"]]
+            .groupby(["from_lc", "to_lc"], as_index=False)
+            .sum()
+        )
 
     def clear(self):
         """Check if there is a previusly displayed dashboard and clear it, and
@@ -139,34 +167,22 @@ class DashView(sw.Layout):
         # retrieve actual tuple 'base_report' that was calculated and it's stored
         # in model.results
 
-        look_up_year = self.year_select.v_model
-
-        sub_b_label = cs.get_sub_b_years_labels(self.model.sub_b_year)[look_up_year]
-
-        df = cs.get_result_from_year(self.model, sub_b_label, "sub_b")
-
-        # group by from_lc and to_lc
-        df_sankey = (
-            df[df.belt_class == 4].groupby(["from_lc", "to_lc"], as_index=False).sum()
-        )
-
-        lbl_left, lbl_right = sub_b_label.split("_")
-
-        # rename columns to match with sankey function
-        cols = {"from_lc": lbl_left, "to_lc": lbl_right}
-
-        df_sankey.rename(columns=cols, inplace=True)
-
         color_dict = pd.read_csv(param.LC_CLASSES, header=None)
+
         color_dict = dict(zip(color_dict.loc[:, 0], color_dict.loc[:, 2]))
 
         output = Output()
+
+        # rename columns to match with sankey function
+        lbl_left, lbl_right = self.sub_b_label.split("_")
+        cols = {"from_lc": lbl_left, "to_lc": lbl_right}
+        self.df_sankey.rename(columns=cols, inplace=True)
 
         with plt.style.context("dark_background"):
             with output:
                 output.clear_output()
                 fig, ax = sankey(
-                    df_sankey,
+                    self.df_sankey,
                     colorDict=color_dict,
                     aspect=4,
                     rightColor=False,
@@ -191,17 +207,9 @@ class ExportView(v.Card):
         self.model = model
         self.attributes = {"id": "report_view"}
 
-        self.alert = sw.Alert().add_msg(
-            cm.dashboard.report.disabled_alert, type_="warning"
-        )
+        self.alert = sw.Alert()
 
         self.btn = sw.Btn(cm.dashboard.label.download, class_="ml-2", disabled=False)
-
-        self.w_year = v.TextField(
-            label=cm.dashboard.label.year,
-            v_model=self.model.year,
-            type="string",
-        )
 
         self.w_source = v.TextField(
             label=cm.dashboard.label.source,
@@ -210,17 +218,6 @@ class ExportView(v.Card):
         )
 
         question_icon = v.Icon(children=["mdi-help-circle"], small=True)
-
-        # Create tooltip
-        t_year = v.Flex(
-            class_="d-flex",
-            children=[
-                self.w_year,
-                sw.Tooltip(
-                    question_icon, cm.dashboard.help.year, left=True, max_width=300
-                ),
-            ],
-        )
 
         t_source = v.Flex(
             class_="d-flex",
@@ -238,19 +235,15 @@ class ExportView(v.Card):
                 children=[
                     sw.Markdown(
                         cm.dashboard.report.description.format(*param.UNITS["sqkm"][1])
-                    )
+                    ),
+                    t_source,
                 ]
             ),
-            t_year,
-            t_source,
             self.btn,
             self.alert,
         ]
 
         self.btn.on_event("click", self.export_results)
-
-        # We need a two-way-binding for the year
-        link((self.w_year, "v_model"), (self.model, "year"))
 
         self.model.bind(self.w_source, "source")
         self.model.observe(self.activate_download, "summary_df")
@@ -261,9 +254,6 @@ class ExportView(v.Card):
         if change["new"] is not None:
             self.btn.disabled = False
             self.alert.reset()
-        else:
-            self.btn.disabled = True
-            self.alert.add_msg(cm.dashboard.report.disabled_alert, type_="warning")
 
     @su.loading_button(debug=True)
     def export_results(self, *args):
@@ -271,7 +261,6 @@ class ExportView(v.Card):
 
         self.alert.add_msg("Exporting tables...")
 
-        cs.get_geoarea(self.model.aoi_model)[1]
         report_folder = cs.get_report_folder(self.model)
         cs.export_reports(self.model, report_folder)
 
