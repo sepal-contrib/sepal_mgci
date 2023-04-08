@@ -14,6 +14,10 @@ from component.parameter.report_template import *
 
 
 class MgciModel(Model):
+    """Model for MGCI calculation"""
+
+    session_id = 1824
+
     use_custom = CBool(0).tag(sync=True)
 
     # output parameters
@@ -62,6 +66,8 @@ class MgciModel(Model):
     matrix_sub_b = Dict({}).tag(sync=True)
     "dict: comes from reclassify_tile.viewb.model.matrix which are the {src:dst} classes"
 
+    green_non_green = Bool(False).tag(sync=True)
+
     reporting_years_sub_a = Dict({}).tag(sync=True)
     """dict: Dict list of reporting years based on user selection. It's calculated when chips are created and it's used to alert dashboard of which years are available for statistics"""
 
@@ -76,8 +82,11 @@ class MgciModel(Model):
     biobelt_image = None
     "ee.Image: clipped bioclimatic belt image with aoi_model.feature_collection"
 
-    transition_matrix = Any(param.TRANSITION_MATRIX).tag(sync=True)
-    "pd.DataFrame: containing at least 3 columns: from_code, to_code, impact_code"
+    transition_matrix = Unicode().tag(sync=True)
+    "str: transition matrix file used to calculate the sub_b indicator"
+
+    green_non_green_file = Unicode().tag(sync=True)
+    "str: custom green non green matrix file used to calculate the sub_b indicator when user has a custom transition matrix"
 
     dash_ready = Bool(False).tag(sync=True)
     "bool: this attribute will receive the dashboard status. True when it has loaded successfully"

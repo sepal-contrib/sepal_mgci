@@ -59,8 +59,16 @@ def fill_parsed_df(parsed_df):
     return filled_df
 
 
-def get_impact(row, transition_table):
-    """Return the type of the impact based on the initial and last class"""
+def get_impact(row, model):
+    """Return the type of the impact based on the initial and last class
+
+    Args:
+        row (pd.Series): row of the dataframe
+        model (MGCIModel): model containing the transition_matrix dataframe (custom or default)
+    """
+
+    # Read the transition matrix safely with pandas
+    transition_table = pd.read_csv(model.transition_matrix)
 
     # Check that both
     if not all([row["from_lc"], row["to_lc"]]):

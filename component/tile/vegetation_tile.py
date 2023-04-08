@@ -131,7 +131,7 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
         self.w_reclass = self.reclassify_tile.w_reclass
 
-        self.transition_view = TransitionMatrix(self.model)
+        self.transition_view = TransitionMatrix(model)
         self.transition_view.hide()
 
         sub_a_tabs = cw.Tabs(
@@ -169,6 +169,17 @@ class VegetationView(v.Layout, sw.SepalWidget):
         self.w_questionaire.observe(self.get_reclassify_view)
 
         self.model.observe(self.set_default_asset, "dash_ready")
+
+        # Create a link between the transition matrix and the model
+        directional_link(
+            (self.transition_view, "transition_matrix"),
+            (self.model, "transition_matrix"),
+        )
+
+        directional_link(
+            (self.transition_view, "green_non_green_file"),
+            (self.model, "green_non_green_file"),
+        )
 
         self.get_reclassify_view()
 
@@ -222,6 +233,7 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
                     # Hide transition matrix
                     self.transition_view.show_matrix = False
+
                     self.w_reclass.reclassify_table.btn_load_target.show()
 
                 else:
@@ -243,8 +255,10 @@ class VegetationView(v.Layout, sw.SepalWidget):
                 else:
                     # show transition matrix but disabled
                     self.transition_view.show()
-                    self.transition_view.show_matrix = True
                     self.transition_view.disabled = True
+                    self.transition_view.set_default_values()
+
+                    self.transition_view.show_matrix = True
 
     def display_map(self, *args):
         """Display reclassified raster on map. Get the reclassify visualization
