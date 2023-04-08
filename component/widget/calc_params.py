@@ -349,18 +349,7 @@ class CustomList(sw.List):
         sub_btn = v.Btn(children=[v.Icon(children=["mdi-minus"])], icon=True)
         sub_btn.on_event("click", lambda *args: self.remove_element(*args, id_=id_))
 
-        actions = (
-            [v.ListItemAction(children=[self.add_btn])]
-            if single
-            else [
-                v.ListItemAction(
-                    children=[self.add_btn],
-                ),
-                v.ListItemAction(
-                    children=[sub_btn],
-                ),
-            ]
-        )
+        actions = v.ListItemAction(children=[self.add_btn])
 
         w_basep = v.Select(
             class_="mr-2 max-width-200",
@@ -386,8 +375,10 @@ class CustomList(sw.List):
 
         if self.indicator == "sub_b":
 
+            sub_b_actions = v.Layout(children=[self.add_btn, sub_btn])
+
             # only display report widgets when using sub_b
-            sub_b_content = CustomListB(items=self.items)
+            sub_b_content = CustomListB(items=self.items, actions=sub_b_actions)
 
             sub_b_content.observe(
                 lambda chg: self.update_model(chg, id_=id_), "v_model"
@@ -400,9 +391,15 @@ class CustomList(sw.List):
                 children=[
                     sub_b_content
                     if self.indicator == "sub_b"
-                    else v.ListItemContent(children=[w_basep_container]),
-                ]
-                + actions,
+                    else v.ListItemContent(
+                        children=[
+                            v.Flex(
+                                class_="d-flex align-center",
+                                children=[w_basep_container, actions],
+                            )
+                        ]
+                    ),
+                ],
             ),
             v.Divider(
                 attributes={"id": id_},
@@ -498,10 +495,11 @@ class CustomListB(sw.ListItemContent):
 
     v_model = Dict(allow_none=True).tag(sync=True)
 
-    def __init__(self, items, *args, **kwargs):
+    def __init__(self, items, actions, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.items = items
+        self.actions = actions
         self.attributes = {"id": "custom_list_sub_b"}
 
         self.w_report_yr = sw.Select(
@@ -588,6 +586,7 @@ class CustomListB(sw.ListItemContent):
                                 class_="d-flex align-center",
                                 children=[span_report, w_reportp_container],
                             ),
+                            actions,
                         ]
                     ),
                 ]
