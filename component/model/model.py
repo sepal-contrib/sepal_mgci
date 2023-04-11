@@ -10,7 +10,8 @@ from traitlets import Any, Bool, CBool, Dict, List, Unicode
 import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
 import component.scripts as cs
-from component.parameter.report_template import *
+
+# from component.parameter.report_template import *
 
 
 class MgciModel(Model):
@@ -22,7 +23,9 @@ class MgciModel(Model):
 
     # output parameters
     year = Unicode("", allow_none=True).tag(sync=True)
-    source = Unicode("", allow_none=True).tag(sync=True)
+    source = Unicode(
+        "Food and Agriculture Organisation of United Nations (FAO)", allow_none=True
+    ).tag(sync=True)
 
     # Custom
     impact_matrix = Bool(allow_none=False).tag(sync=True)
@@ -177,7 +180,6 @@ class MgciModel(Model):
             )
 
         if indicator == "sub_b":
-
             ee_lc_end_band = ee.Image(lc_end).bandNames().get(0)
             ee_lc_end = ee.Image(lc_end).select([ee_lc_end_band])
             ee_lc_end = no_remap(ee_lc_end)

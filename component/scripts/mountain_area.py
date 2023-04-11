@@ -7,7 +7,12 @@ import component.scripts as cs
 
 # isort: off
 from component.parameter.index_parameters import mountain_area_cols
-from component.scripts.report_scripts import fill_parsed_df, get_belt_desc
+from component.scripts.report_scripts import (
+    fill_parsed_df,
+    get_belt_desc,
+    get_nature,
+    get_obs_status,
+)
 
 LC_MAP_MATRIX = pd.read_csv(param.LC_MAP_MATRIX)
 "pd.DataFrame: land cover map matrix. Contains the mapping values between old and new classes for each land cover type. If user selects custom land cover, users will have to reclassify their classes into the fixed lulc_table classes."
@@ -62,12 +67,17 @@ def get_report(parsed_df: pd.DataFrame, year: int, model) -> pd.DataFrame:
     report_df["REF_AREA"] = cs.get_geoarea(model.aoi_model)[1]
     report_df["TIME_PERIOD"] = year
     report_df["TIME_DETAIL"] = year
-    report_df[
-        "SOURCE_DETAIL"
-    ] = "Food and Agriculture Organisation of United Nations (FAO)"  # TODO: Capture from user's input
+    report_df["SOURCE_DETAIL"] = model.source
     report_df["COMMENT_OBS"] = "FAO estimate"
-    report_df["NATURE"] = ""  # TODO: CREATE cs.get_nature()
-    report_df["OBS_STATUS"] = ""  # TODO: CREATE cs.get_obs_status()
     report_df["BIOCLIMATIC_BELT"] = report_df.apply(get_belt_desc, axis=1)
+
+    # fill NaN values with "N/A"
+    report_df.fillna("NA", inplace=True)
+
+    # fill zeros with "N/A"
+    report_df.replace(0, "NA", inplace=True)
+
+    report_df["NATURE"] = report_df.apply(get_nature, axis=1)
+    report_df["OBS_STATUS"] = report_df.apply(get_obs_status, axis=1)
 
     return report_df[mountain_area_cols].reset_index(drop=True), year

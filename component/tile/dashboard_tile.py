@@ -42,7 +42,6 @@ class DashboardTile(sw.Card):
 
 class DashView(sw.Layout):
     def __init__(self, model, indicator, *args, **kwargs):
-
         self.indicator = indicator
         self.class_ = "d-block"
         self.attributes = {"id": f"dashboard_view_{self.indicator}"}
@@ -120,7 +119,6 @@ class DashView(sw.Layout):
 
     @su.loading_button(debug=True)
     def render_dashboard(self, *_):
-
         self.show()
         self.clear()
         self.alert.add_msg(cm.dashboard.alert.rendering)
@@ -244,9 +242,9 @@ class ExportView(v.Card):
         ]
 
         self.btn.on_event("click", self.export_results)
-
-        self.model.bind(self.w_source, "source")
         self.model.observe(self.activate_download, "summary_df")
+
+        link((self.model, "source"), (self.w_source, "v_model"))
 
     def activate_download(self, change):
         """Verify if the summary_df is created, and activate button"""
