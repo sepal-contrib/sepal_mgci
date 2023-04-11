@@ -100,7 +100,6 @@ class Calculation(sw.List):
         on model ic_items change"""
 
         if self.ready and change["new"]:
-
             dialog = self.get_children(id_=f"dialog_{indicator}")[0]
             w_content = self.get_children(id_=f"content_{indicator}")[0]
             dialog.reset_event()
@@ -228,7 +227,6 @@ class Calculation(sw.List):
         multichips = []
 
         for reporting_y in reporting_years.keys():
-
             multichips.append(
                 [
                     v.Chip(
@@ -256,8 +254,65 @@ class Calculation(sw.List):
         self.model.reporting_years_sub_a = reporting_years
 
 
-class CustomList(sw.List):
+class EditionDialog(sw.Dialog):
+    def __init__(self, custom_list, indicator):
+        self.v_model = False
+        self.scrollable = True
+        self.max_width = 650
+        self.style_ = "overflow-x: hidden;"
+        self.persistent = True
 
+        super().__init__()
+
+        self.attributes = {"id": f"dialog_{indicator}"}
+        self.custom_list = custom_list
+
+        ok_btn = sw.Btn("OK", small=True)
+        close_btn = sw.Btn("CANCEL", small=True)
+
+        clean_btn = sw.Btn(gliph="mdi-broom", icon=True).set_tooltip(
+            "Reset all values", bottom=True
+        )
+
+        self.children = [
+            sw.Card(
+                max_width=650,
+                min_height=420,
+                style_="height: 100%;",
+                class_="pa-4",
+                children=[
+                    v.CardTitle(
+                        children=[
+                            cm.calculation[indicator].title,
+                            v.Spacer(),
+                            clean_btn.with_tooltip,
+                        ]
+                    ),
+                    self.custom_list,
+                    v.CardActions(children=[v.Spacer(), close_btn, ok_btn]),
+                ],
+            ),
+        ]
+
+        ok_btn.on_event("click", self.validate_and_close)
+        close_btn.on_event("click", lambda *x: setattr(self, "v_model", False))
+        clean_btn.on_event("click", self.reset_event)
+
+    def validate_and_close(self, *args):
+        """validate the dialog and close if no errors are found"""
+
+        if self.custom_list.errors:
+            return
+
+        setattr(self, "v_model", False)
+
+    def reset_event(self, *args):
+        """search within the content and trigger reset method"""
+
+        self.custom_list.reset()
+
+
+class CustomList(sw.List):
     counter = Int(1).tag(syc=True)
     "int: control number to check how many subb pairs are loaded"
     max_ = Int(10 - 1).tag(syc=True)
@@ -270,11 +325,12 @@ class CustomList(sw.List):
     "str: indicator name. sub_a or sub_b. The widget will render the corresponding subindicator"
     ids = List([]).tag(sync=True)
     "list: list of ids of the elements that are currently loaded in the list"
+    errors = List([]).tag(sync=True)
+    "list: list of errors that are currently displayed in each of the list elements"
 
     def __init__(
         self, indicator: Literal["sub_a", "sub_b"], items: list = [], label: str = ""
     ) -> sw.List:
-
         self.label = label
         self.items = items
         self.indicator = indicator
@@ -285,6 +341,9 @@ class CustomList(sw.List):
         self.add_btn = v.Btn(children=[v.Icon(children=["mdi-plus"])], icon=True)
         self.children = self.get_element(single=True)
         self.add_btn.on_event("click", self.add_element)
+
+        if indicator == "sub_b":
+            self.get_children(id_="custom_list_sub_b")[0].validate_inputs()
 
     def remove_element(self, *args, id_):
         """Removes element from the current list"""
@@ -302,6 +361,7 @@ class CustomList(sw.List):
         self.v_model = tmp_vmodel
 
         self.counter -= 1
+        self.get_errors(None)
 
     def add_element(self, *args):
         """Creates a new element and append to the current list"""
@@ -309,6 +369,8 @@ class CustomList(sw.List):
         if self.counter <= self.max_:
             self.counter += 1
             self.children = self.children + self.get_element()
+
+        [ch.validate_inputs() for ch in self.get_children(id_="custom_list_sub_b")]
 
     def update_model(self, data, id_, target=None):
         """update v_model content based on select changes.
@@ -338,6 +400,18 @@ class CustomList(sw.List):
 
         self.v_model = tmp_vmodel
 
+    def get_errors(self, change):
+        """Get errors from the select change event"""
+
+        # Get all custom List items
+        items = self.get_children(id_="custom_list_sub_b")
+
+        # Get all errors that are there
+        errors = [item.errors for item in items]
+
+        # flatten list
+        self.errors = [val for sublist in errors for val in sublist]
+
     def get_element(self, single=False):
         """creates a double select widget with add and remove buttons. To allow user
         calculate subindicator B and also perform multiple calculations at once"""
@@ -349,7 +423,10 @@ class CustomList(sw.List):
         sub_btn = v.Btn(children=[v.Icon(children=["mdi-minus"])], icon=True)
         sub_btn.on_event("click", lambda *args: self.remove_element(*args, id_=id_))
 
-        actions = v.ListItemAction(children=[self.add_btn])
+        actions = [self.add_btn, sub_btn]
+
+        if self.counter == 1:
+            actions = [actions[0]]
 
         w_basep = v.Select(
             class_="mr-2 max-width-200",
@@ -361,7 +438,7 @@ class CustomList(sw.List):
 
         w_base_yref = SelectYear()
         w_basep_container = sw.Flex(
-            class_="d-flex flex-row", children=[w_basep, w_base_yref]
+            class_="d-flex flex-row", children=[w_basep, w_base_yref] + actions
         )
 
         w_basep.observe(
@@ -374,15 +451,15 @@ class CustomList(sw.List):
         )
 
         if self.indicator == "sub_b":
-
-            sub_b_actions = v.Layout(children=[self.add_btn, sub_btn])
-
             # only display report widgets when using sub_b
-            sub_b_content = CustomListB(items=self.items, actions=sub_b_actions)
+            sub_b_content = CustomListB(items=self.items, actions=actions, counter=id_)
 
             sub_b_content.observe(
                 lambda chg: self.update_model(chg, id_=id_), "v_model"
             )
+
+            # link errors to the main widget
+            sub_b_content.observe(self.get_errors, "errors")
 
         item = [
             v.ListItem(
@@ -391,14 +468,7 @@ class CustomList(sw.List):
                 children=[
                     sub_b_content
                     if self.indicator == "sub_b"
-                    else v.ListItemContent(
-                        children=[
-                            v.Flex(
-                                class_="d-flex align-center",
-                                children=[w_basep_container, actions],
-                            )
-                        ]
-                    ),
+                    else v.ListItemContent(children=[w_basep_container]),
                 ],
             ),
             v.Divider(
@@ -432,74 +502,17 @@ class CustomList(sw.List):
         self.v_model = {}
 
 
-class EditionDialog(sw.Dialog):
-    def __init__(self, custom_list, indicator):
-        self.v_model = False
-        self.scrollable = True
-        self.max_width = 650
-        self.style_ = "overflow-x: hidden;"
-
-        super().__init__()
-
-        self.attributes = {"id": f"dialog_{indicator}"}
-        self.custom_list = custom_list
-
-        close_btn = sw.Btn("OK", small=True)
-        clean_btn = sw.Btn(gliph="mdi-broom", icon=True).set_tooltip(
-            "Reset all values", bottom=True
-        )
-
-        self.children = [
-            sw.Card(
-                max_width=650,
-                min_height=420,
-                style_="height: 100%;",
-                class_="pa-4",
-                children=[
-                    v.CardTitle(
-                        children=[
-                            cm.calculation[indicator].title,
-                            v.Spacer(),
-                            clean_btn.with_tooltip,
-                        ]
-                    ),
-                    self.custom_list,
-                    v.CardActions(children=[v.Spacer(), close_btn]),
-                ],
-            ),
-        ]
-
-        close_btn.on_event("click", lambda *args: setattr(self, "v_model", False))
-        clean_btn.on_event("click", self.reset_event)
-
-    def reset_event(self, *args):
-        """search within the content and trigger reset method"""
-
-        self.custom_list.reset()
-
-
-class SelectYear(v.Select):
-    """Select widget to select a year, it will be always the same"""
-
-    def __init__(self, label=cm.calculation.match_year, attributes={}, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.v_model = False
-        self.style_ = "min-width: 125px; max-width: 125px"
-        self.label = label
-        self.items = param.YEARS
-        self.attributes = attributes or {"id": "ref_select"}
-
-
 class CustomListB(sw.ListItemContent):
-
     v_model = Dict(allow_none=True).tag(sync=True)
+
+    errors = List([]).tag(sync=True)
+    "list: List of errors found in the widget"
 
     def __init__(self, items, actions, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
+        self.errors = []
         self.items = items
-        self.actions = actions
+
         self.attributes = {"id": "custom_list_sub_b"}
 
         self.w_report_yr = sw.Select(
@@ -520,16 +533,18 @@ class CustomListB(sw.ListItemContent):
                 "clean": True,
             },
             label=cm.calculation.y_base,
-            items=self.items,
+            items=sorted(self.items, reverse=False),
         )
 
         w_base_yref = SelectYear(
             attributes={
+                "unique_id": "ref_select_base",
                 "id": "ref_select",
                 "type": "base",
                 "target": "year",
                 "clean": True,
-            }
+            },
+            reverse=False,
         )
 
         w_basep_container = sw.Flex(
@@ -546,16 +561,18 @@ class CustomListB(sw.ListItemContent):
                 "clean": True,
             },
             label=cm.calculation.y_report,
-            items=self.items,
+            items=sorted(self.items, reverse=True),
         )
 
         w_report_yref = SelectYear(
             attributes={
+                "unique_id": "ref_select_report",
                 "id": "ref_select",
                 "type": "report",
                 "target": "year",
                 "clean": True,
-            }
+            },
+            reverse=True,
         )
 
         w_reportp_container = sw.Flex(
@@ -575,7 +592,7 @@ class CustomListB(sw.ListItemContent):
         self.children = [
             sw.Card(
                 children=[
-                    sw.CardTitle(children=[sw.Spacer(), self.w_report_yr]),
+                    sw.CardTitle(children=actions + [sw.Spacer(), self.w_report_yr]),
                     sw.CardText(
                         children=[
                             sw.Flex(
@@ -586,7 +603,6 @@ class CustomListB(sw.ListItemContent):
                                 class_="d-flex align-center",
                                 children=[span_report, w_reportp_container],
                             ),
-                            actions,
                         ]
                     ),
                 ]
@@ -610,6 +626,35 @@ class CustomListB(sw.ListItemContent):
         # set after linking the observers
         self.w_report_yr.v_model = self.w_report_yr.items[0]
 
+    def validate_inputs(self):
+        """Validate the inputs"""
+        # Default errors
+        self.errors = []
+
+        selects = self.get_children(id_="selects") + self.get_children(id_="ref_select")
+
+        for select in selects:
+            if not select.v_model:
+                select.error_messages = ["This field is required"]
+                self.errors = self.errors + [select.label]
+            else:
+                select.error_messages = []
+                self.errors = [err for err in self.errors if err != select.label]
+
+        # Validate reference year inputs
+        base_year = self.get_children(attr="unique_id", value="ref_select_base")[0]
+        report_year = self.get_children(attr="unique_id", value="ref_select_report")[0]
+
+        if all([base_year.v_model, report_year.v_model]):
+            if base_year.v_model >= report_year.v_model:
+                base_year.error_messages = ["Base year must be less than report year"]
+                report_year.error_messages = ["Base year must be less than report year"]
+                self.errors = self.errors + ["year_error"]
+            else:
+                base_year.error_messages = []
+                report_year.error_messages = []
+                self.errors = [err for err in self.errors if err != "year_error"]
+
     def set_v_model(self, change):
         """set the v_model of the w_reportp"""
 
@@ -618,13 +663,13 @@ class CustomListB(sw.ListItemContent):
         year = self.w_report_yr.v_model
 
         if year:
-
             type_ = change["owner"].attributes.get("type")
             target = change["owner"].attributes.get("target")
             value = change["owner"].v_model
 
             tmp_vmodel.setdefault(year, {}).setdefault(type_, {})[target] = value
 
+        self.validate_inputs()
         self.v_model = tmp_vmodel
 
     def fill_span_values(self, change):
@@ -644,7 +689,6 @@ class CustomListB(sw.ListItemContent):
         val = change["new"]
 
         if val:
-
             span_base = self.get_children(id_="span_base")[0]
             span_report = self.get_children(id_="span_report")[0]
 
@@ -656,3 +700,23 @@ class CustomListB(sw.ListItemContent):
 
             span_report.children = [f"{val}:"]
             span_base.children = [f"{previous}:"]
+
+
+class SelectYear(v.Select):
+    """Select widget to select a year, it will be always the same"""
+
+    def __init__(
+        self,
+        label=cm.calculation.match_year,
+        attributes={},
+        reverse=False,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+
+        self.v_model = False
+        self.style_ = "min-width: 125px; max-width: 125px"
+        self.label = label
+        self.items = sorted(param.YEARS, reverse=reverse)
+        self.attributes = attributes or {"id": "ref_select"}
