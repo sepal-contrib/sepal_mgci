@@ -54,7 +54,7 @@ sub_a_cols = [
     "UNIT_MEASURE",
     "UNIT_MULT",
     "BIOCLIMATIC_BELT",
-    # "LAND_COVER",
+    "LAND_COVER",
     "OBS_VALUE",
 ]
 
@@ -190,5 +190,4 @@ sub_b_landtype_cols = [
     "OBS_VALUE_RSA",
     "OBS_VALUE_NET",
     "OBS_VALUE_RSA_NET",
-    "IMPACT_TYPE",
 ]
