@@ -5,7 +5,7 @@ from time import sleep
 import ipyvuetify as v
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
-from traitlets import link
+from traitlets import directional_link, link
 
 import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
@@ -95,7 +95,7 @@ class CalculationView(sw.Card):
             self.alert,
         ]
 
-        self.model.bind(self.w_use_rsa, "rsa")
+        directional_link((self.w_use_rsa, "v_model"), (self.model, "rsa"))
 
         self.btn.on_event("click", self.run_statistics)
 
@@ -112,20 +112,45 @@ class CalculationView(sw.Card):
             else cm.dashboard.label.plan
         )
 
+        if self.model.calc_a:
+            if not any([self.model.calc_a, self.model.calc_b]):
+                raise Exception(cm.calculation.error.no_subind)
+
+            else:
+                if all([not self.model.sub_a_year, not self.model.sub_b_year]):
+                    raise Exception(cm.calculation.error.no_years)
+
+            # Check that all subindicator A have
+
+            if not self.model.sub_a_year:
+                raise Exception("Subindicator A has no years selected")
+
+            else:
+                for idx, year in self.model.sub_a_year.items():
+                    if not year.get("asset"):
+                        raise Exception(f"Item {idx} has no asset selected")
+                    if not year.get("year"):
+                        raise Exception(f"Item {idx} has no year selected")
+
+        if self.model.calc_b:
+            if not self.model.sub_b_year:
+                raise Exception("Subindicator B has no years selected")
+
+            if self.get_children(id_="custom_list_sub_b")[0].errors:
+                raise Exception("Subindicator B has errors")
+
         if not any([self.model.calc_a, self.model.calc_b]):
-            raise Exception(cm.calculation.error.no_subind)
-        else:
-            if all([not self.model.sub_a_year, not self.model.sub_b_year]):
-                raise Exception(cm.calculation.error.no_years)
+            raise Exception("Please select at least one subindicator")
 
-        # TODO: Check that user years are consistent:
-        # - for sub_b: there cannot be repeated reporting years
-        # - for sub_a: check that reporting is higher than baseline
-
-        # TODO: assert that sub_a_matrix only have 10 classes
+        which = (
+            "both"
+            if self.model.calc_a and self.model.calc_b
+            else "sub_a"
+            if self.model.calc_a
+            else "sub_b"
+        )
 
         # Calculate regions
-
         head_msg = sw.Flex(children=[cm.dashboard.alert.computing.format(area_type)])
 
         self.alert.add_msg(head_msg)
@@ -145,7 +170,6 @@ class CalculationView(sw.Card):
             start_year = year[0].get("asset")
 
             if len(year) > 1:
-
                 end_year = year[1].get("asset")
                 process = self.model.reduce_to_regions("sub_b", start_year, end_year)
 
@@ -171,7 +195,6 @@ class CalculationView(sw.Card):
                     raise Exception(f"There was an error {e}")
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
-
             self.model.done = False
 
             # set same_year_matrix variable from model, it will be used when quering the
@@ -190,6 +213,7 @@ class CalculationView(sw.Card):
                 self.model.sub_b_year,
                 self.model.matrix_sub_a,
                 self.model.matrix_sub_b,
+                which=which,
             )
 
             unique_preffix = su.random_string(4).upper()
@@ -264,7 +288,6 @@ class DownloadTaskView(v.Card):
 
     @su.loading_button(debug=True)
     def run_statistics(self, widget, event, data):
-
         # Get and read file
         tasks_file = Path(self.w_file_input.v_model)
         tasks_df = self.model.read_tasks_file(tasks_file)

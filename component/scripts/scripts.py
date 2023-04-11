@@ -1,7 +1,7 @@
 import random
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Literal, Tuple, Union
 
 import ipyvuetify as v
 import numpy as np
@@ -141,7 +141,6 @@ def years_from_dict(year_dict: dict) -> str:
 def get_interpolation_years(
     breaking_points: Dict[str, List[Dict[str, str]]]
 ) -> List[List[Dict[str, str]]]:
-
     """Get interpolation years (assets) from the breaking points.
 
     Based on the breaking points, it will return a list of years (assets)
@@ -197,9 +196,12 @@ def get_interpolation_years(
 
 
 def get_years(
-    sub_a_year: int, sub_b_year: int, matrix_a: str, matrix_b: str
+    sub_a_year: dict,
+    sub_b_year: dict,
+    matrix_a: str,
+    matrix_b: str,
+    which: Literal["both", "sub_a", "sub_b"],
 ) -> List[List[int]]:
-    years_a = get_sub_a_break_points(sub_a_year)
     """Returns a nested list of years (asset) based on the input start and end years.
 
     In order to minimize the number of calculations, assets that are present
@@ -212,6 +214,7 @@ def get_years(
         sub_b_year (dict): model dictionary containing sub B dialog v_model
         matrix_a (dict): reclassification matrix from model A
         matrix_b (dict): reclassification matrix from model B
+        which (str): which sub indicator is being calculated
 
 
     Returns:
@@ -231,7 +234,21 @@ def get_years(
         returns: [[asset_x/2015], [asset_x/2020] [asset_y/2020', asset_y/2015]]
 
     """
+
     years_to_calculate = get_sub_b_break_points(sub_b_year)
+
+    if which == "sub_b":
+        return years_to_calculate
+
+    years_a = get_sub_a_break_points(sub_a_year)
+
+    if which == "sub_a":
+        years_to_calculate = []
+        for breakp_years in years_a.values():
+            # flatten years_a list
+            for year in breakp_years:
+                years_to_calculate.append([year])
+        return years_to_calculate
 
     if matrix_a == matrix_b:
         # Add years from years_a that are not present in years_b
@@ -290,7 +307,6 @@ def get_result_from_year(
     in_double = [str_year in yr for yr in double_years]
 
     if any(in_double):
-
         # There is no way that there are more than 2 years in double_years
         assert sum(in_double) == 1, "More than 2 years in double_years"
         idx = in_double.index(True)
