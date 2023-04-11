@@ -1,5 +1,69 @@
 import component.scripts as cs
 
+ic_items_sub_a = [
+    "users/amitghosh/sdg_module/esa/cci_landcover/1992",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1993",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1994",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1995",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1996",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1997",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1998",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1999",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2000",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2001",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2002",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2003",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2004",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2005",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2006",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2007",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2008",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2009",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2010",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2011",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2012",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2013",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2014",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2015",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2016",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2017",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2018",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2019",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2020",
+]
+
+ic_items_sub_b = [
+    "users/amitghosh/sdg_module/esa/cci_landcover/1992",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1993",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1994",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1995",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1996",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1997",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1998",
+    "users/amitghosh/sdg_module/esa/cci_landcover/1999",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2000",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2001",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2002",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2003",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2004",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2005",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2006",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2007",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2008",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2009",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2010",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2011",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2012",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2013",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2014",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2015",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2016",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2017",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2018",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2019",
+    "users/amitghosh/sdg_module/esa/cci_landcover/2020",
+]
+
 results = {
     "2009": {
         "groups": [
@@ -321,7 +385,6 @@ sub_b_year = {
 
 
 def test_get_sub_b_years():
-
     expected_result = [
         [
             {
@@ -349,7 +412,6 @@ def test_get_sub_b_years():
 
 
 def test_get_sub_b_years_labels(sub_b_year):
-
     expected_result = {2022: "2022_2020", 2015: "2010_2015"}
 
     assert cs.get_sub_b_years_labels == expected_result
