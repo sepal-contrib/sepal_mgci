@@ -12,6 +12,22 @@ LC_CLASSES = pd.read_csv(param.LC_CLASSES)
 "pd.Dataframe: fixed land cover classes, description and colors"
 
 
+def get_nature(row):
+    """return nature column based on OBS_VALUE"""
+
+    return "N" if row["OBS_VALUE"] == "NA" else "C"
+
+
+def get_obs_status(row):
+    """Information on the quality of a value or an unusual or missing value. For what regards to the values produced by countries using the tools only two possible values are allowed: A (Official figure) for data values and M (Missing) when a given bioclimatc belt does not occur in a given country. When Nature = N then OBS_STATUS=M and  OBS_VALUE = NA."""
+
+    if row["NATURE"] == "N":
+        return "M"
+
+    elif row["NATURE"] == "C":
+        return "A"
+
+
 def get_belt_desc(row):
     """return bioclimatic belt description"""
 
@@ -80,9 +96,20 @@ def get_impact(row, model):
     ]["impact_code"].values[0]
 
 
-def get_impact_desc(row, transition_table):
-    """Return impact description based on its code"""
+def get_impact_desc(row, model):
+    """Return impact description based on its code.
 
-    desc = transition_table[transition_table.impact_code == row["impact"]]["impact"]
+    Args:
+        row (pd.Series): row of the dataframe
+        model (MGCIModel): model containing the transition_matrix dataframe (custom or default)
+
+    """
+
+    # Read the transition matrix safely with pandas
+    transition_table = pd.read_csv(model.transition_matrix)
+
+    desc = transition_table[transition_table.impact_code == row["impact_code"]][
+        "impact"
+    ]
 
     return desc.values[0] if len(desc) else "All"
