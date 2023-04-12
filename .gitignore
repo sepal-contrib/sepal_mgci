@@ -8,6 +8,7 @@ __pycache__/
 component/scripts/new_indicator
 .vscode
 typings/
+test*.ipynb
 # C extensions
 *.so
 

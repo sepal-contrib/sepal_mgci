@@ -364,7 +364,6 @@ def interpolate_sub_a_data(
 
     if not (year1 < target_year < year2):
         raise Exception("target year has to be in between year1 and year 2")
-
     df1 = get_result_from_year(model, year1, "sub_a")
     df2 = get_result_from_year(model, year2, "sub_a")
 
