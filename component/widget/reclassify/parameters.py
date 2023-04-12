@@ -10,7 +10,7 @@ NO_VALUE = 999
 
 SCHEMA = {
     "id": [cm.rec.table.schema.id, "number"],
-    "code": [cm.rec.table.schema.code, "number"],
+    "lc_class": [cm.rec.table.schema.code, "number"],
     "desc": [cm.rec.table.schema.description, "string"],
     "color": [cm.rec.table.schema.color, "hexa"],
 }

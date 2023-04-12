@@ -9,11 +9,10 @@ import rasterio as rio
 from matplotlib.colors import to_rgba
 from natsort import natsorted
 from rasterio.windows import from_bounds
-from traitlets import Any, Bool, Dict, Int, List
-
 from sepal_ui.model import Model
 from sepal_ui.scripts import gee
 from sepal_ui.scripts import utils as su
+from traitlets import Any, Bool, Dict, Int, List
 
 from component.message import cm
 from component.widget.reclassify.parameters import NO_VALUE
@@ -161,16 +160,12 @@ class ReclassifyModel(Model):
 
         path = Path(self.dst_class_file)
         if not path.is_file():
-            raise Exception(f"{self.dst_class_file} is not existing")
+            raise Exception(f"{self.dst_class_file} does not exist.")
 
-        df = pd.read_csv(self.dst_class_file, header=None)
-
-        # dst_class_file should be set on the model csv output of the custom view
-        # 3 column: 1: code, 2: name, 3: color
-        df = df.rename(columns={0: "code", 1: "desc", 2: "color"})
+        df = pd.read_csv(self.dst_class_file)
 
         # save the df for reclassify usage
-        class_list = {row.code: (row.desc, row.color) for _, row in df.iterrows()}
+        class_list = {row.lc_class: (row.desc, row.color) for _, row in df.iterrows()}
 
         # create a dict out of it
         return class_list
