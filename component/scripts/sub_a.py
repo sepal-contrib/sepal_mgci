@@ -1,8 +1,9 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import pandas as pd
 
 import component.scripts as cs
+from component.model.model import MgciModel
 
 # isort: off
 from component.parameter.index_parameters import sub_a_cols, sub_a_landtype_cols
@@ -234,3 +235,17 @@ def get_report(
         assert len(report_df) == 55, "Report should have 55 rows"
 
     return report_df[output_cols].reset_index(drop=True), year
+
+
+def get_reports(
+    parsed_df: pd.DataFrame, year_s: str, model: MgciModel
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    SubIndA_MGCI
+    SubIndA_LandType
+    """
+
+    mgci_report = get_report(parsed_df, year_s, model)
+    mgci_land_type_report = get_report(parsed_df, year_s, model, land_type=True)
+
+    return mgci_report, mgci_land_type_report

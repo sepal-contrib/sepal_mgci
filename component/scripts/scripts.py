@@ -13,7 +13,9 @@ import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
 import component.scripts as cs
 from component.model.model import Model as MGCIModel
-from component.scripts import sub_a, sub_b
+from component.scripts import mountain_area as mntn
+from component.scripts import sub_a as sub_a
+from component.scripts import sub_b as sub_b
 
 __all__ = [
     "human_format",
@@ -604,34 +606,6 @@ def get_sub_a_break_points(user_input_years: list) -> dict:
     return break_points
 
 
-def get_sub_a_reports(
-    parsed_df: pd.DataFrame, year_s: str, model: MGCIModel
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    SubIndA_MGCI
-    SubIndA_LandType
-    """
-
-    mgci_report = sub_a.get_report(parsed_df, year_s, model)
-    mgci_land_type_report = sub_a.get_report(parsed_df, year_s, model, land_type=True)
-
-    return mgci_report, mgci_land_type_report
-
-
-def get_sub_b_reports(
-    parsed_df: pd.DataFrame, year_s: str, model: MGCIModel
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    SubIndB_pdma
-    SubIndB_pdma_TransitionType
-    """
-
-    pdma_perc_report = sub_b.get_report(parsed_df, year_s, model)
-    pdma_land_type_report = sub_b.get_report(parsed_df, year_s, model, land_type=True)
-
-    return pdma_perc_report, pdma_land_type_report
-
-
 def export_reports(model: MGCIModel, output_folder) -> None:
     """
     This function exports the reports of the model's results (calculation).
@@ -667,10 +641,9 @@ def export_reports(model: MGCIModel, output_folder) -> None:
     for year in sub_a_years:
         print(f"Reporting {year} for sub_a")
         parsed_df = cs.get_result_from_year(model, year, "sub_a")
-        sub_a_reports.append(get_sub_a_reports(parsed_df, year, model))
-
-        # TODO: add mntn_reports
-        mtn_reports.append(get_mtn_report(parsed_df, year, model))
+        sub_a_reports.append(sub_a.get_reports(parsed_df, year, model))
+        print(f"Reporting {year} for mtn")
+        mtn_reports.append(mntn.get_report(parsed_df, year, model))
 
     for year in sub_b_years:
         print(f"Reporting {year} for sub_b")
@@ -678,7 +651,7 @@ def export_reports(model: MGCIModel, output_folder) -> None:
         year_lbl = cs.get_sub_b_years_labels(model.sub_b_year)[year]
         print(year_lbl)
         parsed_df = cs.get_result_from_year(model, year_lbl, "sub_b")
-        sub_b_reports.append(get_sub_b_reports(parsed_df, year, model))
+        sub_b_reports.append(sub_b.get_reports(parsed_df, year_lbl, model))
 
     for reports in sub_a_reports:
         [
@@ -688,7 +661,8 @@ def export_reports(model: MGCIModel, output_folder) -> None:
                 index=False,
             )
             for report, name in zip(
-                reports, ["SubIndA_MGCI_{}.xlsx", "SubIndA_LandType_{}.xlsx"]
+                reports,
+                ["Table3_1542a_MGCI_{}.xlsx", "Table2_1542a_LandCoverType_{}.xlsx"],
             )
         ]
 
@@ -700,8 +674,19 @@ def export_reports(model: MGCIModel, output_folder) -> None:
                 index=False,
             )
             for report, name in zip(
-                reports, ["SubIndB_pdma_{}.xlsx", "SubIndB_pdma_TransitionType_{}.xlsx"]
+                reports,
+                ["Table5_1542b_pdma_pt_{}.xlsx", "Table4_1542b_pdma_area_{}.xlsx"],
             )
+        ]
+
+    for reports in mtn_reports:
+        [
+            report.to_excel(
+                str(Path(output_folder, name.format(name))),
+                sheet_name=name.format(name),
+                index=False,
+            )
+            for report, name in zip(reports, ["Table1_MountainArea_{}.xlsx"])
         ]
 
     return True

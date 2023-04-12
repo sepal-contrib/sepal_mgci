@@ -1,9 +1,10 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import pandas as pd
 
 import component.parameter.module_parameter as param
 import component.scripts as cs
+from component.model.model import MgciModel
 
 # isort: off
 from component.parameter.index_parameters import sub_b_landtype_cols, sub_b_perc_cols
@@ -167,3 +168,17 @@ def get_report(
     report_df["OBS_STATUS"] = report_df.apply(get_obs_status, axis=1)
 
     return report_df[output_cols], f"{years[0]}_{years[1]}"
+
+
+def get_reports(
+    parsed_df: pd.DataFrame, year_s: str, model: MgciModel
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    SubIndB_pdma
+    SubIndB_pdma_TransitionType
+    """
+
+    pdma_perc_report = get_report(parsed_df, year_s, model)
+    pdma_land_type_report = get_report(parsed_df, year_s, model, area=True)
+
+    return pdma_perc_report, pdma_land_type_report
