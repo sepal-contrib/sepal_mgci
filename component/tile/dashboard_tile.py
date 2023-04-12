@@ -11,6 +11,7 @@ import component.scripts as cs
 import component.widget as cw
 from component.message import cm
 from component.scripts.plots import sankey
+from component.scripts.report_scripts import get_belt_desc
 from component.widget.statistics_card import StatisticCard
 
 
@@ -25,8 +26,8 @@ class DashboardTile(sw.Card):
         self.alert = sw.Alert()
         self.df = None
 
-        dash_view_a = DashView(self.model, indicator="sub_a")
-        dash_view_b = DashView(self.model, indicator="sub_b")
+        dash_view_a = DashViewA(self.model)
+        dash_view_b = DashViewB(self.model)
         export_view = ExportView(self.model)
 
         dash_tabs = cw.Tabs(
@@ -41,18 +42,107 @@ class DashboardTile(sw.Card):
 
 
 class DashView(sw.Layout):
-    def __init__(self, model, indicator, *args, **kwargs):
+    def __init__(self, indicator, *args, **kwargs):
         self.indicator = indicator
-        self.class_ = "d-block"
-        self.attributes = {"id": f"dashboard_view_{self.indicator}"}
-        self.model = model
 
         super().__init__(*args, **kwargs)
 
+    def clear(self):
+        """Check if there is a previusly displayed dashboard and clear it, and
+        reset the modeul summary"""
+
+        if self.get_children(id_=f"render_{self.indicator}"):
+            self.children = [
+                chld
+                for chld in self.children
+                if chld.attributes.get("id") != f"render_{self.indicator}"
+            ]
+
+
+class DashViewA(DashView):
+    def __init__(self, model, *args, **kwargs):
+        self.class_ = "d-block"
+        self.attributes = {"id": f"dashboard_view_sub_a"}
+        self.model = model
+
+        super().__init__(indicator="sub_a", *args, **kwargs)
+
         self.alert = sw.Alert()
 
-        self.year_select = sw.Select(label="Select a target year", v_model=None)
-        self.belt_select = sw.Select(label="Select a belt", v_model=None)
+        self.year_select = sw.Select(
+            class_="mr-2", label="Select a target year", v_model=None
+        )
+        self.btn = sw.Btn("Calculate", class_="ml-2")
+
+        self.children = [
+            sw.Flex(
+                class_="d-flex align-center",
+                children=[self.year_select, self.btn],
+            ),
+            self.alert,
+        ]
+
+        # Observe reporting_years_{indicator} from model to update the year_select
+
+        self.model.observe(self.set_years, f"reporting_years_sub_a")
+
+        self.btn.on_event("click", self.render_dashboard)
+
+    def set_years(self, change):
+        """Set the years in the year_select"""
+
+        if change["new"].keys():
+            self.year_select.items = list(change["new"].keys())
+        else:
+            self.year_select.items = []
+
+    @su.loading_button(debug=True)
+    def render_dashboard(self, *args):
+        """create the corresponding parsed dataframe based on the selected year.
+        This dataframe will be used to calculate the MCGI"""
+
+        if not self.year_select.v_model:
+            raise Exception("Select a year.")
+
+        self.show()
+        self.clear()
+        self.alert.add_msg(cm.dashboard.alert.rendering)
+
+        df = cs.get_result_from_year(self.model, self.year_select.v_model, "sub_a")
+
+        # Get overall MGCI widget
+        w_overall = StatisticCard(df, "Total", self.model)
+
+        # Get individual stats widgets per Kapos classes
+        w_individual = [
+            StatisticCard(df, belt_class, self.model)
+            for belt_class in list(df["belt_class"].unique())
+        ]
+
+        statistics = sw.Layout(
+            attributes={"id": "render_sub_a"},
+            class_="d-block",
+            children=[w_overall] + w_individual,
+        )
+
+        self.children = self.children + [statistics]
+        self.alert.hide()
+
+
+class DashViewB(DashView):
+    def __init__(self, model, *args, **kwargs):
+        self.class_ = "d-block"
+        self.attributes = {"id": "dashboard_view_sub_b"}
+        self.model = model
+
+        super().__init__(indicator="sub_b", *args, **kwargs)
+
+        self.alert = sw.Alert()
+
+        self.year_select = sw.Select(
+            class_="mr-2", label="Select a target year", v_model=None
+        )
+        self.belt_select = sw.Select(class_="mr-2", label="Select a belt", v_model=None)
 
         self.btn = sw.Btn("Calculate", class_="ml-2")
 
@@ -66,12 +156,9 @@ class DashView(sw.Layout):
 
         # Observe reporting_years_{indicator} from model to update the year_select
 
-        self.model.observe(self.set_years, f"reporting_years_{self.indicator}")
-
+        self.model.observe(self.set_years, "reporting_years_sub_b")
         self.btn.on_event("click", self.render_dashboard)
-
         self.year_select.observe(self.set_belt_items, "v_model")
-        self.belt_select.observe(self.set_sankey_df, "v_model")
 
     def set_belt_items(self, change):
         """Set the belt items in the belt_select widget based on the year selected"""
@@ -81,44 +168,37 @@ class DashView(sw.Layout):
         self.sub_b_label = cs.get_sub_b_years_labels(self.model.sub_b_year)[
             look_up_year
         ]
-        self.df = cs.get_result_from_year(self.model, self.sub_b_label, "sub_b")
+        search_year = self.sub_b_label
+
+        self.df = cs.get_result_from_year(self.model, search_year, self.indicator)
 
         # Get all belts that are available for the selected year
 
-        self.belt_select.items = list(self.df.belt_class.unique())
+        # Create items for the belt_select widget as list of dictionaries containing
+        # {"text": get_belt_desc, "value": belt_class}
 
-    def set_sankey_df(self, change):
-        """Set the sankey dataframe based on the year and belt selected"""
+        belt_items = [
+            {"text": get_belt_desc(row), "value": row.belt_class}
+            for idx_, row in pd.DataFrame(
+                self.df.belt_class.unique(), columns=["belt_class"]
+            ).iterrows()
+        ]
 
-        self.df_sankey = (
-            self.df[self.df.belt_class == change["new"]]
-            .groupby(["from_lc", "to_lc"], as_index=False)
-            .sum()
-        )
-
-    def clear(self):
-        """Check if there is a previusly displayed dashboard and clear it, and
-        reset the modeul summary"""
-
-        if self.get_children(id_=f"render_{self.indicator}"):
-            self.children = [
-                chld
-                for chld in self.children
-                if chld.attributes.get("id") != f"render_{self.indicator}"
-            ]
+        self.belt_select.items = belt_items
 
     def set_years(self, change):
         """Set the years in the year_select"""
 
-        value = change["new"].keys() if self.indicator == "sub_a" else change["new"]
-
-        if value:
-            self.year_select.items = list(value)
+        if change["new"]:
+            self.year_select.items = list(change["new"])
         else:
             self.year_select.items = []
 
     @su.loading_button(debug=True)
-    def render_dashboard(self, *_):
+    def render_dashboard(self, *args):
+        """create the corresponding parsed dataframe based on the selected year.
+        This dataframe will be used to calculate the MCGI"""
+
         self.show()
         self.clear()
         self.alert.add_msg(cm.dashboard.alert.rendering)
@@ -126,48 +206,22 @@ class DashView(sw.Layout):
         if not self.year_select.v_model:
             raise Exception("Select a year.")
 
-        if self.indicator == "sub_a":
-            statistics = self.get_sub_a_dash()
-        else:
-            statistics = self.get_sub_b_dash()
-
-        self.children = self.children + [statistics]
-
-        self.alert.hide()
-
-    def get_sub_a_dash(self, *args):
-        """create the corresponding parsed dataframe based on the selected year.
-        This dataframe will be used to calculate the MCGI"""
-
-        df = cs.get_result_from_year(self.model, self.year_select.v_model, "sub_a")
-
-        # Get overall MGCI widget
-        w_overall = StatisticCard(df, "Total", self.model)
-
-        # Get individual stats widgets per Kapos classes
-        w_individual = [
-            StatisticCard(df, belt_class, self.model)
-            for belt_class in list(df["belt_class"].unique())
-        ]
-
-        return sw.Layout(
-            attributes={"id": "render_sub_a"},
-            class_="d-block",
-            children=[w_overall] + w_individual,
-        )
-
-    def get_sub_b_dash(self, *args):
-        """create the corresponding parsed dataframe based on the selected year.
-        This dataframe will be used to calculate the MCGI"""
-
         # Receive user year selection.
         # search for the corresponding base&report tuple in the model
         # retrieve actual tuple 'base_report' that was calculated and it's stored
         # in model.results
 
-        color_dict = pd.read_csv(param.LC_CLASSES, header=None)
+        self.df_sankey = (
+            self.df[self.df.belt_class == self.belt_select.v_model]
+            .groupby(["from_lc", "to_lc"], as_index=False)
+            .sum()
+        )
 
-        color_dict = dict(zip(color_dict.loc[:, 0], color_dict.loc[:, 2]))
+        color_dict = pd.read_csv(param.LC_CLASSES)
+
+        color_dict = dict(
+            zip(color_dict.loc[:, "lc_class"], color_dict.loc[:, "color"])
+        )
 
         output = Output()
 
@@ -188,13 +242,17 @@ class DashView(sw.Layout):
                 )
                 display(fig)
 
-        return sw.Layout(
+        statistics = sw.Layout(
             attributes={"id": "render_sub_b"},
             class_="d-block",
             children=[
                 sw.CardText(children=[output]),
             ],
         )
+
+        self.children = self.children + [statistics]
+
+        self.alert.hide()
 
 
 class ExportView(v.Card):
