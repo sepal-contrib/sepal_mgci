@@ -145,6 +145,9 @@ class MgciModel(Model):
         if not lc_start:
             raise Exception("Please select at least one year")
 
+        if not self.aoi_model.feature_collection:
+            raise Exception("Please select an area of interest")
+
         matrix = getattr(self, f"matrix_{indicator}")
 
         def no_remap(image):
