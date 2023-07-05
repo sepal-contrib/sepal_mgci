@@ -29,10 +29,7 @@ def get_unique_classes(model, image_collection):
     def get_classes(image):
         """perform individual image frequency histogram reduction"""
 
-        # reduce the image
-        image = ee.Image(image)
-        band = image.bandNames().get(0)
-        image = image.select([band])
+        image = image.select(0)
 
         aoi = model.aoi_model.feature_collection or image
         geometry = aoi.geometry()
