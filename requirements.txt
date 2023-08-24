@@ -4,16 +4,12 @@ wheel
 Cython
 pybind11
 
-# uncomment if you want to run your module with GEE in SEPAL
-git+https://github.com/openforis/earthengine-api.git@v0.1.270#egg=earthengine-api&subdirectory=python
-
-# The base lib to run any sepal_ui based app
-# Don't forget to fix it to a specific version when you're app is ready
-sepal_ui==2.16.3
+# updated on 24/08/2023
+git+https://github.com/12rambau/sepal_ui.git@1e3cd4c6d1b3bf5e62a3737dc0a42abffc9a9088
 scipy
 
 # custom libs
-matplotlib==3.1.2
+matplotlib
 ipywidgets==7.6.5
 ipyvuetify==1.8.1
 pandas==1.3.3
