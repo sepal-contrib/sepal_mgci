@@ -3,8 +3,8 @@
         "title" : "SDG Indicator 15.4.2 - Mountain Green Cover Index (MGCI) (BETA)",
         "drawer_item" : {
             "aoi": "Area of Iterest",
-            "mountain" : "Mountain descriptor",
-            "vegetation" : "Vegetation descriptor",
+            "vegetation" : "Land cover dataset",
+            "settings" : "Indicator settings",
             "dashboard" : "MGCI results",
             "about" : "About",
             "disclaimer" : "Disclaimer"
@@ -15,6 +15,9 @@
         "ic_custom_label" : "Select a custom Image Collection"
     },
     "aoi" : {
+        "view" : {
+            "btn" : "Select Area of Interest (AOI)"
+        },
         "legend" : {
             "total" : "Total",
             "color" : "Color", 
@@ -40,8 +43,8 @@
         }
     },
     "veg_layer" : {
-        "title" : "Vegetation descriptor layer",
-        "description" : "The vegetation descriptor layer categorizes land cover into green and non-green areas. Green vegetation includes both natural vegetation and vegetation resulting from anthropic activity (e.g. crops, afforestation, etc.). Non-green areas include very sparsely vegetated areas, bare land, water, permanent ice/snow and urban areas.</br></br> This module computes a vegetation descriptor layer using a land use/land cover map as an input. You have the option to use a custom land use/land cover map for your country. If not available, the tool will use a land cover time series produced by the European Space Agency (ESA) under the Climate Change Initiative (CCI) (Available at: <a href = 'http://maps.elie.ucl.ac.be/CCI/viewer/index.php'> ESA CCI viewer </a>)",
+        "title" : "Selection of land cover dataset",
+        "description" : "SDG indicator 15.4.2 makes use land cover data to evaluate and monitor land cover change and its estimated impact in terms of ecosystem degradation and recovery.</br>Please indicate below if you wish to use a set of custom land cover maps of your country to compute both indicators. If not, the tool will use the land cover time series produced by the European Space Agency (ESA) under the Climate Change Initiative (CCI) as a default global solution (For further information on this dataset, please check <a href='http://maps.elie.ucl.ac.be/CCI/viewer/index.php' target='_blank'>http://maps.elie.ucl.ac.be/CCI/viewer/index.php</a>)",
         "instructions":" ",
         "veg_asst":{
             "label": "Select a Land Cover Map",
@@ -51,8 +54,8 @@
             "title": "Customize",
             "description" : "Customize Land Cover Map... Customize Land Cover Transition Matrix..."
         },
-        "sub_a_title" : "Sub indicator A",
-        "sub_b_title" : "Sub indicator B",
+        "sub_a_title" : "Sub-indicator 15.4.2a: Mountain Green Cover Index (MGCI)",
+        "sub_b_title" : "Sub-indicator 15.4.2b: Proportion of degraded mountain land",
         "questionaire" : {
                 "q1":"Would you like to use a custom land use/land cover map?",
                 "q2":"Would you like to change the default land cover transition matrix?",
@@ -105,14 +108,14 @@
         "match_year" : "Corresponding year"
     },
     "dashboard":{
-        "title" : "MGCI calculation",
+        "title" : "SDG Indicator 15.4.2 Calculation",
         "description" : "Calculate the Mountain Green Cover Index dashboard, the result will include an overall index for all the Kapos mountain classes and also a more detailed index for each of these classes.",
         "report" : {
             "title":"Download report",
             "description": "The module will use the data that has been calculated to produce the following tables.<ul><li>Table1_MountainArea</li><li>Table2_1542a_LandCoverType</li><li>Table3_1542a_MGCI</li><li>Table4_1542b_pdma_area</li><li>Table5_1542b_pdma_pt</li></ul>"
         },
         "tasks" : {
-            "title":"MGCI calculation on background",
+            "title":"Calculation on background",
             "description":"This tab will help you to download the results file required to get the dashboard with the MGCI. You can track the progress of your task in the <a href='https://code.earthengine.google.com/tasks'>GEE tasks tracker</a>, and once it is done, you can select whether the task id given in the calculation tab or use the tasks file which is stored in the '<i>{}</i>' folder."
         },
         "label": {

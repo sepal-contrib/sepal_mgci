@@ -6,6 +6,7 @@ from sepal_ui.mapping import SepalMap
 
 import component.parameter.module_parameter as param
 from component.tile.aoi_view import AoiView
+from component.message import cm
 
 __all__ = ["AoiTile"]
 
@@ -38,6 +39,8 @@ class AoiTile(sw.Layout):
             map_=self.map_,
             methods=["-POINTS", "-DRAW"],
         )
+
+        self.view.btn.children = [cm.aoi.view.btn]
 
         # Rename selection methos as referenced in:
         # https://github.com/dfguerrerom/sepal_mgci/issues/7
