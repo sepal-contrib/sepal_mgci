@@ -45,21 +45,21 @@
     "veg_layer" : {
         "title" : "Selection of land cover dataset",
         "description" : "SDG indicator 15.4.2 makes use land cover data to evaluate and monitor land cover change and its estimated impact in terms of ecosystem degradation and recovery.</br>Please indicate below if you wish to use a set of custom land cover maps of your country to compute both indicators. If not, the tool will use the land cover time series produced by the European Space Agency (ESA) under the Climate Change Initiative (CCI) as a default global solution (For further information on this dataset, please check <a href='http://maps.elie.ucl.ac.be/CCI/viewer/index.php' target='_blank'>http://maps.elie.ucl.ac.be/CCI/viewer/index.php</a>)",
-        "instructions":" ",
         "veg_asst":{
             "label": "Select a Land Cover Map",
             "items" : ["Custom Land Cover Map...", "ESA Land Cover Map"]
         },
-        "customize":{
-            "title": "Customize",
-            "description" : "Customize Land Cover Map... Customize Land Cover Transition Matrix..."
-        },
         "sub_a_title" : "Sub-indicator 15.4.2a: Mountain Green Cover Index (MGCI)",
         "sub_b_title" : "Sub-indicator 15.4.2b: Proportion of degraded mountain land",
+        "subtitle" : "Settings", 
         "questionaire" : {
                 "q1":"Would you like to use a custom land use/land cover map?",
                 "q2":"Would you like to change the default land cover transition matrix?",
-                "q3":"Do you need to reclassify the values of your land cover map?"
+                "sub_a" : "<p><span class='title'>Sub-indicator 15.4.2a</span></p><p>Mountain Green Cover Index (MGCI), measures the extent and changes of green cover in mountain areas. In this sub-indicator, land cover is used to categorize land into green and non-green cover areas. Green cover includes areas covered by both natural vegetation and vegetation resulting from anthropic activity, whereas non-green areas include non-vegetated areas such as bare land, water, permanent ice/snow, urban areas and sparsely vegetated areas.</p>",
+                "sub_b" : "<p><span class='title'>Sub-indicator 15.4.2b</span></p><p>Proportion of degraded mountain land, monitors the extent of degraded mountain land as a result of land cover change. In this sub-indicator, land cover is used to identify areas where changes in the type of land cover (land cover transitions) may indicate a decline or loss of biodiversity, mountain ecosystem functions or services that are considered desirable in a local or national context.</p>",
+                "btn" : {
+                    "label" : "Open parameter settings"
+                }
         },
         "tabs" : {
             "lc_classification" : "Land cover classification",

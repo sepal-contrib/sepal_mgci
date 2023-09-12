@@ -1,187 +1,187 @@
-from typing import Literal
-
 import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
-from ipywidgets import Layout
-from traitlets import CBool, Unicode, directional_link, link, observe
+from traitlets import directional_link
+from component.model.model import MgciModel
 
 import component.parameter.directory as dir_
-import component.parameter.module_parameter as param
-import component.widget as cw
 from component.message import cm
+from component.widget.questionnaire import Questionnaire
 from component.widget.transition_matrix import TransitionMatrix
+from component.widget.custom_widgets import AlertDialog
+import component.parameter.module_parameter as param
+
+
+from sepal_ui.aoi.aoi_model import AoiModel
 
 from . import reclassify_tile as rt
 
 __all__ = ["VegetationTile", "Questionaire"]
 
 
-class VegetationTile(v.Layout, sw.SepalWidget):
-    def __init__(self, model, aoi_model, *args, **kwargs):
+class VegetationTile(sw.Layout):
+    def __init__(self, model: MgciModel, aoi_model: AoiModel, *args, **kwargs):
         self._metadata = {"mount_id": "vegetation_tile"}
         self.class_ = "d-block pa-2"
 
         super().__init__(*args, **kwargs)
 
-        self.model = model
-        self.aoi_model = aoi_model
+        alert = sw.Alert()
+        alert_dialog = AlertDialog(w_alert=alert)
 
         title = v.CardTitle(children=[cm.veg_layer.title])
-        description = v.CardText(children=[sw.Markdown(cm.veg_layer.description)])
 
-        expansion_panel_a = ExpansionIndicator(self.model, self.aoi_model, "sub_a")
-        expansion_panel_b = ExpansionIndicator(self.model, self.aoi_model, "sub_b")
+        desc_sub_a = sw.Markdown(cm.veg_layer.questionaire.sub_a)
+        desc_sub_b = sw.Markdown(cm.veg_layer.questionaire.sub_b)
 
-        self.veg_parameters = sw.ExpansionPanels(
-            v_model=0, children=[expansion_panel_a, expansion_panel_b]
+        description = v.CardText(children=[desc_sub_a, desc_sub_b])
+
+        self.w_questionnaire = Questionnaire()
+
+        self.vegetation_view = VegetationView(
+            model=model,
+            aoi_model=aoi_model,
+            questionaire=self.w_questionnaire,
+            alert=alert,
+        )
+
+        self.w_vegetation_dialog = VegetationDialog(self.vegetation_view)
+
+        self.btn_get_paramters = sw.Btn(
+            cm.veg_layer.questionaire.btn.label, class_="ma-2"
         )
 
         self.children = [
-            v.Card(children=[title, description], class_="pa-2 mb-2"),
+            alert_dialog,
+            self.w_vegetation_dialog,
+            v.Card(children=[title, description], class_="ma-2"),
             v.Card(
+                class_="ma-2",
                 children=[
-                    v.CardTitle(children=[cm.veg_layer.customize.title]),
-                    v.CardText(
-                        children=[
-                            cm.veg_layer.customize.description,
-                            self.veg_parameters,
-                        ]
-                    ),
-                ]
+                    sw.CardTitle(children=[cm.veg_layer.subtitle]),
+                    self.w_questionnaire,
+                    self.btn_get_paramters,
+                ],
             ),
         ]
 
-        expansion_panel_a.view.reclassify_tile.use_default()
-        expansion_panel_b.view.reclassify_tile.use_default()
-
-
-class ExpansionIndicator(sw.ExpansionPanel):
-    """Expansion panel to customize subindicator parameters.
-
-    Every expansion panel will have a questionaire with different questions that
-    will be used to customize the VegetationView, where is the reclassify tile and
-    the transition matrix.
-    """
-
-    def __init__(self, model, aoi_model, indicator: Literal["sub_a", "sub_b"]):
-
-        super().__init__()
-
-        self.model = model
-        self.aoi_model = aoi_model
-
-        w_questionaire = Questionaire(indicator=indicator)
-
-        self.view = VegetationView(
-            model=self.model,
-            aoi_model=self.aoi_model,
-            questionaire=w_questionaire,
-            indicator=indicator,
+        self.btn_get_paramters.on_event(
+            "click", lambda *_: self.w_vegetation_dialog.open_dialog()
         )
 
-        self.expanded = False
-        self.children = [
-            sw.ExpansionPanelHeader(
-                children=[
-                    cm.veg_layer.sub_a_title
-                    if indicator == "sub_a"
-                    else cm.veg_layer.sub_b_title
-                ]
-            ),
-            sw.ExpansionPanelContent(
-                children=[
-                    w_questionaire,
-                    self.view,
-                ]
-            ),
-        ]
 
-        # Bind Vegetation view lulc classes with model
+class VegetationDialog(sw.Dialog):
+    def __init__(self, vegetation_view, *args, **kwargs):
+        kwargs["persistent"] = kwargs.get("persistent", False)
+        kwargs["v_model"] = kwargs.get("v_model", False)
+        kwargs["max_width"] = 1200
+
+        super().__init__(*args, **kwargs)
+
+        self.vegetation_view = vegetation_view
+        self.children = [self.vegetation_view]
+
+    def open_dialog(self, *_):
+        """Call vegetation view build and open the dialog."""
+
+        self.vegetation_view.get_view()
+        self.v_model = True
+
+    def close_dialog(self, *_):
+        """Close dialog."""
+        self.v_model = False
 
 
-class VegetationView(v.Layout, sw.SepalWidget):
+class VegetationView(sw.Layout):
     def __init__(
         self,
-        model,
-        aoi_model,
-        questionaire,
-        indicator: Literal["sub_a", "sub_b"],
+        model: MgciModel,
+        aoi_model: AoiModel,
+        questionaire: Questionnaire,
+        alert: sw.Alert,
         *args,
         **kwargs,
     ):
-
-        self.class_ = "d-block pa-2"
+        self.class_ = "d-block"
 
         super().__init__(*args, **kwargs)
 
         self.model = model
         self.aoi_model = aoi_model
-        self.indicator = indicator
         self.w_questionaire = questionaire
+        self.alert = alert
 
-        self.reclassify_tile = rt.ReclassifyTile(
+        self.reclassify_tile_a = rt.ReclassifyTile(
+            mgci_model=self.model,
             results_dir=dir_.CLASS_DIR,
             save=False,
             aoi_model=self.aoi_model,
             default_class={
                 "IPCC": str(dir_.LOCAL_LC_CLASSES),
             },
-            id_=indicator,
+            id_="sub_a",
+            alert=self.alert,
         )
 
-        self.w_reclass = self.reclassify_tile.w_reclass
+        self.reclassify_tile_a.w_reclass.w_ic_select.default_asset = [
+            str(param.LULC_DEFAULT)
+        ]
+        self.reclassify_tile_a.w_reclass.reclassify_table.btn_load_target.hide()
+
+        self.reclassify_tile_b = rt.ReclassifyTile(
+            mgci_model=self.model,
+            results_dir=dir_.CLASS_DIR,
+            save=False,
+            aoi_model=self.aoi_model,
+            default_class={
+                "IPCC": str(dir_.LOCAL_LC_CLASSES),
+            },
+            id_="sub_b",
+            alert=self.alert,
+            w_asset_selection=self.reclassify_tile_a.w_reclass.w_asset_selection,
+        )
+        self.reclassify_tile_b.w_reclass.reclassify_table.btn_load_target.show()
+
+        self.w_reclass_a = self.reclassify_tile_a.w_reclass
+        self.w_reclass_b = self.reclassify_tile_b.w_reclass
+
+        # we will use the same asset for both datasets
+        directional_link(
+            (self.reclassify_tile_a.w_reclass.w_ic_select, "v_model"),
+            (self.reclassify_tile_b.w_reclass.w_ic_select, "v_model"),
+        )
+
+        # Use the same asset for both datasets, and same button to get both tables
+        self.reclassify_tile_a.w_reclass.btn_get_table.on_event(
+            "click", self.on_get_table
+        )
 
         self.transition_view = TransitionMatrix(model)
-        self.transition_view.hide()
 
-        sub_a_tabs = cw.Tabs(
-            [cm.veg_layer.tabs.lc_classification],
-            [self.reclassify_tile],
+        # Define steppers in advance to avoid building on the fly and so avoid
+        # long loading times
+        self.stepper_a = StepperA(
+            w_reclass_a=self.reclassify_tile_a.w_reclass,
+            w_reclass_b=self.reclassify_tile_b.w_reclass,
+            transition_view=self.transition_view,
         )
 
-        sub_b_tabs = cw.Tabs(
-            [cm.veg_layer.tabs.lc_classification, cm.veg_layer.tabs.transition_matrix],
-            [self.reclassify_tile, self.transition_view],
+        self.stepper_b = StepperB(
+            w_reclass_a=self.reclassify_tile_a.w_reclass,
+            w_reclass_b=self.reclassify_tile_b.w_reclass,
+            transition_view=self.transition_view,
         )
-
-        self.children = [sub_a_tabs if self.indicator == "sub_a" else sub_b_tabs]
-
-        directional_link(
-            (self.reclassify_tile.model, "src_gee"),
-            (self.model, f"lc_asset_{self.indicator}"),
-        )
-
-        directional_link(
-            (self.reclassify_tile.model, "matrix"),
-            (self.model, f"matrix_{self.indicator}"),
-        )
-
-        directional_link(
-            (self.reclassify_tile.model, "ic_items"),
-            (self.model, f"ic_items_{self.indicator}"),
-        )
-
-        directional_link(
-            (self.reclassify_tile.model, "dst_class"),
-            (self.model, f"lulc_classes_{self.indicator}"),
-        )
-
-        self.w_questionaire.observe(self.get_reclassify_view)
 
         self.model.observe(self.set_default_asset, "dash_ready")
 
-        # Create a link between the transition matrix and the model
-        directional_link(
-            (self.transition_view, "transition_matrix"),
-            (self.model, "transition_matrix"),
-        )
+    def on_get_table(self, *_):
+        """Get reclassify table from both reclassification tables"""
 
-        directional_link(
-            (self.transition_view, "green_non_green_file"),
-            (self.model, "green_non_green_file"),
+        self.reclassify_tile_a.w_reclass.get_reclassify_table(
+            self=self.reclassify_tile_a.w_reclass.get_reclassify_table
         )
-
-        self.get_reclassify_view()
+        self.reclassify_tile_b.w_reclass.get_reclassify_table(
+            self=self.reclassify_tile_b.w_reclass.get_reclassify_table
+        )
 
     def set_default_asset(self, change):
         """listen dash_ready model attribute and change w_ic_select default v_model. It
@@ -189,12 +189,11 @@ class VegetationView(v.Layout, sw.SepalWidget):
         time"""
 
         if change["new"]:
-            self.reclassify_tile.w_reclass.w_ic_select.v_model = str(param.LULC_DEFAULT)
-            self.reclassify_tile.use_default()
+            self.reclassify_tile_a.use_default()
+            self.reclassify_tile_b.use_default()
 
-    def get_reclassify_view(self, change=None):
-        """Observe the questionaire answers and display the proper view of the
-        reclassify widget.
+    def get_view(self):
+        """Read the questionaire answers and display the proper view of the stepper.
 
         Depending if the self.indicator is A or B, the view will be different.
         When the indicator is A, the user will only be able to display the reclassify_tile
@@ -202,163 +201,106 @@ class VegetationView(v.Layout, sw.SepalWidget):
 
         When the indicator is B, the user will be able to display the reclassify_tile with
         custom classes and the transition matrix.
+
         """
 
         custom_lulc = self.w_questionaire.ans_custom_lulc
         transition_matrix = self.w_questionaire.ans_transition_matrix
-        need_reclassify = self.w_questionaire.ans_need_reclassify
 
-        self.w_reclass.w_ic_select.disabled = not custom_lulc
-        self.w_reclass.w_ic_select.label = cm.reclass_view.ic_custom_label
+        self.w_reclass_a.w_ic_select.disabled = not custom_lulc
+        self.w_reclass_b.w_ic_select.disabled = not custom_lulc
 
         # Would you like to use a custom land use/land cover map?
         if custom_lulc:
-            hide_show = sw.SepalWidget.show
-            self.w_reclass.reclassify_table.set_table({}, {})
+            self.stepper_a.v_model = 1
+            self.children = [self.stepper_a]
+            self.w_reclass_a.reclassify_table.set_table({}, {})
+            self.w_reclass_b.reclassify_table.set_table({}, {})
+
+            self.transition_view.show_matrix = False
+            self.w_reclass_a.btn_get_table.show()
+
         else:
-            hide_show = sw.SepalWidget.hide
-            self.w_reclass.w_ic_select.v_model = param.LULC_DEFAULT
-            self.reclassify_tile.use_default()
+            self.stepper_b.v_model = 1
+            self.children = [self.stepper_b]
+            self.reclassify_tile_a.use_default()
+            self.reclassify_tile_b.use_default()
+            self.w_reclass_a.btn_get_table.hide()
 
-        hide_show(self.w_reclass.get_children(id_="btn_get_table")[0])
-        hide_show(self.w_reclass.get_children(id_="reclassify_table")[0])
+            # Q2: Would you like to change the transition matrix?
+            if transition_matrix:
+                # Show transition matrix
+                self.transition_view.show_matrix = True
+                self.transition_view.disabled = False
 
-        if self.indicator == "sub_b":
-
-            # Would you like to use a custom land use/land cover map?
-            if custom_lulc:
-
-                # Would you like to change the default land cover transition matrix??
-                if need_reclassify:
-
-                    # Hide transition matrix
-                    self.transition_view.show_matrix = False
-
-                    self.w_reclass.reclassify_table.btn_load_target.show()
-
-                else:
-                    self.w_reclass.reclassify_table.btn_load_target.hide()
-                    self.w_reclass.get_children(id_="btn_get_table")[0].hide()
-                    self.w_reclass.get_children(id_="reclassify_table")[0].hide()
-
-                    # Hide transition matrix
-                    self.transition_view.show_matrix = False
             else:
+                # show transition matrix but disabled
+                self.transition_view.disabled = True
+                self.transition_view.set_default_values()
+                self.transition_view.show_matrix = True
 
-                # Q2: Would you like to change the transition matrix?
-                if transition_matrix:
-                    # Show transition matrix
-                    self.transition_view.show()
-                    self.transition_view.show_matrix = True
-                    self.transition_view.disabled = False
 
-                else:
-                    # show transition matrix but disabled
-                    self.transition_view.show()
-                    self.transition_view.disabled = True
-                    self.transition_view.set_default_values()
+class Stepper(sw.Stepper):
+    def get_steps(self, headers: list, steps: list):
+        """Set the steps and titles of the stepper"""
 
-                    self.transition_view.show_matrix = True
-
-    def display_map(self, *args):
-        """Display reclassified raster on map. Get the reclassify visualization
-        image.
-
-        .. deprecated:
-            this is an orphan method. I will try to use later if requested
-        """
-
-        # Manually trigger the reclassify method
-        self.reclassify_tile.w_reclass.reclassify(None, None, None)
-
-        # Create a three band representation as this function was removed from the
-        # reclassify tool
-
-        reclass_model = self.reclassify_tile.w_reclass.model
-
-        code, desc, color = zip(
-            *[
-                (str(k), str(v[0]), str(v[1]))
-                for k, v in reclass_model.dst_class.items()
+        stepper_items = [
+            [
+                v.StepperStep(children=[c[0]], step=key, editable=True),
+                v.StepperContent(key=key, step=key, children=[v.Card(children=[c[1]])]),
             ]
-        )
-
-        layer = reclass_model.dst_gee_memory.mask(self.model.kapos_image).visualize(
-            **{
-                "bands": reclass_model.band,
-                "palette": color,
-                "min": min(code),
-                "max": max(code),
-            }
-        )
-
-        # Create legend based on the lulc classes.
-        self.map_.add_legend(
-            legend_title="Legend", legend_dict=dict(self.model.lulc_classes.values())
-        )
-        # Do this trick to remove the scrolling bar in the legend output
-        self.map_.legend_widget.layout = Layout(width="120px", overflow="none")
-
-        # Remove previusly loaded layers
-        [self.map_.remove_last_layer() for _ in range(len(self.map_.layers))]
-
-        self.map_.zoom_ee_object(layer.geometry())
-        self.map_.addLayer(layer)
-
-
-class Questionaire(v.Layout, sw.SepalWidget):
-    """Vegetation questionaire widget.
-
-    Do some questions to the user, save the answers
-    in the traits and use them later to display the proper Vegetation View
-    """
-
-    ans_custom_lulc = CBool().tag(sync=True)
-    "bool: answer Would you like to use a custom land use/land cover map?"
-
-    ans_transition_matrix = CBool().tag(sync=True)
-    "bool: answer do you have a custom land cover transition matrix (.csv)?"
-
-    ans_need_reclassify = CBool().tag(sync=True)
-    "bool: answer do you need to reclassify the land cover map?"
-
-    indicator = Unicode().tag(sync=True)
-
-    def __init__(self, indicator: Literal["sub_a", "sub_b"]) -> v.Layout:
-
-        self.class_ = "d-block"
-        self.indicator = indicator
-
-        super().__init__()
-
-        # define questions when using sub_a indicator
-
-        # Set widget questions
-        self.wq_custom_lulc = cw.BoolQuestion(cm.veg_layer.questionaire.q1)
-        self.wq_transition_matrix = cw.BoolQuestion(cm.veg_layer.questionaire.q2).hide()
-        self.wq_reclassify = cw.BoolQuestion(cm.veg_layer.questionaire.q3).hide()
-
-        # show by default the second question if "sub_b" indicator is used
-        self.indicator == "sub_a" or self.wq_transition_matrix.show()
-
-        self.children = [
-            self.wq_custom_lulc,
-            self.wq_transition_matrix,
-            self.wq_reclassify,
+            for key, c in enumerate(zip(headers, steps), 1)
         ]
 
-        link((self.wq_custom_lulc, "v_model"), (self, "ans_custom_lulc"))
-        link((self.wq_transition_matrix, "v_model"), (self, "ans_transition_matrix"))
-        link((self.wq_reclassify, "v_model"), (self, "ans_need_reclassify"))
+        # flatten the list
+        return [item for sublist in stepper_items for item in sublist]
 
-    @observe("ans_custom_lulc")
-    def toggle_question(self, change):
-        """Toggle second question, based on the first answer"""
 
-        if self.indicator == "sub_b":
-            if change["new"]:
-                self.wq_transition_matrix.hide()
-                self.wq_reclassify.show()
-            else:
-                self.wq_transition_matrix.show()
-                self.wq_reclassify.hide()
+class StepperA(Stepper):
+    def __init__(self, w_reclass_a, w_reclass_b, transition_view):
+        self.v_model = 0
+        self.steps = {}
+        super().__init__(v_model=0, vertical=True)
+
+        self.w_reclass_a = w_reclass_a
+        self.w_reclass_b = w_reclass_b
+        self.transition_view = transition_view
+
+        headers = [
+            "Data set selection",
+            "Reclassify Land Cover for Subindicator A",
+            "Reclassify Land Cover for Subindicator B",
+            "Transition Matrix",
+        ]
+
+        steps = [
+            self.w_reclass_a.w_asset_selection,
+            self.w_reclass_a,
+            self.w_reclass_b,
+            self.transition_view,
+        ]
+
+        self.children = self.get_steps(headers=headers, steps=steps)
+
+
+class StepperB(Stepper):
+    def __init__(self, w_reclass_a, w_reclass_b, transition_view):
+        self.v_model = 0
+        self.steps = {}
+        super().__init__(v_model=0, vertical=True)
+
+        self.w_reclass_a = w_reclass_a
+        self.w_reclass_b = w_reclass_b
+        self.transition_view = transition_view
+
+        headers = [
+            "Data set selection",
+            "Transition Matrix",
+        ]
+
+        steps = [
+            self.w_reclass_a.w_asset_selection,
+            self.transition_view,
+        ]
+
+        self.children = self.get_steps(headers=headers, steps=steps)

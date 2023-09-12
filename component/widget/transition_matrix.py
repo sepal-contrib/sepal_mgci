@@ -6,7 +6,8 @@ import pandas as pd
 import sepal_ui.sepalwidgets as sw
 from sepal_ui import color
 from sepal_ui.scripts.decorator import switch
-from traitlets import Bool, Dict, Unicode, observe
+from traitlets import Bool, Dict, Unicode, directional_link, observe
+from component.model.model import MgciModel
 
 import component.parameter.directory as dir_
 import component.parameter.module_parameter as param
@@ -33,8 +34,8 @@ class TransitionMatrix(sw.Layout):
     green_non_green_file = Unicode(str())
     "str: path to the green non green file"
 
-    def __init__(self, model=None):
-
+    def __init__(self, model: MgciModel = None):
+        self.model = model
         # Create a random suffix to avoid conflict between multiple instances
         self.suffix = (
             str(np.random.randint(0, 10000, 1)[0]) if not model else model.session_id
@@ -141,12 +142,22 @@ class TransitionMatrix(sw.Layout):
 
         btn_clear.on_event("click", lambda *args: self.set_default_values())
 
+        # Create a link between the transition matrix and the model
+        directional_link(
+            (self, "transition_matrix"),
+            (self.model, "transition_matrix"),
+        )
+
+        directional_link(
+            (self, "green_non_green_file"),
+            (self.model, "green_non_green_file"),
+        )
+
     @observe("show_matrix")
     def toggle_viz(self, change):
         """toogle visualization style, show only impact matrix or input_impact_file wiedget"""
 
         if change["new"]:
-
             # hide inputs to custom transition matrix and custom green/non green
             [ch.hide() for ch in self.get_children(id_="custom_inputs")]
 
@@ -230,7 +241,6 @@ class TransitionMatrix(sw.Layout):
         # Get all select inputs and change their values to the default ones
         for i, _ in enumerate(self.CLASSES, 1):
             for j, _ in enumerate(self.CLASSES, 1):
-
                 val = self.DECODE[
                     self.default_df[
                         (self.default_df.from_code == i)
@@ -276,7 +286,6 @@ class TransitionMatrix(sw.Layout):
 
 
 class MatrixInput(v.Html):
-
     VALUES = {
         "I": (1, color.success),
         "S": (0, color.primary),
@@ -286,7 +295,6 @@ class MatrixInput(v.Html):
     v_model = Dict().tag(sync=True)
 
     def __init__(self, line, column, default_value):
-
         # get the line and column of the td in the matrix
         self.column = column
         self.line = line
