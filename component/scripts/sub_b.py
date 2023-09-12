@@ -1,10 +1,9 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, TYPE_CHECKING
 
 import pandas as pd
 
 import component.parameter.module_parameter as param
 import component.scripts as cs
-from component.model.model import MgciModel
 
 # isort: off
 from component.parameter.index_parameters import sub_b_landtype_cols, sub_b_perc_cols
@@ -15,6 +14,9 @@ from component.scripts.report_scripts import (
     get_belt_desc,
     get_obs_status,
 )
+
+if TYPE_CHECKING:
+    from component.model.model import MgciModel
 
 BELT_TABLE = pd.read_csv(param.BIOBELTS_DESC)
 "pd.Dataframe: bioclimatic belts classes and description"
@@ -171,7 +173,7 @@ def get_report(
 
 
 def get_reports(
-    parsed_df: pd.DataFrame, year_s: str, model: MgciModel
+    parsed_df: pd.DataFrame, year_s: str, model: "MgciModel"
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     SubIndB_pdma

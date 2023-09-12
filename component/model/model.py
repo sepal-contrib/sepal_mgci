@@ -5,13 +5,12 @@ import pandas as pd
 import sepal_ui.scripts.utils as su
 from sepal_ui.model import Model
 from sepal_ui.scripts.warning import SepalWarning
-from traitlets import Any, Bool, CBool, Dict, List, Unicode
+from traitlets import Bool, CBool, Dict, List, Unicode
 
 import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
-import component.scripts as cs
-
-# from component.parameter.report_template import *
+from component.scripts.surface_area import get_real_surface_area
+from component.scripts.gee import GDrive
 
 
 class MgciModel(Model):
@@ -170,7 +169,7 @@ class MgciModel(Model):
         if self.rsa:
             # When using rsa, we need to use the dem scale, otherwise
             # we will end with wrong results.
-            image_area = cs.get_real_surface_area(self.dem, aoi)
+            image_area = get_real_surface_area(self.dem, aoi)
             scale = ee_lc_start.projection().nominalScale().getInfo()
         else:
             # Otherwise, we will use the coarse scale to the output.
@@ -251,7 +250,7 @@ class MgciModel(Model):
             task_filename (str): name of the task file to be downloaded.
         """
 
-        gdrive = cs.GDrive()
+        gdrive = GDrive()
 
         # Check if the task is completed
         task = gdrive.get_task(task_id.strip())

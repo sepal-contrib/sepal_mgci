@@ -1,9 +1,7 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, TYPE_CHECKING
 
 import pandas as pd
-
 import component.scripts as cs
-from component.model.model import MgciModel
 
 # isort: off
 from component.parameter.index_parameters import sub_a_cols, sub_a_landtype_cols
@@ -16,6 +14,9 @@ from component.scripts.report_scripts import (
     LC_MAP_MATRIX,
     get_obs_status,
 )
+
+if TYPE_CHECKING:
+    from component.model.model import MgciModel
 
 
 def get_mgci_landtype(parsed_df):
@@ -238,7 +239,7 @@ def get_report(
 
 
 def get_reports(
-    parsed_df: pd.DataFrame, year_s: str, model: MgciModel
+    parsed_df: pd.DataFrame, year_s: str, model: "MgciModel"
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     SubIndA_MGCI

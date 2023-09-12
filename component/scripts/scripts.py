@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 import random
 import re
 from pathlib import Path
@@ -12,10 +13,13 @@ from sepal_ui.aoi.aoi_model import AoiModel
 import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
 import component.scripts as cs
-from component.model.model import Model as MGCIModel
 from component.scripts import mountain_area as mntn
 from component.scripts import sub_a as sub_a
 from component.scripts import sub_b as sub_b
+
+if TYPE_CHECKING:
+    from component.model.model import MgciModel
+
 
 __all__ = [
     "human_format",
@@ -71,7 +75,7 @@ def get_mgci_color(mgci: float) -> str:
     return param.UPPER_THRESHOLDS[threshold]
 
 
-def get_report_folder(mgci_model: MGCIModel) -> Path:
+def get_report_folder(mgci_model: "MgciModel") -> Path:
     """Get output report folder path"""
 
     # Create a folder to store multiple year reports from the same area
@@ -274,7 +278,7 @@ def get_years(
 
 
 def get_result_from_year(
-    model: MGCIModel, year: int, indicator: str
+    model: "MgciModel", year: int, indicator: str
 ) -> Union[pd.DataFrame, None]:
     """Return the results for the given year.
 
@@ -350,12 +354,12 @@ def get_result_from_year(
 
 
 def interpolate_sub_a_data(
-    model: MGCIModel, year1: int, year2: int, target_year: int
-) -> pd.DataFrame:
+    model: "MgciModel", year1: int, year2: int, target_year: int
+) -> pd.DataFrame:  # type: ignore
     """Interpolate sub A data between two years.
 
     Args:
-        mode (MGCIModel): MGCI model containing results from calculation
+        mode (MgciModel): MGCI model containing results from calculation
         year1 (int): first year
         year2 (int): second year
         target_year (int): target year
@@ -606,7 +610,7 @@ def get_sub_a_break_points(user_input_years: list) -> dict:
     return break_points
 
 
-def export_reports(model: MGCIModel, output_folder) -> None:
+def export_reports(model: "MgciModel", output_folder) -> None:
     """
     This function exports the reports of the model's results (calculation).
     It separates the reports into two categories: sub_a_reports and sub_b_reports.

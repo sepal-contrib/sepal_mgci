@@ -2,7 +2,6 @@ import pandas as pd
 
 import component.parameter.module_parameter as param
 import component.scripts as cs
-from component.model.model import MgciModel
 
 # isort: off
 from component.parameter.index_parameters import mountain_area_cols
