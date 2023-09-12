@@ -14,6 +14,7 @@ import component.scripts.frequency_hist as scripts
 from component.message import cm
 from component.widget.reclassify.parameters import MATRIX_NAMES, NO_VALUE
 from component.widget.reclassify.reclassify_model import ReclassifyModel
+from component.widget.base_dialog import BaseDialog
 
 __all__ = ["ReclassifyView"]
 
@@ -152,7 +153,6 @@ class ReclassifyView(sw.Card):
 
         # create the layout
         self.children = [
-            self.title,
             self.reclassify_table,
             self.save_dialog,
             self.import_dialog,
@@ -165,18 +165,18 @@ class ReclassifyView(sw.Card):
         )(self.get_reclassify_table)
 
         # JS Events
-        self.import_dialog.load_btn.on_event("click", self.load_matrix_content)
+        self.import_dialog.action_btn.on_event("click", self.load_matrix_content)
 
         self.reclassify_table.btn_load_table.on_event(
-            "click", lambda *args: self.import_dialog.show()
+            "click", lambda *_: self.import_dialog.show_dialog()
         )
 
         self.reclassify_table.btn_save_table.on_event(
-            "click", lambda *args: self.save_dialog.show(self.model.matrix)
+            "click", lambda *_: self.save_dialog.show_dialog(self.model.matrix)
         )
 
         self.reclassify_table.btn_load_target.on_event(
-            "click", lambda *args: self.target_dialog.show()
+            "click", lambda *_: self.target_dialog.show_dialog()
         )
 
         # link feature collection asset selection with model
@@ -300,7 +300,7 @@ class ReclassifyView(sw.Card):
         return self
 
 
-class ImportMatrixDialog(sw.Dialog):
+class ImportMatrixDialog(BaseDialog):
     """
     Dialog to select the file to use and fill the matrix
 
@@ -314,43 +314,17 @@ class ImportMatrixDialog(sw.Dialog):
     file = Unicode("").tag(sync=True)
 
     def __init__(self, folder, **kwargs):
-        # create the 3 widgets
         title = sw.CardTitle(children=["Load reclassification matrix"])
         self.w_file = sw.FileInput(
             label="filename", folder=folder, attributes={"id": "1"}
         )
-        self.load_btn = sw.Btn(msg="Load", small=True, color="secondary")
-        cancel = sw.Btn(msg="Cancel", small=True, color="secondary")
-        actions = sw.CardActions(
-            children=[
-                v.Spacer(),
-                cancel,
-                self.load_btn,
-            ]
-        )
 
-        # default params
-        self.value = False
-        self.max_width = 600
-        self.overlay_opacity = 0.7
-        self.children = [sw.Card(class_="pa-4", children=[title, self.w_file, actions])]
+        content = [title, self.w_file]
 
-        # create the dialog
-        super().__init__(**kwargs)
-
-        # js behaviour
-        cancel.on_event("click", self._cancel)
-
-    def _cancel(self, widget, event, data):
-        """exit and do nothing"""
-
-        self.value = False
-
-    def show(self):
-        self.value = True
+        super().__init__(action_text="Load", content=content)
 
 
-class SaveMatrixDialog(sw.Dialog):
+class SaveMatrixDialog(BaseDialog):
     """
     Dialog to setup the name of the output matrix file
 
@@ -366,31 +340,18 @@ class SaveMatrixDialog(sw.Dialog):
         # create the widgets
         title = sw.CardTitle(children=["Save matrix"])
         self.w_file = sw.TextField(label="Set a matrix file name: ", v_model=None)
-        btn = sw.Btn(msg="Save", small=True, color="secondary")
-        cancel = sw.Btn(msg="Cancel", small=True, color="secondary")
-        actions = sw.CardActions(
-            children=[
-                v.Spacer(),
-                cancel,
-                btn,
-            ]
-        )
+
         self.alert = sw.Alert(children=["Choose a name for the output"]).show()
 
-        # default parameters
-        self.value = False
-        self.max_width = 600
-        self.overlay_opcity = 0.7
-        self.children = [
-            sw.Card(class_="pa-4", children=[title, self.w_file, self.alert, actions])
-        ]
+        content = [title, self.w_file, self.alert]
 
         # create the dialog
-        super().__init__(**kwargs)
+        super().__init__(content=content, **kwargs)
 
         # js behaviour
-        cancel.on_event("click", self._cancel)
-        btn.on_event("click", self._save)
+        self.action_btn.on_event("click", self._save)
+        self.cancel_btn.on_event("click", self.close_dialog)
+
         self.w_file.on_event("blur", self._sanitize)
         self.w_file.observe(self._store_info, "v_model")
 
@@ -406,15 +367,13 @@ class SaveMatrixDialog(sw.Dialog):
             msg = "Choose a name for the output"
         self.alert.add_msg(msg)
 
-    def _cancel(self, widget, event, data):
+    def close_dialog(self, *_):
         """do nothing and exit"""
 
         self.w_file.v_model = ""
-        self.value = False
+        super().close_dialog()
 
-        return self
-
-    def _save(self, widget, event, data):
+    def _save(self, *_):
         """save the matrix in a specified file"""
 
         file = self.folder / f"{su.normalize_str(self.w_file.v_model)}.csv"
@@ -424,11 +383,11 @@ class SaveMatrixDialog(sw.Dialog):
         matrix.to_csv(file, index=False)
 
         # hide the dialog
-        self.value = False
+        super().close_dialog()
 
         return self
 
-    def show(self, matrix):
+    def show_dialog(self, matrix):
         """show the dialog and set the matrix values"""
 
         self._matrix = matrix
@@ -436,11 +395,9 @@ class SaveMatrixDialog(sw.Dialog):
         # Reset file name
         self.w_file.v_model = ""
 
-        self.value = True
+        self.show_dialog()
 
-        return self
-
-    def _sanitize(self, widget, event, data):
+    def _sanitize(self, *_):
         """sanitize the used name when saving"""
 
         if not self.w_file.v_model:
@@ -450,7 +407,7 @@ class SaveMatrixDialog(sw.Dialog):
         return self
 
 
-class TargetClassesDialog(sw.Dialog):
+class TargetClassesDialog(BaseDialog):
     """Custom dialog to select target Land Cover classification classes
 
     Args:
@@ -465,25 +422,11 @@ class TargetClassesDialog(sw.Dialog):
 
         super().__init__()
 
-        self.value = False
-        self.max_width = 750
-
         # Create an alert to display errors
         self.alert = sw.Alert()
 
         title = sw.CardTitle(children=[cm.reclass.tooltip.load_target.title])
         description = cm.reclass.target_dialog.description
-
-        load_btn = sw.Btn(msg="Load", small=True, color="secondary")
-        cancel_btn = sw.Btn(msg="Cancel", small=True, color="secondary")
-
-        actions = sw.CardActions(
-            children=[
-                v.Spacer(),
-                cancel_btn,
-                load_btn,
-            ]
-        )
 
         # from default_class dictionary get the first value (it's the path of the default)
         dst_class_file = list(default_class.values())[0]
@@ -514,47 +457,38 @@ class TargetClassesDialog(sw.Dialog):
 
         self.w_default = v.Flex(class_="mt-5", children=self.btn_list)
 
-        self.children = [
-            sw.Card(
-                children=[
-                    title,
-                    sw.CardText(
-                        class_="pa-4",
-                        children=[
-                            description,
-                            self.w_default,
-                            self.w_dst_class_file,
-                            self.alert,
-                            actions,
-                        ],
-                    ),
-                ]
-            )
+        content = [
+            title,
+            description,
+            self.w_default,
+            self.w_dst_class_file,
+            self.alert,
         ]
+
+        super().__init__(action_text="Load", content=content)
 
         # Events
         [btn.on_event("click", self._set_dst_class_file) for btn in self.btn_list]
 
         self.btn_list[0].fire_event("click", None)
 
-        cancel_btn.on_event("click", self._cancel)
+        self.cancel_btn.on_event("click", lambda *_: self.close_dialog())
 
         # bind selected file (containing destination classes) with model
         self.model.bind(self.w_dst_class_file, "dst_class_file")
 
-        load_btn.on_event("click", self.set_dst_items_event)
+        self.action_btn.on_event("click", self.set_dst_items_event)
 
         # Decorate set_dst_items_event with loading button
-        self.set_dst_items_event = loading_button(alert=self.alert, button=load_btn)(
-            self.set_dst_items_event
-        )
+        self.set_dst_items_event = loading_button(
+            alert=self.alert, button=self.action_btn
+        )(self.set_dst_items_event)
 
     def set_dst_items_event(self, *_):
         """Set the event to update the destination class file"""
 
         self.reclassify_table.set_target_classes()
-        self.value = False
-        print("closed?")
+        self.close_dialog()
 
     def _set_dst_class_file(self, widget: v.VuetifyWidget, *args):
         """
@@ -576,14 +510,6 @@ class TargetClassesDialog(sw.Dialog):
             btn.outlined = False if btn == widget else True
 
         return self
-
-    def _cancel(self, *args):
-        """close the dialog"""
-        self.value = False
-
-    def show(self):
-        """show the dialog"""
-        self.value = True
 
 
 class ReclassifyTable(sw.Layout):

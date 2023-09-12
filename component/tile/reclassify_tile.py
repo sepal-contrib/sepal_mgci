@@ -14,7 +14,7 @@ from component.message import cm
 __all__ = ["ReclassifyTile"]
 
 
-class ReclassifyTile(sw.Card):
+class ReclassifyTile(sw.Layout):
 
     """Custom reclassify tile to replace the default Reclassify Tile and View
     from sepal_ui. This card will change depending on a input questionnaire which
