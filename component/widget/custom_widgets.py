@@ -1,6 +1,8 @@
 import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
 from traitlets import CBool, Int, link
+from ipyvuetify import Btn
+
 
 __all__ = ["BoolQuestion", "Tabs", "TaskMsg"]
 
@@ -86,3 +88,35 @@ class TaskMsg(sw.Flex):
             self.icon.children = ["mdi-information"]
 
         self.icon.color = state_color
+
+
+class AlertDialog(sw.Dialog):
+    def __init__(self, w_alert: sw.Alert):
+        self.max_width = 650
+        self.persistent = True
+        self.style_ = "margin: 0 !important;"
+
+        super().__init__()
+
+        self.v_model = False
+        self.w_alert = w_alert
+
+        btn_close = Btn(
+            block=True,
+            children=["Close"],
+        )
+        self.children = [
+            sw.Card(
+                children=[
+                    self.w_alert,
+                    sw.CardActions(children=[btn_close]),
+                ]
+            )
+        ]
+        btn_close.on_event("click", lambda *_: setattr(self, "v_model", False))
+        self.w_alert.observe(self.open_dialog, "children")
+
+    def open_dialog(self, change):
+        """Opens the dialog when there's a change in the alert chilndren state."""
+        if change["new"] != [""]:
+            self.v_model = True

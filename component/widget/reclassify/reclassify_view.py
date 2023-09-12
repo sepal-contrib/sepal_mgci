@@ -69,6 +69,7 @@ class ReclassifyView(sw.Card):
         folder=None,
         enforce_aoi=False,
         id_="",
+        alert: sw.Alert = None,
         **kwargs,
     ):
         # create metadata to make it compatible with the framwork app system
@@ -105,7 +106,7 @@ class ReclassifyView(sw.Card):
         if gee:
             su.init_ee()
         # create an alert to display information to the user
-        self.alert = sw.Alert()
+        self.alert = alert or sw.Alert()
 
         # set the title of the card
         self.title = sw.CardTitle(
@@ -122,7 +123,7 @@ class ReclassifyView(sw.Card):
             small=True,
             class_="ml-2",
             attributes={"id": "btn_get_table"},
-        ).hide()
+        )
 
         self.w_ic_select = sw.AssetSelect(
             types=["IMAGE_COLLECTION"],
@@ -130,7 +131,8 @@ class ReclassifyView(sw.Card):
             disabled=True,
         )
 
-        w_asset_selection = v.Flex(
+        # Reuse component from a different instance or create a new one
+        self.w_asset_selection = sw.Flex(
             class_="d-flex align-center",
             children=[self.w_ic_select, self.btn_get_table],
         )
@@ -138,7 +140,7 @@ class ReclassifyView(sw.Card):
         # Create a list of buttons containing the different types of
         # target land cover classes
 
-        self.reclassify_table = ReclassifyTable(self.model).hide()
+        self.reclassify_table = ReclassifyTable(self.model)
 
         self.save_dialog = SaveMatrixDialog(folder=out_path)
         self.import_dialog = ImportMatrixDialog(folder=out_path, attributes={"id": "2"})
@@ -151,8 +153,6 @@ class ReclassifyView(sw.Card):
         # create the layout
         self.children = [
             self.title,
-            w_asset_selection,
-            self.alert,
             self.reclassify_table,
             self.save_dialog,
             self.import_dialog,
@@ -178,8 +178,6 @@ class ReclassifyView(sw.Card):
         self.reclassify_table.btn_load_target.on_event(
             "click", lambda *args: self.target_dialog.show()
         )
-
-        self.btn_get_table.on_event("click", self.get_reclassify_table)
 
         # link feature collection asset selection with model
         directional_link((self.w_ic_select, "v_model"), (self.model, "src_gee"))
@@ -257,7 +255,7 @@ class ReclassifyView(sw.Card):
         return self
 
     @su.switch("table_created", on_widgets=["model"], targets=[True])
-    def get_reclassify_table(self, widget, event, data):
+    def get_reclassify_table(self, *_):
         """
         Display a reclassify table which will lead the user to select
         a local code 'from user' to a target code based on a classes file
@@ -461,7 +459,6 @@ class TargetClassesDialog(sw.Dialog):
     """
 
     def __init__(self, model, reclassify_table, default_class: dict = {}):
-
         self.attributes = {"id": "target_classes_dialog"}
         self.model = model
         self.reclassify_table = reclassify_table
@@ -609,7 +606,6 @@ class ReclassifyTable(sw.Layout):
     HEADERS = cm.rec.rec.headers
 
     def __init__(self, model, **kwargs):
-
         self.class_ = "d-block"
         self.attributes = {"id": "reclassify_table"}
 
@@ -742,7 +738,6 @@ class ReclassifyTable(sw.Layout):
 
         # Check that there are widgets
         if select_target_classes:
-
             # Create items from self.model.get_classes()
 
             target_classes_items = [
