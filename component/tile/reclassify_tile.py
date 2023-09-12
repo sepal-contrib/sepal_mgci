@@ -17,7 +17,7 @@ __all__ = ["ReclassifyTile"]
 class ReclassifyTile(sw.Card):
 
     """Custom reclassify tile to replace the default Reclassify Tile and View
-    from sepal_ui. This card will change depending on a input questionaire which
+    from sepal_ui. This card will change depending on a input questionnaire which
     aims to create a custom view depending on their answers."""
 
     def __init__(

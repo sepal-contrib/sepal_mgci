@@ -15,7 +15,7 @@ from sepal_ui.aoi.aoi_model import AoiModel
 
 from . import reclassify_tile as rt
 
-__all__ = ["VegetationTile", "Questionaire"]
+__all__ = ["VegetationTile", "questionnaire"]
 
 
 class VegetationTile(sw.Layout):
@@ -30,8 +30,8 @@ class VegetationTile(sw.Layout):
 
         title = v.CardTitle(children=[cm.veg_layer.title])
 
-        desc_sub_a = sw.Markdown(cm.veg_layer.questionaire.sub_a)
-        desc_sub_b = sw.Markdown(cm.veg_layer.questionaire.sub_b)
+        desc_sub_a = sw.Markdown(cm.veg_layer.questionnaire.sub_a)
+        desc_sub_b = sw.Markdown(cm.veg_layer.questionnaire.sub_b)
 
         description = v.CardText(children=[desc_sub_a, desc_sub_b])
 
@@ -40,14 +40,14 @@ class VegetationTile(sw.Layout):
         self.vegetation_view = VegetationView(
             model=model,
             aoi_model=aoi_model,
-            questionaire=self.w_questionnaire,
+            questionnaire=self.w_questionnaire,
             alert=alert,
         )
 
         self.w_vegetation_dialog = VegetationDialog(self.vegetation_view)
 
         self.btn_get_paramters = sw.Btn(
-            cm.veg_layer.questionaire.btn.label, class_="ma-2"
+            cm.veg_layer.questionnaire.btn.label, class_="ma-2"
         )
 
         self.children = [
@@ -96,7 +96,7 @@ class VegetationView(sw.Layout):
         self,
         model: MgciModel,
         aoi_model: AoiModel,
-        questionaire: Questionnaire,
+        questionnaire: Questionnaire,
         alert: sw.Alert,
         *args,
         **kwargs,
@@ -107,7 +107,7 @@ class VegetationView(sw.Layout):
 
         self.model = model
         self.aoi_model = aoi_model
-        self.w_questionaire = questionaire
+        self.w_questionnaire = questionnaire
         self.alert = alert
 
         self.reclassify_tile_a = rt.ReclassifyTile(
@@ -193,7 +193,7 @@ class VegetationView(sw.Layout):
             self.reclassify_tile_b.use_default()
 
     def get_view(self):
-        """Read the questionaire answers and display the proper view of the stepper.
+        """Read the questionnaire answers and display the proper view of the stepper.
 
         Depending if the self.indicator is A or B, the view will be different.
         When the indicator is A, the user will only be able to display the reclassify_tile
@@ -204,8 +204,8 @@ class VegetationView(sw.Layout):
 
         """
 
-        custom_lulc = self.w_questionaire.ans_custom_lulc
-        transition_matrix = self.w_questionaire.ans_transition_matrix
+        custom_lulc = self.w_questionnaire.ans_custom_lulc
+        transition_matrix = self.w_questionnaire.ans_transition_matrix
 
         self.w_reclass_a.w_ic_select.disabled = not custom_lulc
         self.w_reclass_b.w_ic_select.disabled = not custom_lulc

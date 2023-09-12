@@ -6,7 +6,7 @@ from component.message import cm
 
 
 class Questionnaire(sw.Layout):
-    """Vegetation questionaire widget.
+    """Vegetation questionnaire widget.
 
     Do some questions to the user, save the answers
     in the traits and use them later to display the proper Vegetation View
@@ -29,9 +29,9 @@ class Questionnaire(sw.Layout):
         super().__init__()
 
         # Set widget questions
-        self.wq_custom_lulc = cw.BoolQuestion(cm.veg_layer.questionaire.q1)
-        self.wq_transition_matrix = cw.BoolQuestion(cm.veg_layer.questionaire.q2)
-        self.btn = sw.Btn(cm.veg_layer.questionaire.btn.label)
+        self.wq_custom_lulc = cw.BoolQuestion(cm.veg_layer.questionnaire.q1)
+        self.wq_transition_matrix = cw.BoolQuestion(cm.veg_layer.questionnaire.q2)
+        self.btn = sw.Btn(cm.veg_layer.questionnaire.btn.label)
 
         description = sw.Markdown(cm.veg_layer.description)
 
