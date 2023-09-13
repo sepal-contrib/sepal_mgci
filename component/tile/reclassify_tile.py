@@ -67,7 +67,7 @@ class ReclassifyTile(sw.Layout):
             enforce_aoi=True,
             id_=id_,
             alert=alert,
-        ).nest_tile()
+        )
 
         # Create a default destination classification file
         # I did this because in version 0 I didn't wanted to modify view.

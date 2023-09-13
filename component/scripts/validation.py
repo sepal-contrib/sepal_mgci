@@ -1,8 +1,8 @@
 import pandas as pd
 
 
-def validate_file(file_, text_field_msg, type_):
-    """Read user inputs from custom transition matrix and custom green/non green"""
+def read_file(file_, text_field_msg):
+    """Read csv file and return a dataframe"""
 
     try:
         # Read csv file
@@ -23,6 +23,14 @@ def validate_file(file_, text_field_msg, type_):
         error_msg = "The file could not be found. Please check the file path."
         text_field_msg.error_messages = error_msg
         raise ValueError(error_msg)
+
+    return df
+
+
+def validate_file(file_, text_field_msg, type_):
+    """Read user inputs from custom transition matrix and custom green/non green"""
+
+    df = read_file(file_, text_field_msg)
 
     # Define column requirements for each type
     column_requirements = {
@@ -53,7 +61,6 @@ def validate_file(file_, text_field_msg, type_):
     # Check that all values are integers
     for col in df.columns:
         if not pd.api.types.is_integer_dtype(df[col]):
-
             error_msg = f"The {col} column must contain only integer values."
             text_field_msg.error_messages = error_msg
             raise ValueError(error_msg)
@@ -61,7 +68,6 @@ def validate_file(file_, text_field_msg, type_):
     # Check that there are no values outside the allowed values in the column requirements
     for col, allowed_vals in allowed_values.items():
         if not set(df[col].unique()).issubset(allowed_vals):
-
             join_vals = ", ".join([str(val) for val in allowed_vals])
             error_msg = (
                 f"The {col} column must contain only the following values: {join_vals}"
@@ -85,5 +91,55 @@ def validate_file(file_, text_field_msg, type_):
             error_msg = f"The lc_class column must not have repeated values."
             text_field_msg.error_messages = error_msg
             raise ValueError(error_msg)
+
+    return file_
+
+
+def validate_target_class_file(file_, text_field_msg):
+    """Validate the target classification file.
+
+    The target classification file is a csv file with the following columns:
+
+    - lc_class: The land cover class code
+    - desc: The land cover class description or display name
+    - color: The color to use for the land cover class
+    """
+
+    df = read_file(file_, text_field_msg)
+
+    # Define column requirements
+    req_cols = ["lc_class", "desc", "color"]
+
+    # Check that the file contains the required columns
+    if not set(req_cols).issubset(df.columns):
+        error_msg = (
+            f"The file must contain the following columns: {', '.join(req_cols)}"
+        )
+        text_field_msg.error_messages = error_msg
+        raise ValueError(error_msg)
+
+    # Check that the lc_class column contains only integer values
+    if not pd.api.types.is_integer_dtype(df["lc_class"]):
+        error_msg = f"The lc_class column must contain only integer values."
+        text_field_msg.error_messages = error_msg
+        raise ValueError(error_msg)
+
+    # Check that the lc_class column doesn't have repeated values.
+    if len(df) != len(df.drop_duplicates(subset=["lc_class"])):
+        error_msg = f"The lc_class column must not have repeated values."
+        text_field_msg.error_messages = error_msg
+        raise ValueError(error_msg)
+
+    # Check that the color column contains only string values
+    if not pd.api.types.is_string_dtype(df["color"]):
+        error_msg = f"The color column must contain only string values."
+        text_field_msg.error_messages = error_msg
+        raise ValueError(error_msg)
+
+    # Check that the color column doesn't have repeated values.
+    if len(df) != len(df.drop_duplicates(subset=["color"])):
+        error_msg = f"The color column must not have repeated values."
+        text_field_msg.error_messages = error_msg
+        raise ValueError(error_msg)
 
     return file_

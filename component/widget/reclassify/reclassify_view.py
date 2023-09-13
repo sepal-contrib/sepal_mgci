@@ -9,6 +9,7 @@ from sepal_ui.scripts import utils as su
 from sepal_ui.scripts.decorator import loading_button, switch
 from traitlets import Unicode, directional_link
 
+from component.scripts.validation import validate_target_class_file
 import component.parameter.directory as dir_
 import component.scripts.frequency_hist as scripts
 from component.message import cm
@@ -59,7 +60,7 @@ class ReclassifyView(sw.Card):
 
     def __init__(
         self,
-        model=None,
+        model: ReclassifyModel = None,
         class_path=Path.home(),
         out_path=dir_.MATRIX_DIR,
         gee=False,
@@ -108,11 +109,6 @@ class ReclassifyView(sw.Card):
             su.init_ee()
         # create an alert to display information to the user
         self.alert = alert or sw.Alert()
-
-        # set the title of the card
-        self.title = sw.CardTitle(
-            children=[sw.Html(tag="h2", children=[cm.rec.rec.title])]
-        )
 
         self.w_src_class_file = sw.FileInput(
             [".csv"], label=cm.rec.rec.input.classif.label, folder=self.class_path
@@ -168,15 +164,15 @@ class ReclassifyView(sw.Card):
         self.import_dialog.action_btn.on_event("click", self.load_matrix_content)
 
         self.reclassify_table.btn_load_table.on_event(
-            "click", lambda *_: self.import_dialog.show_dialog()
+            "click", lambda *_: self.import_dialog.open_dialog()
         )
 
         self.reclassify_table.btn_save_table.on_event(
-            "click", lambda *_: self.save_dialog.show_dialog(self.model.matrix)
+            "click", lambda *_: self.save_dialog.open_dialog(self.model.matrix)
         )
 
         self.reclassify_table.btn_load_target.on_event(
-            "click", lambda *_: self.target_dialog.show_dialog()
+            "click", lambda *_: self.target_dialog.open_dialog()
         )
 
         # link feature collection asset selection with model
@@ -314,14 +310,19 @@ class ImportMatrixDialog(BaseDialog):
     file = Unicode("").tag(sync=True)
 
     def __init__(self, folder, **kwargs):
-        title = sw.CardTitle(children=["Load reclassification matrix"])
         self.w_file = sw.FileInput(
             label="filename", folder=folder, attributes={"id": "1"}
         )
 
-        content = [title, self.w_file]
+        content = [self.w_file]
 
-        super().__init__(action_text="Load", content=content)
+        super().__init__(
+            title=cm.reclass.dialog.import_.title,
+            action_text=cm.reclass.dialog.import_.btn_label,
+            content=content,
+        )
+
+        self.cancel_btn.on_event("click", lambda *_: self.close_dialog())
 
 
 class SaveMatrixDialog(BaseDialog):
@@ -338,15 +339,21 @@ class SaveMatrixDialog(BaseDialog):
         self.folder = Path(folder)
 
         # create the widgets
-        title = sw.CardTitle(children=["Save matrix"])
-        self.w_file = sw.TextField(label="Set a matrix file name: ", v_model=None)
+        self.w_file = sw.TextField(
+            label=cm.reclass.dialog.save.w_file_label, v_model=None
+        )
 
-        self.alert = sw.Alert(children=["Choose a name for the output"]).show()
+        self.alert = sw.Alert(children=[cm.reclass.dialog.save.alert.default]).show()
 
-        content = [title, self.w_file, self.alert]
+        content = [self.w_file, self.alert]
 
         # create the dialog
-        super().__init__(content=content, **kwargs)
+        super().__init__(
+            title=cm.reclass.dialog.save.title,
+            action_text=cm.reclass.dialog.save.btn_label,
+            content=content,
+            **kwargs,
+        )
 
         # js behaviour
         self.action_btn.on_event("click", self._save)
@@ -361,10 +368,10 @@ class SaveMatrixDialog(BaseDialog):
         new_val = change["new"]
 
         out_file = self.folder / f"{su.normalize_str(new_val)}.csv"
-        msg = f"Your file will be saved as: {out_file}"
+        msg = cm.reclass.dialog.save.alert.active.format(out_file)
 
         if not new_val:
-            msg = "Choose a name for the output"
+            msg = cm.reclass.dialog.save.alert.default
         self.alert.add_msg(msg)
 
     def close_dialog(self, *_):
@@ -387,7 +394,7 @@ class SaveMatrixDialog(BaseDialog):
 
         return self
 
-    def show_dialog(self, matrix):
+    def open_dialog(self, matrix):
         """show the dialog and set the matrix values"""
 
         self._matrix = matrix
@@ -395,7 +402,7 @@ class SaveMatrixDialog(BaseDialog):
         # Reset file name
         self.w_file.v_model = ""
 
-        self.show_dialog()
+        super().open_dialog()
 
     def _sanitize(self, *_):
         """sanitize the used name when saving"""
@@ -420,21 +427,16 @@ class TargetClassesDialog(BaseDialog):
         self.model = model
         self.reclassify_table = reclassify_table
 
-        super().__init__()
-
         # Create an alert to display errors
         self.alert = sw.Alert()
 
-        title = sw.CardTitle(children=[cm.reclass.tooltip.load_target.title])
-        description = cm.reclass.target_dialog.description
-
         # from default_class dictionary get the first value (it's the path of the default)
-        dst_class_file = list(default_class.values())[0]
+        self.dst_class_file = list(default_class.values())[0]
 
         self.w_dst_class_file = sw.FileInput(
             [".csv"], label=cm.rec.rec.input.classif.label, folder=dir_.RESULTS_DIR
         )
-        self.w_dst_class_file.select_file(dst_class_file)
+        self.w_dst_class_file.select_file(self.dst_class_file)
 
         self.btn_list = [
             sw.Btn(
@@ -458,14 +460,17 @@ class TargetClassesDialog(BaseDialog):
         self.w_default = v.Flex(class_="mt-5", children=self.btn_list)
 
         content = [
-            title,
-            description,
+            cm.reclass.target_dialog.description,
             self.w_default,
             self.w_dst_class_file,
             self.alert,
         ]
 
-        super().__init__(action_text="Load", content=content)
+        super().__init__(
+            title=cm.reclass.tooltip.load_target.title,
+            action_text=cm.reclass.dialog.target.btn_label,
+            content=content,
+        )
 
         # Events
         [btn.on_event("click", self._set_dst_class_file) for btn in self.btn_list]
@@ -474,9 +479,6 @@ class TargetClassesDialog(BaseDialog):
 
         self.cancel_btn.on_event("click", lambda *_: self.close_dialog())
 
-        # bind selected file (containing destination classes) with model
-        self.model.bind(self.w_dst_class_file, "dst_class_file")
-
         self.action_btn.on_event("click", self.set_dst_items_event)
 
         # Decorate set_dst_items_event with loading button
@@ -484,8 +486,32 @@ class TargetClassesDialog(BaseDialog):
             alert=self.alert, button=self.action_btn
         )(self.set_dst_items_event)
 
+        self.w_dst_class_file.observe(self.on_validate_input, "v_model")
+
+    def close_dialog(self, *_):
+        """Set the default destination class file and close the dialog"""
+
+        self.w_dst_class_file.select_file(self.dst_class_file)
+        super().close_dialog()
+
+    def on_validate_input(self, change):
+        """Validate the input file and display error message if needed"""
+
+        self.model.dst_class_file = None
+
+        # Get TextField from change widget
+        text_field_msg = change["owner"].children[-1]
+        text_field_msg.error_messages = []
+
+        self.model.dst_class_file = validate_target_class_file(
+            change["new"], text_field_msg
+        )
+
     def set_dst_items_event(self, *_):
         """Set the event to update the destination class file"""
+
+        if not self.model.dst_class_file:
+            return
 
         self.reclassify_table.set_target_classes()
         self.close_dialog()

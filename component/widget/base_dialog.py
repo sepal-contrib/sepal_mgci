@@ -3,7 +3,7 @@ import ipyvuetify as v
 
 
 class BaseDialog(v.Dialog):
-    def __init__(self, action_text, content, *args, **kwargs):
+    def __init__(self, title: str, action_text: str, content: list, *args, **kwargs):
         kwargs["persistent"] = kwargs.get("persistent", False)
         kwargs["v_model"] = kwargs.get("v_model", False)
         kwargs["max_width"] = 750
@@ -21,12 +21,20 @@ class BaseDialog(v.Dialog):
             ]
         )
 
-        self.children = [sw.Card(class_="pa-2", children=[content]), actions]
+        self.children = [
+            sw.Card(
+                class_="pa-2",
+                children=[
+                    sw.CardTitle(children=title),
+                    sw.CardText(children=content),
+                    actions,
+                ],
+            ),
+        ]
 
     def open_dialog(self, *_):
         """Call vegetation view build and open the dialog."""
 
-        self.vegetation_view.get_view()
         self.v_model = True
 
     def close_dialog(self, *_):
