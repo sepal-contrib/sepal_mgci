@@ -499,7 +499,7 @@ class TargetClassesDialog(BaseDialog):
         self.w_default = v.Flex(class_="mt-5", children=self.btn_list)
 
         content = [
-            cm.reclass.target_dialog.description,
+            cm.reclass.dialog.target.description,
             self.w_default,
             self.w_dst_class_file,
             self.alert,
@@ -606,6 +606,20 @@ class ReclassifyTable(sw.Layout):
         # save the model
         self.model = model
 
+        default_lc_dialog = InfoDialog()
+
+        # Create button to show the default classification
+        self.btn_info = (
+            sw.Btn(
+                gliph="mdi-information",
+                icon=True,
+                color="primary",
+                class_="mr-2",
+            )
+            .set_tooltip(cm.reclass.tooltip.info, bottom=True)
+            .hide()
+        )
+
         # Create button to save the matrix from a file
         self.btn_save_table = sw.Btn(
             gliph="mdi-content-save",
@@ -638,9 +652,11 @@ class ReclassifyTable(sw.Layout):
         self.toolbar = v.Toolbar(
             flat=True,
             children=[
+                default_lc_dialog,
                 cm.reclass.title,
                 v.Spacer(),
                 v.Divider(vertical=True, class_="mx-2"),
+                self.btn_info.with_tooltip,
                 self.btn_load_target.with_tooltip,
                 self.btn_save_table.with_tooltip,
                 self.btn_load_table.with_tooltip,
@@ -675,6 +691,7 @@ class ReclassifyTable(sw.Layout):
 
         self.model.observe(self.set_info_message, "matrix")
         self.progress.observe(self.set_progress_color, "v_model")
+        self.btn_info.on_event("click", lambda *_: default_lc_dialog.open_dialog())
 
     def set_progress_color(self, change):
         """set progress bar colors based on v_model trait instead of setting when
@@ -866,3 +883,55 @@ class Btn(v.Btn, sw.SepalWidget):
         self.disabled = self.loading
 
         return self
+
+
+def InfoDialog():
+    # read csv
+    df = pd.read_csv(dir_.LOCAL_LC_CLASSES, header=0)
+    headers = [cm.reclass.default_table.header[col] for col in df.columns.tolist()]
+    content = df.values.tolist()
+
+    thead = v.Html(
+        tag="thead",
+        children=[
+            v.Html(tag="tr", children=[v.Html(tag="th", children=[h]) for h in headers])
+        ],
+    )
+
+    tbody = v.Html(
+        tag="tbody",
+        children=[
+            v.Html(
+                tag="tr",
+                children=[
+                    v.Html(
+                        tag="td", class_="caption text-center", children=[str(row[0])]
+                    ),
+                    v.Html(tag="td", class_="caption", children=[str(row[1])]),
+                    v.Html(
+                        tag="td",
+                        style_=f"background-color: {row[-1]};",
+                        class_="caption",
+                        children=["  "],
+                    ),
+                ],
+            )
+            for row in content
+        ],
+    )
+
+    table = v.SimpleTable(
+        max_width="500px",
+        dense=True,
+        children=[
+            thead,
+            tbody,
+        ],
+    )
+
+    dialog = BaseDialog(title="Default classification", content=[table], action_text="")
+    dialog.cancel_btn.on_event("click", lambda *_: dialog.close_dialog())
+
+    dialog.action_btn.hide()
+
+    return dialog
