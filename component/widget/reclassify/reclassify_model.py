@@ -12,10 +12,10 @@ from rasterio.windows import from_bounds
 from sepal_ui.model import Model
 from sepal_ui.scripts import gee
 from sepal_ui.scripts import utils as su
-from traitlets import Any, Bool, Dict, Int, List
+from traitlets import Any, Bool, Dict, Int, List, Unicode
 
 from component.message import cm
-from component.widget.reclassify.parameters import NO_VALUE
+from component.parameter.reclassify_parameters import NO_VALUE
 
 __all__ = ["ReclassifyModel"]
 
@@ -65,6 +65,9 @@ class ReclassifyModel(Model):
     matrix = Dict({}).tag(sync=True)
     "dict: the transfer matrix between the input and the output using the following format: {old_value: new_value, ...}"
 
+    matrix_file = Unicode("").tag(sync=True)
+    "str: path to a valid matrix file containing the transfer matrix, that's the one we use to reclassify from_ old values to a new"
+
     # outputs
     input_type = Bool(False).tag(sync=True)  # 1 raster, 0 vector
     "bool: the input type, 1 for raster and 0 for vector"
@@ -84,6 +87,9 @@ class ReclassifyModel(Model):
     # Create a state var, to determine if an asset has been remaped
     remaped = Int(False).tag(sync=True)
     "int: state var updated each time an input is remapped"
+
+    table_created = Bool(False).tag(sync=True)
+    "bool: either or not the table has been created"
 
     save = False
     "bool: either or not the relcassified dataset need to be saved"

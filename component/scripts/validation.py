@@ -1,4 +1,5 @@
 import pandas as pd
+from component.parameter.reclassify_parameters import NO_VALUE, MATRIX_NAMES
 
 
 def read_file(file_, text_field_msg):
@@ -8,7 +9,9 @@ def read_file(file_, text_field_msg):
         # Read csv file
         df = pd.read_csv(file_)
         # remove white spaces from column names
-        df.columns = df.columns.str.strip()
+
+        # I cannot modify the dataframe
+        # df.columns = df.columns.str.strip()
 
     except pd.errors.ParserError:
         # Raise a more specific error for when the file cannot be parsed as a csv
@@ -142,4 +145,28 @@ def validate_target_class_file(file_, text_field_msg):
         text_field_msg.error_messages = error_msg
         raise ValueError(error_msg)
 
+    return file_
+
+
+def validate_reclassify_table(file_, text_field_msg):
+    """Validate the reclassify table file that is used to reclassify the input asset"""
+
+    df = read_file(file_, text_field_msg).fillna(NO_VALUE)
+
+    try:
+        df.astype("int64")
+    except Exception:
+        error_msg = (
+            "This file may contain non supported charaters for reclassification."
+        )
+        text_field_msg.error_messages = error_msg
+        raise Exception(error_msg)
+    if len(df.columns) != 2:
+        # Try to identify the oclumns and subset them
+        if all([colname in list(df.columns) for colname in MATRIX_NAMES]):
+            df = df[MATRIX_NAMES]
+        else:
+            error_msg = "This file is not a properly formatted as classification matrix"
+            text_field_msg.error_messages = error_msg
+            raise Exception(error_msg)
     return file_

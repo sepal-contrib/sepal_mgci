@@ -9,11 +9,14 @@ from sepal_ui.scripts import utils as su
 from sepal_ui.scripts.decorator import loading_button, switch
 from traitlets import Unicode, directional_link
 
-from component.scripts.validation import validate_target_class_file
+from component.scripts.validation import (
+    validate_reclassify_table,
+    validate_target_class_file,
+)
 import component.parameter.directory as dir_
 import component.scripts.frequency_hist as scripts
 from component.message import cm
-from component.widget.reclassify.parameters import MATRIX_NAMES, NO_VALUE
+from component.parameter.reclassify_parameters import MATRIX_NAMES
 from component.widget.reclassify.reclassify_model import ReclassifyModel
 from component.widget.base_dialog import BaseDialog
 
@@ -130,7 +133,7 @@ class ReclassifyView(sw.Card):
 
         # Reuse component from a different instance or create a new one
         self.w_asset_selection = sw.Flex(
-            class_="d-flex align-center",
+            class_="d-flex align-center mx-2",
             children=[self.w_ic_select, self.btn_get_table],
         )
 
@@ -139,11 +142,17 @@ class ReclassifyView(sw.Card):
 
         self.reclassify_table = ReclassifyTable(self.model)
 
-        self.save_dialog = SaveMatrixDialog(folder=out_path)
-        self.import_dialog = ImportMatrixDialog(folder=out_path, attributes={"id": "2"})
+        self.save_dialog = SaveMatrixDialog(folder=out_path, error_alert=self.alert)
+        self.import_dialog = ImportMatrixDialog(
+            model=self.model,
+            folder=out_path,
+            error_alert=self.alert,
+            attributes={"id": "2"},
+        )
         self.target_dialog = TargetClassesDialog(
             model=self.model,
             reclassify_table=self.reclassify_table,
+            error_alert=self.alert,
             default_class=default_class,
         )
 
@@ -160,9 +169,12 @@ class ReclassifyView(sw.Card):
             self.alert, self.btn_get_table, debug=True
         )(self.get_reclassify_table)
 
-        # JS Events
-        self.import_dialog.action_btn.on_event("click", self.load_matrix_content)
+        # Decorate functions
+        self.load_matrix_content = loading_button(
+            self.alert, self.import_dialog.action_btn, debug=True
+        )(self.load_matrix_content)
 
+        self.import_dialog.action_btn.on_event("click", self.load_matrix_content)
         self.reclassify_table.btn_load_table.on_event(
             "click", lambda *_: self.import_dialog.open_dialog()
         )
@@ -181,44 +193,16 @@ class ReclassifyView(sw.Card):
         # Reset table everytime an image image collection is changed.
         self.w_ic_select.observe(self.set_ids, "v_model")
 
-    def set_ids(self, change):
-        """set image collection ids to ic_items model attribute on change. set empty
-        table"""
+    def load_matrix_content(self, *_):
+        if not self.import_dialog.w_file.v_model:
+            raise Exception(cm.reclass.dialog.import_.error.no_file)
 
-        self.model.ic_items = scripts.get_image_collection_ids(change["new"])
-        self.reclassify_table.set_table({}, {})
-
-    def load_matrix_content(self, widget, event, data):
-        """Load the content of the file in the matrix. The table need to be already set
-        to perform this operation"""
-
-        self.import_dialog.value = False
-        file = self.import_dialog.w_file.v_model
-
-        # exit if no files are selected
-        if not file:
-            raise Exception("No file has been selected")
         # exit if no table is loaded
         if not self.model.table_created:
-            raise Exception("You have to get the table before.")
-        # load the file
-        # sanity checks
-        input_data = pd.read_csv(file).fillna(NO_VALUE)
+            raise Exception(cm.reclass.dialog.import_.error.no_table)
 
-        try:
-            input_data.astype("int64")
-        except Exception:
-            raise Exception(
-                "This file may contain non supported charaters for reclassification."
-            )
-        if len(input_data.columns) != 2:
-            # Try to identify the oclumns and subset them
-            if all([colname in list(input_data.columns) for colname in MATRIX_NAMES]):
-                input_data = input_data[MATRIX_NAMES]
-            else:
-                raise Exception(
-                    "This file is not a properly formatted as classification matrix"
-                )
+        input_data = pd.read_csv(self.model.matrix_file)
+
         # check that the destination values are all available
         widget = list(self.reclassify_table.class_select_list.values())[0]
         classes = [i["value"] for i in widget.items]
@@ -226,6 +210,7 @@ class ReclassifyView(sw.Card):
             raise Exception(
                 "Some of the destination data are not existing in the destination dataset"
             )
+
         # fill the data
         for _, row in input_data.iterrows():
             src_code, dst_code = row.src, row.dst
@@ -234,9 +219,14 @@ class ReclassifyView(sw.Card):
                     str(src_code)
                 ].v_model = dst_code
 
-        # self.import_dialog.w_file.reset()
+        self.import_dialog.close_dialog()
 
-        return self
+    def set_ids(self, change):
+        """set image collection ids to ic_items model attribute on change. set empty
+        table"""
+
+        self.model.ic_items = scripts.get_image_collection_ids(change["new"])
+        self.reclassify_table.set_table({}, {})
 
     @su.switch("loading", "disabled", on_widgets=["w_code"])
     def _update_band(self, change):
@@ -305,11 +295,14 @@ class ImportMatrixDialog(BaseDialog):
 
     Attributes:
         file (str): the file to use
+        error_alert (sw.Alert): the alert to display errors
     """
 
     file = Unicode("").tag(sync=True)
 
-    def __init__(self, folder, **kwargs):
+    def __init__(self, model: ReclassifyModel, folder, error_alert: sw.Alert, **kwargs):
+        self.model = model
+
         self.w_file = sw.FileInput(
             label="filename", folder=folder, attributes={"id": "1"}
         )
@@ -322,7 +315,35 @@ class ImportMatrixDialog(BaseDialog):
             content=content,
         )
 
+        # Decorate load_matrix_content with loading button
         self.cancel_btn.on_event("click", lambda *_: self.close_dialog())
+        self.w_file.observe(self.on_validate_input, "v_model")
+
+    def on_validate_input(self, change):
+        """Load the content of the file in the matrix. The table need to be already set
+        to perform this operation"""
+
+        self.model.matrix_file = ""
+
+        # Get TextField from change widget
+        text_field_msg = change["owner"].children[-1]
+        text_field_msg.error_messages = []
+
+        self.model.matrix_file = validate_reclassify_table(
+            change["new"], text_field_msg
+        )
+
+    def open_dialog(self):
+        """show the dialog and set the matrix values"""
+
+        self.w_file.unobserve(self.on_validate_input, "v_model")
+
+        # Reset file name
+        self.w_file.v_model = ""
+
+        self.w_file.observe(self.on_validate_input, "v_model")
+
+        super().open_dialog()
 
 
 class SaveMatrixDialog(BaseDialog):
@@ -333,7 +354,7 @@ class SaveMatrixDialog(BaseDialog):
         folder (pathlike object): the path to the save folder. default to ~/
     """
 
-    def __init__(self, folder=Path.home(), **kwargs):
+    def __init__(self, error_alert: sw.Alert, folder=Path.home(), **kwargs):
         # save the matrix
         self._matrix = {}
         self.folder = Path(folder)
@@ -355,6 +376,9 @@ class SaveMatrixDialog(BaseDialog):
             **kwargs,
         )
 
+        # decorate the buttons with the loading button decorator
+        self._save = loading_button(error_alert, self.action_btn)(self._save)
+
         # js behaviour
         self.action_btn.on_event("click", self._save)
         self.cancel_btn.on_event("click", self.close_dialog)
@@ -368,7 +392,10 @@ class SaveMatrixDialog(BaseDialog):
         new_val = change["new"]
 
         out_file = self.folder / f"{su.normalize_str(new_val)}.csv"
-        msg = cm.reclass.dialog.save.alert.active.format(out_file)
+
+        msg = sw.Markdown(
+            cm.reclass.dialog.save.alert.active.format(out_file.parent, out_file.name)
+        )
 
         if not new_val:
             msg = cm.reclass.dialog.save.alert.default
@@ -382,6 +409,12 @@ class SaveMatrixDialog(BaseDialog):
 
     def _save(self, *_):
         """save the matrix in a specified file"""
+
+        if not self._matrix:
+            raise Exception(cm.reclass.dialog.save.error.no_matrix)
+
+        if not self.w_file.v_model:
+            raise Exception(cm.reclass.dialog.save.error.no_name)
 
         file = self.folder / f"{su.normalize_str(self.w_file.v_model)}.csv"
 
@@ -422,7 +455,13 @@ class TargetClassesDialog(BaseDialog):
         reclassify_table (ReclassifyTable): used to call set_target_classes method from here.
     """
 
-    def __init__(self, model, reclassify_table, default_class: dict = {}):
+    def __init__(
+        self,
+        model,
+        reclassify_table,
+        error_alert: sw.Alert,
+        default_class: dict = {},
+    ):
         self.attributes = {"id": "target_classes_dialog"}
         self.model = model
         self.reclassify_table = reclassify_table
@@ -557,7 +596,7 @@ class ReclassifyTable(sw.Layout):
 
     HEADERS = cm.rec.rec.headers
 
-    def __init__(self, model, **kwargs):
+    def __init__(self, model: ReclassifyModel, **kwargs):
         self.class_ = "d-block"
         self.attributes = {"id": "reclassify_table"}
 

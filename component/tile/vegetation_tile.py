@@ -182,6 +182,7 @@ class VegetationView(sw.Layout):
         self.reclassify_tile_b.w_reclass.get_reclassify_table(
             self=self.reclassify_tile_b.w_reclass.get_reclassify_table
         )
+        self.stepper_a.v_model = 2
 
     def set_default_asset(self, change):
         """listen dash_ready model attribute and change w_ic_select default v_model. It

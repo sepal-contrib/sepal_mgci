@@ -91,7 +91,11 @@
                 "w_file_label" : "Set a matrix file name:",
                 "alert" : {
                     "default" : "Choose a name for the output file",
-                    "active" : "Your file will be saved as: {}"
+                    "active" : "Your file will be saved on: {} </br> as {}."
+                },
+                "error" : {
+                    "no_matrix" : "There is no table to save, please fill up the table first.",
+                    "no_name" : "Please insert a name for the file."
                 }
             },
             "target" : {
@@ -99,7 +103,11 @@
             },
             "import_" : {
                 "title" : "Load reclassification matrix",
-                "btn_label" : "Load"
+                "btn_label" : "Load",
+                "error" : {
+                    "no_file" : "Please select a file containing a reclassified matrix.",
+                    "no_table" : "Please go to the step 1 and get the classes table first."
+                }
             }
         }
     },

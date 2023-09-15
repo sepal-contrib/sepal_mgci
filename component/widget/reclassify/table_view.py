@@ -9,7 +9,7 @@ from component.message import cm
 from sepal_ui.scripts import utils as su
 from traitlets import Int
 
-from component.widget.reclassify import parameters as param
+from component.parameter import reclassify_parameters as param
 
 __all__ = ["TableView"]
 
