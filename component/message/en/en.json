@@ -61,9 +61,13 @@
                     "label" : "Open parameter settings"
                 }
         },
-        "tabs" : {
-            "lc_classification" : "Land cover classification",
-            "transition_matrix" : "Transition matrix"
+        "stepper" : {
+            "header" : {
+                "data_selection" : "Dataset selection",
+                "reclassify_a" : "Reclassify Land Cover for Subindicator A",
+                "reclassify_b" : "Reclassify Land Cover for Subindicator B",
+                "transition_matrix" : "Transition matrix"
+            }
         }
     },
     "reclass" : {
@@ -71,6 +75,7 @@
         "get_classes" : "Get classes",
         "no_data" : "No data",
         "non_complete" : "You have classified {} classes. Empty classes will be classified as zero (0).",
+        "description" : "Please reclassify the land cover classes of your custom land cover datasets to the reference land cover legend used for this indicator",
         "tooltip": {
             "save_matrix" : "Save matrix as .csv file",
             "load_matrix" : "Load matrix from .csv file",
@@ -79,10 +84,15 @@
                 "title" : "Target land cover classes",
                 "load_btn" : "Load target classes",
                 "cancel_btn" : "Cancel"
-            }
+            },
+            "info" : "Show info"
         },
-        "target_dialog" : {
-            "description" : "This module allows users to modify the default target land cover classes used in the reclassification process. The module is set to use the standard 10 IPCC classes by default, but for sub indicator B, users have the option to either use these default classes or create their own custom classification. To use the custom classification option, simply select the 'custom' button and upload a file containing the target classifications that will be used in the reclassification table."
+        "default_table" : {
+            "header" : {
+                "lc_class" : "Land cover class",
+                "desc" : "Name",
+                "color" : "Color"
+            }
         },
         "dialog" : {
             "save" : {
@@ -99,7 +109,8 @@
                 }
             },
             "target" : {
-                "btn_label" : "Load"
+                "btn_label" : "Load",
+                "description" : "This module allows users to modify the default target land cover classes used in the reclassification process. The module is set to use the standard 10 IPCC classes by default, but for sub indicator B, users have the option to either use these default classes or create their own custom classification. To use the custom classification option, simply select the 'custom' button and upload a file containing the target classifications that will be used in the reclassification table."
             },
             "import_" : {
                 "title" : "Load reclassification matrix",

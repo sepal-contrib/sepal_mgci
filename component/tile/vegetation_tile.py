@@ -11,6 +11,7 @@ from component.widget.custom_widgets import AlertDialog
 import component.parameter.module_parameter as param
 
 
+import sepal_ui.scripts.decorator as sd
 from sepal_ui.aoi.aoi_model import AoiModel
 
 from . import reclassify_tile as rt
@@ -63,10 +64,16 @@ class VegetationTile(sw.Layout):
                 ],
             ),
         ]
+        # decorate the button
+        self.open_settings_dialog = sd.loading_button(
+            alert=alert, button=self.btn_get_paramters, debug=True
+        )(self.open_settings_dialog)
 
-        self.btn_get_paramters.on_event(
-            "click", lambda *_: self.w_vegetation_dialog.open_dialog()
-        )
+        self.btn_get_paramters.on_event("click", self.open_settings_dialog)
+
+    def open_settings_dialog(self, *_):
+        """Open the settings dialog"""
+        self.w_vegetation_dialog.open_dialog()
 
 
 class VegetationDialog(sw.Dialog):
@@ -220,6 +227,7 @@ class VegetationView(sw.Layout):
 
             self.transition_view.show_matrix = False
             self.w_reclass_a.btn_get_table.show()
+            self.w_reclass_a.reclassify_table.btn_info.show()
 
         else:
             self.stepper_b.v_model = 1
@@ -266,17 +274,24 @@ class StepperA(Stepper):
         self.w_reclass_a = w_reclass_a
         self.w_reclass_b = w_reclass_b
         self.transition_view = transition_view
+        self.description = v.CardText(children=[cm.reclass.description])
 
         headers = [
-            "Data set selection",
-            "Reclassify Land Cover for Subindicator A",
-            "Reclassify Land Cover for Subindicator B",
-            "Transition Matrix",
+            cm.veg_layer.stepper.header.data_selection,
+            cm.veg_layer.stepper.header.reclassify_a,
+            cm.veg_layer.stepper.header.reclassify_b,
+            cm.veg_layer.stepper.header.transition_matrix,
         ]
 
         steps = [
             self.w_reclass_a.w_asset_selection,
-            self.w_reclass_a,
+            v.Flex(
+                class_="d-block",
+                children=[
+                    self.description,
+                    self.w_reclass_a,
+                ],
+            ),
             self.w_reclass_b,
             self.transition_view,
         ]
@@ -295,8 +310,8 @@ class StepperB(Stepper):
         self.transition_view = transition_view
 
         headers = [
-            "Data set selection",
-            "Transition Matrix",
+            cm.veg_layer.stepper.header.data_selection,
+            cm.veg_layer.stepper.header.transition_matrix,
         ]
 
         steps = [
