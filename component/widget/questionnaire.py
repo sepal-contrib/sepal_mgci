@@ -31,7 +31,6 @@ class Questionnaire(sw.Layout):
         # Set widget questions
         self.wq_custom_lulc = cw.BoolQuestion(cm.veg_layer.questionnaire.q1)
         self.wq_transition_matrix = cw.BoolQuestion(cm.veg_layer.questionnaire.q2)
-        self.btn = sw.Btn(cm.veg_layer.questionnaire.btn.label)
 
         description = sw.Markdown(cm.veg_layer.description)
 
