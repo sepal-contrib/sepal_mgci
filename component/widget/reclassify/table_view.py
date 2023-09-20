@@ -1,12 +1,14 @@
 from colorsys import rgb_to_hls, rgb_to_hsv
 from pathlib import Path
 
+from sepal_ui import sepalwidgets as sw
+from sepal_ui.scripts import utils as su
+import sepal_ui.scripts.decorator as sd
+
 import ipyvuetify as v
 import pandas as pd
 from matplotlib.colors import to_rgb
-from sepal_ui import sepalwidgets as sw
 from component.message import cm
-from sepal_ui.scripts import utils as su
 from traitlets import Int
 
 from component.parameter import reclassify_parameters as param
@@ -534,8 +536,9 @@ class SaveDialog(v.Dialog):
 
 
 class TableView(sw.Card):
-    """
-    Stand-alone Card object allowing the user to build custom class table. The user can start from an existing table or start from scratch. It gives the oportunity to change: the value, the class name and the color. It can be used as a tile in a sepal_ui app. The id\_ of the tile is set to "classification_tile"
+    """Stand-alone Card object allowing the user to build custom class table.
+
+    The user can start from an existing table or start from scratch. It gives the oportunity to change: the value, the class name and the color. It can be used as a tile in a sepal_ui app. The id\_ of the tile is set to "classification_tile"
 
     Args:
         class_path (str|optional): Folder path containing already existing classes. Default to ~/
@@ -628,7 +631,7 @@ class TableView(sw.Card):
         # Events
         self.btn.on_event("click", self.get_class_table)
 
-    @su.loading_button(debug=True)
+    @sd.loading_button(debug=True)
     def get_class_table(self, widget, event, data):
         """
         Display class table widget in view

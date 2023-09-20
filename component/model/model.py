@@ -2,9 +2,9 @@ from pathlib import Path
 
 import ee
 import pandas as pd
-import sepal_ui.scripts.utils as su
-from sepal_ui.model import Model
 from sepal_ui.scripts.warning import SepalWarning
+from sepal_ui.model import Model
+import sepal_ui.scripts.decorator as sd
 from traitlets import Bool, CBool, Dict, List, Unicode
 
 import component.parameter.directory as DIR
@@ -102,7 +102,7 @@ class MgciModel(Model):
     done = Bool(True).tag(sync=True)
     "bool: bool trait to indicate that MGCI calculation has been performed. It will be listen by different widgets (i.e.dashboard tile)."
 
-    @su.need_ee
+    @sd.need_ee
     def __init__(self, aoi_model=None):
         """
 
