@@ -20,7 +20,7 @@ __all__ = ["VegetationTile", "questionnaire"]
 
 
 class VegetationTile(sw.Layout):
-    def __init__(self, model: MgciModel, aoi_model: AoiModel, *args, **kwargs):
+    def __init__(self, model: MgciModel, *args, **kwargs):
         self._metadata = {"mount_id": "vegetation_tile"}
         self.class_ = "d-block pa-2"
 
@@ -40,7 +40,7 @@ class VegetationTile(sw.Layout):
 
         self.vegetation_view = VegetationView(
             model=model,
-            aoi_model=aoi_model,
+            aoi_model=model.aoi_model,
             questionnaire=self.w_questionnaire,
             alert=alert,
         )
@@ -77,7 +77,7 @@ class VegetationTile(sw.Layout):
 
 
 class VegetationDialog(sw.Dialog):
-    def __init__(self, vegetation_view, *args, **kwargs):
+    def __init__(self, vegetation_view: "VegetationView", *args, **kwargs):
         kwargs["persistent"] = kwargs.get("persistent", False)
         kwargs["v_model"] = kwargs.get("v_model", False)
         kwargs["max_width"] = 1200
@@ -180,6 +180,10 @@ class VegetationView(sw.Layout):
 
         self.model.observe(self.set_default_asset, "dash_ready")
 
+        self.w_questionnaire.observe(
+            self.on_questionnaire, ["ans_custom_lulc", "ans_transition_matrix"]
+        )
+
     def on_get_table(self, *_):
         """Get reclassify table from both reclassification tables"""
 
@@ -197,6 +201,16 @@ class VegetationView(sw.Layout):
         time"""
 
         if change["new"]:
+            self.reclassify_tile_a.use_default()
+            self.reclassify_tile_b.use_default()
+
+    def on_questionnaire(self, _):
+        """Everytime the questionnaire answers change, we need to reset the reclassify components"""
+
+        self.w_reclass_a.reclassify_table.set_table({}, {})
+        self.w_reclass_b.reclassify_table.set_table({}, {})
+
+        if not self.w_questionnaire.ans_custom_lulc:
             self.reclassify_tile_a.use_default()
             self.reclassify_tile_b.use_default()
 
@@ -222,8 +236,6 @@ class VegetationView(sw.Layout):
         if custom_lulc:
             self.stepper_a.v_model = 1
             self.children = [self.stepper_a]
-            self.w_reclass_a.reclassify_table.set_table({}, {})
-            self.w_reclass_b.reclassify_table.set_table({}, {})
 
             self.transition_view.show_matrix = False
             self.w_reclass_a.btn_get_table.show()
@@ -232,8 +244,6 @@ class VegetationView(sw.Layout):
         else:
             self.stepper_b.v_model = 1
             self.children = [self.stepper_b]
-            self.reclassify_tile_a.use_default()
-            self.reclassify_tile_b.use_default()
             self.w_reclass_a.btn_get_table.hide()
 
             # Q2: Would you like to change the transition matrix?

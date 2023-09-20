@@ -99,6 +99,8 @@ class ReclassifyTile(sw.Layout):
             (self.mgci_model, f"lulc_classes_{id_}"),
         )
 
+        self.use_default()
+
     def use_default(self):
         """Define a default asset to the w_image component from w_reclass"""
 

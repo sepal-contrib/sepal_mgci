@@ -18,9 +18,6 @@ class Questionnaire(sw.Layout):
     ans_transition_matrix = CBool().tag(sync=True)
     "bool: answer do you have a custom land cover transition matrix (.csv)?"
 
-    # ans_need_reclassify = CBool().tag(sync=True)
-    "bool: answer do you need to reclassify the land cover map?"
-
     indicator = Unicode().tag(sync=True)
 
     def __init__(self) -> sw.Layout:

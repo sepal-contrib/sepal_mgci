@@ -529,10 +529,14 @@ class TargetClassesDialog(BaseDialog):
 
         self.w_dst_class_file.observe(self.on_validate_input, "v_model")
 
-    def close_dialog(self, *_):
-        """Set the default destination class file and close the dialog"""
+    def close_dialog(self, to_default=True, *_):
+        """Set the default destination class file and close the dialog.
 
-        self.w_dst_class_file.select_file(self.dst_class_file)
+        Args:
+            to_default (bool): whether to set the default class file or not. default to True
+        """
+
+        to_default and self.w_dst_class_file.select_file(self.dst_class_file)
         super().close_dialog()
 
     def on_validate_input(self, change):
@@ -555,7 +559,7 @@ class TargetClassesDialog(BaseDialog):
             return
 
         self.reclassify_table.set_target_classes()
-        self.close_dialog()
+        self.close_dialog(to_default=False)
 
     def _set_dst_class_file(self, widget: v.VuetifyWidget, *args):
         """
