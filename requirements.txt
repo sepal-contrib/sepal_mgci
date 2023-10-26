@@ -5,15 +5,13 @@ Cython
 pybind11
 
 # updated on 24/08/2023
-git+https://github.com/12rambau/sepal_ui.git@1e3cd4c6d1b3bf5e62a3737dc0a42abffc9a9088
+git+https://github.com/12rambau/sepal_ui.git@sepal_pre_release
 scipy
 
 # custom libs
 matplotlib
-ipywidgets==7.6.5
-ipyvuetify==1.8.1
-pandas==1.3.3
-cryptography>=2.1.4
+pandas
 openpyxl>=3.0.3
-
-plotly==5.13.0
+plotly
+pytest
+pygaul
