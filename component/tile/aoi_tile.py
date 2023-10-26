@@ -1,5 +1,6 @@
 import ee
 import pandas as pd
+import pkg_resources
 import sepal_ui.sepalwidgets as sw
 from ipyleaflet import WidgetControl
 from sepal_ui.mapping import SepalMap
@@ -61,11 +62,16 @@ class AoiTile(sw.Layout):
         # Read m49 countries.
         m49_countries = pd.read_csv(param.M49_FILE, sep=";")
 
+        # Access to the parquet file in the package data (required with sepal_ui>2.16.4)
+        resource_path = "data/gaul_database.parquet"
+        content = pkg_resources.resource_filename("pygaul", resource_path)
+
+        df = pd.read_parquet(content).astype(str)
+
         # Read AOI gaul dataframe
         gaul_dataset = (
-            pd.read_parquet(self.view.model.FILE[1])
-            .drop_duplicates(subset=self.view.model.CODE[1].format(0))
-            .sort_values(self.view.model.NAME[1].format(0))
+            df.drop_duplicates(subset="ADM{}_CODE".format(0))
+            .sort_values("ADM{}_NAME".format(0))
             .rename(columns={"ISO 3166-1 alpha-3": "iso31661"})
         )
 
