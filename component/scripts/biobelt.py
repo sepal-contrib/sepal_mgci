@@ -42,7 +42,9 @@ def get_belt_area(aoi, biobelt):
     df = pd.DataFrame(area, columns=["class", "area"])
 
     total_area = df.sum()[1]
-    df = df.append({"class": "total", "area": df.sum()[1]}, ignore_index=True)
+
+    df_area = pd.DataFrame({"class": ["total"], "area": [df.sum()[1]]})
+    df = pd.concat([df, df_area], ignore_index=True)
     df["perc"] = df["area"] / total_area * 100
     df["area"] = df["area"].apply("{:,.0f}".format)
 
