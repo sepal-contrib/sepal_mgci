@@ -11,6 +11,7 @@ import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
 from component.scripts.surface_area import get_real_surface_area
 from component.scripts.gee import GDrive
+from component.scripts.reduce import reduce_regions
 
 
 class MgciModel(Model):
@@ -149,76 +150,14 @@ class MgciModel(Model):
 
         matrix = getattr(self, f"matrix_{indicator}")
 
-        def no_remap(image):
-            """return remapped or raw image if there's a matrix"""
-
-            if matrix:
-                from_, to_ = list(zip(*matrix.items()))
-                return image.remap(from_, to_, 0)
-
-            return image
-
-        # Define two ways of calculation, with only one date and with both
-        ee_lc_start_band = ee.Image(lc_start).bandNames().get(0)
-        ee_lc_start = ee.Image(lc_start).select([ee_lc_start_band])
-        ee_lc_start = no_remap(ee_lc_start)
-
-        aoi = self.aoi_model.feature_collection.geometry()
-        clip_biobelt = ee.Image(param.BIOBELT).clip(aoi)
-
-        if self.rsa:
-            # When using rsa, we need to use the dem scale, otherwise
-            # we will end with wrong results.
-            image_area = get_real_surface_area(self.dem, aoi)
-            scale = ee_lc_start.projection().nominalScale().getInfo()
-        else:
-            # Otherwise, we will use the coarse scale to the output.
-            image_area = ee.Image.pixelArea()
-            scale = (
-                ee_lc_start.projection()
-                .nominalScale()
-                .max(ee_lc_start.projection().nominalScale())
-                .getInfo()
-            )
-
-        if indicator == "sub_b":
-            ee_lc_end_band = ee.Image(lc_end).bandNames().get(0)
-            ee_lc_end = ee.Image(lc_end).select([ee_lc_end_band])
-            ee_lc_end = no_remap(ee_lc_end)
-
-            return (
-                image_area.divide(param.UNITS["sqkm"][0])
-                .updateMask(clip_biobelt.mask())
-                .addBands(ee_lc_end)
-                .addBands(ee_lc_start)
-                .addBands(clip_biobelt)
-                .reduceRegion(
-                    **{
-                        "reducer": ee.Reducer.sum().group(1).group(2).group(3),
-                        "geometry": aoi,
-                        "maxPixels": 1e19,
-                        "scale": scale,
-                        "bestEffort": True,
-                        "tileScale": 4,
-                    }
-                )
-            )
-
-        return (
-            image_area.divide(param.UNITS["sqkm"][0])
-            .updateMask(clip_biobelt.mask())
-            .addBands(ee_lc_start)
-            .addBands(clip_biobelt)
-            .reduceRegion(
-                **{
-                    "reducer": ee.Reducer.sum().group(1).group(2),
-                    "geometry": aoi,
-                    "maxPixels": 1e19,
-                    "scale": scale,
-                    "bestEffort": True,
-                    "tileScale": 4,
-                }
-            )
+        return reduce_regions(
+            aoi=self.aoi_model.feature_collection,
+            matrix=matrix,
+            rsa=self.rsa,
+            dem=self.dem,
+            indicator=indicator,
+            lc_start=lc_start,
+            lc_end=lc_end,
         )
 
     def task_process(self, process, task_file, process_id):
