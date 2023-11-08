@@ -1,8 +1,8 @@
 # These libs are requested to build common python libs
 # If you are an advanced user and you are sure to not use them, you can comment the following lines
 wheel
-Cython
-pybind11
+voila
+earthengine-api
 
 # updated on 24/08/2023
 git+https://github.com/12rambau/sepal_ui.git@sepal_pre_release
