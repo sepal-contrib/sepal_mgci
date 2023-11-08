@@ -134,8 +134,15 @@
             "desc_active" : "Based on the data you've provided, the module can generate reports for the following years. Please note that if a year is missing, the module will employ linear interpolation to estimate the values for that year.",
             "desc_disabled" : "The subindicator B will not be calculated. To activate its processing, click the top right switch in this card and select the target layer(s).",
             "desc_no_data" : "You have activated the subindicator A, use the 'Add layer' button to select the target layer(s)."
+
         },
+        "year" : "Year",
+        "baseline_title" : "Baseline period",
+        "reporting_title" : "Reporting years",
+        "reporting_subtitle" : "Each year will be reported against the baseline",
         "y_base" : "Baseline period (year)",
+        "y_start" : "Initial year",
+        "y_end" : "Final year",
         "y_report" : "Reporting period (year)",
         "y_actual" : "Actual year",
         "error" : {
