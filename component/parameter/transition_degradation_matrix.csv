@@ -1,0 +1,11 @@
+from,from_code,to,to_code,impact,impact_code
+degraded,-1, degraded, -1, degrading, -1
+degraded,-1, stable, 0, degrading, -1
+degraded,-1, increasing, 1, stable, 0
+stable, 0, degraded, -1, degrading, -1
+stable, 0, stable, 0, stable, 0
+stable, 0, increasing, 1, improving, 1
+increasing, 1, degraded, -1, degrading, -1
+increasing, 1, stable, 0, stable, 0
+increasing, 1, increasing, 1, improving, 1
+
