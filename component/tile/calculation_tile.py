@@ -1,8 +1,9 @@
-import concurrent.futures
 from pathlib import Path
 from time import sleep
+from typing import Tuple
 
 import ipyvuetify as v
+import pandas as pd
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
 from traitlets import directional_link, link
@@ -12,6 +13,7 @@ import component.parameter.module_parameter as param
 import component.scripts as cs
 import component.widget as cw
 from component.message import cm
+from component.model.model import MgciModel
 
 __all__ = ["CalculationTile"]
 
@@ -44,7 +46,7 @@ class CalculationTile(v.Layout, sw.SepalWidget):
 
 
 class CalculationView(sw.Card):
-    def __init__(self, model, rsa=False, *args, **kwargs):
+    def __init__(self, model: MgciModel, *args, **kwargs):
         """Dashboard tile to calculate and resume the zonal statistics for the
         vegetation layer by kapos ranges.
 
@@ -154,106 +156,48 @@ class CalculationView(sw.Card):
         head_msg = sw.Flex(children=[cm.dashboard.alert.computing.format(area_type)])
 
         self.alert.add_msg(head_msg)
+        logger = cw.TaskMsg()
+        self.alert.append_msg(logger)
 
-        def deferred_calculation(year, task_filename):
-            """perform the computation on the fly or fallback to gee background
+        sub_a_years = cs.get_a_years(self.model.sub_a_year)
+        sub_b_years = cs.get_b_years(self.model.sub_b_year)
+        years = sub_a_years + sub_b_years
 
-            args:
-                year (list(list)) : list of year list to perform calculation
-                task_filename: name of the task file (result ids will be append to the file)
-            """
-            print(year)
-            process_id = cs.years_from_dict(year)
-            msg = cw.TaskMsg(f"Calculating {process_id}..")
-            self.alert.append_msg(msg)
+        # Reset results
+        self.model.results, results = {}, {}
+        self.model.done = False
 
-            start_year = year[0].get("asset")
+        # Create a fucntion in order to be able to test it easily
+        results, task_file = cs.perform_calculation(
+            aoi=self.model.aoi_model.feature_collection,
+            rsa=self.model.rsa,
+            dem=self.model.dem,
+            remap_matrix_a=self.model.matrix_sub_a,
+            remap_matrix_b=self.model.matrix_sub_b,
+            transition_matrix=self.model.transition_matrix,
+            years=years,
+            logger=logger,
+        )
 
-            if len(year) > 1:
-                end_year = year[1].get("asset")
-                process = self.model.reduce_to_regions("sub_b", start_year, end_year)
+        # If result is None, we assume the computation was tasked
 
-            else:
-                process = self.model.reduce_to_regions("sub_a", start_year)
-
-            # Try the process in on the fly
-            try:
-                result = process.getInfo()
-                msg.set_msg(f"Calculating {process_id}... Done.")
-                msg.set_state("success")
-
-                return result
-
-            except Exception as e:
-                if e.args[0] != "Computation timed out.":
-                    # Create an unique name (to search after in Drive)
-                    self.model.task_process(process, task_filename, process_id)
-                    msg.set_msg(f"Calculating {process_id}... Tasked.")
-                    msg.set_state("warning")
-
-                else:
-                    raise Exception(f"There was an error {e}")
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            self.model.done = False
-
-            # set same_year_matrix variable from model, it will be used when quering the
-            # dashboard
-            self.model.same_asset_matrix = all(
-                [
-                    self.model.matrix_sub_a,
-                    self.model.matrix_sub_b,
-                    self.model.lc_asset_sub_a,
-                    self.model.lc_asset_sub_b,
-                ],
+        if not all(results.values()):
+            task_filename = task_file.with_suffix(".csv")
+            self.alert.append_msg(
+                f"The computation has been tasked {task_filename}.", type_="warning"
             )
 
-            years = cs.get_years(
-                self.model.sub_a_year,
-                self.model.sub_b_year,
-                self.model.matrix_sub_a,
-                self.model.matrix_sub_b,
-                which=which,
+        elif all(results.values()):
+            self.model.results = results
+            self.model.done = True
+            self.alert.append_msg(
+                "The computation has been performed.", type_="success"
             )
 
-            unique_preffix = su.random_string(4).upper()
-
-            # Create only one file to store all task ids for the current session.
-            task_file = DIR.TASKS_DIR / f"Task_result_{unique_preffix}"
-
-            futures = {
-                executor.submit(
-                    deferred_calculation, year, task_file
-                ): cs.years_from_dict(year)
-                for year in years
-            }
-
-            self.model.results, results = {}, {}
-            # As we don't know which task was completed first, we have to save them in a
-            # key(grid_size) : value (future.result()) format
-            for future in concurrent.futures.as_completed(futures):
-                future_name = futures[future]
-                results[future_name] = future.result()
-
-            # If result is None, we assume the computation was tasked
-
-            if not all(results.values()):
-                task_filename = task_file.with_suffix(".csv")
-                self.alert.append_msg(
-                    f"The computation has been tasked {task_filename}.", type_="warning"
-                )
-
-            elif all(results.values()):
-                self.model.results = results
-                self.model.done = True
-                self.alert.append_msg(
-                    "The computation has been performed.", type_="success"
-                )
-
-            else:
-                self.alert.append_msg(
-                    "There was an error in one of the steps", type_="error"
-                )
+        else:
+            self.alert.append_msg(
+                "There was an error in one of the steps", type_="error"
+            )
 
 
 class DownloadTaskView(v.Card):

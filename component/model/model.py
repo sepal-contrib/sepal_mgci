@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal, List as ListType
 
 import ee
 import pandas as pd
@@ -77,9 +78,6 @@ class MgciModel(Model):
     reporting_years_sub_b = List([]).tag(sync=True)
     """list: list of reporting years based on user selection. It's calculated when chips are created and it's used to alert dashboard of which years are available for statistics"""
 
-    same_asset_matrix = Bool(False).tag(sync=True)
-    "bool: True if both subindicator A and B have the same matrix and same asset. It will be used to control the interpolation process. If True, get_result_from_year can search the requested year in double_years, otherwise it will search in single_years and if it's not found, it will interpolate"
-
     # Results
 
     biobelt_image = None
@@ -126,59 +124,6 @@ class MgciModel(Model):
 
         # Save the GEE reduce to region json proces
         self.reduced_process = None
-
-    def reduce_to_regions(self, indicator, lc_start, lc_end=None):
-        """Reduce land use/land cover image to bioclimatic belts regions using planimetric
-        or real surface area
-
-        Attributes:
-            indicator (str): either 'sub_a' or 'sub_b'
-            lc_start (string): first year (asset id) of the report or baseline.
-            lc_end (string): last year (asset id) of the report.
-            aoi (ee.FeatureCollection, ee.Geometry): Region to reduce image
-
-        Return:
-            GEE Dicionary process (is not yet executed), with land cover class area
-            per land cover (when both dates are input) and biobelts
-        """
-
-        if not lc_start:
-            raise Exception("Please select at least one year")
-
-        if not self.aoi_model.feature_collection:
-            raise Exception("Please select an area of interest")
-
-        matrix = getattr(self, f"matrix_{indicator}")
-
-        return reduce_regions(
-            aoi=self.aoi_model.feature_collection,
-            matrix=matrix,
-            rsa=self.rsa,
-            dem=self.dem,
-            indicator=indicator,
-            lc_start=lc_start,
-            lc_end=lc_end,
-        )
-
-    def task_process(self, process, task_file, process_id):
-        """Send the task to the GEE servers and process it in background. This will be
-        neccessary when the process is timed out."""
-
-        task_name = Path(f"{task_file.name}_{process_id}")
-
-        task = ee.batch.Export.table.toDrive(
-            **{
-                "collection": ee.FeatureCollection([ee.Feature(None, process)]),
-                "description": str(task_name),
-                "fileFormat": "CSV",
-            }
-        )
-
-        task.start()
-
-        # Create a file containing the task id to track when the process is done.
-        with open(task_file.with_suffix(".csv"), "a") as file:
-            file.write(f"{process_id}, {task.id}" + "\n")
 
     def download_from_task_file(self, task_id, tasks_file, task_filename):
         """Download csv file result from GDrive
