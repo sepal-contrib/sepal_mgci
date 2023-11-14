@@ -4,7 +4,7 @@ Produces Sankey Diagrams with matplotlib to show the transition in land cover.
 adopted from : Sankey by  Anneya Golob & marcomanz & pierre-sassoulas & jorwoods
 from https://github.com/anazalea/pySankey
 """
-
+from component.parameter.module_parameter import transition_degradation_matrix
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -232,3 +232,23 @@ def sankey(df, colorDict=None, aspect=4, rightColor=False, fontsize=14):
     )
 
     return (fig, ax)
+
+
+def plot_transition_matrix():
+    """Show transition degradation matrix"""
+
+    import matplotlib.colors as colors
+    import seaborn as sns
+
+    df = transition_degradation_matrix
+    # Pivot the DataFrame to create a transition matrix
+    transition_matrix = df.pivot(index="from", columns="to", values="impact_code")
+
+    # Create a custom colormap
+    cmap = colors.LinearSegmentedColormap.from_list("", ["red", "gray", "green"])
+
+    # remove legend
+    # Create a colored transition matrix using seaborn
+    plt.figure(figsize=(6, 4))
+    sns.heatmap(transition_matrix, annot=True, cmap=cmap, center=0, cbar=False)
+    plt.show()
