@@ -1,6 +1,5 @@
 import ee
 from pathlib import Path
-import pandas as pd
 import concurrent.futures
 import component.parameter.directory as DIR
 
@@ -9,6 +8,18 @@ from typing import Tuple
 import component.scripts as cs
 import sepal_ui.scripts.utils as su
 from component.scripts.reduce import reduce_regions
+from component.scripts.scripts import map_matrix_to_dict
+import component.widget as cw
+
+
+class Logger:
+    state = "info"
+
+    def set_msg(self, msg: str):
+        print(self.state, ": ", msg)
+
+    def set_state(self, state: str):
+        self.state = state
 
 
 def task_process(process, task_file, process_id):
@@ -33,10 +44,20 @@ def task_process(process, task_file, process_id):
 
 
 def perform_calculation(
-    aoi, rsa, dem, remap_matrix_a, remap_matrix_b, transition_matrix: str, years, logger
+    aoi: ee.Geometry,
+    rsa: bool,
+    dem: str,
+    remap_matrix_a: dict,
+    remap_matrix_b: dict,
+    transition_matrix: str,
+    years: list,
+    logger: cw.TaskMsg = None,
 ):
     if not aoi:
         raise Exception("Please select an area of interest")
+
+    if not logger:
+        logger = Logger()
 
     def deferred_calculation(years: Tuple):
         """perform the computation on the fly or fallback to gee background
@@ -70,17 +91,12 @@ def perform_calculation(
                 raise Exception(f"There was an error {e}")
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Read transition matrix from csv
-        transition_matrix = pd.read_csv(transition_matrix)
-
         results = {}
         unique_preffix = su.random_string(4).upper()
         task_file = DIR.TASKS_DIR / f"Task_result_{unique_preffix}"
 
         futures = {
-            executor.submit(
-                deferred_calculation, year, task_file, logger
-            ): cs.years_from_dict(year)
+            executor.submit(deferred_calculation, year): cs.years_from_dict(year)
             for year in years
         }
 

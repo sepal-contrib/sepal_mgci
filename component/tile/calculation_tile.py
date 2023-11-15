@@ -1,15 +1,13 @@
+import concurrent.futures
 from pathlib import Path
 from time import sleep
-from typing import Tuple
 
 import ipyvuetify as v
-import pandas as pd
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
-from traitlets import directional_link, link
-
+from traitlets import directional_link
 import component.parameter.directory as DIR
-import component.parameter.module_parameter as param
+from component.scripts.deferred_calculation import perform_calculation
 import component.scripts as cs
 import component.widget as cw
 from component.message import cm
@@ -161,14 +159,23 @@ class CalculationView(sw.Card):
 
         sub_a_years = cs.get_a_years(self.model.sub_a_year)
         sub_b_years = cs.get_b_years(self.model.sub_b_year)
-        years = sub_a_years + sub_b_years
+
+        # Define a dictionary to map 'which' values to 'years' values
+        which_to_years = {
+            "both": sub_a_years + sub_b_years,
+            "sub_a": sub_a_years,
+            "sub_b": sub_b_years,
+        }
+
+        # Get the 'years' value for the given 'which' value
+        years = which_to_years.get(which)
 
         # Reset results
         self.model.results, results = {}, {}
         self.model.done = False
 
         # Create a fucntion in order to be able to test it easily
-        results, task_file = cs.perform_calculation(
+        results, task_file = perform_calculation(
             aoi=self.model.aoi_model.feature_collection,
             rsa=self.model.rsa,
             dem=self.model.dem,
@@ -273,7 +280,7 @@ class DownloadTaskView(v.Card):
                     row.iloc[0].strip(),
                     row.iloc[1].strip(),
                 ): row.iloc[0].strip()
-                for idx, row in tasks_df.iterrows()
+                for _, row in tasks_df.iterrows()
             }
 
             self.model.results, results = {}, {}

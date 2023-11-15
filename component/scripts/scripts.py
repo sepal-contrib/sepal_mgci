@@ -28,7 +28,8 @@ __all__ = [
     "get_report_folder",
     "get_geoarea",
     "create_avatar",
-    "get_years",
+    "get_a_years",
+    "get_b_years",
     "read_from_csv",
     "export_reports",
     "get_sub_a_break_points",
@@ -132,7 +133,7 @@ def remove_duplicated_years(
     ]
 
 
-def years_from_dict(year_dict: dict) -> str:
+def years_from_dict(year_dict: Tuple[Dict]) -> str:
     """Extract years from a get_years dictionary.
 
     It will be used to label and display the progress in the alerts.
@@ -201,31 +202,14 @@ def get_interpolation_years(
     )
 
 
-def get_years(
-    sub_a_year: dict,
-    sub_b_year: dict,
-    matrix_a: str,
-    matrix_b: str,
-    which: Literal["both", "sub_a", "sub_b"],
-) -> List[List[int]]:
+def get_a_years(sub_a_year: dict) -> List[Tuple[Dict[str, int]]]:
     """Returns a nested list of years (asset) based on the input start and end years.
-
-    In order to minimize the number of calculations, assets that are present
-    in both models are only calculated once (using reduction with both years)
-    (example 1) as long as matrix_a and matrix_b are the same. If they are
-    different, then the assets are calculated reparately (example 2).
 
     Args:
         sub_a_year (dict): model dictionary containing sub A dialog v_model
-        sub_b_year (dict): model dictionary containing sub B dialog v_model
-        matrix_a (dict): reclassification matrix from model A
-        matrix_b (dict): reclassification matrix from model B
-        which (str): which sub indicator is being calculated
-
 
     Returns:
-        list: A list with individual years (for indicator A) and nested list
-            of years [[start, end], ...,[start, end]] (for indicator B)
+        list: A list with individual years
 
     Example:
         sub_a_year = {
@@ -233,124 +217,98 @@ def get_years(
             2: {'asset': 'asset_x/2015',year': '2015'},
         }
 
-        sub_b_year = {
-            1: {'asset': 'asset_y/2020',year': '2020'},
-            2: {'asset': 'asset_y/2015',year': '2015'},
-        }
-        returns: [[asset_x/2015], [asset_x/2020] [asset_y/2020', asset_y/2015]]
+        returns: [[asset_x/2015], [asset_x/2020] ]
 
     """
 
-    years_to_calculate = get_sub_b_break_points(sub_b_year)
-
-    if which == "sub_b":
-        return years_to_calculate
-
     years_a = get_sub_a_break_points(sub_a_year)
 
-    if which == "sub_a":
-        years_to_calculate = []
-        for breakp_years in years_a.values():
-            # flatten years_a list
-            for year in breakp_years:
-                years_to_calculate.append([year])
-        return years_to_calculate
+    years_to_calculate = []
+    for breakp_years in years_a.values():
+        # flatten years_a list
+        for year in breakp_years:
+            years_to_calculate.append([year])
 
-    if matrix_a == matrix_b:
-        # Add years from years_a that are not present in years_b
-        for breakp_years in years_a.values():
-            # flatten years_a list
-            for year in breakp_years:
-                if year not in [
-                    item for sublist in years_to_calculate for item in sublist
-                ]:
-                    years_to_calculate.append([year])
+    return remove_duplicated_years(years_to_calculate)
 
-        return years_to_calculate
 
-    else:
-        # Add all years from years_a individually
-        return years_to_calculate + [
-            [year]
-            for sublist in remove_duplicated_years(years_a.values())
-            for year in sublist
+def get_b_years(sub_b_years: dict) -> List[Tuple[Dict[str, int]]]:
+    """
+
+    Args:
+        sub_b_years (dict): custom_list_b.v_model from dashboard
+
+    Returns:
+        list: Multiple nested list of three elements each, containing the years of the
+            baselinea plus the report period, one for each reporting period.
+
+    Example:
+        {2: {'asset': 'asset/2018', 'year': 2018},
+        3: {'asset': 'asset/2019', 'year': 2019},
+        'baseline': {'base': {'asset': 'asset/2000', 'year': 2000},
+                    'report': {'asset': 'asset/2015', 'year': 2015}}}
+
+        returns: [
+            [
+                {"asset": "asset/2000", "year": 2000},
+                {"asset": "asset/2015", "year": 2015},
+                {"asset": "asset/2018", "year": 2018},
+            ],
+            [
+                {"asset": "asset/2000", "year": 2000},
+                {"asset": "asset/2015", "year": 2015},
+                {"asset": "asset/2019", "year": 2019},
+            ],
         ]
+    """
+    years_to_calculate = []
+    for type_, value in sub_b_years.items():
+        if type_ != "baseline":
+            years_to_calculate.append(
+                (
+                    sub_b_years.get("baseline").get("base"),
+                    sub_b_years.get("baseline").get("report"),
+                    value,
+                )
+            )
+
+    return years_to_calculate
 
 
-def get_result_from_year(
-    model: "MgciModel", year: int, indicator: str
-) -> Union[pd.DataFrame, None]:
+def get_result_from_year(model: "MgciModel", year: int) -> Union[pd.DataFrame, None]:
     """Return the results for the given year.
 
     It will use the results dictionary to get the results for the requested
     year.
 
-    If indicator sub a es required, it will first try to search it within the individual
-    years, and if it is not found, it will search it within the double years (if
-    same_asset_matrix == True). If there's
-    not a match, it will try to interpolate the results.
+    If there is not a match, it will try to interpolate the results.
 
     Args:
         results (dict): dictionary with results coming from model
         year (int): year to get the results from
-        indicator (str): indicator to get the results from
-        same_asset_matrix (bool): if matrix and asset are the same
     """
     results = model.results
-    same_asset_matrix = model.same_asset_matrix
     reporting_years_sub_a = model.reporting_years_sub_a
 
     str_year = str(year)
 
     individual_yrs = [y for y in results.keys() if len(y.split("_")) == 1]
-    double_years = [y for y in results.keys() if len(y.split("_")) == 2]
 
     # Check that indicator is sub_a and year is in individual years
-    if indicator == "sub_a" and any([str_year in yr for yr in individual_yrs]):
+    if any([str_year in yr for yr in individual_yrs]):
         return parse_result(results[str_year]["groups"], single=True)
 
-    # Otherwise, check that year is in double years
-    in_double = [str_year in yr for yr in double_years]
+    # If we're here, it means that we didn't find the year in individual
+    # or double years
+    assert (
+        int(year) in reporting_years_sub_a
+    ), "You're not suppose to be asking for this year"
 
-    if any(in_double):
-        # There is no way that there are more than 2 years in double_years
-        assert sum(in_double) == 1, "More than 2 years in double_years"
-        idx = in_double.index(True)
+    # Try to get the year by interpolating between two years only if we are in sub_a
+    year1 = model.reporting_years_sub_a[int(year)][0]["year"]
+    year2 = model.reporting_years_sub_a[int(year)][1]["year"]
 
-        # We can only try to get year from double years if indicator same_asset_matrix
-        if indicator == "sub_a" and same_asset_matrix:
-            # If we are in sub_a, we need to extract target year from double years
-            parsed_df = parse_result(results[double_years[idx]]["groups"])
-
-            # Get the name of the column that contains the target year
-            target_lc = ["from_lc", "to_lc"][
-                double_years[idx].split("_").index(str_year)
-            ]
-
-            cols = ["belt_class", target_lc]
-            parsed_df = parsed_df.groupby(cols, as_index=False).sum()[cols + ["sum"]]
-            parsed_df = parsed_df.rename(columns={target_lc: "lc_class"})
-
-            return parsed_df
-
-        elif indicator == "sub_b":
-            return parse_result(results[double_years[idx]]["groups"])
-
-    # If we're here, it means that we didn't find the year in individual or double years
-    if indicator == "sub_a":
-        assert (
-            int(year) in reporting_years_sub_a
-        ), "You're not suppose to be asking for this year"
-
-        # Try to get the year by interpolating between two years only if we are in sub_a
-        year1 = model.reporting_years_sub_a[int(year)][0]["year"]
-        year2 = model.reporting_years_sub_a[int(year)][1]["year"]
-
-        return interpolate_sub_a_data(model, year1, year2, year)
-
-    raise Exception(
-        f"{str_year} not found in results, are you sure indicator is correct?"
-    )
+    return interpolate_sub_a_data(model, year1, year2, year)
 
 
 def interpolate_sub_a_data(
@@ -694,3 +652,22 @@ def export_reports(model: "MgciModel", output_folder) -> None:
         ]
 
     return True
+
+
+def map_matrix_to_dict(matrix_file_path: str):
+    """Read from csv and transform into a dictionary
+
+    Args:
+        matrix_file_path (pathlike):
+    """
+    return dict(
+        list(
+            zip(
+                *list(
+                    pd.read_csv(matrix_file_path)[["from_code", "target_code"]]
+                    .to_dict("list")
+                    .values()
+                )
+            )
+        )
+    )
