@@ -7,8 +7,7 @@ import component.parameter.directory as DIR
 from typing import Tuple
 import component.scripts as cs
 import sepal_ui.scripts.utils as su
-from component.scripts.reduce import reduce_regions
-from component.scripts.scripts import map_matrix_to_dict
+from component.scripts.gee import reduce_regions
 import component.widget as cw
 
 
