@@ -1,7 +1,6 @@
 from pathlib import Path
-from typing import Literal, List as ListType
+from typing import List
 
-import ee
 import pandas as pd
 from sepal_ui.scripts.warning import SepalWarning
 from sepal_ui.model import Model
@@ -10,9 +9,7 @@ from traitlets import Bool, CBool, Dict, List, Unicode
 
 import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
-from component.scripts.surface_area import get_real_surface_area
 from component.scripts.gee import GDrive
-from component.scripts.reduce import reduce_regions
 
 
 class MgciModel(Model):
@@ -101,6 +98,9 @@ class MgciModel(Model):
     done = Bool(True).tag(sync=True)
     "bool: bool trait to indicate that MGCI calculation has been performed. It will be listen by different widgets (i.e.dashboard tile)."
 
+    dem = Unicode().tag(sync=True)
+    "str: DEM file used to calculate surface area"
+
     @sd.need_ee
     def __init__(self, aoi_model=None):
         """
@@ -124,6 +124,10 @@ class MgciModel(Model):
 
         # Save the GEE reduce to region json proces
         self.reduced_process = None
+
+        # Set default dem asset
+        # currently, we are not allowing user to change the dem
+        self.dem = param.DEM_DEFAULT
 
     def download_from_task_file(self, task_id, tasks_file, task_filename):
         """Download csv file result from GDrive
