@@ -63,7 +63,7 @@ class Tabs(v.Card):
 class TaskMsg(sw.Flex):
     colors = ["info", "success", "error", "warning"]
 
-    def __init__(self, msg=""):
+    def __init__(self, msg: str = ""):
         super().__init__()
 
         self.class_ = "d-flex"
