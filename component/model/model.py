@@ -9,7 +9,7 @@ from traitlets import Bool, CBool, Dict, List, Unicode
 
 import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
-from component.scripts.gdrive import GDrive
+from component.scripts.gee import GDrive
 
 
 class MgciModel(Model):
