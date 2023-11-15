@@ -31,7 +31,7 @@ def get_degraded_area(parsed_df, model):
 
     # get the degraded area
     degraded = (
-        df[df.impact == -1]
+        df[df.impact == 1]
         .groupby(["belt_class"])
         .sum()
         .reset_index()[["belt_class", "sum"]]
@@ -41,7 +41,7 @@ def get_degraded_area(parsed_df, model):
     # Get net degraded area per belt class as the sum of improved minus the sum of degraded
 
     improved = (
-        df[df.impact == 1]
+        df[df.impact == 3]
         .groupby(["belt_class"])
         .sum()
         .reset_index()[["belt_class", "sum"]]

@@ -40,7 +40,7 @@ def validate_file(file_, text_field_msg, type_):
         "impact": {
             "required_cols": ["from_code", "to_code", "impact_code"],
             "int_cols": ["from_code", "to_code", "impact_code"],
-            "allowed_values": {"impact_code": [0, -1, 1]},
+            "allowed_values": {"impact_code": [2, 1, 3]},
         },
         "green": {
             "required_cols": ["lc_class", "green"],

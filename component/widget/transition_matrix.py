@@ -20,9 +20,6 @@ class TransitionMatrix(sw.Layout):
     CLASSES = param.LC_COLOR.iloc[:, 0].tolist()
     "list: list of land cover classes names. Comes from lc_classification.csv file"
 
-    DECODE = {1: "I", 0: "S", -1: "D"}
-    "dict: dictionary containing the displayed labels for transition classes"
-
     disabled = Bool(False).tag(sync=True)
 
     show_matrix = Bool(True).tag(sync=True)
@@ -211,12 +208,12 @@ class TransitionMatrix(sw.Layout):
             inputs = []
             for j, target in enumerate(self.CLASSES, 1):
                 # create a input with default matrix value
-                default_value = self.DECODE[
+                default_value = param.DECODE[
                     self.default_df[
                         (self.default_df.from_code == i)
                         & (self.default_df.to_code == j)
                     ]["impact_code"].iloc[0]
-                ]
+                ].get("abrv")
                 matrix_input = MatrixInput(i, j, default_value)
                 matrix_input.color_change({"new": default_value})
                 matrix_input.observe(self.update_dataframe, "v_model")
@@ -241,12 +238,12 @@ class TransitionMatrix(sw.Layout):
         # Get all select inputs and change their values to the default ones
         for i, _ in enumerate(self.CLASSES, 1):
             for j, _ in enumerate(self.CLASSES, 1):
-                val = self.DECODE[
+                val = param.DECODE[
                     self.default_df[
                         (self.default_df.from_code == i)
                         & (self.default_df.to_code == j)
                     ]["impact_code"].iloc[0]
-                ]
+                ].get("abrv")
 
                 self.get_children(id_=f"{i}_{j}")[0].val.v_model = val
 
@@ -286,12 +283,6 @@ class TransitionMatrix(sw.Layout):
 
 
 class MatrixInput(v.Html):
-    VALUES = {
-        "I": (1, color.success),
-        "S": (0, color.primary),
-        "D": (-1, color.error),
-    }
-
     v_model = Dict().tag(sync=True)
 
     def __init__(self, line, column, default_value):
@@ -303,7 +294,7 @@ class MatrixInput(v.Html):
         self.val = sw.Select(
             dense=True,
             color="white",
-            items=[*self.VALUES],
+            items=[*[param.DECODE[val].get("abrv") for val in param.DECODE.keys()]],
             class_="ma-1",
             v_model=default_value,
             attributes={"id": "impact"},
@@ -321,7 +312,13 @@ class MatrixInput(v.Html):
     def color_change(self, change):
         """change the color of the td depending on the value of the select"""
 
-        val, color = self.VALUES[change["new"]]
+        val = [
+            key
+            for key, value in param.DECODE.items()
+            if value.get("abrv") == change["new"]
+        ][0]
+
+        color = param.DECODE[val].get("color")
 
         self.style_ = f"background-color: {color}"
 

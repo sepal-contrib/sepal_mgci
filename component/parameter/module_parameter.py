@@ -80,6 +80,10 @@ LC_CLASSES = Path(__file__).parent / "lc_classification.csv"
 # Define the default classes that will be loaded as target in the reclassify tile
 TRANSITION_MATRIX_FILE = Path(__file__).parent / "transition_matrix.csv"
 
+TRANSITION_DEGRADATION_MATRIX_FILE = (
+    Path(__file__).parent / "transition_degradation_matrix.csv"
+)
+
 # Description of bioclimatic belts codes
 BIOBELTS_DESC = Path(__file__).parent / "biobelts_label.csv"
 
@@ -100,3 +104,26 @@ impact_table = (
     .count()
     .reset_index()[["impact", "impact_code"]]
 )
+
+
+transition_degradation_matrix = pd.read_csv(TRANSITION_DEGRADATION_MATRIX_FILE)
+
+
+DECODE = {
+    3: {
+        "abrv": "I",
+        "label": "Improvement",
+        "color": color.success,
+    },
+    2: {
+        "abrv": "S",
+        "label": "Stable",
+        "color": color.primary,
+    },
+    1: {
+        "abrv": "D",
+        "label": "Degradation",
+        "color": color.error,
+    },
+}
+"dict: dictionary containing the displayed labels for transition classes"
