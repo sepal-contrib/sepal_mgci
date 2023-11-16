@@ -50,7 +50,7 @@ def perform_calculation(
     remap_matrix_b: dict,
     transition_matrix: str,
     years: list,
-    logger: cw.TaskMsg = None,
+    logger: cw.Alert = None,
 ):
     if not aoi:
         raise Exception("Please select an area of interest")
@@ -66,7 +66,7 @@ def perform_calculation(
             task_filename: name of the task file (result ids will be append to the file)
         """
         process_id = cs.years_from_dict(years)
-        logger.set_msg(f"Calculating {process_id}...")
+        logger.set_msg(f"Calculating {process_id}...", id_=process_id)
 
         matrix = remap_matrix_a if len(years) == 1 else remap_matrix_b
         process = reduce_regions(aoi, matrix, rsa, dem, years, transition_matrix)
@@ -74,8 +74,8 @@ def perform_calculation(
         # Try the process in on the fly
         try:
             result = process.getInfo()
-            logger.set_msg(f"Calculating {process_id}... Done.")
-            logger.set_state("success")
+            logger.set_msg(f"Calculating {process_id}... Done.", id_=process_id)
+            logger.set_state("success", id_=process_id)
 
             return result
 
@@ -83,8 +83,8 @@ def perform_calculation(
             if e.args[0] != "Computation timed out.":
                 # Create an unique name (to search after in Drive)
                 task_process(process, task_file, process_id)
-                logger.set_msg(f"Calculating {process_id}... Tasked.")
-                logger.set_state("warning")
+                logger.set_msg(f"Calculating {process_id}... Tasked.", id_=process_id)
+                logger.set_state("warning", id_=process_id)
 
             else:
                 raise Exception(f"There was an error {e}")

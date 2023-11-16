@@ -84,7 +84,7 @@ class CalculationView(sw.Card):
 
         # buttons
         self.btn = sw.Btn(cm.dashboard.label.calculate)
-        self.alert = sw.Alert()
+        self.alert = cw.Alert()
 
         self.children = [
             title,
@@ -154,8 +154,6 @@ class CalculationView(sw.Card):
         head_msg = sw.Flex(children=[cm.dashboard.alert.computing.format(area_type)])
 
         self.alert.add_msg(head_msg)
-        logger = cw.TaskMsg()
-        self.alert.append_msg(logger)
 
         sub_a_years = cs.get_a_years(self.model.sub_a_year)
         sub_b_years = cs.get_b_years(self.model.sub_b_year)
@@ -183,7 +181,7 @@ class CalculationView(sw.Card):
             remap_matrix_b=self.model.matrix_sub_b,
             transition_matrix=self.model.transition_matrix,
             years=years,
-            logger=logger,
+            logger=self.alert,
         )
 
         # If result is None, we assume the computation was tasked
