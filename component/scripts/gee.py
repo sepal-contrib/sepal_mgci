@@ -16,7 +16,7 @@ def no_remap(image: ee.Image, remap_matrix: Optional[dict] = None):
 
     if remap_matrix:
         from_, to_ = list(zip(*remap_matrix.items()))
-        return image.remap(from_, to_, 0)
+        return image.remap(from_, to_, 9999)
 
     return image
 
@@ -50,7 +50,7 @@ def reduce_regions(
     lc_years = [year["asset"] for year in lc_years]
 
     # Define two ways of calculation, with only one date and with both
-    ee_lc_start = no_remap(ee.Image(lc_years[0]).select(0), remap_matrix)
+    ee_lc_start = ee.Image(lc_years[0]).select(0)
 
     clip_biobelt = ee.Image(param.BIOBELT)
 
@@ -76,21 +76,53 @@ def reduce_regions(
 
         final_degradation = get_transition(
             ee_lc_start, ee_end_base, ee_report, aoi, transition_matrix, remap_matrix
-        ).select("final_degradation")
+        )
+
+        def reduce_by(image):
+            return (
+                image_area.divide(param.UNITS["sqkm"][0])
+                .updateMask(clip_biobelt.mask())
+                .addBands(image)
+                .addBands(clip_biobelt)
+                .reduceRegion(
+                    **{
+                        "reducer": ee.Reducer.sum().group(1).group(2),
+                        "geometry": aoi,
+                        "maxPixels": 1e19,
+                        "scale": scale,
+                        "bestEffort": True,
+                        "tileScale": 4,
+                    }
+                )
+            ).get("groups")
 
         return (
-            image_area.divide(param.UNITS["sqkm"][0])
-            .updateMask(clip_biobelt.mask())
-            .addBands(final_degradation)
-            .addBands(clip_biobelt)
-            .reduceRegion(
-                **{
-                    "reducer": ee.Reducer.sum().group(1).group(2),
-                    "geometry": aoi,
-                    "maxPixels": 1e19,
-                    "scale": scale,
-                    "bestEffort": True,
-                    "tileScale": 4,
+            ee.Dictionary(
+                {
+                    "baseline_degradation": reduce_by(
+                        final_degradation.select("baseline_degradation")
+                    )
+                }
+            )
+            .combine(
+                {
+                    "final_degradation": reduce_by(
+                        final_degradation.select("final_degradation")
+                    )
+                }
+            )
+            .combine(
+                {
+                    "baseline_transition": reduce_by(
+                        final_degradation.select("baseline_transition")
+                    )
+                }
+            )
+            .combine(
+                {
+                    "report_transition": reduce_by(
+                        final_degradation.select("report_transition")
+                    )
                 }
             )
         )
@@ -98,7 +130,7 @@ def reduce_regions(
     return (
         image_area.divide(param.UNITS["sqkm"][0])
         .updateMask(clip_biobelt.mask())
-        .addBands(ee_lc_start)
+        .addBands(no_remap(ee_lc_start, remap_matrix))
         .addBands(clip_biobelt)
         .reduceRegion(
             **{
@@ -139,17 +171,6 @@ def get_transition(
     ee_report = no_remap(ee_report, remap_matrix).rename("report_year")
     transition_matrix = pd.read_csv(transition_matrix)
 
-    # Define all possible transitions for the transition matrix
-    transition_matrix.loc[:, "transition"] = (
-        transition_matrix["from_code"] * 100 + transition_matrix["to_code"]
-    )
-
-    # Define all possible transitions for the transition degradation matrix
-    transition_degradation_matrix.loc[:, "transition"] = (
-        transition_degradation_matrix["from_code"] * 100
-        + transition_degradation_matrix["to_code"]
-    )
-
     # Compute transition between baseline images
     baseline_transition = (
         ee_start_base.multiply(100).add(ee_end_base).rename("baseline_transition")
@@ -164,13 +185,13 @@ def get_transition(
     baseline_degradation = baseline_transition.remap(
         transition_matrix["transition"].tolist(),
         transition_matrix["impact_code"].tolist(),
-        0,
+        9999,
     ).rename("baseline_degradation")
 
     report_degradation = report_transition.remap(
         transition_matrix["transition"].tolist(),
         transition_matrix["impact_code"].tolist(),
-        0,
+        9999,
     ).rename("report_degradation")
 
     # Create transition between degradation images
@@ -183,7 +204,7 @@ def get_transition(
     final_degradation = degraded_transition.remap(
         transition_degradation_matrix["transition"].tolist(),
         transition_degradation_matrix["impact_code"].tolist(),
-        0,
+        9999,
     ).rename("final_degradation")
 
     return (

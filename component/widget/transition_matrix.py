@@ -263,6 +263,13 @@ class TransitionMatrix(sw.Layout):
         ] = val["value"]
 
         self.transition_matrix = str(self.custom_transition_file_path)
+
+        # Here I want to create a new column containing the "transition" code
+        # that is the concatenation of the from_code and to_code
+        self.edited_df.loc[:, "transition"] = (
+            self.edited_df.from_code * 100 + self.edited_df.to_code
+        )
+
         self.edited_df[["from_code", "to_code", "impact_code"]].to_csv(
             self.custom_transition_file_path, index=False
         )
