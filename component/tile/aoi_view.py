@@ -1,16 +1,8 @@
-from datetime import datetime as dt
-from pathlib import Path
-from typing import Dict, List, Optional, Union
-
-import ipyvuetify as v
-import sepal_ui.sepalwidgets as sw
 import traitlets as t
-from sepal_ui import mapping as sm
 from sepal_ui.aoi.aoi_model import AoiModel
 from sepal_ui.aoi.aoi_view import AoiView
 from sepal_ui.message import ms
 from sepal_ui.scripts import decorator as sd
-from sepal_ui.scripts import utils as su
 from typing_extensions import Self
 
 from component.scripts.biobelt import add_belt_map
@@ -18,6 +10,20 @@ from component.scripts.biobelt import add_belt_map
 
 class AoiView(AoiView):
     """Custom AOI view to add the biobelt map after the AOI selection."""
+
+    def __init__(self, **kwargs: dict):
+        kwargs.update(
+            {
+                "methods": ["-POINTS", "-DRAW"],
+                "class_": "d-block pa-2 py-4",
+                "min_width": "462px",
+                "max_width": "462px",
+                # I have to add this to avoid an error that takes aoi kwargs as model kwargs
+                "model": AoiModel(),
+            }
+        )
+
+        super().__init__(**kwargs)
 
     @sd.loading_button(debug=True)
     def _update_aoi(self, *args) -> Self:

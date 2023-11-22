@@ -36,10 +36,7 @@ class AoiTile(sw.Layout):
         self.map_.layout.height = "750px"
         self.map_.min_zoom = 2
 
-        self.view = AoiView(
-            map_=self.map_,
-            methods=["-POINTS", "-DRAW"],
-        )
+        self.view = AoiView(map_=self.map_)
 
         self.view.btn.children = [cm.aoi.view.btn]
 
