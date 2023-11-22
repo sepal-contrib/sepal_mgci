@@ -1,3 +1,7 @@
+import sys
+
+sys.executable
+
 from typing import TYPE_CHECKING
 import random
 import re
@@ -27,6 +31,7 @@ __all__ = [
     "get_mgci_color",
     "get_report_folder",
     "get_geoarea",
+    "get_sub_b_items",
     "create_avatar",
     "get_a_years",
     "get_b_years",
@@ -34,9 +39,9 @@ __all__ = [
     "export_reports",
     "get_sub_a_break_points",
     "years_from_dict",
-    "get_result_from_year",
+    "parse_to_year_a",
+    "parse_to_year",
     "get_sub_b_break_points",
-    "get_sub_b_years_labels",
     "parse_result",
 ]
 
@@ -116,13 +121,6 @@ def remove_duplicated_years(
     converted_list = [
         frozenset(frozenset(d.items()) for d in sublist) for sublist in breakpoints
     ]
-
-    # Remove duplicates by using a set comprehension and then convert back to a list
-    # of lists of dictionaries. Sort them by year.
-    # return [
-    #     sorted(list(dict(d) for d in fs), key=lambda d: d.get("year"))
-    #     for fs in set(converted_list)
-    # ]
 
     return [
         sorted(
@@ -275,7 +273,7 @@ def get_b_years(sub_b_years: dict) -> List[Tuple[Dict[str, int]]]:
     return years_to_calculate
 
 
-def get_result_from_year(model: "MgciModel", year: int) -> Union[pd.DataFrame, None]:
+def parse_to_year_a(results, reporting_years, year: int) -> Union[pd.DataFrame, None]:
     """Return the results for the given year.
 
     It will use the results dictionary to get the results for the requested
@@ -287,8 +285,6 @@ def get_result_from_year(model: "MgciModel", year: int) -> Union[pd.DataFrame, N
         results (dict): dictionary with results coming from model
         year (int): year to get the results from
     """
-    results = model.results
-    reporting_years_sub_a = model.reporting_years_sub_a
 
     str_year = str(year)
 
@@ -300,19 +296,17 @@ def get_result_from_year(model: "MgciModel", year: int) -> Union[pd.DataFrame, N
 
     # If we're here, it means that we didn't find the year in individual
     # or double years
-    assert (
-        int(year) in reporting_years_sub_a
-    ), "You're not suppose to be asking for this year"
+    assert int(year) in reporting_years, "You're not suppose to be asking for this year"
 
     # Try to get the year by interpolating between two years only if we are in sub_a
-    year1 = model.reporting_years_sub_a[int(year)][0]["year"]
-    year2 = model.reporting_years_sub_a[int(year)][1]["year"]
+    year1 = reporting_years[int(year)][0]["year"]
+    year2 = reporting_years[int(year)][1]["year"]
 
-    return interpolate_sub_a_data(model, year1, year2, year)
+    return interpolate_sub_a_data(results, reporting_years, year1, year2, year)
 
 
 def interpolate_sub_a_data(
-    model: "MgciModel", year1: int, year2: int, target_year: int
+    results: dict, reporting_years, year1: int, year2: int, target_year: int
 ) -> pd.DataFrame:  # type: ignore
     """Interpolate sub A data between two years.
 
@@ -328,8 +322,8 @@ def interpolate_sub_a_data(
 
     if not (year1 < target_year < year2):
         raise Exception("target year has to be in between year1 and year 2")
-    df1 = get_result_from_year(model, year1, "sub_a")
-    df2 = get_result_from_year(model, year2, "sub_a")
+    df1 = parse_to_year_a(results, reporting_years, year1)
+    df2 = parse_to_year_a(results, reporting_years, year2)
 
     # Ensure both dataframes have the same structure
     if not (df1.columns == df2.columns).all():
@@ -355,6 +349,37 @@ def interpolate_sub_a_data(
     df_interpolated["sum"] = interpolated_data
 
     return df_interpolated
+
+
+def parse_to_year(
+    results: Dict, target_year: Dict[str, Tuple[int, int]]
+) -> pd.DataFrame:
+    """Return the results for the given year.
+
+    Args:
+        target_year: a dictionary with the following structure:
+            {'baseline': [2000, 2015]}, or
+            {'report': [2015, 2020]}
+    """
+    if "baseline" in target_year:
+        for key in results.keys():
+            if len(key.split("_")) > 1:
+                df = parse_result(results[key], single=False)
+                # Decode transition to from_code and to_code
+                df.loc[:, "from_lc"] = df.transition // 100
+                df.loc[:, "to_lc"] = df.transition % 100
+                return df[df.category == "baseline_transition"]
+
+    # target_year is a tuple of the (start_baseline, report_year)
+    year = target_year.get("report")[1]
+    for key in results.keys():
+        if len(key.split("_")) > 1:
+            if str(year) in key:
+                df = parse_result(results[key], single=False)
+                # Decode transition to from_code and to_code
+                df.loc[:, "from_lc"] = df.transition // 100
+                df.loc[:, "to_lc"] = df.transition % 100
+                return df[df.category == "report_transition"]
 
 
 def parse_result(result: dict, single: bool = False) -> pd.DataFrame:
@@ -384,29 +409,33 @@ def parse_result(result: dict, single: bool = False) -> pd.DataFrame:
         The resulting dataframe with the corresponding columns and their values.
 
     """
+    if single:
+        # Define the dataframe depending whether if single or double level nested
+        df = pd.DataFrame(columns=["belt_class", "lc_class", "sum"])
 
-    # Define the dataframe depending whether if single or double level nested
-    df = (
-        pd.DataFrame(columns=["belt_class", "lc_class", "sum"])
-        if single
-        else pd.DataFrame(columns=["belt_class", "from_lc", "to_lc", "sum"])
-    )
-
-    s = 0
-    for belt in result:
-        for lc_class in belt["groups"]:
-            if single:
+        s = 0
+        for belt in result:
+            for lc_class in belt["groups"]:
                 df.loc[s] = [belt["group"], lc_class["group"], lc_class["sum"]]
                 s += 1
-            else:
-                for lc_to_class in lc_class["groups"]:
-                    df.loc[s] = [
-                        belt["group"],
-                        lc_class["group"],
-                        lc_to_class["group"],
-                        lc_to_class["sum"],
-                    ]
-                    s += 1
+
+    else:
+        # Flattening the data and preparing it for DataFrame
+        rows = []
+        for category, groups in result.items():
+            for group_data in groups:
+                main_group = group_data["group"]
+                for sub_group_data in group_data["groups"]:
+                    row = {
+                        "category": category,
+                        "belt_class": main_group,
+                        "transition": sub_group_data["group"],
+                        "sum": sub_group_data["sum"],
+                    }
+                    rows.append(row)
+
+        df = pd.DataFrame(rows)
+
     return df
 
 
@@ -449,55 +478,6 @@ def get_sub_b_break_points(
     return reporting_years
 
 
-def get_sub_b_years_labels(sub_b_year: Dict) -> Dict:
-    """Returns string label for sub_b indicator.
-
-    It gets the input user years for indicator sub b and parses the
-    years for each reporting period as the same way as it is set in
-    model.results dictionary.
-
-    If user is reporting year 2015, with 2009 and 2014, and 2018 with 2014 and 2017,
-    the function will return a dictionary with the following structure:
-
-    .. code-block:: python
-
-        {
-            2015: "2009_2014",
-            2018: "2014_2017"
-        }
-
-    This fucntion will be used in the dashboard to display the results from the user
-    selection.
-
-    """
-
-    yrs = {}
-    for date in sub_b_year.values():
-        for period in date.values():
-            report_year = next(iter(list(date.keys())))
-
-            if "base" not in period or "report" not in period:
-                raise Exception(
-                    f"You have not provided a base and report period for {report_year}"
-                )
-
-            if "year" not in period.get("base") or "year" not in period.get("report"):
-                raise Exception(
-                    f"You have not provided an actual year for {report_year}"
-                )
-
-            yr_tuple = [
-                str(period.get("base").get("year")),
-                str(period.get("report").get("year")),
-            ]
-
-            label_yrs = "_".join(yr_tuple)
-
-            yrs[report_year] = label_yrs
-
-    return yrs
-
-
 def get_sub_a_break_points(user_input_years: list) -> dict:
     """Get the break points for Sub-A.
 
@@ -511,8 +491,12 @@ def get_sub_a_break_points(user_input_years: list) -> dict:
     Returns:
         A dictionary of break points.
     """
+
     # get a list of the years from the user input
     user_years = [val.get("year") for val in user_input_years.values()]
+
+    if not any(user_years):
+        return {}
 
     # filter report intervals that are relevant given the user input years
     reporting_years = [
@@ -598,11 +582,11 @@ def export_reports(model: "MgciModel", output_folder) -> None:
     # use model.reporting_years_sub_b and model.reporting_years_sub_a
 
     sub_a_years = list(model.reporting_years_sub_a.keys())
-    sub_b_years = model.reporting_years_sub_b
+    _, sub_b_years = get_sub_b_items(model.reporting_years_sub_b)
 
     for year in sub_a_years:
         print(f"Reporting {year} for sub_a")
-        parsed_df = cs.get_result_from_year(model, year, "sub_a")
+        parsed_df = cs.parse_to_year_a(model.results, model.reporting_years_sub_a, year)
         sub_a_reports.append(sub_a.get_reports(parsed_df, year, model))
         print(f"Reporting {year} for mtn")
         mtn_reports.append(mntn.get_report(parsed_df, year, model))
@@ -610,10 +594,8 @@ def export_reports(model: "MgciModel", output_folder) -> None:
     for year in sub_b_years:
         print(f"Reporting {year} for sub_b")
         # Get year label for the report
-        year_lbl = cs.get_sub_b_years_labels(model.sub_b_year)[year]
-        print(year_lbl)
-        parsed_df = cs.get_result_from_year(model, year_lbl, "sub_b")
-        sub_b_reports.append(sub_b.get_reports(parsed_df, year_lbl, model))
+        parsed_df = cs.parse_to_year(model.results, year)
+        sub_b_reports.append(sub_b.get_reports(parsed_df, year, model))
 
     for reports in sub_a_reports:
         [
@@ -624,32 +606,33 @@ def export_reports(model: "MgciModel", output_folder) -> None:
             )
             for report, name in zip(
                 reports,
-                ["Table3_1542a_MGCI_{}.xlsx", "Table2_1542a_LandCoverType_{}.xlsx"],
+                ["Table3_ER_MTN_GRNCVI{}.xlsx", "Table2_ER_MTN_GRNCOV{}.xlsx"],
             )
         ]
 
     for reports in sub_b_reports:
         [
             report[0].to_excel(
-                str(Path(output_folder, name.format(report[1]))),
-                sheet_name=name.format(report[1]),
+                str(Path(output_folder, name.format(report[1][0]))),
+                sheet_name=name,
                 index=False,
             )
             for report, name in zip(
                 reports,
-                ["Table5_1542b_pdma_pt_{}.xlsx", "Table4_1542b_pdma_area_{}.xlsx"],
+                ["Table5_ER_MTN_DGRDP{}.xlsx", "Table4_ER_MTN_DGRDA{}.xlsx"],
             )
         ]
 
     for reports in mtn_reports:
-        [
-            report.to_excel(
-                str(Path(output_folder, name.format(name))),
-                sheet_name=name.format(name),
-                index=False,
-            )
-            for report, name in zip(reports, ["Table1_MountainArea_{}.xlsx"])
-        ]
+        report, year = reports
+        name = "Table1_ER_MTN_TOTL_{}.xlsx"
+        report.to_excel(
+            str(Path(output_folder, name.format(year))),
+            sheet_name=name.format(year),
+            index=False,
+        )
+
+    # Read all the reports and merge them into a single one
 
     return True
 
@@ -671,3 +654,47 @@ def map_matrix_to_dict(matrix_file_path: str):
             )
         )
     )
+
+
+def get_reporting_years(years: Dict, indicator: Literal["sub_a", "sub_b"]):
+    """Get the years to report
+
+    Args:
+
+        years: v_model from w_content_ a or b, comes from user input
+
+    """
+
+    if indicator == "sub_b":
+        return [
+            (
+                years.get("baseline").get("base").get("year"),
+                years.get("baseline").get("report").get("year"),
+            )
+        ] + [y.get("year") for type_, y in years.items() if type_ != "baseline"]
+
+    elif indicator == "sub_a":
+        return get_sub_a_break_points(years)
+
+
+def get_sub_b_items(
+    reporting_years_sub_b: list,
+) -> Tuple[List, List[Dict[str, Tuple[int, int]]]]:
+    """From sub b user input, transform it into items for v_select"""
+
+    transition_years = [reporting_years_sub_b[0]] + [
+        [reporting_years_sub_b[0][1], report_y]
+        for report_y in reporting_years_sub_b[1:]
+    ]
+
+    values = [{"baseline": years} for years in [transition_years[0]]] + [
+        {"report": years} for years in transition_years[1:]
+    ]
+
+    labels = [
+        " -> ".join([str(y) for y in years]) for years in [transition_years[0]]
+    ] + [" -> ".join([str(y) for y in years]) for years in transition_years[1:]]
+
+    items = [{"text": label, "value": value} for label, value in zip(labels, values)]
+
+    return items, values

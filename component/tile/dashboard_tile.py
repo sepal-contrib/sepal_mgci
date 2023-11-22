@@ -1,3 +1,4 @@
+from IPython.display import display
 import ipyvuetify as v
 import pandas as pd
 import sepal_ui.scripts.utils as su
@@ -5,6 +6,7 @@ import sepal_ui.sepalwidgets as sw
 from ipywidgets import Output
 from matplotlib import pyplot as plt
 from traitlets import link
+from component.model.model import MgciModel
 
 import component.parameter.module_parameter as param
 import component.scripts as cs
@@ -108,7 +110,11 @@ class DashViewA(DashView):
         self.clear()
         self.alert.add_msg(cm.dashboard.alert.rendering)
 
-        df = cs.get_result_from_year(self.model, self.year_select.v_model, "sub_a")
+        df = cs.parse_to_year_a(
+            self.model.results,
+            self.model.reporting_years_sub_a,
+            self.year_select.v_model,
+        )
 
         # Get overall MGCI widget
         w_overall = StatisticCard(df, "Total", self.model)
@@ -161,25 +167,23 @@ class DashViewB(DashView):
         self.year_select.observe(self.set_belt_items, "v_model")
 
     def set_belt_items(self, change):
-        """Set the belt items in the belt_select widget based on the year selected"""
+        """Set the belt items in the belt_select widget based on the year selected
+
+        Args:
+            change["new"]: year selected in the form:
+                {"baseline": [year1, year2]} or,
+                {"report": [base_start, report_year]}
+        """
 
         look_up_year = change["new"]
 
-        self.sub_b_label = cs.get_sub_b_years_labels(self.model.sub_b_year)[
-            look_up_year
-        ]
-        search_year = self.sub_b_label
-
-        self.df = cs.get_result_from_year(self.model, search_year, self.indicator)
+        self.df = cs.parse_to_year(self.model.results, look_up_year)
 
         # Get all belts that are available for the selected year
 
-        # Create items for the belt_select widget as list of dictionaries containing
-        # {"text": get_belt_desc, "value": belt_class}
-
         belt_items = [
             {"text": get_belt_desc(row), "value": row.belt_class}
-            for idx_, row in pd.DataFrame(
+            for _, row in pd.DataFrame(
                 self.df.belt_class.unique(), columns=["belt_class"]
             ).iterrows()
         ]
@@ -187,10 +191,16 @@ class DashViewB(DashView):
         self.belt_select.items = belt_items
 
     def set_years(self, change):
-        """Set the years in the year_select"""
+        """Set the years in the year_select:
+
+        Args:
+            change["new]: List of years in the form:
+                [[start_base_y, end_base_y], rep_y2, rep_y2, ...]
+        """
 
         if change["new"]:
-            self.year_select.items = list(change["new"])
+            items, _ = cs.get_sub_b_items(change["new"])
+            self.year_select.items = items
         else:
             self.year_select.items = []
 
@@ -206,11 +216,6 @@ class DashViewB(DashView):
         if not self.year_select.v_model:
             raise Exception("Select a year.")
 
-        # Receive user year selection.
-        # search for the corresponding base&report tuple in the model
-        # retrieve actual tuple 'base_report' that was calculated and it's stored
-        # in model.results
-
         self.df_sankey = (
             self.df[self.df.belt_class == self.belt_select.v_model]
             .groupby(["from_lc", "to_lc"], as_index=False)
@@ -224,9 +229,10 @@ class DashViewB(DashView):
         )
 
         output = Output()
-
         # rename columns to match with sankey function
-        lbl_left, lbl_right = self.sub_b_label.split("_")
+        lbl_left, lbl_right = [
+            str(y) for y in list(self.year_select.v_model.values())[0]
+        ]
         cols = {"from_lc": lbl_left, "to_lc": lbl_right}
         self.df_sankey.rename(columns=cols, inplace=True)
 
@@ -256,7 +262,7 @@ class DashViewB(DashView):
 
 
 class ExportView(v.Card):
-    def __init__(self, model, *args, **kwargs):
+    def __init__(self, model: MgciModel, *args, **kwargs):
         self.class_ = "pa-2"
         super().__init__(*args, **kwargs)
 
@@ -318,6 +324,7 @@ class ExportView(v.Card):
         self.alert.add_msg("Exporting tables...")
 
         report_folder = cs.get_report_folder(self.model)
+
         cs.export_reports(self.model, report_folder)
 
         self.alert.add_msg(

@@ -127,3 +127,37 @@ DECODE = {
     },
 }
 "dict: dictionary containing the displayed labels for transition classes"
+
+
+DEFAULT_ASSETS = {
+    "sub_b": {
+        "baseline": {
+            "start_year": {
+                "asset_id": f"{LULC_DEFAULT}/2000",
+                "year": 2000,
+            },
+            "end_year": {
+                "asset_id": f"{LULC_DEFAULT}/2015",
+                "year": 2015,
+            },
+        },
+        "report": {
+            "asset_id": f"{LULC_DEFAULT}/2018",
+            "year": 2018,
+        },
+    },
+    "sub_a": {
+        1: {
+            "asset_id": f"{LULC_DEFAULT}/2000",
+            "year": 2000,
+        },
+        2: {
+            "asset_id": f"{LULC_DEFAULT}/2015",
+            "year": 2015,
+        },
+        3: {
+            "asset_id": f"{LULC_DEFAULT}/2018",
+            "year": 2018,
+        },
+    },
+}
