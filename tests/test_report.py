@@ -12,7 +12,6 @@ aoi_model = AoiModel(admin="959")
 
 class Model:
     results = test.results
-    same_asset_matrix = True
     data = test.sub_a_year
     reporting_years_sub_a = cs.get_sub_a_break_points(data)
     aoi_model = aoi_model
@@ -23,16 +22,16 @@ class Model:
 model = Model()
 
 
-def test_get_result_from_year():
+def test_parse_to_year_a():
     """Test get_result_from_year"""
-    result = cs.get_result_from_year(model, 2015, "sub_a")
+    result = cs.parse_to_year_a(model, 2015, "sub_a")
     assert len(result) == 17
 
 
 def test_fill_parsed_df():
     """Test fill_parsed_df"""
 
-    parsed_df = cs.get_result_from_year(model, 2015, "sub_a")
+    parsed_df = cs.parse_to_year_a(model, 2015, "sub_a")
     filled_df = sub_a.fill_parsed_df(parsed_df)
 
     # We expect to have 4 cols: belt_class, lc_class, sum, and key
@@ -42,7 +41,7 @@ def test_fill_parsed_df():
 
 
 def test_get_report_sub_a_landtype():
-    parsed_df = cs.get_result_from_year(model, 2015, "sub_a")
+    parsed_df = cs.parse_to_year_a(model, 2015, "sub_a")
 
     report = sub_a.get_report(parsed_df, 2008, model=model, land_type=True)[0]
 
@@ -54,7 +53,7 @@ def test_get_report_sub_a_landtype():
 
 
 def test_get_report_sub_a_mgci():
-    parsed_df = cs.get_result_from_year(model, 2015, "sub_a")
+    parsed_df = cs.parse_to_year_a(model, 2015, "sub_a")
 
     report = sub_a.get_report(parsed_df, 2008, model=model, land_type=False)[0]
 
@@ -73,7 +72,7 @@ def test_get_report_sub_a_mgci():
 
 def test_get_report_pdma_area():
     years = "2004_2011"
-    parsed_df = cs.get_result_from_year(model, years, "sub_b")
+    parsed_df = cs.parse_to_year_a(model, years, "sub_b")
     report = sub_b.get_report(parsed_df, years, model=model, area=True)[0]
 
     assert report.shape == (5, 17)
@@ -81,7 +80,7 @@ def test_get_report_pdma_area():
 
 def test_get_report_pdma_pt():
     years = "2004_2011"
-    parsed_df = cs.get_result_from_year(model, years, "sub_b")
+    parsed_df = cs.parse_to_year_a(model, years, "sub_b")
     report = sub_b.get_report(parsed_df, years, model=model, area=False)[0]
 
     assert report.shape == (5, 19)

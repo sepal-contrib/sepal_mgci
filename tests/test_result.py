@@ -1,346 +1,58 @@
 import component.scripts as cs
+from component.parameter.module_parameter import LULC_DEFAULT
 
-ic_items_sub_a = [
-    "users/amitghosh/sdg_module/esa/cci_landcover/1992",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1993",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1994",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1995",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1996",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1997",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1998",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1999",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2000",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2001",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2002",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2003",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2004",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2005",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2006",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2007",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2008",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2009",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2010",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2011",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2012",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2013",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2014",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2015",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2016",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2017",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2018",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2019",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2020",
-]
-
-ic_items_sub_b = [
-    "users/amitghosh/sdg_module/esa/cci_landcover/1992",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1993",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1994",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1995",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1996",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1997",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1998",
-    "users/amitghosh/sdg_module/esa/cci_landcover/1999",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2000",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2001",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2002",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2003",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2004",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2005",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2006",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2007",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2008",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2009",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2010",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2011",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2012",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2013",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2014",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2015",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2016",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2017",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2018",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2019",
-    "users/amitghosh/sdg_module/esa/cci_landcover/2020",
-]
+items = [f"{LULC_DEFAULT}/{year}" for year in range(2000, 2021)]
+ic_items_sub_a = items
+ic_items_sub_b = items
 
 results = {
-    "2009": {
+    "2000": {
         "groups": [
             {
                 "group": 2,
                 "groups": [
-                    {"group": 2, "sum": 9.012584721170349},
-                    {"group": 3, "sum": 68.44437743621329},
-                    {"group": 4, "sum": 79.20185557218142},
-                    {"group": 5, "sum": 29.44951926305147},
-                    {"group": 10, "sum": 0.4224242577818627},
+                    {"group": 3, "sum": 0.7551212500000001},
+                    {"group": 4, "sum": 14.158790898437498},
+                    {"group": 5, "sum": 5.946592710937501},
+                    {"group": 6, "sum": 0.37756365625},
                 ],
             },
             {
                 "group": 3,
                 "groups": [
-                    {"group": 2, "sum": 10.210982422824758},
-                    {"group": 3, "sum": 5.614427620894609},
-                    {"group": 4, "sum": 529.2282384920047},
-                    {"group": 5, "sum": 20.384821304442383},
-                    {"group": 6, "sum": 0.7569206875},
+                    {"group": 1, "sum": 5.193617820312501},
+                    {"group": 2, "sum": 471.30101375949897},
+                    {"group": 3, "sum": 8.026937093750002},
+                    {"group": 4, "sum": 2969.9735879001046},
+                    {"group": 5, "sum": 304.7826624218749},
+                    {"group": 6, "sum": 0.2828043515625},
                 ],
             },
             {
                 "group": 4,
                 "groups": [
-                    {"group": 1, "sum": 30.869439017095576},
-                    {"group": 2, "sum": 400.6589821895229},
-                    {"group": 3, "sum": 7.107650868351718},
-                    {"group": 4, "sum": 2554.1160902336},
-                    {"group": 5, "sum": 203.98341383333351},
-                    {"group": 6, "sum": 2.6510939068627453},
-                    {"group": 10, "sum": 0.2839237734375},
+                    {"group": 1, "sum": 168.36207349218753},
+                    {"group": 2, "sum": 3730.0379216579395},
+                    {"group": 3, "sum": 54.574133561213124},
+                    {"group": 4, "sum": 29961.075690758043},
+                    {"group": 5, "sum": 2908.4876023248444},
+                    {"group": 6, "sum": 23.637147807444848},
+                    {"group": 8, "sum": 0.4717225078125},
+                    {"group": 10, "sum": 72.22220274218749},
                 ],
             },
         ]
     },
-    "2010_2015": {
+    "2000_2015_2018": {
         "groups": [
-            {
-                "group": 2,
-                "groups": [
-                    {"group": 2, "groups": [{"group": 2, "sum": 9.012584721170349}]},
-                    {"group": 3, "groups": [{"group": 3, "sum": 68.44437743621329}]},
-                    {
-                        "group": 4,
-                        "groups": [
-                            {"group": 3, "sum": 0.6053681041053922},
-                            {"group": 4, "sum": 78.596487468076},
-                        ],
-                    },
-                    {"group": 5, "groups": [{"group": 5, "sum": 29.44951926305147}]},
-                    {"group": 10, "groups": [{"group": 10, "sum": 0.4224242577818627}]},
-                ],
-            },
-            {
-                "group": 3,
-                "groups": [
-                    {
-                        "group": 2,
-                        "groups": [
-                            {"group": 2, "sum": 7.2720158847120135},
-                            {"group": 4, "sum": 2.9389665381127457},
-                        ],
-                    },
-                    {"group": 3, "groups": [{"group": 3, "sum": 5.614427620894609}]},
-                    {
-                        "group": 4,
-                        "groups": [
-                            {"group": 3, "sum": 1.0819297039522058},
-                            {"group": 4, "sum": 528.0516637177401},
-                            {"group": 5, "sum": 0.0946450703125},
-                        ],
-                    },
-                    {
-                        "group": 5,
-                        "groups": [
-                            {"group": 4, "sum": 1.7951922632659316},
-                            {"group": 5, "sum": 18.58962904117645},
-                        ],
-                    },
-                    {"group": 6, "groups": [{"group": 6, "sum": 0.7569206875}]},
-                ],
-            },
+            {"group": 2, "groups": [{"group": 0, "sum": 21.238068515625017}]},
+            {"group": 3, "groups": [{"group": 0, "sum": 3759.560623347115}]},
             {
                 "group": 4,
                 "groups": [
-                    {"group": 1, "groups": [{"group": 1, "sum": 31.43734744678308}]},
-                    {
-                        "group": 2,
-                        "groups": [
-                            {"group": 1, "sum": 1.325143578125},
-                            {"group": 2, "sum": 347.67522697184586},
-                            {"group": 4, "sum": 47.00508255888481},
-                        ],
-                    },
-                    {
-                        "group": 3,
-                        "groups": [
-                            {"group": 1, "sum": 2.272350554105392},
-                            {"group": 3, "sum": 4.740651837683823},
-                        ],
-                    },
-                    {
-                        "group": 4,
-                        "groups": [
-                            {"group": 1, "sum": 1.1357797343750002},
-                            {"group": 2, "sum": 0.094643546875},
-                            {"group": 4, "sum": 2558.2015832283296},
-                        ],
-                    },
-                    {
-                        "group": 5,
-                        "groups": [
-                            {"group": 1, "sum": 0.2839563515625},
-                            {"group": 4, "sum": 6.512615603645835},
-                            {"group": 5, "sum": 196.14582326875015},
-                        ],
-                    },
-                    {
-                        "group": 6,
-                        "groups": [
-                            {"group": 1, "sum": 0.094646203125},
-                            {"group": 4, "sum": 0.5678695703125001},
-                            {"group": 6, "sum": 1.893949594362745},
-                        ],
-                    },
-                    {"group": 10, "groups": [{"group": 10, "sum": 0.2839237734375}]},
-                ],
-            },
-        ]
-    },
-    "2004_2011": {
-        "groups": [
-            {
-                "group": 2,
-                "groups": [
-                    {"group": 2, "groups": [{"group": 2, "sum": 9.012584721170349}]},
-                    {
-                        "group": 3,
-                        "groups": [
-                            {"group": 3, "sum": 68.44437743621329},
-                            {"group": 4, "sum": 0.2839917265625},
-                        ],
-                    },
-                    {
-                        "group": 4,
-                        "groups": [
-                            {"group": 3, "sum": 0.6053681041053922},
-                            {"group": 4, "sum": 77.36584574932604},
-                        ],
-                    },
-                    {
-                        "group": 5,
-                        "groups": [
-                            {"group": 4, "sum": 0.8519821640625},
-                            {"group": 5, "sum": 29.44951926305147},
-                        ],
-                    },
-                    {"group": 8, "groups": [{"group": 4, "sum": 0.094667828125}]},
-                    {"group": 10, "groups": [{"group": 10, "sum": 0.4224242577818627}]},
-                ],
-            },
-            {
-                "group": 3,
-                "groups": [
-                    {"group": 2, "groups": [{"group": 2, "sum": 10.210982422824758}]},
-                    {
-                        "group": 3,
-                        "groups": [
-                            {"group": 3, "sum": 5.614427620894609},
-                            {"group": 4, "sum": 0.0946685625},
-                        ],
-                    },
-                    {
-                        "group": 4,
-                        "groups": [
-                            {"group": 3, "sum": 1.0819297039522058},
-                            {"group": 4, "sum": 527.7632030045048},
-                            {"group": 5, "sum": 0.0946450703125},
-                        ],
-                    },
-                    {
-                        "group": 5,
-                        "groups": [
-                            {"group": 4, "sum": 0.09912358823529412},
-                            {"group": 5, "sum": 20.384821304442383},
-                        ],
-                    },
-                    {"group": 6, "groups": [{"group": 6, "sum": 0.7569206875}]},
-                    {"group": 8, "groups": [{"group": 4, "sum": 0.0946685625}]},
-                ],
-            },
-            {
-                "group": 4,
-                "groups": [
-                    {"group": 1, "groups": [{"group": 1, "sum": 30.58546919678308}]},
-                    {
-                        "group": 2,
-                        "groups": [
-                            {"group": 1, "sum": 0.75724746875},
-                            {"group": 2, "sum": 391.7463127494799},
-                            {"group": 3, "sum": 0.47321582812499996},
-                            {"group": 4, "sum": 54.57815210220591},
-                        ],
-                    },
-                    {
-                        "group": 3,
-                        "groups": [
-                            {"group": 1, "sum": 0.6625593046875},
-                            {"group": 3, "sum": 5.971881391789218},
-                        ],
-                    },
-                    {
-                        "group": 4,
-                        "groups": [
-                            {"group": 1, "sum": 0.75717265625},
-                            {"group": 2, "sum": 3.123488007812499},
-                            {"group": 3, "sum": 0.0946469609375},
-                            {"group": 4, "sum": 2499.387167211921},
-                            {"group": 5, "sum": 1.9877017421875003},
-                            {"group": 6, "sum": 0.0946507421875},
-                        ],
-                    },
-                    {
-                        "group": 5,
-                        "groups": [
-                            {"group": 4, "sum": 5.845014023560052},
-                            {"group": 5, "sum": 200.7655474973961},
-                        ],
-                    },
-                    {
-                        "group": 6,
-                        "groups": [
-                            {"group": 4, "sum": 0.1891988046875},
-                            {"group": 6, "sum": 2.3672443599877453},
-                        ],
-                    },
-                    {"group": 10, "groups": [{"group": 10, "sum": 0.2839237734375}]},
-                ],
-            },
-        ]
-    },
-    "2005": {
-        "groups": [
-            {
-                "group": 2,
-                "groups": [
-                    {"group": 2, "sum": 9.012584721170349},
-                    {"group": 3, "sum": 68.72836916277576},
-                    {"group": 4, "sum": 77.97121385343146},
-                    {"group": 5, "sum": 30.30150142711396},
-                    {"group": 8, "sum": 0.094667828125},
-                    {"group": 10, "sum": 0.4224242577818627},
-                ],
-            },
-            {
-                "group": 3,
-                "groups": [
-                    {"group": 2, "sum": 10.210982422824758},
-                    {"group": 3, "sum": 5.709096183394609},
-                    {"group": 4, "sum": 528.9397777787694},
-                    {"group": 5, "sum": 20.483944892677684},
-                    {"group": 6, "sum": 0.7569206875},
-                    {"group": 8, "sum": 0.0946685625},
-                ],
-            },
-            {
-                "group": 4,
-                "groups": [
-                    {"group": 1, "sum": 30.58546919678308},
-                    {"group": 2, "sum": 442.65022967782},
-                    {"group": 3, "sum": 6.634440696476718},
-                    {"group": 4, "sum": 2510.8226888232916},
-                    {"group": 5, "sum": 206.13739848970602},
-                    {"group": 6, "sum": 2.5564431646752452},
-                    {"group": 10, "sum": 0.2839237734375},
+                    {"group": 0, "sum": 36846.64629210856},
+                    {"group": 1, "sum": 3.021668390624999},
+                    {"group": 2, "sum": 69.20053435156245},
                 ],
             },
         ]
@@ -349,69 +61,517 @@ results = {
 
 
 sub_a_year = {
-    1: {"asset": "users/amitghosh/sdg_module/esa/cci_landcover/2009", "year": 2009},
-    2: {"year": 2011, "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2011"},
-    3: {"asset": "users/amitghosh/sdg_module/esa/cci_landcover/2015", "year": 2015},
-    4: {"asset": "users/amitghosh/sdg_module/esa/cci_landcover/2004", "year": 2004},
-    5: {"asset": "users/amitghosh/sdg_module/esa/cci_landcover/2005", "year": 2005},
+    1: {"asset": "users/amitghosh/sdg_module/esa/cci_landcover/2000", "year": 2000}
 }
+
 
 sub_b_year = {
-    1: {
-        2010: {
-            "base": {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2004",
-                "year": 2004,
-            },
-            "report": {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2011",
-                "year": 2011,
-            },
-        }
+    "baseline": {
+        "base": {
+            "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2000",
+            "year": 2000,
+        },
+        "report": {
+            "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2015",
+            "year": 2015,
+        },
     },
-    2: {
-        2015: {
-            "base": {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2010",
-                "year": 2010,
-            },
-            "report": {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2015",
-                "year": 2015,
-            },
-        }
-    },
+    2: {"asset": "users/amitghosh/sdg_module/esa/cci_landcover/2018", "year": 2018},
+    3: {"asset": "users/amitghosh/sdg_module/esa/cci_landcover/2021", "year": 2021},
 }
 
 
-def test_get_sub_b_years():
-    expected_result = [
-        [
+# User input sub indicator A
+sub_a_year = {
+    1: {"asset": "users/amitghosh/sdg_module/esa/cci_landcover/2000", "year": 2000},
+    2: {"year": 2003, "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2003"},
+    3: {"year": 2007, "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2007"},
+    4: {"year": 2010, "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2010"},
+}
+
+# User input sub indicator B
+sub_b_year = {
+    "baseline": {
+        "base": {
+            "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2000",
+            "year": 2000,
+        },
+        "report": {
+            "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2015",
+            "year": 2015,
+        },
+    },
+    2: {"asset": "users/amitghosh/sdg_module/esa/cci_landcover/2018", "year": 2018},
+    3: {"asset": "users/amitghosh/sdg_module/esa/cci_landcover/2019", "year": 2019},
+}
+
+# Calculation result for both subindicators
+results = {
+    "2010": {
+        "groups": [
             {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2004",
-                "year": 2004,
+                "group": 2,
+                "groups": [
+                    {"group": 2, "sum": 1.0644652841586244},
+                    {"group": 3, "sum": 8.128088157642837},
+                    {"group": 4, "sum": 16.43364641745569},
+                    {"group": 5, "sum": 3.7322511778848906},
+                    {"group": 10, "sum": 0.012428176094408428},
+                ],
             },
             {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2011",
-                "year": 2011,
+                "group": 3,
+                "groups": [
+                    {"group": 2, "sum": 1.1904219413207746},
+                    {"group": 3, "sum": 0.962729972066941},
+                    {"group": 4, "sum": 86.42165988223387},
+                    {"group": 5, "sum": 2.5798345186574387},
+                    {"group": 6, "sum": 0.08095732100484897},
+                ],
+            },
+            {
+                "group": 4,
+                "groups": [
+                    {"group": 1, "sum": 2.951189391967298},
+                    {"group": 2, "sum": 40.159059648364035},
+                    {"group": 3, "sum": 0.7001784363572373},
+                    {"group": 4, "sum": 357.17463325143297},
+                    {"group": 5, "sum": 20.76603168019052},
+                    {"group": 6, "sum": 0.371813258345141},
+                    {"group": 10, "sum": 0.02586864146017962},
+                ],
+            },
+        ]
+    },
+    "2003": {
+        "groups": [
+            {
+                "group": 2,
+                "groups": [
+                    {"group": 2, "sum": 1.0644652841586244},
+                    {"group": 3, "sum": 8.172631591384073},
+                    {"group": 4, "sum": 16.215199004821155},
+                    {"group": 5, "sum": 3.8941158055903062},
+                    {"group": 8, "sum": 0.012039351187883515},
+                    {"group": 10, "sum": 0.012428176094408428},
+                ],
+            },
+            {
+                "group": 3,
+                "groups": [
+                    {"group": 2, "sum": 1.1904219413207746},
+                    {"group": 3, "sum": 0.977730363287547},
+                    {"group": 4, "sum": 86.3814031096828},
+                    {"group": 5, "sum": 2.5919022969293355},
+                    {"group": 6, "sum": 0.08095732100484897},
+                    {"group": 8, "sum": 0.013188603058568352},
+                ],
+            },
+            {
+                "group": 4,
+                "groups": [
+                    {"group": 1, "sum": 2.875237109647001},
+                    {"group": 2, "sum": 45.924415749762375},
+                    {"group": 3, "sum": 0.6634559195593783},
+                    {"group": 4, "sum": 351.1607413192775},
+                    {"group": 5, "sum": 21.123729180141055},
+                    {"group": 6, "sum": 0.3753263882701161},
+                    {"group": 10, "sum": 0.02586864146017962},
+                ],
+            },
+        ]
+    },
+    "2007": {
+        "groups": [
+            {
+                "group": 2,
+                "groups": [
+                    {"group": 2, "sum": 1.0644652841586244},
+                    {"group": 3, "sum": 8.128088157642837},
+                    {"group": 4, "sum": 16.40739675133515},
+                    {"group": 5, "sum": 3.7464614928175464},
+                    {"group": 8, "sum": 0.012039351187883515},
+                    {"group": 10, "sum": 0.012428176094408428},
+                ],
+            },
+            {
+                "group": 3,
+                "groups": [
+                    {"group": 2, "sum": 1.1904219413207746},
+                    {"group": 3, "sum": 0.977730363287547},
+                    {"group": 4, "sum": 86.3814031096828},
+                    {"group": 5, "sum": 2.5919022969293355},
+                    {"group": 6, "sum": 0.08095732100484897},
+                    {"group": 8, "sum": 0.013188603058568352},
+                ],
+            },
+            {
+                "group": 4,
+                "groups": [
+                    {"group": 1, "sum": 2.875237109647001},
+                    {"group": 2, "sum": 42.5782781709194},
+                    {"group": 3, "sum": 0.6634559195593783},
+                    {"group": 4, "sum": 354.7326092704806},
+                    {"group": 5, "sum": 20.89799880778107},
+                    {"group": 6, "sum": 0.3753263882701161},
+                    {"group": 10, "sum": 0.02586864146017962},
+                ],
+            },
+        ]
+    },
+    "2000": {
+        "groups": [
+            {
+                "group": 2,
+                "groups": [
+                    {"group": 2, "sum": 1.0644652841586244},
+                    {"group": 3, "sum": 8.172631591384073},
+                    {"group": 4, "sum": 16.215199004821155},
+                    {"group": 5, "sum": 3.8941158055903062},
+                    {"group": 8, "sum": 0.012039351187883515},
+                    {"group": 10, "sum": 0.012428176094408428},
+                ],
+            },
+            {
+                "group": 3,
+                "groups": [
+                    {"group": 2, "sum": 1.1904219413207746},
+                    {"group": 3, "sum": 0.977730363287547},
+                    {"group": 4, "sum": 86.3814031096828},
+                    {"group": 5, "sum": 2.5919022969293355},
+                    {"group": 6, "sum": 0.08095732100484897},
+                    {"group": 8, "sum": 0.013188603058568352},
+                ],
+            },
+            {
+                "group": 4,
+                "groups": [
+                    {"group": 1, "sum": 2.875237109647001},
+                    {"group": 2, "sum": 45.90489627912992},
+                    {"group": 3, "sum": 0.6837520343367423},
+                    {"group": 4, "sum": 351.2836657469516},
+                    {"group": 5, "sum": 21.00002810832202},
+                    {"group": 6, "sum": 0.3753263882701161},
+                    {"group": 10, "sum": 0.02586864146017962},
+                ],
+            },
+        ]
+    },
+    "2000_2015_2018": {
+        "baseline_degradation": [
+            {
+                "group": 2,
+                "groups": [
+                    {"group": 1, "sum": 0.05061955101366822},
+                    {"group": 2, "sum": 29.101812249588235},
+                    {"group": 3, "sum": 0.2184474126345349},
+                ],
+            },
+            {
+                "group": 3,
+                "groups": [
+                    {"group": 1, "sum": 0.10122322382310367},
+                    {"group": 2, "sum": 90.51243375714019},
+                    {"group": 3, "sum": 0.621946654320597},
+                ],
+            },
+            {
+                "group": 4,
+                "groups": [
+                    {"group": 1, "sum": 1.6730801003000524},
+                    {"group": 2, "sum": 407.7155156926726},
+                    {"group": 3, "sum": 12.760178515145146},
+                ],
             },
         ],
-        [
+        "baseline_transition": [
             {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2010",
-                "year": 2010,
+                "group": 2,
+                "groups": [
+                    {"group": 202, "sum": 1.0644652841586244},
+                    {"group": 303, "sum": 8.128088157642837},
+                    {"group": 304, "sum": 0.04454343374123522},
+                    {"group": 403, "sum": 0.05061955101366822},
+                    {"group": 404, "sum": 16.164579453807487},
+                    {"group": 504, "sum": 0.16186462770541618},
+                    {"group": 505, "sum": 3.7322511778848906},
+                    {"group": 804, "sum": 0.012039351187883515},
+                    {"group": 1010, "sum": 0.012428176094408428},
+                ],
             },
             {
-                "asset": "users/amitghosh/sdg_module/esa/cci_landcover/2015",
-                "year": 2015,
+                "group": 3,
+                "groups": [
+                    {"group": 202, "sum": 0.8575210247538564},
+                    {"group": 204, "sum": 0.3329009165669179},
+                    {"group": 303, "sum": 0.962729972066941},
+                    {"group": 304, "sum": 0.015000391220606016},
+                    {"group": 403, "sum": 0.09146973799703546},
+                    {"group": 404, "sum": 86.2801798858597},
+                    {"group": 405, "sum": 0.009753485826068208},
+                    {"group": 504, "sum": 0.26085674347450477},
+                    {"group": 505, "sum": 2.33104555345483},
+                    {"group": 606, "sum": 0.08095732100484897},
+                    {"group": 804, "sum": 0.013188603058568352},
+                ],
+            },
+            {
+                "group": 4,
+                "groups": [
+                    {"group": 101, "sum": 2.875237109647001},
+                    {"group": 201, "sum": 0.16755839366130676},
+                    {"group": 202, "sum": 34.34364423286578},
+                    {"group": 203, "sum": 0.044619286937452304},
+                    {"group": 204, "sum": 11.349074365665603},
+                    {"group": 301, "sum": 0.23364744618267494},
+                    {"group": 303, "sum": 0.42980847337670336},
+                    {"group": 304, "sum": 0.020296114777363983},
+                    {"group": 401, "sum": 0.11469183735044579},
+                    {"group": 402, "sum": 0.6833381127265374},
+                    {"group": 403, "sum": 0.00950126975633096},
+                    {"group": 404, "sum": 350.1099355482808},
+                    {"group": 405, "sum": 0.3562141872166072},
+                    {"group": 406, "sum": 0.009984791620742884},
+                    {"group": 501, "sum": 0.026933603269889105},
+                    {"group": 504, "sum": 1.3461887477647114},
+                    {"group": 505, "sum": 19.626905757287428},
+                    {"group": 601, "sum": 0.008688117430093066},
+                    {"group": 604, "sum": 0.07250713270616671},
+                    {"group": 606, "sum": 0.29413113813385633},
+                    {"group": 1010, "sum": 0.02586864146017962},
+                ],
             },
         ],
-    ]
-
-    assert cs.get_sub_b_years(sub_b_year) == expected_result
-
-
-def test_get_sub_b_years_labels(sub_b_year):
-    expected_result = {2022: "2022_2020", 2015: "2010_2015"}
-
-    assert cs.get_sub_b_years_labels == expected_result
+        "final_degradation": [
+            {
+                "group": 2,
+                "groups": [
+                    {"group": 1, "sum": 0.05061955101366822},
+                    {"group": 2, "sum": 29.309079822493956},
+                    {"group": 3, "sum": 0.011179839728820818},
+                ],
+            },
+            {
+                "group": 3,
+                "groups": [
+                    {"group": 1, "sum": 0.10122322382310367},
+                    {"group": 2, "sum": 91.0926509367464},
+                    {"group": 3, "sum": 0.04172947471440247},
+                ],
+            },
+            {
+                "group": 4,
+                "groups": [
+                    {"group": 1, "sum": 3.547143038957304},
+                    {"group": 2, "sum": 418.2727150248828},
+                    {"group": 3, "sum": 0.32891624427832344},
+                ],
+            },
+        ],
+        "report_transition": [
+            {
+                "group": 2,
+                "groups": [
+                    {"group": 202, "sum": 1.0644652841586244},
+                    {"group": 303, "sum": 8.178707708656503},
+                    {"group": 404, "sum": 16.38302686644202},
+                    {"group": 504, "sum": 0.011179839728820818},
+                    {"group": 505, "sum": 3.7210713381560696},
+                    {"group": 1010, "sum": 0.012428176094408428},
+                ],
+            },
+            {
+                "group": 3,
+                "groups": [
+                    {"group": 202, "sum": 0.8459708274845611},
+                    {"group": 204, "sum": 0.011550197269295315},
+                    {"group": 303, "sum": 1.0541997100639766},
+                    {"group": 404, "sum": 86.90212654018026},
+                    {"group": 504, "sum": 0.030179277445107157},
+                    {"group": 505, "sum": 2.310619761835791},
+                    {"group": 606, "sum": 0.08095732100484897},
+                ],
+            },
+            {
+                "group": 4,
+                "groups": [
+                    {"group": 101, "sum": 3.426756507541409},
+                    {"group": 201, "sum": 0.008844769149950265},
+                    {"group": 202, "sum": 34.7953443146546},
+                    {"group": 204, "sum": 0.2227932617877602},
+                    {"group": 303, "sum": 0.4839290300704866},
+                    {"group": 401, "sum": 0.00888806842309201},
+                    {"group": 402, "sum": 1.7112126195234225},
+                    {"group": 403, "sum": 0.010946505878611559},
+                    {"group": 404, "sum": 361.0150422216904},
+                    {"group": 405, "sum": 0.13492218647944226},
+                    {"group": 406, "sum": 0.01699030719932637},
+                    {"group": 501, "sum": 0.009017213318832852},
+                    {"group": 504, "sum": 0.11589140660666077},
+                    {"group": 505, "sum": 19.858211324578544},
+                    {"group": 606, "sum": 0.3041159297545992},
+                    {"group": 1010, "sum": 0.02586864146017962},
+                ],
+            },
+        ],
+    },
+    "2000_2015_2019": {
+        "baseline_degradation": [
+            {
+                "group": 2,
+                "groups": [
+                    {"group": 1, "sum": 0.05061955101366822},
+                    {"group": 2, "sum": 29.101812249588235},
+                    {"group": 3, "sum": 0.2184474126345349},
+                ],
+            },
+            {
+                "group": 3,
+                "groups": [
+                    {"group": 1, "sum": 0.10122322382310367},
+                    {"group": 2, "sum": 90.51243375714019},
+                    {"group": 3, "sum": 0.621946654320597},
+                ],
+            },
+            {
+                "group": 4,
+                "groups": [
+                    {"group": 1, "sum": 1.6730801003000524},
+                    {"group": 2, "sum": 407.7155156926726},
+                    {"group": 3, "sum": 12.760178515145146},
+                ],
+            },
+        ],
+        "baseline_transition": [
+            {
+                "group": 2,
+                "groups": [
+                    {"group": 202, "sum": 1.0644652841586244},
+                    {"group": 303, "sum": 8.128088157642837},
+                    {"group": 304, "sum": 0.04454343374123522},
+                    {"group": 403, "sum": 0.05061955101366822},
+                    {"group": 404, "sum": 16.164579453807487},
+                    {"group": 504, "sum": 0.16186462770541618},
+                    {"group": 505, "sum": 3.7322511778848906},
+                    {"group": 804, "sum": 0.012039351187883515},
+                    {"group": 1010, "sum": 0.012428176094408428},
+                ],
+            },
+            {
+                "group": 3,
+                "groups": [
+                    {"group": 202, "sum": 0.8575210247538564},
+                    {"group": 204, "sum": 0.3329009165669179},
+                    {"group": 303, "sum": 0.962729972066941},
+                    {"group": 304, "sum": 0.015000391220606016},
+                    {"group": 403, "sum": 0.09146973799703546},
+                    {"group": 404, "sum": 86.2801798858597},
+                    {"group": 405, "sum": 0.009753485826068208},
+                    {"group": 504, "sum": 0.26085674347450477},
+                    {"group": 505, "sum": 2.33104555345483},
+                    {"group": 606, "sum": 0.08095732100484897},
+                    {"group": 804, "sum": 0.013188603058568352},
+                ],
+            },
+            {
+                "group": 4,
+                "groups": [
+                    {"group": 101, "sum": 2.875237109647001},
+                    {"group": 201, "sum": 0.16755839366130676},
+                    {"group": 202, "sum": 34.34364423286578},
+                    {"group": 203, "sum": 0.044619286937452304},
+                    {"group": 204, "sum": 11.349074365665603},
+                    {"group": 301, "sum": 0.23364744618267494},
+                    {"group": 303, "sum": 0.42980847337670336},
+                    {"group": 304, "sum": 0.020296114777363983},
+                    {"group": 401, "sum": 0.11469183735044579},
+                    {"group": 402, "sum": 0.6833381127265374},
+                    {"group": 403, "sum": 0.00950126975633096},
+                    {"group": 404, "sum": 350.1099355482808},
+                    {"group": 405, "sum": 0.3562141872166072},
+                    {"group": 406, "sum": 0.009984791620742884},
+                    {"group": 501, "sum": 0.026933603269889105},
+                    {"group": 504, "sum": 1.3461887477647114},
+                    {"group": 505, "sum": 19.626905757287428},
+                    {"group": 601, "sum": 0.008688117430093066},
+                    {"group": 604, "sum": 0.07250713270616671},
+                    {"group": 606, "sum": 0.29413113813385633},
+                    {"group": 1010, "sum": 0.02586864146017962},
+                ],
+            },
+        ],
+        "final_degradation": [
+            {
+                "group": 2,
+                "groups": [
+                    {"group": 1, "sum": 0.05061955101366822},
+                    {"group": 2, "sum": 29.309079822493956},
+                    {"group": 3, "sum": 0.011179839728820818},
+                ],
+            },
+            {
+                "group": 3,
+                "groups": [
+                    {"group": 1, "sum": 0.10538380212249233},
+                    {"group": 2, "sum": 91.03236477229119},
+                    {"group": 3, "sum": 0.09785506087021789},
+                ],
+            },
+            {
+                "group": 4,
+                "groups": [
+                    {"group": 1, "sum": 4.133296983824758},
+                    {"group": 2, "sum": 417.39405431672196},
+                    {"group": 3, "sum": 0.6214230075717627},
+                ],
+            },
+        ],
+        "report_transition": [
+            {
+                "group": 2,
+                "groups": [
+                    {"group": 202, "sum": 1.0644652841586244},
+                    {"group": 303, "sum": 8.178707708656503},
+                    {"group": 404, "sum": 16.38302686644202},
+                    {"group": 504, "sum": 0.011179839728820818},
+                    {"group": 505, "sum": 3.7210713381560696},
+                    {"group": 1010, "sum": 0.012428176094408428},
+                ],
+            },
+            {
+                "group": 3,
+                "groups": [
+                    {"group": 202, "sum": 0.8156782770911534},
+                    {"group": 204, "sum": 0.04184274766270297},
+                    {"group": 303, "sum": 1.0541997100639766},
+                    {"group": 402, "sum": 0.004160578299388662},
+                    {"group": 404, "sum": 86.89796596188089},
+                    {"group": 504, "sum": 0.05601231320751491},
+                    {"group": 505, "sum": 2.284786726073383},
+                    {"group": 606, "sum": 0.08095732100484897},
+                ],
+            },
+            {
+                "group": 4,
+                "groups": [
+                    {"group": 101, "sum": 3.426756507541409},
+                    {"group": 201, "sum": 0.008844769149950265},
+                    {"group": 202, "sum": 34.696532693470544},
+                    {"group": 204, "sum": 0.3216048829718105},
+                    {"group": 303, "sum": 0.4839290300704866},
+                    {"group": 401, "sum": 0.00888806842309201},
+                    {"group": 402, "sum": 2.273670569599525},
+                    {"group": 403, "sum": 0.02531054071845274},
+                    {"group": 404, "sum": 360.43822023677455},
+                    {"group": 405, "sum": 0.13492218647944226},
+                    {"group": 406, "sum": 0.01699030719932637},
+                    {"group": 501, "sum": 0.018349173270342096},
+                    {"group": 504, "sum": 0.3095865487160499},
+                    {"group": 505, "sum": 19.655184222517647},
+                    {"group": 606, "sum": 0.3041159297545992},
+                    {"group": 1010, "sum": 0.02586864146017962},
+                ],
+            },
+        ],
+    },
+}

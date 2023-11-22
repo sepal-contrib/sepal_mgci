@@ -48,25 +48,24 @@ def test_get_years():
     ]
 
 
-def test_get_result_from_year():
-
+def test_parse_to_year_a():
     results = {"2018_2021": {}, "2005": {}, "2011": {}, "2009": {}, "2015": {}}
 
-    assert cs.get_result_from_year(results, int("2018"), "sub_b") == {
+    assert cs.parse_to_year_a(results, int("2018"), "sub_b") == {
         "2018_2021": results["2018_2021"]
     }
-    assert cs.get_result_from_year(results, int("2021"), "sub_b") == {
+    assert cs.parse_to_year_a(results, int("2021"), "sub_b") == {
         "2018_2021": results["2018_2021"]
     }
-    assert cs.get_result_from_year(results, int("2005"), "sub_a") == {
+    assert cs.parse_to_year_a(results, int("2005"), "sub_a") == {
         "2005": results["2005"]
     }
-    assert cs.get_result_from_year(results, int("2011"), "sub_a") == {
+    assert cs.parse_to_year_a(results, int("2011"), "sub_a") == {
         "2011": results["2011"]
     }
-    assert cs.get_result_from_year(results, int("2009"), "sub_a") == {
+    assert cs.parse_to_year_a(results, int("2009"), "sub_a") == {
         "2009": results["2009"]
     }
-    assert cs.get_result_from_year(results, int("2015"), "sub_a") == {
+    assert cs.parse_to_year_a(results, int("2015"), "sub_a") == {
         "2015": results["2015"]
     }
