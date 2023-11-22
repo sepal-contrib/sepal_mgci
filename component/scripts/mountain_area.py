@@ -1,3 +1,4 @@
+from typing import List, Tuple
 import pandas as pd
 
 import component.parameter.module_parameter as param
@@ -43,11 +44,11 @@ def get_mountain_area(parsed_df):
     return pd.concat([belt_area_df, total_green])
 
 
-def get_report(parsed_df: pd.DataFrame, year: int, model) -> pd.DataFrame:
+def get_report(parsed_df: pd.DataFrame, year: int, model) -> Tuple[pd.DataFrame, int]:
     """Create a report for Table1_MountainArea.
 
     Args:
-        parsed_df (pd.DataFrame): it comes from cs.cs.get_result_from_year() since it gets the year from model.results and parses the result.
+        parsed_df (pd.DataFrame): it comes from cs.cs.parse_to_year_a() since it gets the year from model.results and parses the result.
     """
 
     report_df = get_mountain_area(parsed_df)

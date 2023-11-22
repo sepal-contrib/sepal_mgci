@@ -112,7 +112,7 @@ class MgciModel(Model):
             results_file (str): file containing a task .csv file with name and task_id
 
         """
-
+        self.results: Dict = None
         self.biobelt_imaga = None
         self.vegetation_image = None
         self.aoi_model = aoi_model

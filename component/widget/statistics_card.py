@@ -2,6 +2,7 @@ import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
 from ipywidgets import Output
 from matplotlib import pyplot as plt
+from component.model.model import MgciModel
 
 import component.parameter.module_parameter as param
 import component.scripts as cs
@@ -10,7 +11,7 @@ from component.scripts.sub_a import get_mgci
 
 
 class StatisticCard(sw.Card):
-    def __init__(self, df, belt_class, model, *args, **kwargs):
+    def __init__(self, df, belt_class, model: MgciModel, *args, **kwargs):
         """
         Creates a full layout view with a circular MGC index followed by
         horizontal bars of land cover area per kapos classes.
@@ -77,7 +78,6 @@ class StatisticCard(sw.Card):
         )
 
     def get_chart(self, belt_class):
-
         values = (
             self.df.groupby(["lc_class"], as_index=False).sum()
             if belt_class == "Total"
