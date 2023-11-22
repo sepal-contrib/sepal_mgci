@@ -73,6 +73,14 @@ class Calculation(sw.List):
         )
         self.ready = True
 
+        self.set_defaults()
+
+    def set_defaults(self):
+        """Set default values for custom lists"""
+
+        self.w_content_b.set_default()
+        self.w_content_a.set_default()
+
     def reset_event(self, change, indicator):
         """search within the content and trigger reset method"""
 
@@ -196,14 +204,17 @@ class Calculation(sw.List):
         data = change["new"]
 
         if indicator == "sub_b":
-            self.model.reporting_years_sub_b = [
-                next(iter(list(y.keys()))) for y in list(data.values())
-            ]
+            if not all([val.get("asset") for val in data.values()]) & all(
+                [val.get("year") for val in data.values()]
+            ):
+                return
+
+            self.model.reporting_years_sub_b = cs.get_reporting_years(data, "sub_b")
             return
 
         base_years = [str(val.get("year", "...")) for val in data.values()]
 
-        reporting_years = cs.get_sub_a_break_points(data)
+        reporting_years = cs.get_reporting_years(data, "sub_a")
 
         if base_years and not reporting_years:
             str_base_y = ", ".join(base_years)
@@ -452,12 +463,16 @@ class CustomList(sw.List):
         w_basep = v.Select(
             class_="mr-2 max-width-200",
             v_model=False,
-            attributes={"id": "selects"},
+            attributes={"id": "selects", "unique_id": f"report_asset_{id_}"},
             label=cm.calculation.year,
             items=self.items,
         )
 
-        w_base_yref = SelectYear(label=cm.calculation.match_year)
+        w_base_yref = SelectYear(
+            label=cm.calculation.match_year,
+            attributes={"unique_id": f"report_ref_{id_}"},
+        )
+
         sub_a_content = sw.Flex(
             class_="d-flex flex-row", children=[w_basep, w_base_yref] + actions
         )
@@ -490,6 +505,16 @@ class CustomListA(CustomList):
         super().__init__("sub_a", items=items)
         self.children = [self.reporty_title] + self.get_element()
 
+    def set_default(self):
+        # Default values for sub_a
+        self.get_children(attr="unique_id", value="report_asset_1")[
+            0
+        ].v_model = param.DEFAULT_ASSETS["sub_a"][1]["asset_id"]
+
+        self.get_children(attr="unique_id", value="report_ref_1")[
+            0
+        ].v_model = param.DEFAULT_ASSETS["sub_a"][1]["year"]
+
 
 class CustomListB(CustomList):
     def __init__(self, items):
@@ -511,6 +536,9 @@ class CustomListB(CustomList):
         self.get_children(id_="custom_list_sub_b")[0].validate_inputs()
 
         self.w_baseline.observe(self.update_baseline_model, "v_model")
+
+        # Add at leas one report year
+        self.add_element()
 
     def remove_element(self, *args, id_):
         """Inherit from CustomList and remove title if there's only one element left"""
@@ -547,6 +575,25 @@ class CustomListB(CustomList):
 
         self.v_model = tmp_vmodel
 
+    def set_default(self):
+        """Set default values"""
+
+        baseline = param.DEFAULT_ASSETS["sub_b"]["baseline"]
+        report = param.DEFAULT_ASSETS["sub_b"]["report"]
+
+        self.w_baseline.w_basep.v_model = baseline["start_year"]["asset_id"]
+        self.w_baseline.w_base_yref.v_model = baseline["start_year"]["year"]
+
+        self.w_baseline.w_reportp.v_model = baseline["end_year"]["asset_id"]
+        self.w_baseline.w_report_yref.v_model = baseline["end_year"]["year"]
+
+        self.get_children(attr="unique_id", value="report_asset_2")[0].v_model = report[
+            "asset_id"
+        ]
+        self.get_children(attr="unique_id", value="report_ref_2")[0].v_model = report[
+            "year"
+        ]
+
 
 class BaselineItem(sw.ListItemContent):
     """Widget to allow the selection of the baseline period for the subindicator B.
@@ -565,7 +612,7 @@ class BaselineItem(sw.ListItemContent):
 
         self.attributes = {"id": "custom_list_sub_b"}
 
-        w_basep = v.Select(
+        self.w_basep = v.Select(
             class_="mr-2 max-width-200",
             v_model=False,
             attributes={
@@ -578,7 +625,7 @@ class BaselineItem(sw.ListItemContent):
             items=sorted(self.items, reverse=False),
         )
 
-        w_base_yref = SelectYear(
+        self.w_base_yref = SelectYear(
             attributes={
                 "unique_id": "ref_select_base",
                 "id": "ref_select",
@@ -590,10 +637,10 @@ class BaselineItem(sw.ListItemContent):
         )
 
         w_basep_container = sw.Flex(
-            class_="d-flex flex-row", children=[w_basep, w_base_yref]
+            class_="d-flex flex-row", children=[self.w_basep, self.w_base_yref]
         )
 
-        w_reportp = v.Select(
+        self.w_reportp = v.Select(
             class_="mr-3 ",
             v_model=False,
             attributes={
@@ -606,7 +653,7 @@ class BaselineItem(sw.ListItemContent):
             items=sorted(self.items, reverse=True),
         )
 
-        w_report_yref = SelectYear(
+        self.w_report_yref = SelectYear(
             attributes={
                 "unique_id": "ref_select_report",
                 "id": "ref_select",
@@ -618,7 +665,7 @@ class BaselineItem(sw.ListItemContent):
         )
 
         w_reportp_container = sw.Flex(
-            class_="d-flex flex-row", children=[w_reportp, w_report_yref]
+            class_="d-flex flex-row", children=[self.w_reportp, self.w_report_yref]
         )
 
         span_base = v.Html(
@@ -657,11 +704,11 @@ class BaselineItem(sw.ListItemContent):
             for chld in self.get_children(id_="ref_select")
         ]
 
-        w_basep.observe(self.set_v_model, "v_model")
-        w_base_yref.observe(self.set_v_model, "v_model")
+        self.w_basep.observe(self.set_v_model, "v_model")
+        self.w_base_yref.observe(self.set_v_model, "v_model")
 
-        w_reportp.observe(self.set_v_model, "v_model")
-        w_report_yref.observe(self.set_v_model, "v_model")
+        self.w_reportp.observe(self.set_v_model, "v_model")
+        self.w_report_yref.observe(self.set_v_model, "v_model")
 
     def validate_inputs(self):
         """Validate the inputs"""
@@ -723,4 +770,4 @@ class SelectYear(v.Select):
         self.style_ = "min-width: 125px; max-width: 125px"
         self.label = label
         self.items = sorted(param.YEARS, reverse=reverse)
-        self.attributes = attributes or {"id": "ref_select"}
+        self.attributes = attributes
