@@ -38,7 +38,7 @@ def validate_file(file_, text_field_msg, type_):
     # Define column requirements for each type
     column_requirements = {
         "impact": {
-            "required_cols": ["from_code", "to_code", "impact_code"],
+            "required_cols": ["from_code", "to_code", "impact_code", "transition"],
             "int_cols": ["from_code", "to_code", "impact_code"],
             "allowed_values": {"impact_code": [2, 1, 3]},
         },

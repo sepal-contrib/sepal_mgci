@@ -198,5 +198,8 @@
                 "belt_4":"Where elevation is between 1,500 and 2,500 meters and the slope is greather than 2%"
             }
         }
+    },
+    "error" : {
+        "no_aoi" : "Please select an area of interest first."
     }
 }

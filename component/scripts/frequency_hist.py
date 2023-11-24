@@ -1,7 +1,8 @@
 import concurrent.futures
-
 import ee
 from natsort import natsorted
+
+from component.message import cm
 
 ee.Initialize()
 
@@ -20,13 +21,16 @@ def get_image_collection_ids(image_collection):
     return ee.ImageCollection(image_collection).aggregate_array("system:id").getInfo()
 
 
-def get_unique_classes(model, image_collection):
+def get_unique_classes(aoi: ee.FeatureCollection, image_collection: ee.ImageCollection):
     """perfroms multiple (3) reductions over the image collection to luckly get all the
     classes. When no. images in image_collection <3, we extract all the classes in each
     image. If > 3 we expect that first, middle and last image contains all the classes
     in the image collection."""
 
-    def get_classes(image):
+    if not aoi:
+        raise ValueError(cm.error.no_aoi)
+
+    def get_classes(image, aoi):
         """perform individual image frequency histogram reduction"""
 
         # reduce the image
@@ -34,7 +38,6 @@ def get_unique_classes(model, image_collection):
         band = image.bandNames().get(0)
         image = image.select([band])
 
-        aoi = model.aoi_model.feature_collection or image
         geometry = aoi.geometry()
 
         reduction = image.reduceRegion(
@@ -52,7 +55,8 @@ def get_unique_classes(model, image_collection):
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         futures = {
-            executor.submit(get_classes, image_id): image_id for image_id in subset_ids
+            executor.submit(get_classes, image_id, aoi): image_id
+            for image_id in subset_ids
         }
 
         result = {}

@@ -1,14 +1,15 @@
+from typing import Tuple
 import ee
 from pathlib import Path
 import concurrent.futures
 import component.parameter.directory as DIR
 
 
-from typing import Tuple
-import component.scripts as cs
 import sepal_ui.scripts.utils as su
+import component.scripts as cs
 from component.scripts.gee import reduce_regions
 import component.widget as cw
+from component.message import cm
 
 
 class Logger:
@@ -53,7 +54,7 @@ def perform_calculation(
     logger: cw.Alert = None,
 ):
     if not aoi:
-        raise Exception("Please select an area of interest")
+        raise Exception(cm.error.no_aoi)
 
     if not logger:
         logger = Logger()

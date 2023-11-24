@@ -258,7 +258,9 @@ class ReclassifyView(sw.Card):
         self.model.dst_class = self.model.get_classes()
 
         # get the src_classes and selected image collection items (aka images)
-        self.model.src_class = scripts.get_unique_classes(self.model, image_collection)
+        self.model.src_class = scripts.get_unique_classes(
+            self.model.aoi_model.feature_collection, image_collection
+        )
 
         self.reclassify_table.set_table(self.model.dst_class, self.model.src_class)
 

@@ -270,7 +270,7 @@ class TransitionMatrix(sw.Layout):
             self.edited_df.from_code * 100 + self.edited_df.to_code
         )
 
-        self.edited_df[["from_code", "to_code", "impact_code"]].to_csv(
+        self.edited_df[["from_code", "to_code", "impact_code", "transition"]].to_csv(
             self.custom_transition_file_path, index=False
         )
 
