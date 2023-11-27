@@ -105,6 +105,8 @@ class DashViewA(DashView):
 
         self.btn.on_event("click", self.render_dashboard)
 
+        self.set_years({"new": self.model.reporting_years_sub_a})
+
     def set_years(self, change):
         """Set the years in the year_select"""
 
@@ -173,6 +175,8 @@ class DashViewB(DashView):
         self.model.observe(self.set_years, "reporting_years_sub_b")
         self.btn.on_event("click", self.render_dashboard)
         self.year_select.observe(self.set_belt_items, "v_model")
+
+        self.set_years({"new": self.model.reporting_years_sub_b})
 
     def set_belt_items(self, change):
         """Set the belt items in the belt_select widget based on the year selected
