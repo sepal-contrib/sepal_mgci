@@ -51,7 +51,7 @@
         },
         "sub_a_title" : "Sub-indicator 15.4.2a: Mountain Green Cover Index (MGCI)",
         "sub_b_title" : "Sub-indicator 15.4.2b: Proportion of degraded mountain land",
-        "subtitle" : "Settings", 
+        "subtitle" : "Selection of land cover dataset", 
         "questionnaire" : {
                 "q1":"Would you like to use a custom land use/land cover map?",
                 "q2":"Would you like to change the default land cover transition matrix?",
@@ -156,7 +156,7 @@
         "description" : "Calculate the Mountain Green Cover Index dashboard, the result will include an overall index for all the Kapos mountain classes and also a more detailed index for each of these classes.",
         "report" : {
             "title":"Download report",
-            "description": "The module will use the data that has been calculated to produce the following tables.<ul><li>Table1_MountainArea</li><li>Table2_1542a_LandCoverType</li><li>Table3_1542a_MGCI</li><li>Table4_1542b_pdma_area</li><li>Table5_1542b_pdma_pt</li></ul>"
+            "description": "The module will use the data that has been calculated to produce the following table.<ul><li></li></ul>"
         },
         "tasks" : {
             "title":"Calculation on background",

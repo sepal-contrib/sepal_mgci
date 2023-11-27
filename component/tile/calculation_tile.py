@@ -5,10 +5,12 @@ from time import sleep
 import ipyvuetify as v
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
+import sepal_ui.scripts.decorator as sd
 from traitlets import directional_link
 import component.parameter.directory as DIR
 from component.scripts.deferred_calculation import perform_calculation
 import component.scripts as cs
+from component.scripts.validation import validate_calc_params
 import component.widget as cw
 from component.message import cm
 from component.model.model import MgciModel
@@ -84,6 +86,10 @@ class CalculationView(sw.Card):
 
         # buttons
         self.btn = sw.Btn(cm.dashboard.label.calculate)
+        self.btn_export = sw.Btn(
+            cm.dashboard.label.download, class_="ml-2", disabled=True
+        )
+
         self.alert = cw.Alert()
 
         self.children = [
@@ -92,12 +98,42 @@ class CalculationView(sw.Card):
             self.calculation,
             t_rsa,
             self.btn,
+            self.btn_export,
             self.alert,
         ]
 
+        self.export_results = sd.loading_button(
+            alert=self.alert, button=self.btn_export
+        )(self.export_results)
+
         directional_link((self.w_use_rsa, "v_model"), (self.model, "rsa"))
 
+        self.btn_export.on_event("click", self.export_results)
         self.btn.on_event("click", self.run_statistics)
+        self.model.observe(self.activate_download, "done")
+
+    def activate_download(self, change):
+        """Verify if the process is done and activate button"""
+        print(change["new"])
+        if change["new"]:
+            self.btn_export.disabled = False
+            return
+
+        self.btn_export.disabled = True
+
+    @su.loading_button(debug=True)
+    def export_results(self, *args):
+        """Write the results on a comma separated values file, or an excel file"""
+
+        self.alert.add_msg("Exporting tables...")
+
+        report_folder = cs.get_report_folder(self.model)
+
+        cs.export_reports(self.model, report_folder)
+
+        self.alert.add_msg(
+            f"Reporting tables successfull exported {report_folder}", type_="success"
+        )
 
     @su.loading_button(debug=True)
     def run_statistics(self, *args):
@@ -112,35 +148,16 @@ class CalculationView(sw.Card):
             else cm.dashboard.label.plan
         )
 
-        if self.model.calc_a:
-            if not any([self.model.calc_a, self.model.calc_b]):
-                raise Exception(cm.calculation.error.no_subind)
+        # Catch errors from the ui validation
+        sub_b_val = self.get_children(id_="custom_list_sub_b")[0]
 
-            else:
-                if all([not self.model.sub_a_year, not self.model.sub_b_year]):
-                    raise Exception(cm.calculation.error.no_years)
-
-            # Check that all subindicator A have
-
-            if not self.model.sub_a_year:
-                raise Exception("Subindicator A has no years selected")
-
-            else:
-                for idx, year in self.model.sub_a_year.items():
-                    if not year.get("asset"):
-                        raise Exception(f"Item {idx} has no asset selected")
-                    if not year.get("year"):
-                        raise Exception(f"Item {idx} has no year selected")
-
-        if self.model.calc_b:
-            if not self.model.sub_b_year:
-                raise Exception("Subindicator B has no years selected")
-
-            if self.get_children(id_="custom_list_sub_b")[0].errors:
-                raise Exception("Subindicator B has errors")
-
-        if not any([self.model.calc_a, self.model.calc_b]):
-            raise Exception("Please select at least one subindicator")
+        validate_calc_params(
+            self.model.calc_a,
+            self.model.calc_b,
+            self.model.sub_a_year,
+            self.model.sub_b_year,
+            sub_b_val,
+        )
 
         which = (
             "both"

@@ -54,7 +54,7 @@ class VegetationTile(sw.Layout):
         self.children = [
             alert_dialog,
             self.w_vegetation_dialog,
-            v.Card(children=[title, description], class_="ma-2"),
+            # v.Card(children=[title, description], class_="ma-2"),
             v.Card(
                 class_="ma-2",
                 children=[

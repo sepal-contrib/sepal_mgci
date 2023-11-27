@@ -30,11 +30,10 @@ class DashboardTile(sw.Card):
 
         dash_view_a = DashViewA(self.model)
         dash_view_b = DashViewB(self.model)
-        export_view = ExportView(self.model)
 
         dash_tabs = cw.Tabs(
-            ["Sub indicator A", "Sub indicator B", "Export results"],
-            [dash_view_a, dash_view_b, export_view],
+            ["Sub indicator A", "Sub indicator B"],
+            [dash_view_a, dash_view_b],
         )
 
         self.children = [
