@@ -163,7 +163,14 @@ def get_report(
 
     report_df["BIOCLIMATIC_BELT"] = report_df.apply(get_belt_desc, axis=1)
 
-    # fill NaN values with "N/A"
+    # round obs_value
+    report_df["OBS_VALUE"] = report_df["OBS_VALUE"].round(4)
+    report_df["OBS_VALUE_NET"] = report_df["OBS_VALUE"].round(4)
+
+    # Convert DataFrame to object type
+    report_df = report_df.astype(object)
+
+    # Now fill NaN values with "NA"
     report_df.fillna("NA", inplace=True)
 
     # fill zeros with "N/A"
@@ -172,7 +179,7 @@ def get_report(
     report_df["NATURE"] = report_df.apply(get_nature, axis=1)
     report_df["OBS_STATUS"] = report_df.apply(get_obs_status, axis=1)
 
-    return report_df[output_cols], f"{years[0]}_{years[1]}"
+    return report_df[output_cols]
 
 
 def get_reports(

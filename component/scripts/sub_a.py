@@ -223,6 +223,13 @@ def get_report(
     report_df["COMMENT_OBS"] = "FAO estimate"
     report_df["BIOCLIMATIC_BELT"] = report_df.apply(get_belt_desc, axis=1)
 
+    # round obs_value
+    report_df["OBS_VALUE"] = report_df["OBS_VALUE"].round(4)
+    report_df["OBS_VALUE_RSA"] = report_df["OBS_VALUE"].round(4)
+
+    # Convert DataFrame to object type
+    report_df = report_df.astype(object)
+
     # fill NaN values with "N/A"
     report_df.fillna("NA", inplace=True)
 
@@ -235,7 +242,7 @@ def get_report(
     if land_type:
         assert len(report_df) == 55, "Report should have 55 rows"
 
-    return report_df[output_cols].reset_index(drop=True), year
+    return report_df[output_cols].reset_index(drop=True)
 
 
 def get_reports(

@@ -1,7 +1,3 @@
-import sys
-
-sys.executable
-
 from typing import TYPE_CHECKING
 import random
 import re
@@ -13,6 +9,9 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 from sepal_ui.aoi.aoi_model import AoiModel
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment
+
 
 import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
@@ -582,7 +581,9 @@ def export_reports(model: "MgciModel", output_folder) -> None:
     # use model.reporting_years_sub_b and model.reporting_years_sub_a
 
     sub_a_years = list(model.reporting_years_sub_a.keys())
-    _, sub_b_years = get_sub_b_items(model.reporting_years_sub_b)
+
+    reporting_years_sub_b = get_reporting_years(model.sub_b_year, "sub_b")
+    _, sub_b_years = get_sub_b_items(reporting_years_sub_b)
 
     for year in sub_a_years:
         print(f"Reporting {year} for sub_a")
@@ -597,42 +598,51 @@ def export_reports(model: "MgciModel", output_folder) -> None:
         parsed_df = cs.parse_to_year(model.results, year)
         sub_b_reports.append(sub_b.get_reports(parsed_df, year, model))
 
-    for reports in sub_a_reports:
-        [
-            report[0].to_excel(
-                str(Path(output_folder, name.format(report[1]))),
-                sheet_name=name.format(report[1]),
-                index=False,
-            )
-            for report, name in zip(
-                reports,
-                ["Table3_ER_MTN_GRNCVI{}.xlsx", "Table2_ER_MTN_GRNCOV{}.xlsx"],
-            )
-        ]
+    # Concat all reports
 
-    for reports in sub_b_reports:
-        [
-            report[0].to_excel(
-                str(Path(output_folder, name.format(report[1][0]))),
-                sheet_name=name,
-                index=False,
-            )
-            for report, name in zip(
-                reports,
-                ["Table5_ER_MTN_DGRDP{}.xlsx", "Table4_ER_MTN_DGRDA{}.xlsx"],
-            )
-        ]
+    mtn_reports_df = pd.concat(mtn_reports)
 
-    for reports in mtn_reports:
-        report, year = reports
-        name = "Table1_ER_MTN_TOTL_{}.xlsx"
-        report.to_excel(
-            str(Path(output_folder, name.format(year))),
-            sheet_name=name.format(year),
-            index=False,
+    # sub a reports
+    er_mtn_grnvi_df = pd.concat([report[0] for report in sub_a_reports])
+    er_mtn_grncov_df = pd.concat([report[1] for report in sub_a_reports])
+
+    # sub b reports
+    er_mtn_dgrp_df = pd.concat([report[0] for report in sub_b_reports])
+    er_mtn_dgda_df = pd.concat([report[1] for report in sub_b_reports])
+
+    output_name = str(
+        Path(output_folder, output_folder.name + f"{model.session_id}.xlsx")
+    )
+
+    with pd.ExcelWriter(output_name) as writer:
+        mtn_reports_df.to_excel(writer, sheet_name="Table1_ER_MTN_TOTL", index=False)
+        er_mtn_grnvi_df.to_excel(writer, sheet_name="Table3_ER_MTN_GRNCVI", index=False)
+        er_mtn_grncov_df.to_excel(
+            writer, sheet_name="Table2_ER_MTN_GRNCOV", index=False
         )
+        er_mtn_dgrp_df.to_excel(writer, sheet_name="Table5_ER_MTN_DGRDP", index=False)
+        er_mtn_dgda_df.to_excel(writer, sheet_name="Table4_ER_MTN_DGRDA", index=False)
 
-    # Read all the reports and merge them into a single one
+        for sheetname in writer.sheets:
+            worksheet = writer.sheets[sheetname]
+            for col in worksheet.columns:
+                max_length = 0
+                column = col[0]
+                for cell in col:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(cell.value)
+                    except:
+                        pass
+                adjusted_width = max(max_length, len(str(column.value))) + 4
+                worksheet.column_dimensions[
+                    get_column_letter(column.column)
+                ].width = adjusted_width
+
+                # Align "obs_value" column to the right
+                if "OBS" in column.value:
+                    for cell in col:
+                        cell.alignment = Alignment(horizontal="right")
 
     return True
 

@@ -70,6 +70,13 @@ def get_report(parsed_df: pd.DataFrame, year: int, model) -> Tuple[pd.DataFrame,
     report_df["COMMENT_OBS"] = "FAO estimate"
     report_df["BIOCLIMATIC_BELT"] = report_df.apply(get_belt_desc, axis=1)
 
+    # round obs_value
+    report_df["OBS_VALUE"] = report_df["OBS_VALUE"].round(4)
+    report_df["OBS_VALUE_RSA"] = report_df["OBS_VALUE"].round(4)
+
+    # Convert DataFrame to object type
+    report_df = report_df.astype(object)
+
     # fill NaN values with "N/A"
     report_df.fillna("NA", inplace=True)
 
@@ -79,4 +86,4 @@ def get_report(parsed_df: pd.DataFrame, year: int, model) -> Tuple[pd.DataFrame,
     report_df["NATURE"] = report_df.apply(get_nature, axis=1)
     report_df["OBS_STATUS"] = report_df.apply(get_obs_status, axis=1)
 
-    return report_df[mountain_area_cols].reset_index(drop=True), year
+    return report_df[mountain_area_cols].reset_index(drop=True)
