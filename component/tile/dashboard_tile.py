@@ -43,8 +43,11 @@ class DashboardTile(sw.Card):
 
 
 class DashView(sw.Layout):
-    def __init__(self, indicator, *args, **kwargs):
+    def __init__(self, indicator, model, *args, **kwargs):
         self.indicator = indicator
+        self.class_ = "d-block pa-2"
+
+        self.model = model
 
         super().__init__(*args, **kwargs)
 
@@ -59,14 +62,27 @@ class DashView(sw.Layout):
                 if chld.attributes.get("id") != f"render_{self.indicator}"
             ]
 
+    def render_dashboard(self, *args):
+        """create the corresponding parsed dataframe based on the selected year."""
+
+        self.show()
+        self.clear()
+        self.alert.add_msg(cm.dashboard.alert.rendering)
+
+        if not self.year_select.v_model:
+            raise Exception("Select a year.")
+
+        if not self.model.results:
+            raise Exception(
+                "No results to display, go to the calculation step and calculate the MGCI indicator."
+            )
+
 
 class DashViewA(DashView):
     def __init__(self, model, *args, **kwargs):
-        self.class_ = "d-block"
         self.attributes = {"id": f"dashboard_view_sub_a"}
-        self.model = model
 
-        super().__init__(indicator="sub_a", *args, **kwargs)
+        super().__init__(indicator="sub_a", model=model, *args, **kwargs)
 
         self.alert = sw.Alert()
 
@@ -97,17 +113,12 @@ class DashViewA(DashView):
         else:
             self.year_select.items = []
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def render_dashboard(self, *args):
         """create the corresponding parsed dataframe based on the selected year.
         This dataframe will be used to calculate the MCGI"""
 
-        if not self.year_select.v_model:
-            raise Exception("Select a year.")
-
-        self.show()
-        self.clear()
-        self.alert.add_msg(cm.dashboard.alert.rendering)
+        super().render_dashboard()
 
         df = cs.parse_to_year_a(
             self.model.results,
@@ -136,11 +147,9 @@ class DashViewA(DashView):
 
 class DashViewB(DashView):
     def __init__(self, model, *args, **kwargs):
-        self.class_ = "d-block"
         self.attributes = {"id": "dashboard_view_sub_b"}
-        self.model = model
 
-        super().__init__(indicator="sub_b", *args, **kwargs)
+        super().__init__(indicator="sub_b", model=model, *args, **kwargs)
 
         self.alert = sw.Alert()
 
@@ -203,17 +212,12 @@ class DashViewB(DashView):
         else:
             self.year_select.items = []
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def render_dashboard(self, *args):
         """create the corresponding parsed dataframe based on the selected year.
         This dataframe will be used to calculate the MCGI"""
 
-        self.show()
-        self.clear()
-        self.alert.add_msg(cm.dashboard.alert.rendering)
-
-        if not self.year_select.v_model:
-            raise Exception("Select a year.")
+        super().render_dashboard()
 
         self.df_sankey = (
             self.df[self.df.belt_class == self.belt_select.v_model]

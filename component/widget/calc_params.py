@@ -189,7 +189,7 @@ class Calculation(sw.List):
         Args:
             change["new"]: It's the v_model from CustomList component, it will contain the user selection for each of the subindicators.
         """
-
+        print("getting chips")
         # Get the space where the elements will be inserted
         span = self.get_children(id_=f"span_{indicator}")[0]
         alert = self.get_children(id_=f"alert_{indicator}")[0]
@@ -204,8 +204,15 @@ class Calculation(sw.List):
         data = change["new"]
 
         if indicator == "sub_b":
-            if not all([val.get("asset") for val in data.values()]) & all(
-                [val.get("year") for val in data.values()]
+            baseline = data.get("baseline", {}).values()
+            report = {k: v for k, v in data.items() if k != "baseline"}.values()
+            if not all(
+                [
+                    all(val.get("asset") for val in baseline) if baseline else False,
+                    all(val.get("year") for val in baseline) if baseline else False,
+                    all(val.get("asset") for val in report) if report else False,
+                    all(val.get("year") for val in report) if report else False,
+                ]
             ):
                 return
 
@@ -229,7 +236,6 @@ class Calculation(sw.List):
             alert.hide()
 
         multichips = []
-
         for reporting_y in reporting_years.keys():
             multichips.append(
                 [
