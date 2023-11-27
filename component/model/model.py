@@ -22,7 +22,7 @@ class MgciModel(Model):
     # output parameters
     year = Unicode("", allow_none=True).tag(sync=True)
     source = Unicode(
-        "Food and Agriculture Organisation of United Nations (FAO)", allow_none=True
+        "Food and Agriculture Organization of United Nations (FAO)", allow_none=True
     ).tag(sync=True)
 
     # Custom

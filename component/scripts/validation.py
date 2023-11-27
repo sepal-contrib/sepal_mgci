@@ -1,10 +1,10 @@
 import pandas as pd
 from component.parameter.reclassify_parameters import NO_VALUE, MATRIX_NAMES
+from component.message import cm
 
 
 def read_file(file_, text_field_msg):
     """Read csv file and return a dataframe"""
-
     try:
         # Read csv file
         df = pd.read_csv(file_)
@@ -153,14 +153,12 @@ def validate_reclassify_table(file_, text_field_msg):
 
     df = read_file(file_, text_field_msg).fillna(NO_VALUE)
 
-    try:
-        df.astype("int64")
-    except Exception:
-        error_msg = (
-            "This file may contain non supported charaters for reclassification."
-        )
-        text_field_msg.error_messages = error_msg
-        raise Exception(error_msg)
+    for col in df.columns:
+        try:
+            df[col] = df[col].astype("int64")
+        except ValueError:
+            continue
+
     if len(df.columns) != 2:
         # Try to identify the oclumns and subset them
         if all([colname in list(df.columns) for colname in MATRIX_NAMES]):
@@ -170,3 +168,35 @@ def validate_reclassify_table(file_, text_field_msg):
             text_field_msg.error_messages = error_msg
             raise Exception(error_msg)
     return file_
+
+
+def validate_calc_params(calc_a: bool, calc_b: bool, sub_a_year, sub_b_year, sub_b_val):
+    if calc_a:
+        if not any([calc_a, calc_b]):
+            raise Exception(cm.calculation.error.no_subind)
+
+        else:
+            if all([not sub_a_year, not sub_b_year]):
+                raise Exception(cm.calculation.error.no_years)
+
+        # Check that all subindicator A have
+
+        if not sub_a_year:
+            raise Exception("Subindicator A has no years selected")
+
+        else:
+            for idx, year in sub_a_year.items():
+                if not year.get("asset"):
+                    raise Exception(f"Item {idx} has no asset selected")
+                if not year.get("year"):
+                    raise Exception(f"Item {idx} has no year selected")
+
+    if calc_b:
+        if not sub_b_year:
+            raise Exception("Subindicator B has no years selected")
+
+        if sub_b_val.errors:
+            raise Exception("Subindicator B has errors")
+
+    if not any([calc_a, calc_b]):
+        raise Exception("Please select at least one subindicator")
