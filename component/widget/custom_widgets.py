@@ -1,4 +1,5 @@
 import ipyvuetify as v
+from sepal_ui import color
 import sepal_ui.sepalwidgets as sw
 from traitlets import CBool, Int, link
 from ipyvuetify import Btn
@@ -32,7 +33,7 @@ class Tabs(v.Card):
 
     def __init__(self, titles, content, **kwargs):
         self.background_color = "primary"
-        self.dark = True
+        self.dark = True if color._dark_theme else False
 
         self.tabs = [
             v.Tabs(
