@@ -134,6 +134,8 @@ class Calculation(sw.List):
                 v.ListItemContent(
                     children=[
                         v.Card(
+                            min_height=225,
+                            max_height=225,
                             children=[
                                 v.CardTitle(
                                     children=[
@@ -161,7 +163,7 @@ class Calculation(sw.List):
                                         alert,
                                     ]
                                 ),
-                            ]
+                            ],
                         )
                     ]
                 ),
@@ -214,6 +216,26 @@ class Calculation(sw.List):
                 ]
             ):
                 return
+
+            reporting_years_sub_b = cs.get_reporting_years(data, "sub_b")
+            baseline_chip = [
+                v.Chip(
+                    color="success",
+                    small=True,
+                    children=["-".join([str(y) for y in reporting_years_sub_b[0]])],
+                )
+            ]
+            report_chip = [
+                v.Chip(
+                    color="success",
+                    small=True,
+                    children=[str(yr)],
+                )
+                for yr in reporting_years_sub_b[1:]
+            ]
+            span.children = (
+                ["Baseline: "] + baseline_chip + ["\nReport: "] + report_chip
+            )
 
             self.model.reporting_years_sub_b = cs.get_reporting_years(data, "sub_b")
             return
@@ -429,19 +451,6 @@ class CustomList(sw.List):
 
         [setattr(select, "items", items) for select in select_wgts]
 
-    def reset(self):
-        """remove all selected values form selection widgets"""
-
-        select_wgts = self.get_children(id_="selects")
-        ref_wgts = self.get_children(id_="ref_select")
-
-        [self.remove_element(id_=id) for id in self.ids if id != 1]
-
-        [setattr(select, "v_model", None) for select in (select_wgts + ref_wgts)]
-
-        # And also reset the v_model
-        self.v_model = {}
-
     def get_actions(self):
         """get the actions to be displayed in the list elements"""
 
@@ -475,7 +484,7 @@ class CustomList(sw.List):
 
         w_base_yref = SelectYear(
             label=cm.calculation.match_year,
-            attributes={"unique_id": f"report_ref_{id_}"},
+            attributes={"unique_id": f"report_ref_{id_}", "id_": "ref_select"},
         )
 
         sub_a_content = sw.Flex(
@@ -520,6 +529,19 @@ class CustomListA(CustomList):
             0
         ].v_model = param.DEFAULT_ASSETS["sub_a"][1]["year"]
 
+    def reset(self):
+        """remove all selected values form selection widgets"""
+
+        select_wgts = self.get_children(id_="selects")
+        ref_wgts = self.get_children(attr="id_", value="ref_select")
+
+        [self.remove_element(id_=id) for id in self.ids if id != 1]
+
+        [setattr(select, "v_model", None) for select in (select_wgts + ref_wgts)]
+
+        # And also reset the v_model
+        self.v_model = {}
+
 
 class CustomListB(CustomList):
     def __init__(self, items):
@@ -548,10 +570,8 @@ class CustomListB(CustomList):
     def remove_element(self, *args, id_):
         """Inherit from CustomList and remove title if there's only one element left"""
 
-        super().remove_element(*args, id_=id_)
-
-        if self.counter == 1:
-            self.children = [self.w_baseline]
+        if self.counter > 2:
+            super().remove_element(*args, id_=id_)
 
     def get_element(self):
         """Inherit from CustomList and overwrite get_element method to add
@@ -599,6 +619,19 @@ class CustomListB(CustomList):
             "year"
         ]
 
+    def reset(self):
+        """remove all selected values form selection widgets"""
+
+        select_wgts = self.get_children(id_="selects")
+        ref_wgts = self.get_children(attr="id_", value="ref_select")
+
+        [self.remove_element(id_=id) for id in self.ids if id not in [1, 2]]
+
+        [setattr(select, "v_model", None) for select in (select_wgts + ref_wgts)]
+
+        # And also reset the v_model
+        self.v_model = {}
+
 
 class BaselineItem(sw.ListItemContent):
     """Widget to allow the selection of the baseline period for the subindicator B.
@@ -633,7 +666,7 @@ class BaselineItem(sw.ListItemContent):
         self.w_base_yref = SelectYear(
             attributes={
                 "unique_id": "ref_select_base",
-                "id": "ref_select",
+                "id_": "ref_select",
                 "type": "base",
                 "target": "year",
                 "clean": True,
@@ -661,7 +694,7 @@ class BaselineItem(sw.ListItemContent):
         self.w_report_yref = SelectYear(
             attributes={
                 "unique_id": "ref_select_report",
-                "id": "ref_select",
+                "id_": "ref_select",
                 "type": "report",
                 "target": "year",
                 "clean": True,
@@ -771,7 +804,7 @@ class SelectYear(v.Select):
     ):
         super().__init__(*args, **kwargs)
 
-        self.v_model = False
+        self.v_model = None
         self.style_ = "min-width: 125px; max-width: 125px"
         self.label = label
         self.items = sorted(param.YEARS, reverse=reverse)

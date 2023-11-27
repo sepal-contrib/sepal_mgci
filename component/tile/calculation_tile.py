@@ -94,7 +94,7 @@ class CalculationView(sw.Card):
 
         self.children = [
             title,
-            description,
+            # description,
             self.calculation,
             t_rsa,
             self.btn,

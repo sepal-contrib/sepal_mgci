@@ -131,7 +131,7 @@
         },
         "sub_b" : {
             "title" : "Sub indicator B",
-            "desc_active" : "Based on the data you've provided, the module can generate reports for the following years. Please note that if a year is missing, the module will employ linear interpolation to estimate the values for that year.",
+            "desc_active" : "Based on the data you've provided, the module can generate reports for the following years.",
             "desc_disabled" : "The subindicator B will not be calculated. To activate its processing, click the top right switch in this card and select the target layer(s).",
             "desc_no_data" : "You have activated the subindicator A, use the 'Add layer' button to select the target layer(s)."
 
@@ -153,7 +153,7 @@
     },
     "dashboard":{
         "title" : "SDG Indicator 15.4.2 Calculation",
-        "description" : "Calculate the Mountain Green Cover Index dashboard, the result will include an overall index for all the Kapos mountain classes and also a more detailed index for each of these classes.",
+        "description" : "To calculate the SDG Indicator 15.4.2 you will have to provide the inputs for each of the subindicators.",
         "report" : {
             "title":"Download report",
             "description": "The module will use the data that has been calculated to produce the following table.<ul><li></li></ul>"

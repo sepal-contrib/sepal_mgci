@@ -74,7 +74,7 @@ class DashView(sw.Layout):
 
         if not self.model.results:
             raise Exception(
-                "No results to display, go to the calculation step and calculate the MGCI indicator."
+                "No results to display, go to the calculation step and perform the calculation first."
             )
 
 
