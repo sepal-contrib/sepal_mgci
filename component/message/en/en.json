@@ -4,7 +4,7 @@
         "drawer_item" : {
             "aoi": "Area of Iterest",
             "vegetation" : "Land cover dataset",
-            "settings" : "Indicator settings",
+            "calculation" : "Indicator settings",
             "dashboard" : "MGCI results",
             "about" : "About",
             "disclaimer" : "Disclaimer"

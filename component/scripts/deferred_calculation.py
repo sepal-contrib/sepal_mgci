@@ -15,10 +15,10 @@ from component.message import cm
 class Logger:
     state = "info"
 
-    def set_msg(self, msg: str):
+    def set_msg(self, msg: str, id_: str = None):
         print(self.state, ": ", msg)
 
-    def set_state(self, state: str):
+    def set_state(self, state: str, id_: str = None):
         self.state = state
 
 

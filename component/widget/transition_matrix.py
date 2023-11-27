@@ -28,9 +28,6 @@ class TransitionMatrix(sw.Layout):
     transition_matrix = Unicode(str(param.TRANSITION_MATRIX_FILE)).tag(sync=True)
     "str: path to the transition matrix file"
 
-    green_non_green_file = Unicode(str())
-    "str: path to the green non green file"
-
     def __init__(self, model: MgciModel = None):
         self.model = model
         # Create a random suffix to avoid conflict between multiple instances
@@ -101,28 +98,8 @@ class TransitionMatrix(sw.Layout):
             ],
         ).hide()
 
-        self.input_green = sw.FileInput(
-            ".csv", folder=dir_.TRANSITION_DIR, root=dir_.RESULTS_DIR
-        )
-        self.input_green_layout = sw.Card(
-            attributes={"id": "custom_inputs"},
-            row=True,
-            children=[
-                sw.CardTitle(children=["Green non green file"]),
-                sw.CardText(
-                    children=[
-                        "Select a custom green non green file containing all your custom land cover classes and its corresponding green/non green classification. The file must contain the following columns: lc_class and green. Columns names have to be exactly the same.",
-                        self.input_green,
-                    ]
-                ),
-            ],
-        ).hide()
-
         self.input_impact.observe(
             lambda chg: self.read_inputs(change=chg, type_="impact"), "v_model"
-        )
-        self.input_green.observe(
-            lambda chg: self.read_inputs(change=chg, type_="green"), "v_model"
         )
 
         # create the simple table
@@ -132,7 +109,6 @@ class TransitionMatrix(sw.Layout):
             toolbar,
             self.progress,
             self.input_impact_layout,
-            # self.input_green_layout,
         ]
 
         self.set_rows()
@@ -143,11 +119,6 @@ class TransitionMatrix(sw.Layout):
         directional_link(
             (self, "transition_matrix"),
             (self.model, "transition_matrix"),
-        )
-
-        directional_link(
-            (self, "green_non_green_file"),
-            (self.model, "green_non_green_file"),
         )
 
     @observe("show_matrix")
@@ -182,9 +153,6 @@ class TransitionMatrix(sw.Layout):
         if type_ == "impact":
             self.transition_matrix = change["new"]
 
-        # elif type_ == "green":
-        #     self.green_non_green_file = change["new"]
-
     @switch("indeterminate", on_widgets=["progress"], targets=[False])
     def set_rows(self):
         """Create selectable matrix with default transition matrix file.
@@ -193,7 +161,6 @@ class TransitionMatrix(sw.Layout):
         """
 
         # Set all inputs to default values
-        # self.green_non_green_file = str(param.GREEN_NON_GREEN_FILE)
         self.transition_matrix = str(param.TRANSITION_MATRIX_FILE)
         self.default_df = pd.read_csv(param.TRANSITION_MATRIX_FILE)
         self.edited_df = self.default_df.copy()

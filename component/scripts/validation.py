@@ -63,10 +63,11 @@ def validate_file(file_, text_field_msg, type_):
 
     # Check that all values are integers
     for col in df.columns:
-        if not pd.api.types.is_integer_dtype(df[col]):
-            error_msg = f"The {col} column must contain only integer values."
-            text_field_msg.error_messages = error_msg
-            raise ValueError(error_msg)
+        if col in req_cols:
+            if not pd.api.types.is_integer_dtype(df[col]):
+                error_msg = f"The {col} column must contain only integer values."
+                text_field_msg.error_messages = error_msg
+                raise ValueError(error_msg)
 
     # Check that there are no values outside the allowed values in the column requirements
     for col, allowed_vals in allowed_values.items():
@@ -164,7 +165,11 @@ def validate_reclassify_table(file_, text_field_msg):
         if all([colname in list(df.columns) for colname in MATRIX_NAMES]):
             df = df[MATRIX_NAMES]
         else:
-            error_msg = "This file is not a properly formatted as classification matrix"
+            # Show the columns that are not in the MATRIX_NAMES list
+            missing_cols = [
+                colname for colname in list(df.columns) if colname not in MATRIX_NAMES
+            ]
+            error_msg = f"The file must contain the following columns: {', '.join(MATRIX_NAMES)}. The following columns are missing: {', '.join(missing_cols)}"
             text_field_msg.error_messages = error_msg
             raise Exception(error_msg)
     return file_

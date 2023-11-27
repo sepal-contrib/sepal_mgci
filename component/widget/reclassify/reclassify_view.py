@@ -114,11 +114,6 @@ class ReclassifyView(sw.Card):
             su.init_ee()
         # create an alert to display information to the user
         self.alert = alert or sw.Alert()
-
-        self.w_src_class_file = sw.FileInput(
-            [".csv"], label=cm.rec.rec.input.classif.label, folder=self.class_path
-        )
-
         self.btn_get_table = Btn(
             children=[cm.reclass.get_classes],
             color="primary",
@@ -196,7 +191,7 @@ class ReclassifyView(sw.Card):
         self.w_ic_select.observe(self.set_ids, "v_model")
 
     def load_matrix_content(self, *_):
-        if not self.import_dialog.w_file.v_model:
+        if not self.import_dialog.w_map_matrix_file.v_model:
             raise Exception(cm.reclass.dialog.import_.error.no_file)
 
         # exit if no table is loaded
@@ -307,11 +302,14 @@ class ImportMatrixDialog(BaseDialog):
     def __init__(self, model: ReclassifyModel, folder, error_alert: sw.Alert, **kwargs):
         self.model = model
 
-        self.w_file = sw.FileInput(
-            label="filename", folder=folder, attributes={"id": "1"}
+        self.w_map_matrix_file = sw.FileInput(
+            label="filename",
+            folder=folder,
+            attributes={"id": "1"},
+            root=dir_.RESULTS_DIR,
         )
 
-        content = [self.w_file]
+        content = [self.w_map_matrix_file]
 
         super().__init__(
             title=cm.reclass.dialog.import_.title,
@@ -321,7 +319,7 @@ class ImportMatrixDialog(BaseDialog):
 
         # Decorate load_matrix_content with loading button
         self.cancel_btn.on_event("click", lambda *_: self.close_dialog())
-        self.w_file.observe(self.on_validate_input, "v_model")
+        self.w_map_matrix_file.observe(self.on_validate_input, "v_model")
 
     def on_validate_input(self, change):
         """Load the content of the file in the matrix. The table need to be already set
@@ -340,12 +338,12 @@ class ImportMatrixDialog(BaseDialog):
     def open_dialog(self):
         """show the dialog and set the matrix values"""
 
-        self.w_file.unobserve(self.on_validate_input, "v_model")
+        self.w_map_matrix_file.unobserve(self.on_validate_input, "v_model")
 
         # Reset file name
-        self.w_file.v_model = ""
+        self.w_map_matrix_file.v_model = ""
 
-        self.w_file.observe(self.on_validate_input, "v_model")
+        self.w_map_matrix_file.observe(self.on_validate_input, "v_model")
 
         super().open_dialog()
 
@@ -477,7 +475,10 @@ class TargetClassesDialog(BaseDialog):
         self.dst_class_file = list(default_class.values())[0]
 
         self.w_dst_class_file = sw.FileInput(
-            [".csv"], label=cm.rec.rec.input.classif.label, folder=dir_.RESULTS_DIR
+            [".csv"],
+            label=cm.rec.rec.input.classif.label,
+            folder=dir_.RESULTS_DIR,
+            root=dir_.RESULTS_DIR,
         )
         self.w_dst_class_file.select_file(self.dst_class_file)
 

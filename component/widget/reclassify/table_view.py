@@ -9,6 +9,8 @@ import ipyvuetify as v
 import pandas as pd
 from matplotlib.colors import to_rgb
 from component.message import cm
+import component.parameter.directory as dir_
+
 from traitlets import Int
 
 from component.parameter import reclassify_parameters as param
@@ -595,6 +597,7 @@ class TableView(sw.Card):
             extentions=[".csv"],
             label=cm.rec.table.classif.file_select,
             folder=self.class_path,
+            root=dir_.RESULTS_DIR,
         )
         self.btn = sw.Btn(
             cm.rec.table.classif.btn,

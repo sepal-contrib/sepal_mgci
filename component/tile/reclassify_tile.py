@@ -59,7 +59,7 @@ class ReclassifyTile(sw.Layout):
         # set the tabs elements
         self.w_reclass = rec.ReclassifyView(
             self.model,
-            out_path=self.results_dir,
+            out_path=dir_.MATRIX_DIR,
             gee=gee,
             default_class=default_class,
             aoi_model=aoi_model,

@@ -114,7 +114,6 @@ class CalculationView(sw.Card):
 
     def activate_download(self, change):
         """Verify if the process is done and activate button"""
-        print(change["new"])
         if change["new"]:
             self.btn_export.disabled = False
             return
@@ -189,6 +188,17 @@ class CalculationView(sw.Card):
         self.model.results, results = {}, {}
         self.model.done = False
 
+        # As pre step, make sure model.matrix_sub_a and model.matrix_sub_b are
+        # dictionaries of int keys and int values
+
+        self.model.matrix_sub_a = {
+            int(k): int(v) for k, v in self.model.matrix_sub_a.items()
+        }
+
+        self.model.matrix_sub_b = {
+            int(k): int(v) for k, v in self.model.matrix_sub_b.items()
+        }
+
         # Create a fucntion in order to be able to test it easily
         results, task_file = perform_calculation(
             aoi=self.model.aoi_model.feature_collection,
@@ -243,7 +253,9 @@ class DownloadTaskView(v.Card):
 
         v.Icon(children=["mdi-help-circle"], small=True)
 
-        self.w_file_input = sw.FileInput(folder=DIR.TASKS_DIR, extentions=[".csv"])
+        self.w_file_input = sw.FileInput(
+            folder=DIR.TASKS_DIR, extentions=[".csv"], root=DIR.RESULTS_DIR
+        )
 
         self.alert = sw.Alert()
         self.btn = sw.Btn(cm.dashboard.label.calculate)

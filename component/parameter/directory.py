@@ -18,7 +18,7 @@ RESULTS_DIR = BASE_DIR / "module_results/sdg_indicators/mgci"
 CLASS_DIR = RESULTS_DIR / "custom_classifications"
 "Path: location where custom target classification are stored"
 
-MATRIX_DIR = RESULTS_DIR / "reclass_matrix"
+MATRIX_DIR = RESULTS_DIR / "custom_map_matrix"
 "Path: location where custom mapper matrix are stored"
 
 TRANSITION_DIR = RESULTS_DIR / "custom_transition"
