@@ -616,12 +616,12 @@ def export_reports(model: "MgciModel", output_folder) -> None:
 
     with pd.ExcelWriter(output_name) as writer:
         mtn_reports_df.to_excel(writer, sheet_name="Table1_ER_MTN_TOTL", index=False)
-        er_mtn_grnvi_df.to_excel(writer, sheet_name="Table3_ER_MTN_GRNCVI", index=False)
         er_mtn_grncov_df.to_excel(
             writer, sheet_name="Table2_ER_MTN_GRNCOV", index=False
         )
-        er_mtn_dgrp_df.to_excel(writer, sheet_name="Table5_ER_MTN_DGRDP", index=False)
+        er_mtn_grnvi_df.to_excel(writer, sheet_name="Table3_ER_MTN_GRNCVI", index=False)
         er_mtn_dgda_df.to_excel(writer, sheet_name="Table4_ER_MTN_DGRDA", index=False)
+        er_mtn_dgrp_df.to_excel(writer, sheet_name="Table5_ER_MTN_DGRDP", index=False)
 
         for sheetname in writer.sheets:
             worksheet = writer.sheets[sheetname]
