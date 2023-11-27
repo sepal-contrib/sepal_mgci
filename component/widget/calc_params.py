@@ -189,7 +189,6 @@ class Calculation(sw.List):
         Args:
             change["new"]: It's the v_model from CustomList component, it will contain the user selection for each of the subindicators.
         """
-        print("getting chips")
         # Get the space where the elements will be inserted
         span = self.get_children(id_=f"span_{indicator}")[0]
         alert = self.get_children(id_=f"alert_{indicator}")[0]
