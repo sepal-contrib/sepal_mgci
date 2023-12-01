@@ -66,7 +66,7 @@ class VegetationTile(sw.Layout):
         ]
         # decorate the button
         self.open_settings_dialog = sd.loading_button(
-            alert=alert, button=self.btn_get_paramters, debug=True
+            alert=alert, button=self.btn_get_paramters
         )(self.open_settings_dialog)
 
         self.btn_get_paramters.on_event("click", self.open_settings_dialog)

@@ -634,7 +634,7 @@ class TableView(sw.Card):
         # Events
         self.btn.on_event("click", self.get_class_table)
 
-    @sd.loading_button(debug=True)
+    @sd.loading_button()
     def get_class_table(self, widget, event, data):
         """
         Display class table widget in view

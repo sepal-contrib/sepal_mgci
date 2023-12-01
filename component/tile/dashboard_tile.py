@@ -324,7 +324,7 @@ class ExportView(v.Card):
             self.btn.disabled = False
             self.alert.reset()
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def export_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 

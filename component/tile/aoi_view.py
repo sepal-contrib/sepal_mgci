@@ -25,7 +25,7 @@ class AoiView(AoiView):
 
         super().__init__(**kwargs)
 
-    @sd.loading_button(debug=True)
+    @sd.loading_button()
     def _update_aoi(self, *args) -> Self:
         """load the object in the model & update the map (if possible)."""
         # read the information from the geojson datas

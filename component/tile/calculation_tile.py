@@ -120,7 +120,7 @@ class CalculationView(sw.Card):
 
         self.btn_export.disabled = True
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def export_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 
@@ -134,7 +134,7 @@ class CalculationView(sw.Card):
             f"Reporting tables successfull exported {report_folder}", type_="success"
         )
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def run_statistics(self, *args):
         """Start the calculation of the statistics. It will start the process on the fly
         or making a task in the background depending if the rsa is selected or if the
@@ -264,7 +264,7 @@ class DownloadTaskView(v.Card):
 
         self.btn.on_event("click", self.run_statistics)
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def run_statistics(self, widget, event, data):
         # Get and read file
         tasks_file = Path(self.w_file_input.v_model)
