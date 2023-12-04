@@ -67,8 +67,15 @@ class LayerHandler(sw.Card):
 
         if subindicator == "sub_a_year":
             if all([year.get("year") and year.get("asset") for year in data.values()]):
-                self.sub_a_items = [{"header": "Sub indicator A"}] + [
-                    {"text": year.get("year"), "value": ["a", year.get("asset")]}
+                self.sub_a_items = [{"header": cm.layers.sub_a_header}] + [
+                    {
+                        "text": year.get("year"),
+                        "value": [
+                            "a",
+                            year.get("asset"),
+                            f"{cm.layers.land_cover} {year.get('year')}",
+                        ],
+                    }
                     for year in data.values()
                 ]
             else:
@@ -94,38 +101,58 @@ class LayerHandler(sw.Card):
                 # Land cover for all years (2000-xxx)
 
                 self.sub_b_items = (
-                    [{"header": "Sub indicator B"}]
+                    [{"header": cm.layers.sub_a_header}]
                     + [
                         {
-                            "text": f"Total degradation {year}",
-                            "value": ["b", f"final_degradation_{year}"],
+                            "text": f"{cm.layers.final_degradation} {year}",
+                            "value": [
+                                "b",
+                                f"final_degradation_{year}",
+                                f"{cm.layers.final_degradation} {year}",
+                            ],
                         }
                         for year in [y["year"] for y in report]
                     ]
                     + [
                         {
-                            "text": "Baseline degradation",
-                            "value": ["b", "baseline_degradation"],
+                            "text": cm.layers.baseline_degradation,
+                            "value": [
+                                "b",
+                                "baseline_degradation",
+                                cm.layers.baseline_degradation,
+                            ],
                         }
                     ]
                     + [
                         {
-                            "text": f"Report degradation {year}",
-                            "value": ["b", f"report_degradation_{year}"],
+                            "text": f"{cm.layers.report_degradation} {year}",
+                            "value": [
+                                "b",
+                                f"report_degradation_{year}",
+                                f"{cm.layers.report_degradation} {year}",
+                            ],
                         }
                         for year in [y["year"] for y in report]
                     ]
                     + [
                         {
-                            "text": f"Land cover {year}",
-                            "value": ["b", f"land_cover_{year}"],
+                            "text": f"{cm.layers.land_cover} {year}",
+                            "value": [
+                                "b",
+                                f"land_cover_{year}",
+                                f"{cm.layers.land_cover} {year}",
+                            ],
                         }
                         for year in [y["year"] for y in baseline]
                     ]
                     + [
                         {
-                            "text": f"Land cover {year}",
-                            "value": ["b", f"report_year_{year}"],
+                            "text": f"{cm.layers.land_cover} {year}",
+                            "value": [
+                                "b",
+                                f"report_year_{year}",
+                                f"{cm.layers.land_cover} {year}",
+                            ],
                         }
                         for year in [y["year"] for y in report]
                     ]
@@ -141,7 +168,11 @@ class LayerHandler(sw.Card):
 
     @su.loading_button()
     def add_layer(self, *_):
-        """Get the layers from the model"""
+        """Get the layers from the model
+
+        Args:
+            selection: the selection from the w_layers widget
+        """
 
         selection = self.w_layers.v_model
 
@@ -163,7 +194,7 @@ class LayerHandler(sw.Card):
                 selection[1], remap_matrix, aoi, sub_b_year, transition_matrix
             )
 
-        self.map_.addLayer(layer, vis_params, selection[1])
+        self.map_.addLayer(layer, vis_params, selection[2])
         self.map_.centerObject(aoi)
 
 

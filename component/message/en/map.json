@@ -7,7 +7,8 @@
                 "radio": {
                     "label": "Select export method",
                     "gee": "As a GEE asset",
-                    "sepal": "As a SEPAL file"
+                    "sepal": "As a SEPAL file",
+                    "gdrive" : "As a Google Drive file"
                 },
                 "export": "Export",
                 "cancel": "Cancel",
@@ -24,5 +25,13 @@
                 }
             }
         }
+    },
+    "layers" : {
+        "final_degradation" : "Total degradation",
+        "baseline_degradation" : "Baseline degradation",
+        "report_degradation" : "Report degradation",
+        "land_cover" : "Land cover",
+        "sub_a_header" : "Sub indicator A",
+        "sub_b_header" : "Sub indicator B"
     }
 }
