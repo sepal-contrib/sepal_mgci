@@ -1,4 +1,5 @@
 from pathlib import Path
+import random
 from typing import List
 
 import pandas as pd
@@ -15,7 +16,8 @@ from component.scripts.gdrive import GDrive
 class MgciModel(Model):
     """Model for MGCI calculation"""
 
-    session_id = 1824
+    # Create a random session id of 4 digits
+    session_id = random.randint(1000, 9999)
 
     use_custom = CBool(0).tag(sync=True)
 
