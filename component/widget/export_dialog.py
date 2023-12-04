@@ -71,11 +71,14 @@ class ExportMapDialog(v.Dialog):
     def get_ee_image(self, *_) -> ee.Image:
         selection = self.w_layers.v_model
 
-        aoi = self.model.aoi_model.feature_collection.geometry()
+        aoi = self.model.aoi_model.feature_collection
+
+        if not aoi:
+            raise Exception(cm.error.no_aoi)
 
         if selection[0] == "a":
             remap_matrix = self.model.matrix_sub_a
-            layer, vis_params = get_layer_a(selection[1], remap_matrix, aoi)
+            layer, vis_params = get_layer_a(selection[1], remap_matrix, aoi.geometry())
 
         elif selection[0] == "b":
             remap_matrix = self.model.matrix_sub_b
@@ -83,7 +86,11 @@ class ExportMapDialog(v.Dialog):
             transition_matrix = self.model.transition_matrix
 
             layer, vis_params = get_layer_b(
-                selection[1], remap_matrix, aoi, sub_b_year, transition_matrix
+                selection[1],
+                remap_matrix,
+                aoi.geometry(),
+                sub_b_year,
+                transition_matrix,
             )
 
         return layer, vis_params
@@ -91,10 +98,10 @@ class ExportMapDialog(v.Dialog):
     @su.loading_button()
     def on_download(self, *_):
         """download the dataset using the given parameters."""
-        aoi = self.model.aoi_model.feature_collection.geometry()
+        aoi = self.model.aoi_model.feature_collection
 
         if not aoi:
-            raise Exception("No aoi selected")
+            raise Exception(cm.error.no_aoi)
 
         # The value from the w_layers is a tuple with (theme, id_)
         ee_image, vis_params = self.get_ee_image(*self.w_layers.v_model)
@@ -103,7 +110,7 @@ class ExportMapDialog(v.Dialog):
             "image": ee_image,
             "description": name,
             "scale": self.w_scale.v_model,
-            "region": aoi,
+            "region": aoi.geometry(),
             "maxPixels": 1e13,
         }
 

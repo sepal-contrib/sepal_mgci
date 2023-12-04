@@ -76,4 +76,4 @@ def get_layer_b(selection, remap_matrix, aoi, sub_b_year, transition_matrix):
             layer = transition_image.select(layer_name)
             vis_params = visuals.VIS_PARAMS["land_cover"]
 
-    return layer, vis_params
+    return layer.updateMask(read_asset(param.BIOBELT).mask()), vis_params

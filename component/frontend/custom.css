@@ -15,10 +15,10 @@
 
 /* This is when this runs on jupyter lab < 4 */
 .results_map .jupyter-widgets.leaflet-widgets {
-  height: 84vh !important;
+  height: 72vh !important;
 }
 
 /* This is when this runs on jupyter lab 4 */
 .results_map.jupyter-widgets.leaflet-widgets {
-  height: 84vh !important;
+  height: 72vh !important;
 }

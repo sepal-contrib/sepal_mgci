@@ -12,11 +12,12 @@ from component.model.model import MgciModel
 import component.parameter.visualization as visuals
 from component.scripts.layers import get_layer_a, get_layer_b
 from component.widget.export_dialog import ExportMapDialog
-from component.widget.legend_control import LegendControl
+from component.widget.legend_control import LegendDashboard
+from component.message import cm
 
 
 class LayerHandler(sw.Card):
-    def __init__(self, map_: SepalMap, model: MgciModel):
+    def __init__(self, map_: "Map", model: MgciModel):
         self.width = "450px"
         self.map_ = map_
 
@@ -70,6 +71,8 @@ class LayerHandler(sw.Card):
                     {"text": year.get("year"), "value": ["a", year.get("asset")]}
                     for year in data.values()
                 ]
+            else:
+                self.sub_a_items = []
 
         if subindicator == "sub_b_year":
             baseline = data.get("baseline", {}).values()
@@ -127,6 +130,8 @@ class LayerHandler(sw.Card):
                         for year in [y["year"] for y in report]
                     ]
                 )
+            else:
+                self.sub_b_items = []
 
         if self.sub_a_items and self.sub_b_items:
             self.w_layers.items = self.sub_a_items + self.sub_b_items
@@ -139,6 +144,9 @@ class LayerHandler(sw.Card):
         """Get the layers from the model"""
 
         selection = self.w_layers.v_model
+
+        if not self.model.aoi_model.feature_collection:
+            raise Exception(cm.error.no_aoi)
 
         aoi = self.model.aoi_model.feature_collection.geometry()
 
@@ -163,7 +171,12 @@ class Map(SepalMap):
     """Custom Map"""
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        default_basemap = (
+            "CartoDB.DarkMatter" if v.theme.dark is True else "CartoDB.Positron"
+        )
+        basemaps = [default_basemap] + ["SATELLITE"]
+
+        super().__init__(basemaps=basemaps, **kwargs)
 
         self.add_class("results_map")
 
@@ -184,8 +197,8 @@ class Map(SepalMap):
             vertical: vertical or horizoal position of the legend
         """
         # Define as class member so it can be accessed from outside.
-        self.legend = LegendControl(
-            legend_dict,
+        self.legend = LegendDashboard(
+            legend_dict=legend_dict,
             title=title,
             vertical=vertical,
             position=position,
