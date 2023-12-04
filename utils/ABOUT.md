@@ -1,5 +1,26 @@
 # SDG Indicator 15.4.2.
 
+<center style="inline-block">
+    <img 
+        src="https://raw.githubusercontent.com/sepal-contrib/sepal_mgci/main/utils/img/sdg.png" 
+        alt="duke_logo" 
+        height="175" 
+        class="ma-3"
+    />
+    <img 
+        src="https://raw.githubusercontent.com/sepal-contrib/sepal_mgci/main/utils/img/sdg15.png" 
+        alt="duke_logo" 
+        height="175" 
+        class="ma-3"
+    />
+    <img 
+        src="https://raw.githubusercontent.com/sepal-contrib/sepal_mgci/main/utils/img/sdg1542.png" 
+        alt="duke_logo" 
+        height="175" 
+        class="ma-3"
+    />
+</center>
+
 ## Sub-indicator 15.4.2a, 
 
 Mountain Green Cover Index (MGCI), is designed to measure the extent and changes of green cover - i.e. forest, shrubs, trees, pasture land, cropland, etc. – in mountain areas. MGCI is defined as the percentage of green cover over the total surface of the mountain area of a given country and for given reporting year. The aim of the index is to monitor the evolution of green cover and thus assess the status of conservation of mountain ecosystems.
