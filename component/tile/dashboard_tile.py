@@ -14,6 +14,7 @@ import component.widget as cw
 from component.message import cm
 from component.scripts.plots import sankey
 from component.scripts.report_scripts import get_belt_desc
+from component.widget.map import MapView
 from component.widget.statistics_card import StatisticCard
 
 
@@ -28,12 +29,13 @@ class DashboardTile(sw.Card):
         self.alert = sw.Alert()
         self.df = None
 
+        map_view = MapView(self.model)
         dash_view_a = DashViewA(self.model)
         dash_view_b = DashViewB(self.model)
 
         dash_tabs = cw.Tabs(
-            ["Sub indicator A", "Sub indicator B"],
-            [dash_view_a, dash_view_b],
+            ["Visualization", "Sub indicator A", "Sub indicator B"],
+            [map_view, dash_view_a, dash_view_b],
         )
 
         self.children = [

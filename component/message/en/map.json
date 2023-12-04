@@ -1,0 +1,28 @@
+{
+    "map" : {
+        "dialog" : {
+            "export": {
+                "title": "Export map",
+                "scale": "Resolution (m)",
+                "radio": {
+                    "label": "Select export method",
+                    "gee": "As a GEE asset",
+                    "sepal": "As a SEPAL file"
+                },
+                "export": "Export",
+                "cancel": "Cancel",
+                "gee_task_success" : "The task <i>'{}'</i> have been tasked in your <a href='https://code.earthengine.google.com/tasks'>GEE account</a>. "
+
+            },
+            "drawing": {
+                "title": "Custom geometries",
+                "label": "Set name",
+                "btn": "Add",
+                "cancel": "Cancel",
+                "table" : {
+                    "no_geometries" : "There are not custom geometries on the map."
+                }
+            }
+        }
+    }
+}

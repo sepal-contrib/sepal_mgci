@@ -42,6 +42,7 @@ __all__ = [
     "parse_to_year",
     "get_sub_b_break_points",
     "parse_result",
+    "get_reporting_years",
 ]
 
 
