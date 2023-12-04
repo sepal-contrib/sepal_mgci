@@ -113,17 +113,17 @@ DECODE = {
     3: {
         "abrv": "I",
         "label": "Improvement",
-        "color": color.success,
+        "color": "#8B0000",
     },
     2: {
         "abrv": "S",
         "label": "Stable",
-        "color": color.primary,
+        "color": "#B0C4DE",
     },
     1: {
         "abrv": "D",
         "label": "Degradation",
-        "color": color.error,
+        "color": "#008000",
     },
 }
 "dict: dictionary containing the displayed labels for transition classes"
