@@ -2,7 +2,7 @@ from ipyleaflet import WidgetControl
 import ipyvuetify as v
 
 import sepal_ui.sepalwidgets as sw
-from sepal_ui.mapping import SepalMap, LegendControl
+from sepal_ui.mapping import SepalMap
 from sepal_ui.mapping.map_btn import MapBtn
 from sepal_ui.mapping import InspectorControl
 import sepal_ui.scripts.decorator as su
@@ -12,6 +12,7 @@ from component.model.model import MgciModel
 import component.parameter.visualization as visuals
 from component.scripts.layers import get_layer_a, get_layer_b
 from component.widget.export_dialog import ExportMapDialog
+from component.widget.legend_control import LegendControl
 
 
 class LayerHandler(sw.Card):
