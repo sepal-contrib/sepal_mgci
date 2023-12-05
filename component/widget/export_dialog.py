@@ -6,10 +6,10 @@ import ee
 from sepal_ui import sepalwidgets as sw
 from sepal_ui.scripts import utils as su
 
+import component.scripts as cs
 from component.message import cm
 from component.model.model import MgciModel
 from component.scripts.layers import get_layer_a, get_layer_b
-from component.widget.base_dialog import BaseDialog
 
 ee.Initialize()
 
@@ -21,6 +21,7 @@ class ExportMapDialog(v.Dialog):
         self.model = model
         self.items = []
         self.max_width = "700px"
+        self.v_model = False
 
         # create the useful widgets
         # align on the landsat images
@@ -34,7 +35,10 @@ class ExportMapDialog(v.Dialog):
             label=cm.map.dialog.export.radio.sepal, value="sepal", disabled=True
         )
         gee = sw.Radio(label=cm.map.dialog.export.radio.gee, value="gee")
-        self.w_method = sw.RadioGroup(v_model="gee", row=True, children=[sepal, gee])
+        gdrive = sw.Radio(label=cm.map.dialog.export.radio.gdrive, value="gdrive")
+        self.w_method = sw.RadioGroup(
+            v_model="gee", row=True, children=[sepal, gee, gdrive]
+        )
         self.w_layers = w_layers
 
         # add alert and btn component for the loading_button
@@ -93,7 +97,13 @@ class ExportMapDialog(v.Dialog):
                 transition_matrix,
             )
 
-        return layer, vis_params
+        else:
+            raise Exception("No valid layer selected")
+
+        layer_name = selection[2].replace(" ", "").lower()
+        prefix = "SubA" if selection[0] == "a" else "SubB"
+
+        return layer, vis_params, f"{prefix}_{layer_name}"
 
     @su.loading_button()
     def on_download(self, *_):
@@ -104,8 +114,10 @@ class ExportMapDialog(v.Dialog):
             raise Exception(cm.error.no_aoi)
 
         # The value from the w_layers is a tuple with (theme, id_)
-        ee_image, vis_params = self.get_ee_image(*self.w_layers.v_model)
-        name = "test_name"
+        ee_image, vis_params, layer_name = self.get_ee_image(*self.w_layers.v_model)
+
+        name = f"{self.model.aoi_model.name}_{self.model.session_id}_{layer_name}"
+
         export_params = {
             "image": ee_image,
             "description": name,
@@ -117,8 +129,14 @@ class ExportMapDialog(v.Dialog):
         # launch the task
         if self.w_method.v_model == "gee":
             folder = Path(ee.data.getAssetRoots()[0]["id"])
-            export_params.update(assetId=str(folder / name), description=f"{name}_gee")
+            export_params.update(assetId=str(folder / name))
             task = ee.batch.Export.image.toAsset(**export_params)
+            task.start()
+            msg = sw.Markdown(cm.map.dialog.export.gee_task_success.format(name))
+            self.alert.add_msg(msg, "success")
+
+        elif self.w_method.v_model == "gdrive":
+            task = ee.batch.Export.image.toDrive(**export_params)
             task.start()
             msg = sw.Markdown(cm.map.dialog.export.gee_task_success.format(name))
             self.alert.add_msg(msg, "success")
