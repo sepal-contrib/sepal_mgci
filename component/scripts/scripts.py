@@ -85,7 +85,7 @@ def get_report_folder(mgci_model: "MgciModel") -> Path:
     """Get output report folder path"""
 
     # Create a folder to store multiple year reports from the same area
-    report_folder = DIR.REPORTS_DIR / f"MGCI_{mgci_model.aoi_model.name}"
+    report_folder = DIR.REPORTS_DIR / f"SDG1542_{mgci_model.aoi_model.name}"
     report_folder.mkdir(parents=True, exist_ok=True)
     return report_folder
 

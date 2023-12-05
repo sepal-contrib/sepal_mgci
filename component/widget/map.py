@@ -150,7 +150,7 @@ class LayerHandler(sw.Card):
                             "text": f"{cm.layers.land_cover} {year}",
                             "value": [
                                 "b",
-                                f"report_year_{year}",
+                                f"land_cover_{year}",
                                 f"{cm.layers.land_cover} {year}",
                             ],
                         }
@@ -193,6 +193,9 @@ class LayerHandler(sw.Card):
             layer, vis_params = get_layer_b(
                 selection[1], remap_matrix, aoi, sub_b_year, transition_matrix
             )
+
+        else:
+            raise Exception("No valid layer selected")
 
         self.map_.addLayer(layer, vis_params, selection[2])
         self.map_.centerObject(aoi)

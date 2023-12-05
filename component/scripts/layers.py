@@ -45,35 +45,43 @@ def get_layer_b(selection, remap_matrix, aoi, sub_b_year, transition_matrix):
         vis_params = visuals.VIS_PARAMS["degradation"]
 
     else:
-        years = cs.get_reporting_years(sub_b_year, "sub_b")[1:]
-        index = years.index(int(selection.split("_")[-1]))
-        transition_image = transition_images[index]
-
-        # Select the required band
-        if selection.startswith("final_degradation"):
-            layer = transition_image.select("final_degradation")
-            vis_params = visuals.VIS_PARAMS["degradation"]
-
-        elif selection.startswith("report_degradation"):
-            layer = transition_image.select("report_degradation")
-            vis_params = visuals.VIS_PARAMS["degradation"]
-
-        elif "land_cover" in selection:
+        reporting_years = cs.get_reporting_years(sub_b_year, "sub_b")
+        if "land_cover" in selection:
             year = int(selection.split("_")[-1])
 
-            baseline_years = years[0]
+            # The first tuple returned is the baseline
+            baseline_years = reporting_years[0]
 
             if year in baseline_years:
+                # I can use either, they have the same baseline
+                transition_image = transition_images[0]
                 layer_name = (
                     "land_cover_start"
                     if year == baseline_years[0]
                     else f"land_cover_end"
                 )
             else:
-                layer_name = f"land_cover_report"
+                years = reporting_years[1:]
+                index = years.index(year)
+                transition_image = transition_images[index]
 
+                layer_name = f"land_cover_report"
             # TODO: use random visualizaion if remap is not default
             layer = transition_image.select(layer_name)
             vis_params = visuals.VIS_PARAMS["land_cover"]
+
+        else:
+            years = reporting_years[1:]
+            index = years.index(int(selection.split("_")[-1]))
+            transition_image = transition_images[index]
+
+            # Select the required band
+            if selection.startswith("final_degradation"):
+                layer = transition_image.select("final_degradation")
+                vis_params = visuals.VIS_PARAMS["degradation"]
+
+            elif selection.startswith("report_degradation"):
+                layer = transition_image.select("report_degradation")
+                vis_params = visuals.VIS_PARAMS["degradation"]
 
     return layer.updateMask(read_asset(param.BIOBELT).mask()), vis_params
