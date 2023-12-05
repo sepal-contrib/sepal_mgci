@@ -1,8 +1,10 @@
 import ee
 import pandas as pd
 import pkg_resources
-import sepal_ui.sepalwidgets as sw
 from ipyleaflet import WidgetControl
+
+import ipyvuetify as v
+import sepal_ui.sepalwidgets as sw
 from sepal_ui.mapping import SepalMap
 
 import component.parameter.module_parameter as param
@@ -13,14 +15,6 @@ __all__ = ["AoiTile"]
 
 ee.Initialize()
 
-{
-    (2000, 2005): [2000, 2005],
-    (2005, 2010): [2005, 2010],
-    (2010, 2015): [2010, 2012, 2015],
-    (2015, 2018): [2015, 2018],
-    (2018, 2021): [2018, 2021],
-}
-
 
 class AoiTile(sw.Layout):
     """Custo AOI Tile"""
@@ -30,8 +24,11 @@ class AoiTile(sw.Layout):
         self._metadata = {"mount_id": "aoi_tile"}
 
         super().__init__()
-
-        self.map_ = SepalMap(gee=True)
+        default_basemap = (
+            "CartoDB.DarkMatter" if v.theme.dark is True else "CartoDB.Positron"
+        )
+        basemaps = [default_basemap] + ["SATELLITE"]
+        self.map_ = SepalMap(gee=True, basemaps=basemaps)
         self.map_.add_class("aoi_map")
         self.map_.dc.hide()
         self.map_.min_zoom = 2

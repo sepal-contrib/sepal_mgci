@@ -51,8 +51,8 @@ class LayerHandler(sw.Card):
         self.model.observe(self.update_layer_list, "sub_b_year")
 
         # Get with the default values
-        self.update_layer_list({"owner": "sub_a_year", "new": self.model.sub_a_year})
-        self.update_layer_list({"owner": "sub_b_year", "new": self.model.sub_b_year})
+        self.update_layer_list({"name": "sub_a_year", "new": self.model.sub_a_year})
+        self.update_layer_list({"name": "sub_b_year", "new": self.model.sub_b_year})
 
     def update_layer_list(self, change):
         """Update w_layers with the layers selected by the user"""
@@ -60,12 +60,16 @@ class LayerHandler(sw.Card):
         # I need two sublists, one for each subindicator
 
         # First check if both "year" and "asset" are not empty on all model.sub_a_year.values()
-
-        subindicator = change["owner"]
+        subindicator = change["name"]
         data = change["new"]
 
         if subindicator == "sub_a_year":
-            if all([year.get("year") and year.get("asset") for year in data.values()]):
+            vals = [
+                year.get("year", None) and year.get("asset", None)
+                for year in data.values()
+            ]
+
+            if all(vals) and vals != []:
                 self.sub_a_items = [{"header": cm.layers.sub_a_header}] + [
                     {
                         "text": year.get("year"),
@@ -84,14 +88,14 @@ class LayerHandler(sw.Card):
             baseline = data.get("baseline", {}).values()
             report = {k: v for k, v in data.items() if k != "baseline"}.values()
 
-            if all(
-                [
-                    all(val.get("asset") for val in baseline) if baseline else False,
-                    all(val.get("year") for val in baseline) if baseline else False,
-                    all(val.get("asset") for val in report) if report else False,
-                    all(val.get("year") for val in report) if report else False,
-                ]
-            ):
+            vals = [
+                all(val.get("asset") for val in baseline) if baseline else False,
+                all(val.get("year") for val in baseline) if baseline else False,
+                all(val.get("asset") for val in report) if report else False,
+                all(val.get("year") for val in report) if report else False,
+            ]
+
+            if all(vals) and vals != []:
                 # Create a list of all possible layers that can be shown
 
                 # Total degradation for baseline against all report years
@@ -100,7 +104,7 @@ class LayerHandler(sw.Card):
                 # Land cover for all years (2000-xxx)
 
                 self.sub_b_items = (
-                    [{"header": cm.layers.sub_a_header}]
+                    [{"header": cm.layers.sub_b_header}]
                     + [
                         {
                             "text": f"{cm.layers.final_degradation} {year}",
@@ -159,11 +163,11 @@ class LayerHandler(sw.Card):
             else:
                 self.sub_b_items = []
 
-        if self.sub_a_items and self.sub_b_items:
+        if self.sub_a_items or self.sub_b_items:
             self.w_layers.items = self.sub_a_items + self.sub_b_items
 
         else:
-            self.w_layers.items = ["Some layers are missing"]
+            self.w_layers.items = []
 
     @su.loading_button()
     def add_layer(self, *_):
