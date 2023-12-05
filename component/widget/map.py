@@ -37,15 +37,14 @@ class LayerHandler(sw.Card):
 
         self._layers = []
 
-        self.w_layers = sw.Select(
-            items=[],
-            v_model=[],
-            label="Layers",
-        )
+        self.w_layers = sw.Select(items=[], v_model=[], label="Layers", class_="mr-2")
         self.alert = sw.Alert()
         self.btn = sw.Btn("", gliph="mdi-plus")
+        self.btn.v_icon.left = False
 
-        self.children = [v.Flex(class_="d-flex", children=[self.w_layers, self.btn])]
+        self.children = [
+            v.Row(no_gutters=True, align="center", children=[self.w_layers, self.btn])
+        ]
 
         self.btn.on_event("click", self.add_layer)
         self.model.observe(self.update_layer_list, "sub_a_year")
