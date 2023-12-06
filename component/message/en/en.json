@@ -1,11 +1,11 @@
 {
     "app": {
-        "title" : "SDG Indicator 15.4.2 - Mountain Green Cover Index (MGCI) (BETA)",
+        "title" : "SDG Indicator 15.4.2 (BETA)",
         "drawer_item" : {
-            "aoi": "Area of Iterest",
+            "aoi": "Area of Interest",
             "vegetation" : "Land cover dataset",
             "calculation" : "Indicator settings",
-            "dashboard" : "MGCI results",
+            "dashboard" : "Results",
             "about" : "About",
             "disclaimer" : "Disclaimer"
         }

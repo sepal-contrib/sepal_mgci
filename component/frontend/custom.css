@@ -3,3 +3,22 @@
     z-index: 802 !important;
   }
   
+/* This is when this runs on jupyter lab 4 */
+.aoi_map.jupyter-widgets.leaflet-widgets {
+  height: 84vh !important;
+}
+
+/* This is when this runs on jupyter lab < 4 */
+.aoi_map .jupyter-widgets.leaflet-widgets {
+  height: 84vh !important;
+}
+
+/* This is when this runs on jupyter lab < 4 */
+.results_map .jupyter-widgets.leaflet-widgets {
+  height: 72vh !important;
+}
+
+/* This is when this runs on jupyter lab 4 */
+.results_map.jupyter-widgets.leaflet-widgets {
+  height: 72vh !important;
+}

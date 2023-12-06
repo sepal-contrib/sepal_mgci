@@ -162,13 +162,13 @@ class ReclassifyView(sw.Card):
         ]
 
         # Decorate functions
-        self.get_reclassify_table = loading_button(
-            self.alert, self.btn_get_table, debug=True
-        )(self.get_reclassify_table)
+        self.get_reclassify_table = loading_button(self.alert, self.btn_get_table)(
+            self.get_reclassify_table
+        )
 
         # Decorate functions
         self.load_matrix_content = loading_button(
-            self.alert, self.import_dialog.action_btn, debug=True
+            self.alert, self.import_dialog.action_btn
         )(self.load_matrix_content)
 
         self.import_dialog.action_btn.on_event("click", self.load_matrix_content)

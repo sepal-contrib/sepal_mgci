@@ -1,3 +1,22 @@
+## 0.2.0 (2023-12-04)
+
+### Feat
+
+- add export dialog to export images
+- set default height to aoi map
+- give an unique name to the session
+- add results map dashboard
+- update about info
+- add chips for sub_b
+- update dashboard values
+- set venv
+
+### Refactor
+
+- rename app
+- **decorator**: drop debug param
+- set sepal venv
+
 ## 0.1.0 (2023-11-27)
 
 ### Feat

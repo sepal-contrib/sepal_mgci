@@ -166,9 +166,9 @@ def get_transition(
     """
 
     # Remap images
-    ee_start_base = no_remap(ee_start_base, remap_matrix).rename("start_base_year")
-    ee_end_base = no_remap(ee_end_base, remap_matrix).rename("end_base_year")
-    ee_report = no_remap(ee_report, remap_matrix).rename("report_year")
+    ee_start_base = no_remap(ee_start_base, remap_matrix).rename("land_cover_start")
+    ee_end_base = no_remap(ee_end_base, remap_matrix).rename("land_cover_end")
+    ee_report = no_remap(ee_report, remap_matrix).rename("land_cover_report")
     transition_matrix = pd.read_csv(transition_matrix)
 
     # Compute transition between baseline images
@@ -218,3 +218,8 @@ def get_transition(
         .addBands(ee_report)
         .clip(aoi)
     )
+
+
+def read_asset(asset_id: str) -> ee.Image:
+    """Converts an asset id to an ee.Image"""
+    return ee.Image(asset_id)
