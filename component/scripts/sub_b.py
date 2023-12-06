@@ -134,26 +134,26 @@ def get_report(
         report_df["OBS_VALUE_NET"] = report_df["net_degraded"]
         report_df[
             "OBS_VALUE_RSA"
-        ] = "TBD"  # TODO: determine if we're going to use RSA or not
+        ] = param.TBD  # TODO: determine if we're going to use RSA or not
         report_df[
             "OBS_VALUE_RSA_NET"
-        ] = "TBD"  # TODO: determine if we're going to use RSA or not
+        ] = param.TBD  # TODO: determine if we're going to use RSA or not
         report_df["UNIT_MEASURE"] = "KM2"
-        report_df["UNIT_MULT"] = "TBD"
+        report_df["UNIT_MULT"] = param.TBD
         output_cols = sub_b_landtype_cols
     else:
         report_df = get_pdma_pt(parsed_df, model)
         report_df["OBS_VALUE"] = report_df["pt_degraded"]
         report_df["OBS_VALUE_NET"] = report_df["pt_net_degraded"]
         report_df["UNIT_MEASURE"] = "PT"
-        report_df["UNIT_MULT"] = "TBD"
+        report_df["UNIT_MULT"] = param.TBD
 
         output_cols = sub_b_perc_cols
 
     report_df["Indicator"] = "15.4.2"
-    report_df["SeriesID"] = "TBD"
-    report_df["SERIES"] = "TBD"
-    report_df["SeriesDesc"] = "TBD"
+    report_df["SeriesID"] = param.TBD
+    report_df["SERIES"] = param.TBD
+    report_df["SeriesDesc"] = param.TBD
     report_df["REF_AREA"] = cs.get_geoarea(model.aoi_model)[1]
     report_df["GeoAreaName"] = cs.get_geoarea(model.aoi_model)[0]
     report_df["TIME_PERIOD"] = f"{years[1]}"

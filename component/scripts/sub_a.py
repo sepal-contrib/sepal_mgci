@@ -5,6 +5,8 @@ import component.scripts as cs
 
 # isort: off
 from component.parameter.index_parameters import sub_a_cols, sub_a_landtype_cols
+import component.parameter.module_parameter as param
+
 
 from component.scripts.report_scripts import (
     fill_parsed_df,
@@ -195,26 +197,26 @@ def get_report(
         # Table2_1542a_LandCoverType
         report_df = get_mgci_landtype(parsed_df)
         report_df["OBS_VALUE"] = report_df["sum"]
-        report_df["OBS_VALUE_RSA"] = "TBD"  # TODO: check if we can report RSA
+        report_df["OBS_VALUE_RSA"] = param.TBD  # TODO: check if we can report RSA
         report_df["UNIT_MEASURE"] = "KM2"
-        report_df["UNIT_MULT"] = "TBD"
+        report_df["UNIT_MULT"] = param.TBD
         report_df["LAND_COVER"] = report_df.apply(get_lc_desc, axis=1)
         output_cols = sub_a_landtype_cols
     else:
         # Table3_1542a_MGCI
         report_df = get_mgci(parsed_df)
         report_df["OBS_VALUE"] = report_df.mgci
-        report_df["OBS_VALUE_RSA"] = "TBD"  # TODO: check if we can report RSA
+        report_df["OBS_VALUE_RSA"] = param.TBD  # TODO: check if we can report RSA
         report_df["UNIT_MEASURE"] = "PT"
-        report_df["UNIT_MULT"] = "TBD"
+        report_df["UNIT_MULT"] = param.TBD
         report_df["LAND_COVER"] = report_df.apply(get_lc_desc, axis=1)
         output_cols = sub_a_cols
 
     # The following cols are equal for both tables
     report_df["Indicator"] = "15.4.2"
-    report_df["SeriesID"] = "TBD"
-    report_df["SERIES"] = "TBD"
-    report_df["SeriesDesc"] = "TBD"
+    report_df["SeriesID"] = param.TBD
+    report_df["SERIES"] = param.TBD
+    report_df["SeriesDesc"] = param.TBD
     report_df["GeoAreaName"] = cs.get_geoarea(model.aoi_model)[0]
     report_df["REF_AREA"] = cs.get_geoarea(model.aoi_model)[1]
     report_df["TIME_PERIOD"] = year
