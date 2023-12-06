@@ -113,17 +113,17 @@ DECODE = {
     3: {
         "abrv": "I",
         "label": "Improvement",
-        "color": "#8B0000",
+        "color": "#008000",
     },
     2: {
         "abrv": "S",
         "label": "Stable",
-        "color": "#B0C4DE",
+        "color": "#FFFACD",
     },
     1: {
         "abrv": "D",
         "label": "Degradation",
-        "color": "#008000",
+        "color": "#DC143C",
     },
 }
 "dict: dictionary containing the displayed labels for transition classes"
@@ -161,3 +161,6 @@ DEFAULT_ASSETS = {
         },
     },
 }
+
+
+TBD = ""
