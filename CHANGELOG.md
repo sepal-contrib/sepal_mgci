@@ -1,3 +1,30 @@
+## 0.3.0 (2023-12-11)
+
+### Feat
+
+- use sepal_ui==2.17 to avoid conflicts with ipyleaflet
+- rename results drawer
+- align layer handler components
+- add export as GDrive
+
+### Fix
+
+- fix layer handler broken event
+
+### Refactor
+
+- change TBD wording
+- change degradation color palette
+- **about**: add module documentation
+- use sepal venv
+- set sepal entry point
+- **map_dashboard**: add B land cover layers
+- enlarge dialog width
+- **dash_map**: display readable layer names
+- debug
+- use custom legend
+- typo
+
 ## 0.2.0 (2023-12-04)
 
 ### Feat
