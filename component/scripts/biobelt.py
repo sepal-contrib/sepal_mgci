@@ -31,6 +31,7 @@ def get_belt_area(aoi, biobelt):
                     "reducer": ee.Reducer.sum().group(1),
                     "geometry": aoi,
                     "scale": biobelt.projection().nominalScale(),
+                    "maxPixels": 1e13,
                 }
             )
             .get("groups")
