@@ -42,9 +42,9 @@ def get_belt_area(aoi, biobelt):
 
     df = pd.DataFrame(area, columns=["class", "area"])
 
-    total_area = df.sum()[1]
+    total_area = df.sum().iloc[1]
 
-    df_area = pd.DataFrame({"class": ["total"], "area": [df.sum()[1]]})
+    df_area = pd.DataFrame({"class": ["total"], "area": [total_area]})
     df = pd.concat([df, df_area], ignore_index=True)
     df["perc"] = df["area"] / total_area * 100
     df["area"] = df["area"].apply("{:,.0f}".format)
@@ -68,7 +68,7 @@ def get_belt_area(aoi, biobelt):
     if len(df) == 1:
         df.iloc[0] = [color.main, cm.legend.no_mountain, "-", "-"]
 
-    return json.loads(df.to_json(orient="index"))
+    return json.loads(df.to_json(orient="index")), df
 
 
 def add_belt_map(aoi_model, map_):
@@ -78,7 +78,8 @@ def add_belt_map(aoi_model, map_):
     biobelt = ee.Image(BIOBELT).clip(aoi)
 
     # Create legend
-    legend_dict = get_belt_area(aoi, biobelt)
+    legend_dict, df = get_belt_area(aoi, biobelt)
+    print(legend_dict)
 
     # Add kapos mountain layer to map
     map_.zoom_ee_object(aoi_model.feature_collection.geometry())
@@ -87,9 +88,3 @@ def add_belt_map(aoi_model, map_):
     if any([isinstance(c, LegendControl) for c in map_.controls]):
         map_.legend.legend_dict = deepcopy(legend_dict)
         return
-
-    # Define as class member so it can be accessed from outside.
-    map_.legend = LegendControl(
-        legend_dict=legend_dict, title="", position="bottomright"
-    )
-    map_.add_control(map_.legend)
