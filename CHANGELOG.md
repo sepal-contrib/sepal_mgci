@@ -1,3 +1,22 @@
+## 0.4.0 (2023-12-17)
+
+### Feat
+
+- remove maps when values have changed
+- improve time out computation
+- improve error handling
+- **tables**: rename and standarize transition table headers. - improve error handling
+- **local_matrix**: copy transition matrix on local side
+
+### Fix
+
+- **legend**: set mountain legend on aoi map
+
+### Refactor
+
+- remove legacy code
+- **biobelt**: increase max piexels
+
 ## 0.3.0 (2023-12-11)
 
 ### Feat
