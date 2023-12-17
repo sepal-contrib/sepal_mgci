@@ -13,15 +13,6 @@ from component.scripts.report_scripts import (
     get_obs_status,
 )
 
-LC_MAP_MATRIX = pd.read_csv(param.LC_MAP_MATRIX)
-"pd.DataFrame: land cover map matrix. Contains the mapping values between old and new classes for each land cover type. If user selects custom land cover, users will have to reclassify their classes into the fixed lulc_table classes."
-
-BELT_TABLE = pd.read_csv(param.BIOBELTS_DESC)
-"pd.Dataframe: bioclimatic belts classes and description"
-
-LC_CLASSES = pd.read_csv(param.LC_CLASSES)
-"pd.Dataframe: fixed land cover classes, description and colors"
-
 
 def get_mountain_area(parsed_df):
     """Takes in a parsed DataFrame as an input and returns a DataFrame that

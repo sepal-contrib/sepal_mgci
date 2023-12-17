@@ -11,7 +11,7 @@ from sepal_ui.scripts.decorator import loading_button, switch
 from traitlets import Unicode, directional_link
 
 from component.scripts.validation import (
-    validate_reclassify_table,
+    validate_remapping_table,
     validate_target_class_file,
 )
 import component.parameter.directory as dir_
@@ -198,19 +198,26 @@ class ReclassifyView(sw.Card):
         if not self.model.table_created:
             raise Exception(cm.reclass.dialog.import_.error.no_table)
 
+        if not self.model.matrix_file:
+            raise Exception(cm.reclass.dialog.import_.error.no_valid)
+
         input_data = pd.read_csv(self.model.matrix_file)
 
         # check that the destination values are all available
         widget = list(self.reclassify_table.class_select_list.values())[0]
         classes = [i["value"] for i in widget.items]
-        if not all(v in classes for v in input_data.dst.unique()):
+        if not all(v in classes for v in input_data.to_code.unique()):
+            # get the missing values
+            missing_values = ",".join(
+                [str(v) for v in input_data.to_code.unique() if v not in classes]
+            )
             raise Exception(
-                "Some of the destination data are not existing in the destination dataset"
+                f"Some of the targed land cover classes ({missing_values}) are not present in the destination land cover classes."
             )
 
         # fill the data
         for _, row in input_data.iterrows():
-            src_code, dst_code = row.src, row.dst
+            src_code, dst_code = row.from_code, row.to_code
             if str(src_code) in self.reclassify_table.class_select_list:
                 self.reclassify_table.class_select_list[
                     str(src_code)
@@ -327,13 +334,14 @@ class ImportMatrixDialog(BaseDialog):
 
         self.model.matrix_file = ""
 
+        if not change["new"]:
+            return
+
         # Get TextField from change widget
         text_field_msg = change["owner"].children[-1]
         text_field_msg.error_messages = []
 
-        self.model.matrix_file = validate_reclassify_table(
-            change["new"], text_field_msg
-        )
+        self.model.matrix_file = validate_remapping_table(change["new"], text_field_msg)
 
     def open_dialog(self):
         """show the dialog and set the matrix values"""

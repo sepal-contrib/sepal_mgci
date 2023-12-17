@@ -68,9 +68,7 @@ class LegendControl(LegendDashboard):
 
     _html_title = None
 
-    def __init__(
-        self, legend_dict={}, title=ms.mapping.legend, vertical=True, **kwargs
-    ):
+    def __init__(self, legend_dict, title=ms.mapping.legend, vertical=True, **kwargs):
         # init traits
         self.title = title
         self.legend_dict = legend_dict

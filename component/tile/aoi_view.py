@@ -4,7 +4,7 @@ from sepal_ui.aoi.aoi_view import AoiView
 from sepal_ui.message import ms
 from sepal_ui.scripts import decorator as sd
 from typing_extensions import Self
-
+from component.widget.legend_control import LegendControl
 from component.scripts.biobelt import add_belt_map
 
 
@@ -24,6 +24,10 @@ class AoiView(AoiView):
         )
 
         super().__init__(**kwargs)
+
+        # Define as class member so it can be accessed from outside.
+        self.map_.legend = LegendControl({}, title="", position="bottomright")
+        self.map_.add_control(self.map_.legend)
 
     @sd.loading_button()
     def _update_aoi(self, *args) -> Self:

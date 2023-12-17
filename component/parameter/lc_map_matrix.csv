@@ -1,4 +1,4 @@
-from_code,from_desc,target_code,target_desc,green
+from_code,from_desc,to_code,target_desc,green
 190,Urban areas,1,Artificial surfaces,0
 10,Rainfed cropland,2,Croplands,1
 11,Rainfed cropland,2,Croplands,1
