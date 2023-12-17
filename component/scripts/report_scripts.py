@@ -2,9 +2,6 @@ import pandas as pd
 
 import component.parameter.module_parameter as param
 
-LC_MAP_MATRIX = pd.read_csv(param.LC_MAP_MATRIX)
-"pd.DataFrame: land cover map matrix. Contains the mapping values between old and new classes for each land cover type. If user selects custom land cover, users will have to reclassify their classes into the fixed lulc_table classes."
-
 BELT_TABLE = pd.read_csv(param.BIOBELTS_DESC)
 "pd.Dataframe: bioclimatic belts classes and description"
 
@@ -94,22 +91,3 @@ def get_impact(row, model):
         (transition_table.from_code == row["from_lc"])
         & (transition_table.to_code == row["to_lc"])
     ]["impact_code"].values[0]
-
-
-def get_impact_desc(row, model):
-    """Return impact description based on its code.
-
-    Args:
-        row (pd.Series): row of the dataframe
-        model (MGCIModel): model containing the transition_matrix dataframe (custom or default)
-
-    """
-
-    # Read the transition matrix safely with pandas
-    transition_table = pd.read_csv(model.transition_matrix)
-
-    desc = transition_table[transition_table.impact_code == row["impact_code"]][
-        "impact"
-    ]
-
-    return desc.values[0] if len(desc) else "All"
