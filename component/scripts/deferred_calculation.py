@@ -22,11 +22,11 @@ class Logger:
         self.state = state
 
 
-def task_process(process, task_file, process_id):
+def task_process(process, task_filepath):
     """Send the task to the GEE servers and process it in background. This will be
     neccessary when the process is timed out."""
 
-    task_name = Path(f"{task_file.name}_{process_id}")
+    task_name = Path(f"{task_filepath.stem}")
 
     task = ee.batch.Export.table.toDrive(
         **{
@@ -39,8 +39,8 @@ def task_process(process, task_file, process_id):
     task.start()
 
     # Create a file containing the task id to track when the process is done.
-    with open(task_file.with_suffix(".csv"), "a") as file:
-        file.write(f"{process_id}, {task.id}" + "\n")
+    with open(task_filepath.with_suffix(".csv"), "w") as file:
+        file.write(f"{task_name}, {task.id}" + "\n")
 
 
 def perform_calculation(
@@ -51,6 +51,7 @@ def perform_calculation(
     remap_matrix_b: dict,
     transition_matrix: str,
     years: list,
+    task_filepath: Path,
     logger: cw.Alert = None,
 ):
     if not aoi:
@@ -59,7 +60,19 @@ def perform_calculation(
     if not logger:
         logger = Logger()
 
-    def deferred_calculation(years: Tuple):
+    class Fly:
+        def __init__(self):
+            self.on_the_fly = True
+
+        def set(self, value):
+            self.on_the_fly = value
+
+        def get(self):
+            return self.on_the_fly
+
+    on_the_fly = Fly()
+
+    def deferred_calculation(years: Tuple, on_the_fly: bool):
         """perform the computation on the fly or fallback to gee background
 
         args:
@@ -77,15 +90,20 @@ def perform_calculation(
             result = process.getInfo()
             logger.set_msg(f"Calculating {process_id}... Done.", id_=process_id)
             logger.set_state("success", id_=process_id)
+            on_the_fly.set(True)
 
             return result
 
         except Exception as e:
-            if e.args[0] != "Computation timed out.":
+            if e.args[0] == "Computation timed out.":
                 # Create an unique name (to search after in Drive)
-                task_process(process, task_file, process_id)
-                logger.set_msg(f"Calculating {process_id}... Tasked.", id_=process_id)
+                logger.set_msg(
+                    f"Warning: {process_id} failed on the fly.", id_=process_id
+                )
                 logger.set_state("warning", id_=process_id)
+                on_the_fly.set(False)
+
+                return ee.Feature(None, process).set("process_id", process_id)
 
             else:
                 raise Exception(f"There was an error {e}")
@@ -93,17 +111,24 @@ def perform_calculation(
     with concurrent.futures.ThreadPoolExecutor() as executor:
         results = {}
         unique_preffix = su.random_string(4).upper()
-        task_file = DIR.TASKS_DIR / f"Task_result_{unique_preffix}"
 
         futures = {
-            executor.submit(deferred_calculation, year): cs.years_from_dict(year)
+            executor.submit(deferred_calculation, year, on_the_fly): cs.years_from_dict(
+                year
+            )
             for year in years
         }
 
-        # As we don't know which task was completed first, we have to save them in a
-        # key(grid_size) : value (future.result()) format
         for future in concurrent.futures.as_completed(futures):
             future_name = futures[future]
             results[future_name] = future.result()
 
-        return results, task_file
+        if not on_the_fly.get():
+            # If the process was not done on the fly, send it to the GEE servers
+            # but first merge all the processes in one.
+            process = ee.FeatureCollection(list(results.values()))
+            task_process(process, task_filepath)
+
+            return {1: False}
+
+        return results

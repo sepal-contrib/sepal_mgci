@@ -112,6 +112,9 @@ class CalculationView(sw.Card):
         self.btn.on_event("click", self.run_statistics)
         self.model.observe(self.activate_download, "done")
 
+        self.model.observe(lambda *_: self.alert.reset(), "sub_a_year")
+        self.model.observe(lambda *_: self.alert.reset(), "sub_b_year")
+
     def activate_download(self, change):
         """Verify if the process is done and activate button"""
         if change["new"]:
@@ -215,8 +218,14 @@ class CalculationView(sw.Card):
             int(k): int(v) for k, v in self.model.matrix_sub_b.items()
         }
 
+        report_folder = cs.get_report_folder(self.model)
+        task_filepath = (
+            DIR.TASKS_DIR
+            / f"Task_result_{report_folder.stem}_{self.model.session_id}.csv"
+        )
+
         # Create a fucntion in order to be able to test it easily
-        results, task_file = perform_calculation(
+        results = perform_calculation(
             aoi=self.model.aoi_model.feature_collection,
             rsa=self.model.rsa,
             dem=self.model.dem,
@@ -224,16 +233,22 @@ class CalculationView(sw.Card):
             remap_matrix_b=self.model.matrix_sub_b,
             transition_matrix=self.model.transition_matrix,
             years=years,
+            task_filepath=task_filepath,
             logger=self.alert,
         )
 
         # If result is None, we assume the computation was tasked
 
         if not all(results.values()):
-            task_filename = task_file.with_suffix(".csv")
-            self.alert.append_msg(
-                f"The computation has been tasked {task_filename}.", type_="warning"
+            task_filename = task_filepath.with_suffix(".csv")
+
+            msg = sw.Markdown(
+                "The computation could not be completed on the fly. The task <i>'{}'</i> have been tasked in your <a href='https://code.earthengine.google.com/tasks'>GEE account</a>.".format(
+                    task_filename
+                )
             )
+
+            self.alert.append_msg(msg, type_="warning")
 
         elif all(results.values()):
             self.model.results = results

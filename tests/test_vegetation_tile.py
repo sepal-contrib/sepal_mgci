@@ -83,7 +83,7 @@ def test_default_matrix(mgci_model, default_target_classes):
         list(
             zip(
                 *list(
-                    pd.read_csv(param.LC_MAP_MATRIX)[["from_code", "target_code"]]
+                    pd.read_csv(param.LC_MAP_MATRIX)[["from_code", "to_code"]]
                     .to_dict("list")
                     .values()
                 )
