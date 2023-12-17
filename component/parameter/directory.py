@@ -38,13 +38,19 @@ TRANSITION_DIR.mkdir(parents=True, exist_ok=True)
 # As soon as the folders are created, copy the default classification files
 
 # copy param.LC_CLASSES to CLASS_DIR and make it read only if it doesn't exist
-LOCAL_LC_CLASSES = CLASS_DIR.joinpath("lc_classification.csv")
+LOCAL_LC_CLASSES = CLASS_DIR.joinpath("default_lc_classification.csv")
 if not LOCAL_LC_CLASSES.exists():
-    shutil.copy(param.LC_CLASSES, CLASS_DIR)
+    shutil.copy(param.LC_CLASSES, LOCAL_LC_CLASSES)
     LOCAL_LC_CLASSES.chmod(0o444)
 
 # copy param.LC_MAP_MATRIX to MATRIX_DIR and make it read only
-LOCAL_LCMAP_MATRIX = MATRIX_DIR.joinpath("lc_map_matrix.csv")
+LOCAL_LCMAP_MATRIX = MATRIX_DIR.joinpath("default_lc_map_matrix.csv")
 if not LOCAL_LCMAP_MATRIX.exists():
-    shutil.copy(param.LC_MAP_MATRIX, MATRIX_DIR)
+    shutil.copy(param.LC_MAP_MATRIX, LOCAL_LCMAP_MATRIX)
     LOCAL_LCMAP_MATRIX.chmod(0o444)
+
+
+# copy param.LC_MAP_MATRIX to MATRIX_DIR and make it read only
+LOCAL_TRANSITION_MATRIX = TRANSITION_DIR.joinpath("transition_matrix.csv")
+if not LOCAL_TRANSITION_MATRIX.exists():
+    shutil.copy(param.TRANSITION_MATRIX_FILE, LOCAL_TRANSITION_MATRIX)
