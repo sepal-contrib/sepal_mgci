@@ -658,7 +658,7 @@ def map_matrix_to_dict(matrix_file_path: str):
         list(
             zip(
                 *list(
-                    pd.read_csv(matrix_file_path)[["from_code", "target_code"]]
+                    pd.read_csv(matrix_file_path)[["from_code", "to_code"]]
                     .to_dict("list")
                     .values()
                 )
@@ -709,3 +709,13 @@ def get_sub_b_items(
     items = [{"text": label, "value": value} for label, value in zip(labels, values)]
 
     return items, values
+
+
+def set_transition_code(df):
+    """Create a new column containing the "transition" code
+    that is the concatenation of the from_code and to_code"""
+
+    df = df.copy()
+    df.loc[:, "transition"] = df.from_code * 100 + df.to_code
+
+    return df

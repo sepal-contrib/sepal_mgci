@@ -13,12 +13,14 @@ from component.scripts.report_scripts import (
     get_nature,
     get_belt_desc,
     get_lc_desc,
-    LC_MAP_MATRIX,
     get_obs_status,
 )
 
 if TYPE_CHECKING:
     from component.model.model import MgciModel
+
+
+LC_MAP_MATRIX = pd.read_csv(param.LC_MAP_MATRIX)
 
 
 def get_mgci_landtype(parsed_df):
@@ -31,9 +33,11 @@ def get_mgci_landtype(parsed_df):
 
     df = fill_parsed_df(parsed_df.copy())
 
-    # Add is_green column to the dataframe based on lc_class.
+    # As for this subindicator we will always use the same land cover classification,
+    # we can use the param.LC_MAP_MATRIX to get the is_green value.
+
     df["is_green"] = df.apply(
-        lambda row: LC_MAP_MATRIX.loc[LC_MAP_MATRIX.target_code == row["lc_class"]][
+        lambda row: LC_MAP_MATRIX.loc[LC_MAP_MATRIX.to_code == row["lc_class"]][
             "green"
         ].iloc[0],
         axis=1,
@@ -80,7 +84,7 @@ def get_mgci(parsed_df: pd.DataFrame) -> pd.DataFrame:
     Cover Index) for each belt class.
 
     It groups the data by "belt_class" and "is_green",
-    adds a column "is_green" to the dataframe based on the lc_map_matrix, calculates the
+    adds a column "is_green" to the dataframe based on the param.lc_map_matrix, calculates the
     green and non-green areas, and calculates the mgci value. The function then returns
     a new dataframe with the belts and their respective mgci values.
 
@@ -91,7 +95,7 @@ def get_mgci(parsed_df: pd.DataFrame) -> pd.DataFrame:
 
     # Adds is_green column to the dataframe based on lc_class.
     df["is_green"] = df.apply(
-        lambda row: LC_MAP_MATRIX.loc[LC_MAP_MATRIX.target_code == row["lc_class"]][
+        lambda row: LC_MAP_MATRIX.loc[LC_MAP_MATRIX.to_code == row["lc_class"]][
             "green"
         ].iloc[0],
         axis=1,

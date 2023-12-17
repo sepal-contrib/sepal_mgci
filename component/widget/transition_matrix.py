@@ -12,6 +12,7 @@ from component.model.model import MgciModel
 import component.parameter.directory as dir_
 import component.parameter.module_parameter as param
 from component.scripts import validation as validation
+from component.scripts.scripts import set_transition_code
 
 
 class TransitionMatrix(sw.Layout):
@@ -98,9 +99,7 @@ class TransitionMatrix(sw.Layout):
             ],
         ).hide()
 
-        self.input_impact.observe(
-            lambda chg: self.read_inputs(change=chg, type_="impact"), "v_model"
-        )
+        self.input_impact.observe(self.read_inputs, "v_model")
 
         # create the simple table
         super().__init__()
@@ -137,20 +136,21 @@ class TransitionMatrix(sw.Layout):
         else:
             # show inputs to custom transition matrix and custom green/non green
             [ch.show() for ch in self.get_children(id_="custom_inputs")]
-
             [ch.hide() for ch in self.get_children(id_="transition_matrix")]
 
-    def read_inputs(self, change, type_):
-        """Read user inputs from custom transition matrix and custom green/non green"""
+            self.input_impact.reset()
+            self.transition_matrix = ""
 
-        # Get TextField from change widget
-        text_field_msg = change["owner"].children[-1]
-        text_field_msg.error_messages = []
+    def read_inputs(self, change):
+        """Read user custom input from custom transition matrix"""
 
-        validation.validate_file(change["new"], text_field_msg, type_)
-        # After passing all checks, update the model
+        if change["new"]:
+            # Get TextField from change widget
+            text_field_msg = change["owner"].children[-1]
+            text_field_msg.error_messages = []
 
-        if type_ == "impact":
+            validation.validate_transition_matrix(change["new"], text_field_msg)
+
             self.transition_matrix = change["new"]
 
     @switch("indeterminate", on_widgets=["progress"], targets=[False])
@@ -233,9 +233,7 @@ class TransitionMatrix(sw.Layout):
 
         # Here I want to create a new column containing the "transition" code
         # that is the concatenation of the from_code and to_code
-        self.edited_df.loc[:, "transition"] = (
-            self.edited_df.from_code * 100 + self.edited_df.to_code
-        )
+        self.edited_df = set_transition_code(self.edited_df)
 
         self.edited_df[["from_code", "to_code", "impact_code", "transition"]].to_csv(
             self.custom_transition_file_path, index=False
