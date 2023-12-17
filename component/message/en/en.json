@@ -58,7 +58,7 @@
                 "sub_a" : "<p><span class='title'>Sub-indicator 15.4.2a</span></p><p>Mountain Green Cover Index (MGCI), measures the extent and changes of green cover in mountain areas. In this sub-indicator, land cover is used to categorize land into green and non-green cover areas. Green cover includes areas covered by both natural vegetation and vegetation resulting from anthropic activity, whereas non-green areas include non-vegetated areas such as bare land, water, permanent ice/snow, urban areas and sparsely vegetated areas.</p>",
                 "sub_b" : "<p><span class='title'>Sub-indicator 15.4.2b</span></p><p>Proportion of degraded mountain land, monitors the extent of degraded mountain land as a result of land cover change. In this sub-indicator, land cover is used to identify areas where changes in the type of land cover (land cover transitions) may indicate a decline or loss of biodiversity, mountain ecosystem functions or services that are considered desirable in a local or national context.</p>",
                 "btn" : {
-                    "label" : "Open parameter settings"
+                    "label" : "Validate settings"
                 }
         },
         "stepper" : {
@@ -113,11 +113,12 @@
                 "description" : "This module allows users to modify the default target land cover classes used in the reclassification process. The module is set to use the standard 10 IPCC classes by default, but for sub indicator B, users have the option to either use these default classes or create their own custom classification. To use the custom classification option, simply select the 'custom' button and upload a file containing the target classifications that will be used in the reclassification table."
             },
             "import_" : {
-                "title" : "Load reclassification matrix",
+                "title" : "Load remapping table",
                 "btn_label" : "Load",
                 "error" : {
                     "no_file" : "Please select a file containing a reclassified matrix.",
-                    "no_table" : "Please go to the step 1 and get the classes table first."
+                    "no_table" : "Please go to the step 1 and get the classes table first.",
+                    "no_valid" : "The file you have selected is not valid. Please select a valid file."
                 }
             }
         }

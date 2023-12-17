@@ -48,7 +48,7 @@ class CalculationTile(v.Layout, sw.SepalWidget):
 class CalculationView(sw.Card):
     def __init__(self, model: MgciModel, *args, **kwargs):
         """Dashboard tile to calculate and resume the zonal statistics for the
-        vegetation layer by kapos ranges.
+        vegetation layer by biobelt.
 
         Args:
             model (MgciModel): Mgci Model
@@ -165,6 +165,22 @@ class CalculationView(sw.Card):
             if self.model.calc_a
             else "sub_b"
         )
+
+        if which == "sub_a" or which == "both":
+            if not self.model.matrix_sub_a:
+                raise Exception(
+                    "No remap matrix for subindicator A, please remap your data in the previous step."
+                )
+
+        if which == "sub_b" or which == "both":
+            if not self.model.matrix_sub_b:
+                raise Exception(
+                    "No remap matrix for subindicator B, please remap your data in the previous step."
+                )
+            if not self.model.transition_matrix:
+                raise Exception(
+                    "No transition matrix for subindicator B, please upload one in the previous step."
+                )
 
         # Calculate regions
         head_msg = sw.Flex(children=[cm.dashboard.alert.computing.format(area_type)])
