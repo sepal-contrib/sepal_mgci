@@ -58,6 +58,8 @@ class LayerHandler(sw.Card):
         """Update w_layers with the layers selected by the user"""
 
         # I need two sublists, one for each subindicator
+        # either case, remove all layers from map
+        self.map_.remove_all()
 
         # First check if both "year" and "asset" are not empty on all model.sub_a_year.values()
         subindicator = change["name"]
