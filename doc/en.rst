@@ -1,6 +1,7 @@
 SEPAL-SDG 15.4.2 :sub:`beta`
 ============================
-*A tool to support the computation of SDG Indicator 15.4.2 Indicator 15.4.2: (a) Mountain Green Cover Index and (b) Proportion of degraded mountain land using SEPAL (System for Earth Observation Data Access, Processing, and Analysis for Land Monitoring).*
+
+*A tool to support the computation of SDG Indicator 15.4.2 Indicator 15.4.2: (a) Mountain Green Cover Index and (b) Proportion of degraded mountain land using SEPAL (System for Earth Observation Data Access, Processing, and Analysis for Land Monitoring). *
 
 This guide will introduce you to SEPAL-SDG 15.4.2 :sub:`beta` and will provide you detailed instructions on how the set it up and carry out the computation of both sub-indicators in a step-by-step manner. Screenshots are included to make it easier for the user to know what each description refers to.
 
@@ -32,13 +33,13 @@ Data sources
 SEPAL-SDG 15.4.2 :sub:`beta` draws on a number of global data sources to allow the computation of the SDG 15.4.2 indicator when similar national data is not available. The datasets described below have been made available by the following organizations under separate terms as indicated in their respective metadata.
 
 - **Land cover**: European Space Agency (ESA) Climate Change Initiative (CCI) Land cover, available at `ESA-CCI land cover website <https://maps.elie.ucl.ac.be/CCI/viewer/index.php>`_.
-- **Digital Elevation Model**: The Shuttle Radar Topography Mission (SRTM), available at `Google Earth Engine Data Catalog <https://developers.google.com/earth-engine/datasets/catalog/CGIAR_SRTM90_V4>`_.
-- **Administrative Boundaries**: FAO GAUL: Global Administrative Unit Layers 2015, available at `Google Earth Engine Data Catalog <https://developers.google.com/earth-engine/datasets/catalog/FAO_GAUL_2015_level1>`_.
+- **Digital Elevation Model**: The Shuttle Radar Topography Mission (SRTM), available at `Google Earth Engine Data SRTM <https://developers.google.com/earth-engine/datasets/catalog/CGIAR_SRTM90_V4>`_.
+- **Administrative Boundaries**: FAO GAUL: Global Administrative Unit Layers 2015, available at `Google Earth Engine Data FAO GAUL <https://developers.google.com/earth-engine/datasets/catalog/FAO_GAUL_2015_level1>`_.
 
 **Note:** The  Administrative Boundaries provided in this tool are in the public domain. The designations employed and the presentation of material on this map do not imply the expression of any opinion whatsoever on the part of the Secretariat of the United Nations concerning the legal status of any country, territory, city or area or its authorities, or concerning the delimitation of its frontiers or boundaries. If using SEPAL-SDG 15.4.2 :sub:`beta` for official purposes, it is recommended that users use an official boundary provided by the designated office of their country.
 
 Before using SEPAL-SDG 15.4.2 :sub:`beta`
------------------------------------
+-----------------------------------------
 
 Initial setup
 ^^^^^^^^^^^^^
@@ -139,7 +140,7 @@ Google Earth Engine allows the upload of tabular data in CSV format. To upload a
 
 .. tip::
 
-Now you can access and use your assets in SEPAL. As you have already established a connection between your GEE and SEPAL accounts, all your assets are synced and available for you in SEPAL. You will be able to select them from the dropdown or copy/paste them directly from GEE when prompted in SEPAL-SDG 15.4.2 :sub:`beta`
+   Now you can access and use your assets in SEPAL. As you have already established a connection between your GEE and SEPAL accounts, all your assets are synced and available for you in SEPAL. You will be able to select them from the dropdown or copy/paste them directly from GEE when prompted in SEPAL-SDG 15.4.2 :sub:`beta`
 
 The SEPAL interface and the SEPAL-SDG 15.4.2 :sub:`beta` module
 ---------------------------------------------------------------
@@ -184,7 +185,8 @@ The module should look like the image below. As any other SEPAL module, SEPAL-SD
    :alt: MGCI module
 
 Personalising SEPAL-SDG 15.4.2 :sub:`beta`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 SEPAL includes functionalities to personalize the appearance of SEPAL-SDG 15.4.2 :sub:`beta`
 
 **Theme customization:**
@@ -337,7 +339,8 @@ You can do this in two different ways:
 
 .. _reclass_table:
   .. tip:: What is a reclassification matrix table?:
-      A reclassification matrix is a comma-separated values (CSV) file used to reclassify old pixel values into new ones. The CSV file only has to contain two values per line, the first one refers to the `from` value, while the second is the `target` value, just as it is described in the following table: 
+
+     A reclassification matrix is a comma-separated values (CSV) file used to reclassify old pixel values into new ones. The CSV file only has to contain two values per line, the first one refers to the `from` value, while the second is the `target` value, just as it is described in the following table: 
 
       .. csv-table:: Reclassification table example
          :header: "Origin class", "Target class"
@@ -408,7 +411,7 @@ Once finished, just click outside the window and move to the next processing ste
 
 .. note::
 
-Adapting the default land cover transition matrix using the default global land cover data should be carefully considered. Decisions about which land cover transitions are linked to a degradation or an improvement process in the context of sub-indicator B should be made taking into account the expected change in biodiversity and the mountain ecosystem functions or services that are considered desirable in a local or national context. For these reasons, FAO recommends to consider as degradation all land cover transitions that involve changes from natural land cover types (such as forests, shrublands, grasslands, wetlands) to anthropogenic land cover types (artificial surfaces, cropland, pastures, plantation forests, etc.) as a general rule, given that land use change is known to be the primary driver of biodiversity loss (IPBES, 2019).
+   Adapting the default land cover transition matrix using the default global land cover data should be carefully considered. Decisions about which land cover transitions are linked to a degradation or an improvement process in the context of sub-indicator B should be made taking into account the expected change in biodiversity and the mountain ecosystem functions or services that are considered desirable in a local or national context. For these reasons, FAO recommends to consider as degradation all land cover transitions that involve changes from natural land cover types (such as forests, shrublands, grasslands, wetlands) to anthropogenic land cover types (artificial surfaces, cropland, pastures, plantation forests, etc.) as a general rule, given that land use change is known to be the primary driver of biodiversity loss (IPBES, 2019).
 
 Indicators settings
 -------------------
@@ -441,7 +444,7 @@ Defining parameters for Sub-indicator A: Mountain Green Cover Index
 
 .. note::
 
-Remember that reporting years for Sub-indicator A are 2000, 2005, 2010, 2015 and subsequently every 3 years (2018, 2021, 2024,...). If you are using custom national land cover maps that are not annually updated and does not exactely match reporting years (for example, you may have a land cover map for 2004 instead of 2005), the tool will automatically interpolates values for the reporting years based on the years for which land cover data is available. 
+   Remember that reporting years for Sub-indicator A are 2000, 2005, 2010, 2015 and subsequently every 3 years (2018, 2021, 2024,...). If you are using custom national land cover maps that are not annually updated and does not exactely match reporting years (for example, you may have a land cover map for 2004 instead of 2005), the tool will automatically interpolates values for the reporting years based on the years for which land cover data is available. 
 
 .. image:: https://raw.githubusercontent.com/xavidelamo/sepal_images/main/computation/defining_multiple_years.PNG
    :align: center
@@ -493,7 +496,7 @@ Once you have set the parameters of each sub-indicator, the tool is now ready to
 
 .. tip::
 
-SEPAL-SDG 15.4.2 :sub:`beta` calculates the indicator values assuming a planimetric area methods by default. To calculate indicator values using a real surface area method (a method that takes into account the third dimension of mountain surfaces through the use of digital elevation models and is known to derive closer estimates of the real surface area of mountain regions), click on "Use Real Surface Area"
+   SEPAL-SDG 15.4.2 :sub:`beta` calculates the indicator values assuming a planimetric area methods by default. To calculate indicator values using a real surface area method (a method that takes into account the third dimension of mountain surfaces through the use of digital elevation models and is known to derive closer estimates of the real surface area of mountain regions), click on "Use Real Surface Area"
 
 3. The entire process is done "on the fly” and thus you need to export your reporting tables to visualize and use them when required. To do that, click on  the "Export Reporting Tables". When completed, a message will appear indicating where the tables have been exported. 
 
@@ -559,7 +562,7 @@ As explained earlier, once computation is completed, users can export the report
    :width: 700
    :alt: Reclassify table
 
-**2. To download the report from SEPAL, click on the report and this activates the download icon in the top right side of the screen.
+**2. To download the report from SEPAL, click on the report and this activates the download icon in the top right side of the screen.**
 
 .. image:: https://raw.githubusercontent.com/xavidelamo/sepal_images/main/computation/export_mgci.PNG
    :align: center
@@ -594,7 +597,7 @@ This generates dashboards to visualize the results of the computation. As seen b
    :width: 700
    :alt: Reclassify table
 
-**2. To see the results for Sub-Indicator B, choose a target year (baseline or one of the reporting years) using the drop-down arrow and a bioclimatic belt. Then click on Calculate:
+**2. To see the results for Sub-Indicator B, choose a target year (baseline or one of the reporting years) using the drop-down arrow and a bioclimatic belt. Then click on Calculate:**
 
 .. image:: https://raw.githubusercontent.com/xavidelamo/sepal_images/main/computation/results_sub_indicator_b.PNG
    :align: center
