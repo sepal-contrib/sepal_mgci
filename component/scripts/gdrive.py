@@ -1,10 +1,13 @@
+from pathlib import Path
 import io
 import logging
+import json
 
 import ee
 import numpy as np
 from apiclient import discovery
 from googleapiclient.http import MediaIoBaseDownload
+from google.oauth2.credentials import Credentials
 
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 
@@ -14,13 +17,32 @@ __all__ = ["GDrive"]
 class GDrive:
     def __init__(self):
         self.initialize = ee.Initialize()
-        self.credentials = ee.Credentials()
+        # Access to sepal access token
+        self.access_token = json.loads(
+            (Path.home() / ".config/earthengine/credentials").read_text()
+        ).get("access_token")
         self.service = discovery.build(
             serviceName="drive",
             version="v3",
             cache_discovery=False,
-            credentials=self.credentials,
+            credentials=Credentials(self.access_token),
         )
+
+    def print_file_list(self):
+        service = self.service
+
+        results = (
+            service.files()
+            .list(pageSize=30, fields="nextPageToken, files(id, name)")
+            .execute()
+        )
+        items = results.get("files", [])
+        if not items:
+            print("No files found.")
+        else:
+            print("Files:")
+            for item in items:
+                print("{0} ({1})".format(item["name"], item["id"]))
 
     def get_items(self):
         service = self.service
@@ -30,7 +52,7 @@ class GDrive:
             service.files()
             .list(
                 q="mimeType='text/csv'",
-                pageSize=10,
+                pageSize=1000,
                 fields="nextPageToken, files(id, name)",
             )
             .execute()
@@ -40,6 +62,7 @@ class GDrive:
         return items
 
     def get_id(self, filename):
+
         items = self.get_items()
         # extract list of names and id and find the wanted file
         namelist = np.array([items[i]["name"] for i in range(len(items))])
@@ -52,10 +75,12 @@ class GDrive:
             return (1, idlist[file_pos])
 
     def download_file(self, filename, output_file):
+
         # get file id
         success, fId = self.get_id(filename)
         if success == 0:
-            raise Exception("File not found")
+            print(filename + " not found")
+            return
 
         request = self.service.files().get_media(fileId=fId[0])
         fh = io.BytesIO()
@@ -63,43 +88,23 @@ class GDrive:
         done = False
         while done is False:
             status, done = downloader.next_chunk()
+            # print('Download %d%%.' % int(status.progress() * 100))
 
         fo = open(output_file, "wb")
         fo.write(fh.getvalue())
         fo.close()
 
-        return True
+    def delete_file(self, items_to_search, filename):
 
-    def download_file(self, filename, output_file):
-        success, fId = self.get_id(filename)
-        if success == 0:
-            raise Exception("File not found")
-
-        request = self.service.files().get_media(fileId=fId[0])
-        fh = io.BytesIO()
-        downloader = MediaIoBaseDownload(fh, request)
-        done = False
-        while done is False:
-            status, done = downloader.next_chunk()
-        if status:
-            fo = open(output_file, "wb")
-            fo.write(fh.getvalue())
-            fo.close()
-        else:
-            raise Exception("Download Failed")
-        return True
-
-    def delete_file(self, filename):
         # get file id
-        success, fId = self.get_id(self.get_items(), filename)
+        success, fId = self.get_id(items_to_search, filename)
 
         if success == 0:
             print(filename + " not found")
 
         self.service.files().delete(fileId=fId[0]).execute()
 
-    @staticmethod
-    def get_task(task_id):
+    def get_task(self, task_id):
         """Get the current state of the task"""
 
         tasks_list = ee.batch.Task.list()

@@ -164,9 +164,7 @@ class CalculationView(sw.Card):
         which = (
             "both"
             if self.model.calc_a and self.model.calc_b
-            else "sub_a"
-            if self.model.calc_a
-            else "sub_b"
+            else "sub_a" if self.model.calc_a else "sub_b"
         )
 
         if which == "sub_a" or which == "both":
@@ -314,7 +312,7 @@ class DownloadTaskView(v.Card):
             task_filename = f"{tasks_file.stem}_{process_id}.csv"
 
             # Dowload from file
-            msg = cw.TaskMsg(f"Calculating {process_id}..")
+            msg = cw.TaskMsg(f"Calculating {process_id}..", process_id)
             self.alert.append_msg(msg)
 
             result_file = self.model.download_from_task_file(

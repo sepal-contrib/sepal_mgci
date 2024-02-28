@@ -22,15 +22,15 @@ class Logger:
         self.state = state
 
 
-def task_process(process, task_filepath):
+def task_process(process: ee.FeatureCollection, task_filepath: str) -> None:
     """Send the task to the GEE servers and process it in background. This will be
     neccessary when the process is timed out."""
-
+    print("changed")
     task_name = Path(f"{task_filepath.stem}")
 
     task = ee.batch.Export.table.toDrive(
         **{
-            "collection": ee.FeatureCollection([ee.Feature(None, process)]),
+            "collection": process,
             "description": str(task_name),
             "fileFormat": "CSV",
         }
@@ -87,6 +87,7 @@ def perform_calculation(
 
         # Try the process in on the fly
         try:
+            raise Exception("Computation timed out.")
             result = process.getInfo()
             logger.set_msg(f"Calculating {process_id}... Done.", id_=process_id)
             logger.set_state("success", id_=process_id)
