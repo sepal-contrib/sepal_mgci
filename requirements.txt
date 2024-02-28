@@ -15,5 +15,3 @@ plotly
 pytest
 pygaul
 seaborn
-ipywidgets==7.6.5
-ipyvuetify==1.8.1
