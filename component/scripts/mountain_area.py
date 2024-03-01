@@ -35,12 +35,27 @@ def get_mountain_area(parsed_df):
     return pd.concat([belt_area_df, total_green])
 
 
-def get_report(parsed_df: pd.DataFrame, year: int, model) -> Tuple[pd.DataFrame, int]:
+def get_report(
+    parsed_df: pd.DataFrame, year: int, model=None, **details
+) -> Tuple[pd.DataFrame, int]:
     """Create a report for Table1_MountainArea.
 
     Args:
         parsed_df (pd.DataFrame): it comes from cs.cs.parse_to_year_a() since it gets the year from model.results and parses the result.
+
+    **extra_args:
+        Extra parameters used when model = None and function is executed from
+        outside the ui
+        - geo_area_name
+        - ref_area
+        - source_detail
     """
+
+    if details:
+        # This is useful when function is called from outside the
+        geo_area_name = details.get("geo_area_name")
+        ref_area = details.get("ref_area")
+        source_detail = details.get("source_detail")
 
     report_df = get_mountain_area(parsed_df)
     report_df["OBS_VALUE"] = report_df["sum"]
@@ -53,11 +68,11 @@ def get_report(parsed_df: pd.DataFrame, year: int, model) -> Tuple[pd.DataFrame,
     report_df["SeriesID"] = param.TBD
     report_df["SERIES"] = param.TBD
     report_df["SeriesDesc"] = param.TBD
-    report_df["GeoAreaName"] = cs.get_geoarea(model.aoi_model)[0]
-    report_df["REF_AREA"] = cs.get_geoarea(model.aoi_model)[1]
+    report_df["GeoAreaName"] = geo_area_name or cs.get_geoarea(model.aoi_model)[0]
+    report_df["REF_AREA"] = ref_area or cs.get_geoarea(model.aoi_model)[1]
     report_df["TIME_PERIOD"] = year
     report_df["TIME_DETAIL"] = year
-    report_df["SOURCE_DETAIL"] = model.source
+    report_df["SOURCE_DETAIL"] = source_detail or model.source
     report_df["COMMENT_OBS"] = "FAO estimate"
     report_df["BIOCLIMATIC_BELT"] = report_df.apply(get_belt_desc, axis=1)
 

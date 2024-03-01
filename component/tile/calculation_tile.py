@@ -294,56 +294,36 @@ class DownloadTaskView(v.Card):
         self.btn.on_event("click", self.run_statistics)
 
     @su.loading_button()
-    def run_statistics(self, widget, event, data):
+    def run_statistics(self, *_):
+        """From the gee result dictionary, extract the values and give a proper
+        format in a pd.DataFrame.
+
+        Args:
+            process (ee.reduceRegion): ee process (without execution).
+            task_file (path, str): full path of task file containing task_id(s)
+        """
+
+        self.model.done = False
+        self.model.results = {}
+
         # Get and read file
         tasks_file = Path(self.w_file_input.v_model)
-        tasks_df = self.model.read_tasks_file(tasks_file)
+        task_df = self.model.read_tasks_file(tasks_file)
 
-        def extract_from_tasks_file(tasks_file, process_id, task_id):
-            """From the gee result dictionary, extract the values and give a proper
-            format in a pd.DataFrame.
+        task_id = task_df.iloc[0, 1]
+        process_id = task_df.iloc[0, 0]
 
-            Args:
-                process (ee.reduceRegion): ee process (without execution).
-                task_file (path, str): full path of task file containing task_id(s)
-            """
+        # re-build the filename
+        task_filename = f"{tasks_file.stem}.csv"
 
-            # re-build the filename
-            task_filename = f"{tasks_file.stem}_{process_id}.csv"
+        # Dowload from file
+        msg = cw.TaskMsg(f"Processing {process_id}..", process_id)
+        self.alert.append_msg(msg)
 
-            # Dowload from file
-            msg = cw.TaskMsg(f"Calculating {process_id}..", process_id)
-            self.alert.append_msg(msg)
+        result_file = self.model.download_from_task_file(
+            task_id, tasks_file, task_filename
+        )
 
-            result_file = self.model.download_from_task_file(
-                task_id, tasks_file, task_filename
-            )
-
-            result = cs.read_from_csv(result_file, process_id)
-            sleep(0.5)
-            msg.set_msg(f"Calculating {process_id}... Done!.")
-            msg.set_state("success")
-
-            return result
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            self.model.done = False
-
-            futures = {
-                executor.submit(
-                    extract_from_tasks_file,
-                    tasks_file,
-                    row.iloc[0].strip(),
-                    row.iloc[1].strip(),
-                ): row.iloc[0].strip()
-                for _, row in tasks_df.iterrows()
-            }
-
-            self.model.results, results = {}, {}
-
-            for future in concurrent.futures.as_completed(futures):
-                future_name = futures[future]
-                results[future_name] = future.result()
-
-            self.model.results = results
-            self.model.done = True
+        self.model.results = cs.read_from_csv(result_file)
+        msg.set_state("success")
+        self.model.done = True

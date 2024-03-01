@@ -9,13 +9,13 @@ import component.parameter.module_parameter as param
 import component.parameter.directory as dir_
 from component.widget import reclassify as rec
 from component.message import cm
+from component.scripts.scripts import map_matrix_to_dict
 
 
 __all__ = ["ReclassifyTile"]
 
 
 class ReclassifyTile(sw.Layout):
-
     """Custom reclassify tile to replace the default Reclassify Tile and View
     from sepal_ui. This card will change depending on a input questionnaire which
     aims to create a custom view depending on their answers."""
@@ -106,14 +106,4 @@ class ReclassifyTile(sw.Layout):
 
         self.w_reclass.w_ic_select.v_model = str(param.LULC_DEFAULT)
 
-        self.w_reclass.model.matrix = dict(
-            list(
-                zip(
-                    *list(
-                        pd.read_csv(param.LC_MAP_MATRIX)[["from_code", "to_code"]]
-                        .to_dict("list")
-                        .values()
-                    )
-                )
-            )
-        )
+        self.w_reclass.model.matrix = map_matrix_to_dict(param.LC_MAP_MATRIX)

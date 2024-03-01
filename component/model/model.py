@@ -150,7 +150,6 @@ class MgciModel(Model):
             tmp_result_folder.mkdir(exist_ok=True)
 
             tmp_result_file = tmp_result_folder / task_filename
-            print(task_filename)
             gdrive.download_file(task_filename, tmp_result_file)
 
             return tmp_result_file

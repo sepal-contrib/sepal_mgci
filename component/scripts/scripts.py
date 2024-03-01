@@ -292,7 +292,7 @@ def parse_to_year_a(results, reporting_years, year: int) -> Union[pd.DataFrame, 
 
     # Check that indicator is sub_a and year is in individual years
     if any([str_year in yr for yr in individual_yrs]):
-        return parse_result(results[str_year]["groups"], single=True)
+        return parse_result(results[str_year]["sub_a"], single=True)
 
     # If we're here, it means that we didn't find the year in individual
     # or double years
@@ -439,24 +439,37 @@ def parse_result(result: dict, single: bool = False) -> pd.DataFrame:
     return df
 
 
-def read_from_csv(task_file, process_id) -> dict:
+def read_from_csv(task_file) -> dict:
     """read csv format from feature collection exportation in gee
 
     Args:
         task_file(path): full path of downloaded task
-        process_id (str): process id, normally are the year(s) of the result
     """
 
-    result_df = pd.read_csv(task_file)
+    sub_b_cats = [
+        "baseline_degradation",
+        "final_degradation",
+        "baseline_transition",
+        "report_transition",
+    ]
+    results = {}
+    raw_results_df = pd.read_csv(task_file)
 
-    line = (
-        re.sub(r"([a-zA-Z]+)", r"'\1'", result_df.groups.iloc[0])
-        .replace("=", ":")
-        .replace("'E'", "E")
-        .replace("<'FeatureCollection'>,", "")
-    )
+    def read_line(line):
+        return eval(
+            re.sub(r"([a-zA-Z]+)", r"'\1'", line).replace("=", ":").replace("'E'", "E")
+        )
 
-    return eval(line)
+    for _, row in raw_results_df.iterrows():
+
+        if len(str(row["process_id"]).split("_")) > 1:
+            results[row["process_id"]] = []
+            for cat in sub_b_cats:
+                results[row["process_id"]].append({cat: read_line(row[cat])})
+        else:
+            results[row["process_id"]] = {"sub_a": read_line(row["sub_a"])}
+
+    return results
 
 
 def get_sub_b_break_points(
@@ -636,9 +649,9 @@ def export_reports(model: "MgciModel", output_folder) -> None:
                     except:
                         pass
                 adjusted_width = max(max_length, len(str(column.value))) + 4
-                worksheet.column_dimensions[
-                    get_column_letter(column.column)
-                ].width = adjusted_width
+                worksheet.column_dimensions[get_column_letter(column.column)].width = (
+                    adjusted_width
+                )
 
                 # Align "obs_value" column to the right
                 if "OBS" in column.value:

@@ -182,7 +182,11 @@ def get_mgci(parsed_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_report(
-    parsed_df: pd.DataFrame, year: int, model, land_type: Optional[bool] = False
+    parsed_df: pd.DataFrame,
+    year: int,
+    model: Optional["MgciModel"] = None,
+    land_type: Optional[bool] = False,
+    **details
 ) -> pd.DataFrame:
     """
     This function takes in a parsed DataFrame, a year, and an optional land_type
@@ -195,7 +199,20 @@ def get_report(
     'GeoAreaCode', 'TimePeriod', 'Time_Detail', 'Source', 'FootNote', 'Nature',
     'Reporting Type', 'Observation Status', 'Bioclimatic Belt', 'ISOalpha3',
     'Type', and 'SeriesCode'.
+
+    **extra_args:
+        Extra parameters used when model = None and function is executed from
+        outside the ui
+        - geo_area_name
+        - ref_area
+        - source_detail
     """
+
+    if details:
+        # This is useful when function is called from outside the
+        geo_area_name = details.get("geo_area_name")
+        ref_area = details.get("ref_area")
+        source_detail = details.get("source_detail")
 
     if land_type:
         # Table2_1542a_LandCoverType
@@ -221,11 +238,11 @@ def get_report(
     report_df["SeriesID"] = param.TBD
     report_df["SERIES"] = param.TBD
     report_df["SeriesDesc"] = param.TBD
-    report_df["GeoAreaName"] = cs.get_geoarea(model.aoi_model)[0]
-    report_df["REF_AREA"] = cs.get_geoarea(model.aoi_model)[1]
+    report_df["GeoAreaName"] = geo_area_name or cs.get_geoarea(model.aoi_model)[0]
+    report_df["REF_AREA"] = ref_area or cs.get_geoarea(model.aoi_model)[1]
     report_df["TIME_PERIOD"] = year
     report_df["TIME_DETAIL"] = year
-    report_df["SOURCE_DETAIL"] = model.source
+    report_df["SOURCE_DETAIL"] = source_detail or model.source
     report_df["COMMENT_OBS"] = "FAO estimate"
     report_df["BIOCLIMATIC_BELT"] = report_df.apply(get_belt_desc, axis=1)
 
@@ -252,14 +269,16 @@ def get_report(
 
 
 def get_reports(
-    parsed_df: pd.DataFrame, year_s: str, model: "MgciModel"
+    parsed_df: pd.DataFrame, year_s: str, model: "MgciModel" = None, **extra_args
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     SubIndA_MGCI
     SubIndA_LandType
     """
 
-    mgci_report = get_report(parsed_df, year_s, model)
-    mgci_land_type_report = get_report(parsed_df, year_s, model, land_type=True)
+    mgci_report = get_report(parsed_df, year_s, model, **extra_args)
+    mgci_land_type_report = get_report(
+        parsed_df, year_s, model, land_type=True, **extra_args
+    )
 
     return mgci_report, mgci_land_type_report
