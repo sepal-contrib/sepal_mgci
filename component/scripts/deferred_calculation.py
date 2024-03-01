@@ -33,6 +33,14 @@ def task_process(process: ee.FeatureCollection, task_filepath: str) -> None:
             "collection": process,
             "description": str(task_name),
             "fileFormat": "CSV",
+            "selectors": [
+                "process_id",
+                "sub_a",
+                "baseline_degradation",
+                "final_degradation",
+                "baseline_transition",
+                "report_transition",
+            ],
         }
     )
 
@@ -87,7 +95,6 @@ def perform_calculation(
 
         # Try the process in on the fly
         try:
-            raise Exception("Computation timed out.")
             result = process.getInfo()
             logger.set_msg(f"Calculating {process_id}... Done.", id_=process_id)
             logger.set_state("success", id_=process_id)
@@ -111,7 +118,6 @@ def perform_calculation(
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         results = {}
-        unique_preffix = su.random_string(4).upper()
 
         futures = {
             executor.submit(deferred_calculation, year, on_the_fly): cs.years_from_dict(

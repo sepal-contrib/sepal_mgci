@@ -8,7 +8,7 @@ from component.message import cm
 # Create a range of years from 2000 to present year
 # and sort them in descending order
 YEARS = pd.date_range(
-    start="2000-01-01", end=pd.Timestamp.now(), freq="AS"
+    start="2000-01-01", end=pd.Timestamp.now(), freq="YS"
 ).year.tolist()
 YEARS.sort(reverse=True)
 "list: list of years used in calculation dialogs to match asset selection"

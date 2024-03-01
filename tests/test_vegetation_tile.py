@@ -6,6 +6,7 @@ from component.model.model import MgciModel
 from component.tile.vegetation_tile import VegetationTile
 import component.parameter.directory as dir_
 import component.parameter.module_parameter as param
+from component.scripts.scripts import map_matrix_to_dict
 
 
 @pytest.fixture
@@ -79,17 +80,7 @@ def test_default_matrix(mgci_model, default_target_classes):
 
     vegetation_tile = VegetationTile(mgci_model)
 
-    default_map_matrix = dict(
-        list(
-            zip(
-                *list(
-                    pd.read_csv(param.LC_MAP_MATRIX)[["from_code", "to_code"]]
-                    .to_dict("list")
-                    .values()
-                )
-            )
-        )
-    )
+    default_map_matrix = map_matrix_to_dict(param.LC_MAP_MATRIX)
 
     # Vegetation tile has to start with the default land cover mapping matrices in both models
 

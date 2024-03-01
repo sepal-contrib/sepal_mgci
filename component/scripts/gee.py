@@ -127,21 +127,24 @@ def reduce_regions(
             )
         )
 
-    return (
-        image_area.divide(param.UNITS["sqkm"][0])
-        .updateMask(clip_biobelt.mask())
-        .addBands(no_remap(ee_lc_start, remap_matrix))
-        .addBands(clip_biobelt)
-        .reduceRegion(
-            **{
-                "reducer": ee.Reducer.sum().group(1).group(2),
-                "geometry": aoi,
-                "maxPixels": 1e19,
-                "scale": scale,
-                "bestEffort": True,
-                "tileScale": 4,
-            }
-        )
+    return ee.Dictionary(
+        {
+            "sub_a": image_area.divide(param.UNITS["sqkm"][0])
+            .updateMask(clip_biobelt.mask())
+            .addBands(no_remap(ee_lc_start, remap_matrix))
+            .addBands(clip_biobelt)
+            .reduceRegion(
+                **{
+                    "reducer": ee.Reducer.sum().group(1).group(2),
+                    "geometry": aoi,
+                    "maxPixels": 1e19,
+                    "scale": scale,
+                    "bestEffort": True,
+                    "tileScale": 4,
+                }
+            )
+            .get("groups")
+        }
     )
 
 
