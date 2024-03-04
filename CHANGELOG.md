@@ -1,3 +1,24 @@
+## 0.5.0 (2024-03-04)
+
+### Feat
+
+- improve in app ifno
+- define step by step process to calculate and report sub_a indicator
+- add meaningfull error when there's no the home folder
+- add meaningfull error when there's no the home folder
+- Add authentication cell
+
+### Fix
+
+- fix gee timeout error
+- fix gdrive download
+
+### Refactor
+
+- download & export tables when task used
+- drop concurrent operations
+- remove auth
+
 ## 0.4.0 (2023-12-17)
 
 ### Feat
