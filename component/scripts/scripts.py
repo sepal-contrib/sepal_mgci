@@ -463,9 +463,9 @@ def read_from_csv(task_file) -> dict:
     for _, row in raw_results_df.iterrows():
 
         if len(str(row["process_id"]).split("_")) > 1:
-            results[row["process_id"]] = []
+            results[row["process_id"]] = {}
             for cat in sub_b_cats:
-                results[row["process_id"]].append({cat: read_line(row[cat])})
+                results[row["process_id"]][cat] = read_line(row[cat])
         else:
             results[row["process_id"]] = {"sub_a": read_line(row["sub_a"])}
 

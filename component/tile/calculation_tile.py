@@ -309,9 +309,17 @@ class DownloadTaskView(v.Card):
         )
 
         self.alert = sw.Alert()
+        self.alert.add_msg(cm.dashboard.tasks.warning, type_="warning")
+
         self.btn = sw.Btn(cm.dashboard.label.calculate_from_task)
 
-        self.children = [title, description, self.w_file_input, self.btn, self.alert]
+        self.children = [
+            title,
+            description,
+            self.alert,
+            self.w_file_input,
+            self.btn,
+        ]
 
         self.btn.on_event("click", self.run_statistics)
 

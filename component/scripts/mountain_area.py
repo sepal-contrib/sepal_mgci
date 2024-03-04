@@ -51,11 +51,10 @@ def get_report(
         - source_detail
     """
 
-    if details:
-        # This is useful when function is called from outside the
-        geo_area_name = details.get("geo_area_name")
-        ref_area = details.get("ref_area")
-        source_detail = details.get("source_detail")
+    # This is useful when function is called from outside the
+    geo_area_name = details.get("geo_area_name", None)
+    ref_area = details.get("ref_area", None)
+    source_detail = details.get("source_detail", None)
 
     report_df = get_mountain_area(parsed_df)
     report_df["OBS_VALUE"] = report_df["sum"]
