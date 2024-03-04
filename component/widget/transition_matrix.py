@@ -1,5 +1,3 @@
-import concurrent.futures
-
 import ipyvuetify as v
 import numpy as np
 import pandas as pd
@@ -43,14 +41,16 @@ class TransitionMatrix(sw.Layout):
         self.class_ = "d-block"
 
         self.w_labels = [
-            sw.Tooltip(
-                v.Html(tag="th", children=[self.truncate_string(class_)]),
-                (class_),
-                bottom=True,
-                max_width=175,
+            (
+                sw.Tooltip(
+                    v.Html(tag="th", children=[self.truncate_string(class_)]),
+                    (class_),
+                    bottom=True,
+                    max_width=175,
+                )
+                if len(class_) > 20
+                else v.Html(tag="th", children=class_)
             )
-            if len(class_) > 20
-            else v.Html(tag="th", children=class_)
             for class_ in self.CLASSES
         ]
 
@@ -245,9 +245,7 @@ class TransitionMatrix(sw.Layout):
         create execute them as a pool executor"""
 
         selectables = self.get_children(id_="impact")
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            executor.map(lambda s: setattr(s, "disabled", not s.disabled), selectables)
+        [setattr(s, "disabled", not s.disabled) for s in selectables]
 
     def truncate_string(self, string):
         """truncate the content if it's too long"""

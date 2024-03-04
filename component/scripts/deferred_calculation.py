@@ -1,11 +1,9 @@
 from typing import Tuple
 import ee
 from pathlib import Path
-import concurrent.futures
 import component.parameter.directory as DIR
 
 
-import sepal_ui.scripts.utils as su
 import component.scripts as cs
 from component.scripts.gee import reduce_regions
 import component.widget as cw
@@ -80,9 +78,9 @@ def perform_calculation(
             return self.on_the_fly
 
     on_the_fly = Fly()
-    on_the_fly.set(background)
+    on_the_fly.set(not background)
 
-    def deferred_calculation(years: Tuple, on_the_fly: bool):
+    def calculation(years: Tuple, on_the_fly: bool):
         """perform the computation on the fly or fallback to gee background
 
         args:
@@ -128,26 +126,16 @@ def perform_calculation(
             logger.set_state("warning", id_=process_id)
             return ee.Feature(None, process).set("process_id", process_id)
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        results = {}
+    results = {}
+    for year in years:
+        results[cs.years_from_dict(year)] = calculation(year, on_the_fly)
 
-        futures = {
-            executor.submit(deferred_calculation, year, on_the_fly): cs.years_from_dict(
-                year
-            )
-            for year in years
-        }
+    if not on_the_fly.get():
+        # If the process was not done on the fly, send it to the GEE servers
+        # but first merge all the processes in one.
+        process = ee.FeatureCollection(list(results.values()))
+        task_process(process, task_filepath)
 
-        for future in concurrent.futures.as_completed(futures):
-            future_name = futures[future]
-            results[future_name] = future.result()
+        return {1: False}
 
-        if not on_the_fly.get():
-            # If the process was not done on the fly, send it to the GEE servers
-            # but first merge all the processes in one.
-            process = ee.FeatureCollection(list(results.values()))
-            task_process(process, task_filepath)
-
-            return {1: False}
-
-        return results
+    return results
