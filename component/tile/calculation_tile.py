@@ -75,11 +75,29 @@ class CalculationView(sw.Card):
             value=True,
         )
 
+        self.w_background = v.Switch(
+            v_model=True,
+            label=cm.dashboard.label.background,
+            value=True,
+        )
+
         t_rsa = v.Flex(
             class_="d-flex",
             children=[
                 sw.Tooltip(
                     self.w_use_rsa, cm.dashboard.help.rsa, right=True, max_width=300
+                )
+            ],
+        )
+
+        t_background = v.Flex(
+            class_="d-flex",
+            children=[
+                sw.Tooltip(
+                    self.w_background,
+                    cm.dashboard.help.background,
+                    right=True,
+                    max_width=300,
                 )
             ],
         )
@@ -97,6 +115,7 @@ class CalculationView(sw.Card):
             # description,
             self.calculation,
             t_rsa,
+            t_background,
             self.btn,
             self.btn_export,
             self.alert,
@@ -197,7 +216,7 @@ class CalculationView(sw.Card):
             "sub_a": sub_a_years,
             "sub_b": sub_b_years,
         }
-
+#####################################################################################
         # Get the 'years' value for the given 'which' value
         years = which_to_years.get(which)
 
@@ -233,6 +252,7 @@ class CalculationView(sw.Card):
             years=years,
             task_filepath=task_filepath,
             logger=self.alert,
+            background=self.w_background.v_model,
         )
 
         # If result is None, we assume the computation was tasked

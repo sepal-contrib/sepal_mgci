@@ -61,6 +61,7 @@ def perform_calculation(
     years: list,
     task_filepath: Path,
     logger: cw.Alert = None,
+    background: bool = False,
 ):
     if not aoi:
         raise Exception(cm.error.no_aoi)
@@ -79,6 +80,7 @@ def perform_calculation(
             return self.on_the_fly
 
     on_the_fly = Fly()
+    on_the_fly.set(background)
 
     def deferred_calculation(years: Tuple, on_the_fly: bool):
         """perform the computation on the fly or fallback to gee background
@@ -93,28 +95,38 @@ def perform_calculation(
         matrix = remap_matrix_a if len(years) == 1 else remap_matrix_b
         process = reduce_regions(aoi, matrix, rsa, dem, years, transition_matrix)
 
-        # Try the process in on the fly
-        try:
-            result = process.getInfo()
-            logger.set_msg(f"Calculating {process_id}... Done.", id_=process_id)
-            logger.set_state("success", id_=process_id)
-            on_the_fly.set(True)
+        if on_the_fly.get():
 
-            return result
+            # Try the process in on the fly
+            try:
+                result = process.getInfo()
+                logger.set_msg(f"Calculating {process_id}... Done.", id_=process_id)
+                logger.set_state("success", id_=process_id)
+                on_the_fly.set(True)
 
-        except Exception as e:
-            if e.args[0] == "Computation timed out.":
-                # Create an unique name (to search after in Drive)
-                logger.set_msg(
-                    f"Warning: {process_id} failed on the fly.", id_=process_id
-                )
-                logger.set_state("warning", id_=process_id)
-                on_the_fly.set(False)
+                return result
 
-                return ee.Feature(None, process).set("process_id", process_id)
+            except Exception as e:
+                if e.args[0] == "Computation timed out.":
+                    # Create an unique name (to search after in Drive)
+                    logger.set_msg(
+                        f"Warning: {process_id} failed on the fly.", id_=process_id
+                    )
+                    logger.set_state("warning", id_=process_id)
+                    on_the_fly.set(False)
 
-            else:
-                raise Exception(f"There was an error {e}")
+                    return ee.Feature(None, process).set("process_id", process_id)
+
+                else:
+                    raise Exception(f"There was an error trying to compute {e}")
+
+        else:
+            logger.set_msg(
+                f"Warning: {process_id} has been tasked on GEE background.",
+                id_=process_id,
+            )
+            logger.set_state("warning", id_=process_id)
+            return ee.Feature(None, process).set("process_id", process_id)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         results = {}
