@@ -1,4 +1,3 @@
-import concurrent.futures
 from pathlib import Path
 from time import sleep
 
@@ -150,6 +149,9 @@ class CalculationView(sw.Card):
 
         report_folder = cs.get_report_folder(self.model)
 
+        if not self.model.aoi_model.feature_collection:
+            raise Exception(cm.error.no_aoi)
+
         cs.export_reports(self.model, report_folder)
 
         self.alert.add_msg(
@@ -216,7 +218,7 @@ class CalculationView(sw.Card):
             "sub_a": sub_a_years,
             "sub_b": sub_b_years,
         }
-#####################################################################################
+
         # Get the 'years' value for the given 'which' value
         years = which_to_years.get(which)
 
@@ -261,7 +263,7 @@ class CalculationView(sw.Card):
             task_filename = task_filepath.with_suffix(".csv")
 
             msg = sw.Markdown(
-                "The computation could not be completed on the fly. The task <i>'{}'</i> have been tasked in your <a href='https://code.earthengine.google.com/tasks'>GEE account</a>.".format(
+                "The computation could not be completed on the fly. The task <i>'{}'</i> has been tasked in your <a href='https://code.earthengine.google.com/tasks'>GEE account</a>.".format(
                     task_filename
                 )
             )
@@ -307,7 +309,7 @@ class DownloadTaskView(v.Card):
         )
 
         self.alert = sw.Alert()
-        self.btn = sw.Btn(cm.dashboard.label.calculate)
+        self.btn = sw.Btn(cm.dashboard.label.calculate_from_task)
 
         self.children = [title, description, self.w_file_input, self.btn, self.alert]
 
@@ -347,3 +349,18 @@ class DownloadTaskView(v.Card):
         self.model.results = cs.read_from_csv(result_file)
         msg.set_state("success")
         self.model.done = True
+
+        # Write the results on a comma separated values file, or an excel file
+
+        self.alert.append_msg("Exporting tables...")
+
+        report_folder = cs.get_report_folder(self.model)
+
+        if not self.model.aoi_model.feature_collection:
+            raise Exception(cm.error.no_aoi)
+
+        cs.export_reports(self.model, report_folder)
+
+        self.alert.add_msg(
+            f"Reporting tables successfull exported {report_folder}", type_="success"
+        )

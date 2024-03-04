@@ -165,7 +165,8 @@
         },
         "label": {
             "download" : "Export reporting tables",
-            "calculate" : "Calculate MGCI",
+            "calculate" : "Calculate indicator",
+            "calculate_from_task" : "Download & Export tables",
             "scale" : "Process scale",
             "year": "Year",
             "rsa": "Use real surface area",
