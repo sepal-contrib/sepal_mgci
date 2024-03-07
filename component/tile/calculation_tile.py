@@ -80,6 +80,16 @@ class CalculationView(sw.Card):
             value=True,
         )
 
+        self.w_scale = v.Slider(
+            label=cm.dashboard.label.scale,
+            v_model=90,
+            min=30,
+            max=2000,
+            thumb_label="always",
+            step=10,
+            disabled=False,
+        )
+
         t_rsa = v.Flex(
             class_="d-flex",
             children=[
@@ -90,6 +100,18 @@ class CalculationView(sw.Card):
         )
 
         t_background = v.Flex(
+            class_="d-flex",
+            children=[
+                sw.Tooltip(
+                    self.w_background,
+                    cm.dashboard.help.background,
+                    right=True,
+                    max_width=300,
+                )
+            ],
+        )
+
+        t_scale = v.Flex(
             class_="d-flex",
             children=[
                 sw.Tooltip(
@@ -115,6 +137,7 @@ class CalculationView(sw.Card):
             self.calculation,
             t_rsa,
             t_background,
+            t_scale,
             self.btn,
             self.btn_export,
             self.alert,
@@ -243,6 +266,15 @@ class CalculationView(sw.Card):
             / f"Task_result_{report_folder.stem}_{self.model.session_id}.csv"
         )
 
+        scale = None  # Default value
+
+        if not self.w_scale.disabled:
+            # Add the output scale to the name
+            task_filepath = task_filepath.with_name(
+                task_filepath.stem + f"_scale_{self.w_scale.v_model}"
+            )
+            scale = self.w_scale.v_model
+
         # Create a fucntion in order to be able to test it easily
         results = perform_calculation(
             aoi=self.model.aoi_model.feature_collection,
@@ -255,6 +287,7 @@ class CalculationView(sw.Card):
             task_filepath=task_filepath,
             logger=self.alert,
             background=self.w_background.v_model,
+            scale=scale,
         )
 
         # If result is None, we assume the computation was tasked

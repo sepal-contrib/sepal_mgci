@@ -60,6 +60,7 @@ def perform_calculation(
     task_filepath: Path,
     logger: cw.Alert = None,
     background: bool = False,
+    scale: int = None,
 ):
     if not aoi:
         raise Exception(cm.error.no_aoi)
@@ -91,7 +92,7 @@ def perform_calculation(
         logger.set_msg(f"Calculating {process_id}...", id_=process_id)
 
         matrix = remap_matrix_a if len(years) == 1 else remap_matrix_b
-        process = reduce_regions(aoi, matrix, rsa, dem, years, transition_matrix)
+        process = reduce_regions(aoi, matrix, rsa, dem, years, transition_matrix, scale)
 
         if on_the_fly.get():
 

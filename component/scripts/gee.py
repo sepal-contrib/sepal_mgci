@@ -28,6 +28,7 @@ def reduce_regions(
     dem: str,
     lc_years: List[Tuple[Dict]],
     transition_matrix: str,
+    scale: int = None,
 ) -> ee.Dictionary:
     """Reduce land use/land cover image to bioclimatic belts regions using planimetric
     or real surface area
@@ -38,6 +39,7 @@ def reduce_regions(
         aoi (ee.FeatureCollection, ee.Geometry): Region to reduce image
         lc_years (list of strings): list of years (gee asset id) of the land cover
         transition_matrix (pathlike): transition matrix file path
+        scale (int): scale of the reduce process
 
     Return:
         GEE Dicionary process (is not yet executed), with land cover class area
@@ -91,7 +93,7 @@ def reduce_regions(
                         "maxPixels": 1e19,
                         "scale": scale,
                         "bestEffort": True,
-                        "tileScale": 4,
+                        "tileScale": 8,
                     }
                 )
             ).get("groups")
@@ -126,7 +128,7 @@ def reduce_regions(
                 }
             )
         )
-
+    # This is for subindicator A
     return ee.Dictionary(
         {
             "sub_a": image_area.divide(param.UNITS["sqkm"][0])
@@ -140,7 +142,7 @@ def reduce_regions(
                     "maxPixels": 1e19,
                     "scale": scale,
                     "bestEffort": True,
-                    "tileScale": 4,
+                    "tileScale": 8,
                 }
             )
             .get("groups")
