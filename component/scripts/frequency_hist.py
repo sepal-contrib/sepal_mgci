@@ -39,8 +39,23 @@ def get_unique_classes(aoi: ee.FeatureCollection, image_collection: ee.ImageColl
 
         geometry = aoi.geometry()
 
+        # Multiply the nominal scale by 2 in case the nominal scale is finer than 45
+        scale = ee.Number(
+            ee.Algorithms.If(
+                image.projection().nominalScale().lt(30),
+                image.projection().nominalScale().multiply(2),
+                image.projection().nominalScale(),
+            )
+        )
+
+        # If scale is less than 30, set it to 30
+        scale = ee.Algorithms.If(scale.lt(30), 30, scale)
+
         reduction = image.reduceRegion(
-            ee.Reducer.frequencyHistogram(), geometry, maxPixels=1e13
+            ee.Reducer.frequencyHistogram(),
+            geometry,
+            maxPixels=1e13,
+            scale=scale,
         )
 
         # Remove all the unnecessary reducer output structure and make a
