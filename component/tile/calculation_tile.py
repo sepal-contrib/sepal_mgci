@@ -434,7 +434,7 @@ class Slider(v.Row):
             class_="mt-5",
             v_model=90,
             min=30,
-            max=2000,
+            max=10000,
             thumb_label="always",
             step=10,
             disabled=True,
