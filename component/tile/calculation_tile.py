@@ -5,7 +5,7 @@ import ipyvuetify as v
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
 import sepal_ui.scripts.decorator as sd
-from traitlets import directional_link
+from traitlets import Bool, Int, directional_link, link
 import component.parameter.directory as DIR
 from component.scripts.deferred_calculation import perform_calculation
 import component.scripts as cs
@@ -80,15 +80,7 @@ class CalculationView(sw.Card):
             value=True,
         )
 
-        self.w_scale = v.Slider(
-            label=cm.dashboard.label.scale,
-            v_model=90,
-            min=30,
-            max=2000,
-            thumb_label="always",
-            step=10,
-            disabled=False,
-        )
+        self.w_scale = Slider()
 
         t_rsa = v.Flex(
             class_="d-flex",
@@ -115,10 +107,31 @@ class CalculationView(sw.Card):
             class_="d-flex",
             children=[
                 sw.Tooltip(
-                    self.w_background,
-                    cm.dashboard.help.background,
+                    self.w_scale,
+                    cm.dashboard.help.scale,
                     right=True,
                     max_width=300,
+                )
+            ],
+        )
+
+        advanced_options = v.ExpansionPanels(
+            class_="mb-2",
+            v_model=True,
+            children=[
+                v.ExpansionPanel(
+                    children=[
+                        v.ExpansionPanelHeader(
+                            children=[cm.dashboard.advanced_options]
+                        ),
+                        v.ExpansionPanelContent(
+                            children=[
+                                t_rsa,
+                                t_background,
+                                t_scale,
+                            ]
+                        ),
+                    ]
                 )
             ],
         )
@@ -135,9 +148,7 @@ class CalculationView(sw.Card):
             title,
             # description,
             self.calculation,
-            t_rsa,
-            t_background,
-            t_scale,
+            advanced_options,
             self.btn,
             self.btn_export,
             self.alert,
@@ -405,3 +416,45 @@ class DownloadTaskView(v.Card):
         self.alert.add_msg(
             f"Reporting tables successfull exported {report_folder}", type_="success"
         )
+
+
+class Slider(v.Row):
+
+    v_model = Int().tag(sync=True)
+    disabled = Bool().tag(sync=True)
+
+    def __init__(self, *args, **kwargs):
+
+        # self.class_ = "d-flex pa-4"
+        self.no_gutters = True
+        self.align = "center"
+
+        self.slider = v.Slider(
+            label=cm.dashboard.label.scale,
+            class_="mt-5",
+            v_model=90,
+            min=30,
+            max=2000,
+            thumb_label="always",
+            step=10,
+            disabled=True,
+        )
+
+        switch = v.Switch(
+            class_="mt-5",
+            v_model=False,
+            value=True,
+        )
+
+        self.children = [switch, self.slider]
+
+        super().__init__(*args, **kwargs)
+
+        switch.observe(self.toggle_slider, "v_model")
+        link((self.slider, "v_model"), (self, "v_model"))
+        link((self.slider, "disabled"), (self, "disabled"))
+
+    def toggle_slider(self, change):
+        """de/activate slider according with the user's input in switch"""
+
+        self.slider.disabled = not change["new"]
