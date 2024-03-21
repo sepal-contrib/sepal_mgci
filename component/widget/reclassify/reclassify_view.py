@@ -11,7 +11,7 @@ from sepal_ui.scripts.decorator import loading_button, switch
 from traitlets import Unicode, directional_link
 
 from component.scripts.validation import (
-    validate_reclassify_table,
+    validate_remapping_table,
     validate_target_class_file,
 )
 import component.parameter.directory as dir_
@@ -114,11 +114,6 @@ class ReclassifyView(sw.Card):
             su.init_ee()
         # create an alert to display information to the user
         self.alert = alert or sw.Alert()
-
-        self.w_src_class_file = sw.FileInput(
-            [".csv"], label=cm.rec.rec.input.classif.label, folder=self.class_path
-        )
-
         self.btn_get_table = Btn(
             children=[cm.reclass.get_classes],
             color="primary",
@@ -167,13 +162,13 @@ class ReclassifyView(sw.Card):
         ]
 
         # Decorate functions
-        self.get_reclassify_table = loading_button(
-            self.alert, self.btn_get_table, debug=True
-        )(self.get_reclassify_table)
+        self.get_reclassify_table = loading_button(self.alert, self.btn_get_table)(
+            self.get_reclassify_table
+        )
 
         # Decorate functions
         self.load_matrix_content = loading_button(
-            self.alert, self.import_dialog.action_btn, debug=True
+            self.alert, self.import_dialog.action_btn
         )(self.load_matrix_content)
 
         self.import_dialog.action_btn.on_event("click", self.load_matrix_content)
@@ -196,26 +191,33 @@ class ReclassifyView(sw.Card):
         self.w_ic_select.observe(self.set_ids, "v_model")
 
     def load_matrix_content(self, *_):
-        if not self.import_dialog.w_file.v_model:
+        if not self.import_dialog.w_map_matrix_file.v_model:
             raise Exception(cm.reclass.dialog.import_.error.no_file)
 
         # exit if no table is loaded
         if not self.model.table_created:
             raise Exception(cm.reclass.dialog.import_.error.no_table)
 
+        if not self.model.matrix_file:
+            raise Exception(cm.reclass.dialog.import_.error.no_valid)
+
         input_data = pd.read_csv(self.model.matrix_file)
 
         # check that the destination values are all available
         widget = list(self.reclassify_table.class_select_list.values())[0]
         classes = [i["value"] for i in widget.items]
-        if not all(v in classes for v in input_data.dst.unique()):
+        if not all(v in classes for v in input_data.to_code.unique()):
+            # get the missing values
+            missing_values = ",".join(
+                [str(v) for v in input_data.to_code.unique() if v not in classes]
+            )
             raise Exception(
-                "Some of the destination data are not existing in the destination dataset"
+                f"Some of the targed land cover classes ({missing_values}) are not present in the destination land cover classes."
             )
 
         # fill the data
         for _, row in input_data.iterrows():
-            src_code, dst_code = row.src, row.dst
+            src_code, dst_code = row.from_code, row.to_code
             if str(src_code) in self.reclassify_table.class_select_list:
                 self.reclassify_table.class_select_list[
                     str(src_code)
@@ -258,7 +260,9 @@ class ReclassifyView(sw.Card):
         self.model.dst_class = self.model.get_classes()
 
         # get the src_classes and selected image collection items (aka images)
-        self.model.src_class = scripts.get_unique_classes(self.model, image_collection)
+        self.model.src_class = scripts.get_unique_classes(
+            self.model.aoi_model.feature_collection, image_collection
+        )
 
         self.reclassify_table.set_table(self.model.dst_class, self.model.src_class)
 
@@ -305,11 +309,14 @@ class ImportMatrixDialog(BaseDialog):
     def __init__(self, model: ReclassifyModel, folder, error_alert: sw.Alert, **kwargs):
         self.model = model
 
-        self.w_file = sw.FileInput(
-            label="filename", folder=folder, attributes={"id": "1"}
+        self.w_map_matrix_file = sw.FileInput(
+            label="filename",
+            folder=folder,
+            attributes={"id": "1"},
+            root=dir_.RESULTS_DIR,
         )
 
-        content = [self.w_file]
+        content = [self.w_map_matrix_file]
 
         super().__init__(
             title=cm.reclass.dialog.import_.title,
@@ -319,7 +326,7 @@ class ImportMatrixDialog(BaseDialog):
 
         # Decorate load_matrix_content with loading button
         self.cancel_btn.on_event("click", lambda *_: self.close_dialog())
-        self.w_file.observe(self.on_validate_input, "v_model")
+        self.w_map_matrix_file.observe(self.on_validate_input, "v_model")
 
     def on_validate_input(self, change):
         """Load the content of the file in the matrix. The table need to be already set
@@ -327,23 +334,24 @@ class ImportMatrixDialog(BaseDialog):
 
         self.model.matrix_file = ""
 
+        if not change["new"]:
+            return
+
         # Get TextField from change widget
         text_field_msg = change["owner"].children[-1]
         text_field_msg.error_messages = []
 
-        self.model.matrix_file = validate_reclassify_table(
-            change["new"], text_field_msg
-        )
+        self.model.matrix_file = validate_remapping_table(change["new"], text_field_msg)
 
     def open_dialog(self):
         """show the dialog and set the matrix values"""
 
-        self.w_file.unobserve(self.on_validate_input, "v_model")
+        self.w_map_matrix_file.unobserve(self.on_validate_input, "v_model")
 
         # Reset file name
-        self.w_file.v_model = ""
+        self.w_map_matrix_file.v_model = ""
 
-        self.w_file.observe(self.on_validate_input, "v_model")
+        self.w_map_matrix_file.observe(self.on_validate_input, "v_model")
 
         super().open_dialog()
 
@@ -475,7 +483,10 @@ class TargetClassesDialog(BaseDialog):
         self.dst_class_file = list(default_class.values())[0]
 
         self.w_dst_class_file = sw.FileInput(
-            [".csv"], label=cm.rec.rec.input.classif.label, folder=dir_.RESULTS_DIR
+            [".csv"],
+            label=cm.rec.rec.input.classif.label,
+            folder=dir_.RESULTS_DIR,
+            root=dir_.RESULTS_DIR,
         )
         self.w_dst_class_file.select_file(self.dst_class_file)
 

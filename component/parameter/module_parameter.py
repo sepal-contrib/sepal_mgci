@@ -8,7 +8,7 @@ from component.message import cm
 # Create a range of years from 2000 to present year
 # and sort them in descending order
 YEARS = pd.date_range(
-    start="2000-01-01", end=pd.Timestamp.now(), freq="AS"
+    start="2000-01-01", end=pd.Timestamp.now(), freq="YS"
 ).year.tolist()
 YEARS.sort(reverse=True)
 "list: list of years used in calculation dialogs to match asset selection"
@@ -80,6 +80,10 @@ LC_CLASSES = Path(__file__).parent / "lc_classification.csv"
 # Define the default classes that will be loaded as target in the reclassify tile
 TRANSITION_MATRIX_FILE = Path(__file__).parent / "transition_matrix.csv"
 
+TRANSITION_DEGRADATION_MATRIX_FILE = (
+    Path(__file__).parent / "transition_degradation_matrix.csv"
+)
+
 # Description of bioclimatic belts codes
 BIOBELTS_DESC = Path(__file__).parent / "biobelts_label.csv"
 
@@ -100,3 +104,63 @@ impact_table = (
     .count()
     .reset_index()[["impact", "impact_code"]]
 )
+
+
+transition_degradation_matrix = pd.read_csv(TRANSITION_DEGRADATION_MATRIX_FILE)
+
+
+DECODE = {
+    3: {
+        "abrv": "I",
+        "label": "Improvement",
+        "color": "#008000",
+    },
+    2: {
+        "abrv": "S",
+        "label": "Stable",
+        "color": "#FFFACD",
+    },
+    1: {
+        "abrv": "D",
+        "label": "Degradation",
+        "color": "#DC143C",
+    },
+}
+"dict: dictionary containing the displayed labels for transition classes"
+
+
+DEFAULT_ASSETS = {
+    "sub_b": {
+        "baseline": {
+            "start_year": {
+                "asset_id": f"{LULC_DEFAULT}/2000",
+                "year": 2000,
+            },
+            "end_year": {
+                "asset_id": f"{LULC_DEFAULT}/2015",
+                "year": 2015,
+            },
+        },
+        "report": {
+            "asset_id": f"{LULC_DEFAULT}/2018",
+            "year": 2018,
+        },
+    },
+    "sub_a": {
+        1: {
+            "asset_id": f"{LULC_DEFAULT}/2000",
+            "year": 2000,
+        },
+        2: {
+            "asset_id": f"{LULC_DEFAULT}/2015",
+            "year": 2015,
+        },
+        3: {
+            "asset_id": f"{LULC_DEFAULT}/2018",
+            "year": 2018,
+        },
+    },
+}
+
+
+TBD = ""

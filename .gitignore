@@ -12,6 +12,8 @@ test*.ipynb
 # C extensions
 *.so
 
+doc/demo/
+
 # Distribution / packaging
 .Python
 build/

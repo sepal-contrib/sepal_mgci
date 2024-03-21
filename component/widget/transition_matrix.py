@@ -1,5 +1,3 @@
-import concurrent.futures
-
 import ipyvuetify as v
 import numpy as np
 import pandas as pd
@@ -12,6 +10,7 @@ from component.model.model import MgciModel
 import component.parameter.directory as dir_
 import component.parameter.module_parameter as param
 from component.scripts import validation as validation
+from component.scripts.scripts import set_transition_code
 
 
 class TransitionMatrix(sw.Layout):
@@ -20,9 +19,6 @@ class TransitionMatrix(sw.Layout):
     CLASSES = param.LC_COLOR.iloc[:, 0].tolist()
     "list: list of land cover classes names. Comes from lc_classification.csv file"
 
-    DECODE = {1: "I", 0: "S", -1: "D"}
-    "dict: dictionary containing the displayed labels for transition classes"
-
     disabled = Bool(False).tag(sync=True)
 
     show_matrix = Bool(True).tag(sync=True)
@@ -30,9 +26,6 @@ class TransitionMatrix(sw.Layout):
 
     transition_matrix = Unicode(str(param.TRANSITION_MATRIX_FILE)).tag(sync=True)
     "str: path to the transition matrix file"
-
-    green_non_green_file = Unicode(str())
-    "str: path to the green non green file"
 
     def __init__(self, model: MgciModel = None):
         self.model = model
@@ -48,14 +41,16 @@ class TransitionMatrix(sw.Layout):
         self.class_ = "d-block"
 
         self.w_labels = [
-            sw.Tooltip(
-                v.Html(tag="th", children=[self.truncate_string(class_)]),
-                (class_),
-                bottom=True,
-                max_width=175,
+            (
+                sw.Tooltip(
+                    v.Html(tag="th", children=[self.truncate_string(class_)]),
+                    (class_),
+                    bottom=True,
+                    max_width=175,
+                )
+                if len(class_) > 20
+                else v.Html(tag="th", children=class_)
             )
-            if len(class_) > 20
-            else v.Html(tag="th", children=class_)
             for class_ in self.CLASSES
         ]
 
@@ -104,29 +99,7 @@ class TransitionMatrix(sw.Layout):
             ],
         ).hide()
 
-        self.input_green = sw.FileInput(
-            ".csv", folder=dir_.TRANSITION_DIR, root=dir_.RESULTS_DIR
-        )
-        self.input_green_layout = sw.Card(
-            attributes={"id": "custom_inputs"},
-            row=True,
-            children=[
-                sw.CardTitle(children=["Green non green file"]),
-                sw.CardText(
-                    children=[
-                        "Select a custom green non green file containing all your custom land cover classes and its corresponding green/non green classification. The file must contain the following columns: lc_class and green. Columns names have to be exactly the same.",
-                        self.input_green,
-                    ]
-                ),
-            ],
-        ).hide()
-
-        self.input_impact.observe(
-            lambda chg: self.read_inputs(change=chg, type_="impact"), "v_model"
-        )
-        self.input_green.observe(
-            lambda chg: self.read_inputs(change=chg, type_="green"), "v_model"
-        )
+        self.input_impact.observe(self.read_inputs, "v_model")
 
         # create the simple table
         super().__init__()
@@ -135,7 +108,6 @@ class TransitionMatrix(sw.Layout):
             toolbar,
             self.progress,
             self.input_impact_layout,
-            # self.input_green_layout,
         ]
 
         self.set_rows()
@@ -146,11 +118,6 @@ class TransitionMatrix(sw.Layout):
         directional_link(
             (self, "transition_matrix"),
             (self.model, "transition_matrix"),
-        )
-
-        directional_link(
-            (self, "green_non_green_file"),
-            (self.model, "green_non_green_file"),
         )
 
     @observe("show_matrix")
@@ -169,24 +136,22 @@ class TransitionMatrix(sw.Layout):
         else:
             # show inputs to custom transition matrix and custom green/non green
             [ch.show() for ch in self.get_children(id_="custom_inputs")]
-
             [ch.hide() for ch in self.get_children(id_="transition_matrix")]
 
-    def read_inputs(self, change, type_):
-        """Read user inputs from custom transition matrix and custom green/non green"""
+            self.input_impact.reset()
+            self.transition_matrix = ""
 
-        # Get TextField from change widget
-        text_field_msg = change["owner"].children[-1]
-        text_field_msg.error_messages = []
+    def read_inputs(self, change):
+        """Read user custom input from custom transition matrix"""
 
-        validation.validate_file(change["new"], text_field_msg, type_)
-        # After passing all checks, update the model
+        if change["new"]:
+            # Get TextField from change widget
+            text_field_msg = change["owner"].children[-1]
+            text_field_msg.error_messages = []
 
-        if type_ == "impact":
+            validation.validate_transition_matrix(change["new"], text_field_msg)
+
             self.transition_matrix = change["new"]
-
-        # elif type_ == "green":
-        #     self.green_non_green_file = change["new"]
 
     @switch("indeterminate", on_widgets=["progress"], targets=[False])
     def set_rows(self):
@@ -196,7 +161,6 @@ class TransitionMatrix(sw.Layout):
         """
 
         # Set all inputs to default values
-        # self.green_non_green_file = str(param.GREEN_NON_GREEN_FILE)
         self.transition_matrix = str(param.TRANSITION_MATRIX_FILE)
         self.default_df = pd.read_csv(param.TRANSITION_MATRIX_FILE)
         self.edited_df = self.default_df.copy()
@@ -211,12 +175,12 @@ class TransitionMatrix(sw.Layout):
             inputs = []
             for j, target in enumerate(self.CLASSES, 1):
                 # create a input with default matrix value
-                default_value = self.DECODE[
+                default_value = param.DECODE[
                     self.default_df[
                         (self.default_df.from_code == i)
                         & (self.default_df.to_code == j)
                     ]["impact_code"].iloc[0]
-                ]
+                ].get("abrv")
                 matrix_input = MatrixInput(i, j, default_value)
                 matrix_input.color_change({"new": default_value})
                 matrix_input.observe(self.update_dataframe, "v_model")
@@ -241,12 +205,12 @@ class TransitionMatrix(sw.Layout):
         # Get all select inputs and change their values to the default ones
         for i, _ in enumerate(self.CLASSES, 1):
             for j, _ in enumerate(self.CLASSES, 1):
-                val = self.DECODE[
+                val = param.DECODE[
                     self.default_df[
                         (self.default_df.from_code == i)
                         & (self.default_df.to_code == j)
                     ]["impact_code"].iloc[0]
-                ]
+                ].get("abrv")
 
                 self.get_children(id_=f"{i}_{j}")[0].val.v_model = val
 
@@ -266,7 +230,12 @@ class TransitionMatrix(sw.Layout):
         ] = val["value"]
 
         self.transition_matrix = str(self.custom_transition_file_path)
-        self.edited_df[["from_code", "to_code", "impact_code"]].to_csv(
+
+        # Here I want to create a new column containing the "transition" code
+        # that is the concatenation of the from_code and to_code
+        self.edited_df = set_transition_code(self.edited_df)
+
+        self.edited_df[["from_code", "to_code", "impact_code", "transition"]].to_csv(
             self.custom_transition_file_path, index=False
         )
 
@@ -276,9 +245,7 @@ class TransitionMatrix(sw.Layout):
         create execute them as a pool executor"""
 
         selectables = self.get_children(id_="impact")
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            executor.map(lambda s: setattr(s, "disabled", not s.disabled), selectables)
+        [setattr(s, "disabled", not s.disabled) for s in selectables]
 
     def truncate_string(self, string):
         """truncate the content if it's too long"""
@@ -286,12 +253,6 @@ class TransitionMatrix(sw.Layout):
 
 
 class MatrixInput(v.Html):
-    VALUES = {
-        "I": (1, color.success),
-        "S": (0, color.primary),
-        "D": (-1, color.error),
-    }
-
     v_model = Dict().tag(sync=True)
 
     def __init__(self, line, column, default_value):
@@ -303,7 +264,7 @@ class MatrixInput(v.Html):
         self.val = sw.Select(
             dense=True,
             color="white",
-            items=[*self.VALUES],
+            items=[*[param.DECODE[val].get("abrv") for val in param.DECODE.keys()]],
             class_="ma-1",
             v_model=default_value,
             attributes={"id": "impact"},
@@ -321,7 +282,13 @@ class MatrixInput(v.Html):
     def color_change(self, change):
         """change the color of the td depending on the value of the select"""
 
-        val, color = self.VALUES[change["new"]]
+        val = [
+            key
+            for key, value in param.DECODE.items()
+            if value.get("abrv") == change["new"]
+        ][0]
+
+        color = param.DECODE[val].get("color")
 
         self.style_ = f"background-color: {color}"
 

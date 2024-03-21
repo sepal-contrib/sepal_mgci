@@ -1,0 +1,10 @@
+Unnamed: 0,from,from_code,to,to_code,impact,impact_code,transition
+0,degraded,1, degraded,1, degrading,1,101
+1,degraded,1, stable,2, degrading,1,102
+2,degraded,1, increasing,3, stable,2,103
+3,stable,2, degraded,1, degrading,1,201
+4,stable,2, stable,2, stable,2,202
+5,stable,2, increasing,3, improving,3,203
+6,increasing,3, degraded,1, degrading,1,301
+7,increasing,3, stable,2, stable,2,302
+8,increasing,3, increasing,3, improving,3,303

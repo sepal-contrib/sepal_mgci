@@ -1,6 +1,7 @@
 from pathlib import Path
+import random
+from typing import List
 
-import ee
 import pandas as pd
 from sepal_ui.scripts.warning import SepalWarning
 from sepal_ui.model import Model
@@ -9,21 +10,21 @@ from traitlets import Bool, CBool, Dict, List, Unicode
 
 import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
-from component.scripts.surface_area import get_real_surface_area
-from component.scripts.gee import GDrive
+from component.scripts.gdrive import GDrive
 
 
 class MgciModel(Model):
     """Model for MGCI calculation"""
 
-    session_id = 1824
+    # Create a random session id of 4 digits
+    session_id = random.randint(1000, 9999)
 
     use_custom = CBool(0).tag(sync=True)
 
     # output parameters
     year = Unicode("", allow_none=True).tag(sync=True)
     source = Unicode(
-        "Food and Agriculture Organisation of United Nations (FAO)", allow_none=True
+        "Food and Agriculture Organization of United Nations (FAO)", allow_none=True
     ).tag(sync=True)
 
     # Custom
@@ -76,9 +77,6 @@ class MgciModel(Model):
     reporting_years_sub_b = List([]).tag(sync=True)
     """list: list of reporting years based on user selection. It's calculated when chips are created and it's used to alert dashboard of which years are available for statistics"""
 
-    same_asset_matrix = Bool(False).tag(sync=True)
-    "bool: True if both subindicator A and B have the same matrix and same asset. It will be used to control the interpolation process. If True, get_result_from_year can search the requested year in double_years, otherwise it will search in single_years and if it's not found, it will interpolate"
-
     # Results
 
     biobelt_image = None
@@ -102,6 +100,9 @@ class MgciModel(Model):
     done = Bool(True).tag(sync=True)
     "bool: bool trait to indicate that MGCI calculation has been performed. It will be listen by different widgets (i.e.dashboard tile)."
 
+    dem = Unicode().tag(sync=True)
+    "str: DEM file used to calculate surface area"
+
     @sd.need_ee
     def __init__(self, aoi_model=None):
         """
@@ -113,7 +114,7 @@ class MgciModel(Model):
             results_file (str): file containing a task .csv file with name and task_id
 
         """
-
+        self.results: Dict = None
         self.biobelt_imaga = None
         self.vegetation_image = None
         self.aoi_model = aoi_model
@@ -126,120 +127,9 @@ class MgciModel(Model):
         # Save the GEE reduce to region json proces
         self.reduced_process = None
 
-    def reduce_to_regions(self, indicator, lc_start, lc_end=None):
-        """Reduce land use/land cover image to bioclimatic belts regions using planimetric
-        or real surface area
-
-        Attributes:
-            indicator (str): either 'sub_a' or 'sub_b'
-            lc_start (string): first year (asset id) of the report or baseline.
-            lc_end (string): last year (asset id) of the report.
-            aoi (ee.FeatureCollection, ee.Geometry): Region to reduce image
-
-        Return:
-            GEE Dicionary process (is not yet executed), with land cover class area
-            per land cover (when both dates are input) and biobelts
-        """
-
-        if not lc_start:
-            raise Exception("Please select at least one year")
-
-        if not self.aoi_model.feature_collection:
-            raise Exception("Please select an area of interest")
-
-        matrix = getattr(self, f"matrix_{indicator}")
-
-        def no_remap(image):
-            """return remapped or raw image if there's a matrix"""
-
-            if matrix:
-                from_, to_ = list(zip(*matrix.items()))
-                return image.remap(from_, to_, 0)
-
-            return image
-
-        # Define two ways of calculation, with only one date and with both
-        ee_lc_start_band = ee.Image(lc_start).bandNames().get(0)
-        ee_lc_start = ee.Image(lc_start).select([ee_lc_start_band])
-        ee_lc_start = no_remap(ee_lc_start)
-
-        aoi = self.aoi_model.feature_collection.geometry()
-        clip_biobelt = ee.Image(param.BIOBELT).clip(aoi)
-
-        if self.rsa:
-            # When using rsa, we need to use the dem scale, otherwise
-            # we will end with wrong results.
-            image_area = get_real_surface_area(self.dem, aoi)
-            scale = ee_lc_start.projection().nominalScale().getInfo()
-        else:
-            # Otherwise, we will use the coarse scale to the output.
-            image_area = ee.Image.pixelArea()
-            scale = (
-                ee_lc_start.projection()
-                .nominalScale()
-                .max(ee_lc_start.projection().nominalScale())
-                .getInfo()
-            )
-
-        if indicator == "sub_b":
-            ee_lc_end_band = ee.Image(lc_end).bandNames().get(0)
-            ee_lc_end = ee.Image(lc_end).select([ee_lc_end_band])
-            ee_lc_end = no_remap(ee_lc_end)
-
-            return (
-                image_area.divide(param.UNITS["sqkm"][0])
-                .updateMask(clip_biobelt.mask())
-                .addBands(ee_lc_end)
-                .addBands(ee_lc_start)
-                .addBands(clip_biobelt)
-                .reduceRegion(
-                    **{
-                        "reducer": ee.Reducer.sum().group(1).group(2).group(3),
-                        "geometry": aoi,
-                        "maxPixels": 1e19,
-                        "scale": scale,
-                        "bestEffort": True,
-                        "tileScale": 4,
-                    }
-                )
-            )
-
-        return (
-            image_area.divide(param.UNITS["sqkm"][0])
-            .updateMask(clip_biobelt.mask())
-            .addBands(ee_lc_start)
-            .addBands(clip_biobelt)
-            .reduceRegion(
-                **{
-                    "reducer": ee.Reducer.sum().group(1).group(2),
-                    "geometry": aoi,
-                    "maxPixels": 1e19,
-                    "scale": scale,
-                    "bestEffort": True,
-                    "tileScale": 4,
-                }
-            )
-        )
-
-    def task_process(self, process, task_file, process_id):
-        """Send the task to the GEE servers and process it in background. This will be
-        neccessary when the process is timed out."""
-
-        task_name = Path(f"{task_file.name}_{process_id}")
-
-        task = ee.batch.Export.table.toDrive(
-            **{
-                "collection": ee.FeatureCollection([ee.Feature(None, process)]),
-                "description": str(task_name),
-                "fileFormat": "CSV",
-            }
-        )
-
-        task.start()
-
-        # Create a file containing the task id to track when the process is done.
-        with open(task_file.with_suffix(".csv"), "a") as file:
-            file.write(f"{process_id}, {task.id}" + "\n")
+        # Set default dem asset
+        # currently, we are not allowing user to change the dem
+        self.dem = param.DEM_DEFAULT
 
     def download_from_task_file(self, task_id, tasks_file, task_filename):
         """Download csv file result from GDrive
@@ -260,7 +150,6 @@ class MgciModel(Model):
             tmp_result_folder.mkdir(exist_ok=True)
 
             tmp_result_file = tmp_result_folder / task_filename
-            print(task_filename)
             gdrive.download_file(task_filename, tmp_result_file)
 
             return tmp_result_file

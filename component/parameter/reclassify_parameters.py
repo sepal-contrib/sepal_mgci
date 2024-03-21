@@ -2,7 +2,7 @@ from component.message import cm
 
 __all__ = ["MATRIX_NAMES", "TABLE_NAMES", "NO_VALUE", "SCHEMA"]
 
-MATRIX_NAMES = ["src", "dst"]
+MATRIX_NAMES = ["from_code", "to_code"]
 TABLE_NAMES = ["code", "desc", "color"]
 
 # Set a value for missing reclassifications

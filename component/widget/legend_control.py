@@ -1,3 +1,4 @@
+from typing import Union
 import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
 from ipyleaflet import WidgetControl
@@ -6,9 +7,41 @@ from sepal_ui.scripts import utils as su
 from traitlets import Bool, Dict, Unicode, observe
 
 import component.parameter.module_parameter as param
+from sepal_ui.mapping.legend_control import LegendControl
 
 
-class LegendControl(WidgetControl):
+class LegendDashboard(LegendControl):
+    @staticmethod
+    def color_box(color: Union[str, tuple], size: int = 35):
+        """Returns an rectangular SVG html element with the provided color.
+
+        Args:
+            color: It can be a string (e.g., 'red', '#ffff00', 'ffff00') or RGB tuple (e.g., (255, 127, 0))
+            size: the size of the legend square
+
+        Returns:
+            The HTML rendered color box
+        """
+        # Define height and width based on the size
+        w = size
+        h = size / 2
+
+        return [
+            v.Html(
+                tag="svg",
+                attributes={"width": w, "height": h},
+                children=[
+                    v.Html(
+                        tag="rect",
+                        attributes={"width": w, "height": h},
+                        style_=f"fill:{su.to_colors(color)}; stroke-width:1; stroke:rgb(255,255,255)",
+                    )
+                ],
+            )
+        ]
+
+
+class LegendControl(LegendDashboard):
     """
     A custom Legend widget ready to be embed in a map
 
@@ -35,9 +68,7 @@ class LegendControl(WidgetControl):
 
     _html_title = None
 
-    def __init__(
-        self, legend_dict={}, title=ms.mapping.legend, vertical=True, **kwargs
-    ):
+    def __init__(self, legend_dict, title=ms.mapping.legend, vertical=True, **kwargs):
         # init traits
         self.title = title
         self.legend_dict = legend_dict
@@ -150,25 +181,3 @@ class LegendControl(WidgetControl):
         self._html_title.children = change["new"]
 
         return
-
-    @staticmethod
-    def color_box(color, size=35):
-        """Returns an rectangular SVG html element with the provided color"""
-
-        # Define height and width based on the size
-        w = size
-        h = size / 2
-
-        return [
-            v.Html(
-                tag="svg",
-                attributes={"width": w, "height": h},
-                children=[
-                    v.Html(
-                        tag="rect",
-                        attributes={"width": w, "height": h},
-                        style_=f"fill:{su.to_colors(color)}; stroke-width:1; stroke:rgb(255,255,255)",
-                    )
-                ],
-            )
-        ]

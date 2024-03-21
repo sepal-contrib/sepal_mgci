@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 import component.parameter.directory as dir_
-from component.parameter.module_parameter import TRANSITION_MATRIX_FILE
+from component.parameter.module_parameter import TRANSITION_MATRIX_FILE, DECODE
 from component.widget.transition_matrix import TransitionMatrix
 
 # TODO: At some point I will have to change the way as v_model is set in each
@@ -20,7 +20,6 @@ def transition_matrix():
 
 
 def test_transition_matrix(transition_matrix):
-
     # Assert that transition matrix, matrix is the default
     assert transition_matrix.transition_matrix == str(TRANSITION_MATRIX_FILE)
 
@@ -64,9 +63,6 @@ def test_change_value(transition_matrix):
         (default_df.from_code == 1) & (default_df.to_code == 1), "impact_code"
     ][0]
 
-    DECODE = {1: "I", 0: "S", -1: "D"}
-
-    assert (
-        transition_matrix.get_children(id_="1_1")[0].val.v_model
-        == DECODE[expected_value]
-    )
+    assert transition_matrix.get_children(id_="1_1")[0].val.v_model == DECODE[
+        expected_value
+    ].get("abrv")

@@ -1,7 +1,10 @@
 import ee
 import pandas as pd
-import sepal_ui.sepalwidgets as sw
+import pkg_resources
 from ipyleaflet import WidgetControl
+
+import ipyvuetify as v
+import sepal_ui.sepalwidgets as sw
 from sepal_ui.mapping import SepalMap
 
 import component.parameter.module_parameter as param
@@ -12,14 +15,6 @@ __all__ = ["AoiTile"]
 
 ee.Initialize()
 
-{
-    (2000, 2005): [2000, 2005],
-    (2005, 2010): [2005, 2010],
-    (2010, 2015): [2010, 2012, 2015],
-    (2015, 2018): [2015, 2018],
-    (2018, 2021): [2018, 2021],
-}
-
 
 class AoiTile(sw.Layout):
     """Custo AOI Tile"""
@@ -29,16 +24,16 @@ class AoiTile(sw.Layout):
         self._metadata = {"mount_id": "aoi_tile"}
 
         super().__init__()
-
-        self.map_ = SepalMap(gee=True)
+        default_basemap = (
+            "CartoDB.DarkMatter" if v.theme.dark is True else "CartoDB.Positron"
+        )
+        basemaps = [default_basemap] + ["SATELLITE"]
+        self.map_ = SepalMap(gee=True, basemaps=basemaps)
+        self.map_.add_class("aoi_map")
         self.map_.dc.hide()
-        self.map_.layout.height = "750px"
         self.map_.min_zoom = 2
 
-        self.view = AoiView(
-            map_=self.map_,
-            methods=["-POINTS", "-DRAW"],
-        )
+        self.view = AoiView(map_=self.map_)
 
         self.view.btn.children = [cm.aoi.view.btn]
 
@@ -61,11 +56,16 @@ class AoiTile(sw.Layout):
         # Read m49 countries.
         m49_countries = pd.read_csv(param.M49_FILE, sep=";")
 
+        # Access to the parquet file in the package data (required with sepal_ui>2.16.4)
+        resource_path = "data/gaul_database.parquet"
+        content = pkg_resources.resource_filename("pygaul", resource_path)
+
+        df = pd.read_parquet(content).astype(str)
+
         # Read AOI gaul dataframe
         gaul_dataset = (
-            pd.read_parquet(self.view.model.FILE[1])
-            .drop_duplicates(subset=self.view.model.CODE[1].format(0))
-            .sort_values(self.view.model.NAME[1].format(0))
+            df.drop_duplicates(subset="ADM{}_CODE".format(0))
+            .sort_values("ADM{}_NAME".format(0))
             .rename(columns={"ISO 3166-1 alpha-3": "iso31661"})
         )
 

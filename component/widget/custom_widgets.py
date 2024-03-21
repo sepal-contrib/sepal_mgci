@@ -1,10 +1,11 @@
 import ipyvuetify as v
+from sepal_ui import color
 import sepal_ui.sepalwidgets as sw
 from traitlets import CBool, Int, link
 from ipyvuetify import Btn
 
 
-__all__ = ["BoolQuestion", "Tabs", "TaskMsg"]
+__all__ = ["BoolQuestion", "Tabs", "TaskMsg", "Alert"]
 
 
 class BoolQuestion(v.Flex, sw.SepalWidget):
@@ -32,7 +33,7 @@ class Tabs(v.Card):
 
     def __init__(self, titles, content, **kwargs):
         self.background_color = "primary"
-        self.dark = True
+        self.dark = True if color._dark_theme else False
 
         self.tabs = [
             v.Tabs(
@@ -60,11 +61,35 @@ class Tabs(v.Card):
         super().__init__(**kwargs)
 
 
+class Alert(sw.Alert):
+    def set_state(self, state_color, id_: int = 1):
+        """sets a state (color) to the icon of the TaskMsg component"""
+
+        if self.get_children(attr="id", value=f"task_msg_{id_}"):
+            task_msg = self.get_children(attr="id", value=f"task_msg_{id_}")[0]
+            task_msg.set_state(state_color)
+            return
+
+    def set_msg(self, msg: str, id_: int = 1):
+        if id_:
+            if self.get_children(attr="id", value=f"task_msg_{id_}"):
+                task_msg = self.get_children(attr="id", value=f"task_msg_{id_}")[0]
+                task_msg.set_msg(msg)
+                return self
+
+            # If not found, create a new one
+            task_msg = TaskMsg(msg, id_)
+
+        return super().append_msg(msg=task_msg)
+
+
 class TaskMsg(sw.Flex):
     colors = ["info", "success", "error", "warning"]
 
-    def __init__(self, msg=""):
+    def __init__(self, msg: str, id_: int):
         super().__init__()
+
+        self.attributes = {"id": f"task_msg_{id_}"}
 
         self.class_ = "d-flex"
         self.icon = sw.Icon(children=["mdi-circle"], color="info")

@@ -1,11 +1,11 @@
 {
     "app": {
-        "title" : "SDG Indicator 15.4.2 - Mountain Green Cover Index (MGCI) (BETA)",
+        "title" : "SDG Indicator 15.4.2 (BETA)",
         "drawer_item" : {
-            "aoi": "Area of Iterest",
+            "aoi": "Area of Interest",
             "vegetation" : "Land cover dataset",
-            "settings" : "Indicator settings",
-            "dashboard" : "MGCI results",
+            "calculation" : "Indicator settings",
+            "dashboard" : "Results",
             "about" : "About",
             "disclaimer" : "Disclaimer"
         }
@@ -51,14 +51,14 @@
         },
         "sub_a_title" : "Sub-indicator 15.4.2a: Mountain Green Cover Index (MGCI)",
         "sub_b_title" : "Sub-indicator 15.4.2b: Proportion of degraded mountain land",
-        "subtitle" : "Settings", 
+        "subtitle" : "Selection of land cover dataset", 
         "questionnaire" : {
                 "q1":"Would you like to use a custom land use/land cover map?",
                 "q2":"Would you like to change the default land cover transition matrix?",
                 "sub_a" : "<p><span class='title'>Sub-indicator 15.4.2a</span></p><p>Mountain Green Cover Index (MGCI), measures the extent and changes of green cover in mountain areas. In this sub-indicator, land cover is used to categorize land into green and non-green cover areas. Green cover includes areas covered by both natural vegetation and vegetation resulting from anthropic activity, whereas non-green areas include non-vegetated areas such as bare land, water, permanent ice/snow, urban areas and sparsely vegetated areas.</p>",
                 "sub_b" : "<p><span class='title'>Sub-indicator 15.4.2b</span></p><p>Proportion of degraded mountain land, monitors the extent of degraded mountain land as a result of land cover change. In this sub-indicator, land cover is used to identify areas where changes in the type of land cover (land cover transitions) may indicate a decline or loss of biodiversity, mountain ecosystem functions or services that are considered desirable in a local or national context.</p>",
                 "btn" : {
-                    "label" : "Open parameter settings"
+                    "label" : "Validate settings"
                 }
         },
         "stepper" : {
@@ -113,11 +113,12 @@
                 "description" : "This module allows users to modify the default target land cover classes used in the reclassification process. The module is set to use the standard 10 IPCC classes by default, but for sub indicator B, users have the option to either use these default classes or create their own custom classification. To use the custom classification option, simply select the 'custom' button and upload a file containing the target classifications that will be used in the reclassification table."
             },
             "import_" : {
-                "title" : "Load reclassification matrix",
+                "title" : "Load remapping table",
                 "btn_label" : "Load",
                 "error" : {
                     "no_file" : "Please select a file containing a reclassified matrix.",
-                    "no_table" : "Please go to the step 1 and get the classes table first."
+                    "no_table" : "Please go to the step 1 and get the classes table first.",
+                    "no_valid" : "The file you have selected is not valid. Please select a valid file."
                 }
             }
         }
@@ -131,11 +132,18 @@
         },
         "sub_b" : {
             "title" : "Sub indicator B",
-            "desc_active" : "Based on the data you've provided, the module can generate reports for the following years. Please note that if a year is missing, the module will employ linear interpolation to estimate the values for that year.",
+            "desc_active" : "Based on the data you've provided, the module can generate reports for the following years.",
             "desc_disabled" : "The subindicator B will not be calculated. To activate its processing, click the top right switch in this card and select the target layer(s).",
             "desc_no_data" : "You have activated the subindicator A, use the 'Add layer' button to select the target layer(s)."
+
         },
+        "year" : "Year",
+        "baseline_title" : "Baseline period",
+        "reporting_title" : "Reporting years",
+        "reporting_subtitle" : "Each year will be reported against the baseline",
         "y_base" : "Baseline period (year)",
+        "y_start" : "Initial year",
+        "y_end" : "Final year",
         "y_report" : "Reporting period (year)",
         "y_actual" : "Actual year",
         "error" : {
@@ -146,24 +154,28 @@
     },
     "dashboard":{
         "title" : "SDG Indicator 15.4.2 Calculation",
-        "description" : "Calculate the Mountain Green Cover Index dashboard, the result will include an overall index for all the Kapos mountain classes and also a more detailed index for each of these classes.",
+        "description" : "To calculate the SDG Indicator 15.4.2 you will have to provide the inputs for each of the subindicators.",
         "report" : {
             "title":"Download report",
-            "description": "The module will use the data that has been calculated to produce the following tables.<ul><li>Table1_MountainArea</li><li>Table2_1542a_LandCoverType</li><li>Table3_1542a_MGCI</li><li>Table4_1542b_pdma_area</li><li>Table5_1542b_pdma_pt</li></ul>"
+            "description": "The module will use the data that has been calculated to produce the following table.<ul><li></li></ul>"
         },
+        "advanced_options" : "Advanced options",
         "tasks" : {
-            "title":"Calculation on background",
-            "description":"This tab will help you to download the results file required to get the dashboard with the MGCI. You can track the progress of your task in the <a href='https://code.earthengine.google.com/tasks'>GEE tasks tracker</a>, and once it is done, you can select whether the task id given in the calculation tab or use the tasks file which is stored in the '<i>{}</i>' folder."
+            "title":"Process on the GEE background tasks",
+            "description" : "This section is designed to help you with calculations that are running in the background on Google Earth Engine. Here is what you can do:<br><br>- **Locate Your Task File**: A unique 'task file' is created for each calculation that was sent to the GEE background, which you can find at '<i>{}</i>' folder.<br>- **Monitor Your Task**: Keep an eye on your task's progress and check its current status at any time.<br>- **Download Results**: Once completed, you can download the results and reporting tables directly from here.<br>- **View Your Dashboard**: Your results will automatically populate the dashboard, making it easy to review and analyze the data.<br>Just follow the steps provided on this page to smoothly manage and retrieve your calculation outputs.",
+            "warning" : "Attention Returning Users: If you are accessing results from a previous session, please ensure that you start from the first step and select the same area of interest that you used for your initial calculation. This is necessary to retrieve the correct results from the Google Earth Engine (GEE)."
         },
         "label": {
             "download" : "Export reporting tables",
-            "calculate" : "Calculate MGCI",
+            "calculate" : "Calculate indicator",
+            "calculate_from_task" : "Download & Export tables",
             "scale" : "Process scale",
             "year": "Year",
             "rsa": "Use real surface area",
             "rsa_name"  :"real surface area",
             "plan" : "planimetric area",
-            "source" : "Institution"
+            "source" : "Institution",
+            "background" : "Run in EE background (for large datasets)"
         },
         "alert" : {
             "computing" : "Calculating MGCI values, using {}. This process could take a few minutes.",
@@ -174,9 +186,10 @@
         },
         "help":{
             "rsa" : "Use Real Surface Area. Disable it to calculate the results using planimetric area. To more details, please refer to the module documentation.",
-            "scale" : "Pixel resolution for the output. It will affect the speed and the accuracy of the results",
             "year": "Select a year for the dashboard outputs. It will be used to label the outputs. If not provided, the reclassified band name will be used.",
-            "source": "Please insert the name of the institution you belong to."
+            "source": "Please insert the name of the institution you belong to.",
+            "background" : "Run the process in the background. Use this option when there are computation time errors or when the tool doesn't show promptly results.",
+            "scale" : "If activated, the process will be executed at the selected scale. It will affect the speed and the accuracy of the results. Otherwise, the process will be executed at the original scale of the input data."
         },
         "global_" : {
             "title" : "Overall Mountain Green Cover Index",
@@ -191,5 +204,8 @@
                 "belt_4":"Where elevation is between 1,500 and 2,500 meters and the slope is greather than 2%"
             }
         }
+    },
+    "error" : {
+        "no_aoi" : "Please select an area of interest first."
     }
 }

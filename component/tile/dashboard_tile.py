@@ -1,3 +1,4 @@
+from IPython.display import display
 import ipyvuetify as v
 import pandas as pd
 import sepal_ui.scripts.utils as su
@@ -5,6 +6,7 @@ import sepal_ui.sepalwidgets as sw
 from ipywidgets import Output
 from matplotlib import pyplot as plt
 from traitlets import link
+from component.model.model import MgciModel
 
 import component.parameter.module_parameter as param
 import component.scripts as cs
@@ -12,6 +14,7 @@ import component.widget as cw
 from component.message import cm
 from component.scripts.plots import sankey
 from component.scripts.report_scripts import get_belt_desc
+from component.widget.map import MapView
 from component.widget.statistics_card import StatisticCard
 
 
@@ -26,13 +29,13 @@ class DashboardTile(sw.Card):
         self.alert = sw.Alert()
         self.df = None
 
+        map_view = MapView(self.model)
         dash_view_a = DashViewA(self.model)
         dash_view_b = DashViewB(self.model)
-        export_view = ExportView(self.model)
 
         dash_tabs = cw.Tabs(
-            ["Sub indicator A", "Sub indicator B", "Export results"],
-            [dash_view_a, dash_view_b, export_view],
+            ["Visualization", "Sub indicator A", "Sub indicator B"],
+            [map_view, dash_view_a, dash_view_b],
         )
 
         self.children = [
@@ -42,8 +45,11 @@ class DashboardTile(sw.Card):
 
 
 class DashView(sw.Layout):
-    def __init__(self, indicator, *args, **kwargs):
+    def __init__(self, indicator, model, *args, **kwargs):
         self.indicator = indicator
+        self.class_ = "d-block pa-2"
+
+        self.model = model
 
         super().__init__(*args, **kwargs)
 
@@ -58,14 +64,27 @@ class DashView(sw.Layout):
                 if chld.attributes.get("id") != f"render_{self.indicator}"
             ]
 
+    def render_dashboard(self, *args):
+        """create the corresponding parsed dataframe based on the selected year."""
+
+        self.show()
+        self.clear()
+        self.alert.add_msg(cm.dashboard.alert.rendering)
+
+        if not self.year_select.v_model:
+            raise Exception("Select a year.")
+
+        if not self.model.results:
+            raise Exception(
+                "No results to display, go to the calculation step and perform the calculation first."
+            )
+
 
 class DashViewA(DashView):
     def __init__(self, model, *args, **kwargs):
-        self.class_ = "d-block"
         self.attributes = {"id": f"dashboard_view_sub_a"}
-        self.model = model
 
-        super().__init__(indicator="sub_a", *args, **kwargs)
+        super().__init__(indicator="sub_a", model=model, *args, **kwargs)
 
         self.alert = sw.Alert()
 
@@ -88,6 +107,8 @@ class DashViewA(DashView):
 
         self.btn.on_event("click", self.render_dashboard)
 
+        self.set_years({"new": self.model.reporting_years_sub_a})
+
     def set_years(self, change):
         """Set the years in the year_select"""
 
@@ -96,19 +117,18 @@ class DashViewA(DashView):
         else:
             self.year_select.items = []
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def render_dashboard(self, *args):
         """create the corresponding parsed dataframe based on the selected year.
         This dataframe will be used to calculate the MCGI"""
 
-        if not self.year_select.v_model:
-            raise Exception("Select a year.")
+        super().render_dashboard()
 
-        self.show()
-        self.clear()
-        self.alert.add_msg(cm.dashboard.alert.rendering)
-
-        df = cs.get_result_from_year(self.model, self.year_select.v_model, "sub_a")
+        df = cs.parse_to_year_a(
+            self.model.results,
+            self.model.reporting_years_sub_a,
+            self.year_select.v_model,
+        )
 
         # Get overall MGCI widget
         w_overall = StatisticCard(df, "Total", self.model)
@@ -131,11 +151,9 @@ class DashViewA(DashView):
 
 class DashViewB(DashView):
     def __init__(self, model, *args, **kwargs):
-        self.class_ = "d-block"
         self.attributes = {"id": "dashboard_view_sub_b"}
-        self.model = model
 
-        super().__init__(indicator="sub_b", *args, **kwargs)
+        super().__init__(indicator="sub_b", model=model, *args, **kwargs)
 
         self.alert = sw.Alert()
 
@@ -160,26 +178,26 @@ class DashViewB(DashView):
         self.btn.on_event("click", self.render_dashboard)
         self.year_select.observe(self.set_belt_items, "v_model")
 
+        self.set_years({"new": self.model.reporting_years_sub_b})
+
     def set_belt_items(self, change):
-        """Set the belt items in the belt_select widget based on the year selected"""
+        """Set the belt items in the belt_select widget based on the year selected
+
+        Args:
+            change["new"]: year selected in the form:
+                {"baseline": [year1, year2]} or,
+                {"report": [base_start, report_year]}
+        """
 
         look_up_year = change["new"]
 
-        self.sub_b_label = cs.get_sub_b_years_labels(self.model.sub_b_year)[
-            look_up_year
-        ]
-        search_year = self.sub_b_label
-
-        self.df = cs.get_result_from_year(self.model, search_year, self.indicator)
+        self.df = cs.parse_to_year(self.model.results, look_up_year)
 
         # Get all belts that are available for the selected year
 
-        # Create items for the belt_select widget as list of dictionaries containing
-        # {"text": get_belt_desc, "value": belt_class}
-
         belt_items = [
             {"text": get_belt_desc(row), "value": row.belt_class}
-            for idx_, row in pd.DataFrame(
+            for _, row in pd.DataFrame(
                 self.df.belt_class.unique(), columns=["belt_class"]
             ).iterrows()
         ]
@@ -187,29 +205,25 @@ class DashViewB(DashView):
         self.belt_select.items = belt_items
 
     def set_years(self, change):
-        """Set the years in the year_select"""
+        """Set the years in the year_select:
+
+        Args:
+            change["new]: List of years in the form:
+                [[start_base_y, end_base_y], rep_y2, rep_y2, ...]
+        """
 
         if change["new"]:
-            self.year_select.items = list(change["new"])
+            items, _ = cs.get_sub_b_items(change["new"])
+            self.year_select.items = items
         else:
             self.year_select.items = []
 
-    @su.loading_button(debug=True)
+    @su.loading_button()
     def render_dashboard(self, *args):
         """create the corresponding parsed dataframe based on the selected year.
         This dataframe will be used to calculate the MCGI"""
 
-        self.show()
-        self.clear()
-        self.alert.add_msg(cm.dashboard.alert.rendering)
-
-        if not self.year_select.v_model:
-            raise Exception("Select a year.")
-
-        # Receive user year selection.
-        # search for the corresponding base&report tuple in the model
-        # retrieve actual tuple 'base_report' that was calculated and it's stored
-        # in model.results
+        super().render_dashboard()
 
         self.df_sankey = (
             self.df[self.df.belt_class == self.belt_select.v_model]
@@ -224,9 +238,10 @@ class DashViewB(DashView):
         )
 
         output = Output()
-
         # rename columns to match with sankey function
-        lbl_left, lbl_right = self.sub_b_label.split("_")
+        lbl_left, lbl_right = [
+            str(y) for y in list(self.year_select.v_model.values())[0]
+        ]
         cols = {"from_lc": lbl_left, "to_lc": lbl_right}
         self.df_sankey.rename(columns=cols, inplace=True)
 
@@ -253,73 +268,3 @@ class DashViewB(DashView):
         self.children = self.children + [statistics]
 
         self.alert.hide()
-
-
-class ExportView(v.Card):
-    def __init__(self, model, *args, **kwargs):
-        self.class_ = "pa-2"
-        super().__init__(*args, **kwargs)
-
-        self.model = model
-        self.attributes = {"id": "report_view"}
-
-        self.alert = sw.Alert()
-
-        self.btn = sw.Btn(cm.dashboard.label.download, class_="ml-2", disabled=False)
-
-        self.w_source = v.TextField(
-            label=cm.dashboard.label.source,
-            v_model=self.model.source,
-            type="string",
-        )
-
-        question_icon = v.Icon(children=["mdi-help-circle"], small=True)
-
-        t_source = v.Flex(
-            class_="d-flex",
-            children=[
-                self.w_source,
-                sw.Tooltip(
-                    question_icon, cm.dashboard.help.source, left=True, max_width=300
-                ),
-            ],
-        )
-
-        self.children = [
-            v.CardTitle(children=[cm.dashboard.report.title]),
-            v.CardText(
-                children=[
-                    sw.Markdown(
-                        cm.dashboard.report.description.format(*param.UNITS["sqkm"][1])
-                    ),
-                    t_source,
-                ]
-            ),
-            self.btn,
-            self.alert,
-        ]
-
-        self.btn.on_event("click", self.export_results)
-        self.model.observe(self.activate_download, "summary_df")
-
-        link((self.model, "source"), (self.w_source, "v_model"))
-
-    def activate_download(self, change):
-        """Verify if the summary_df is created, and activate button"""
-
-        if change["new"] is not None:
-            self.btn.disabled = False
-            self.alert.reset()
-
-    @su.loading_button(debug=True)
-    def export_results(self, *args):
-        """Write the results on a comma separated values file, or an excel file"""
-
-        self.alert.add_msg("Exporting tables...")
-
-        report_folder = cs.get_report_folder(self.model)
-        cs.export_reports(self.model, report_folder)
-
-        self.alert.add_msg(
-            f"Reporting tables successfull exported {report_folder}", type_="success"
-        )

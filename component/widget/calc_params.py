@@ -26,15 +26,8 @@ class Calculation(sw.List):
         self.model = model
         self.ready = False
 
-        self.w_content_a = CustomList(
-            indicator="sub_a",
-            label=cm.calculation.y_report,
-            items=self.model.ic_items_sub_a,
-        )
-
-        self.w_content_b = CustomList(
-            indicator="sub_b", items=self.model.ic_items_sub_b
-        )
+        self.w_content_a = CustomListA(items=self.model.ic_items_sub_a)
+        self.w_content_b = CustomListB(items=self.model.ic_items_sub_b)
 
         self.dialog_a = EditionDialog(self.w_content_a, "sub_a")
         self.dialog_b = EditionDialog(self.w_content_b, "sub_b")
@@ -79,6 +72,14 @@ class Calculation(sw.List):
             (self.model, "calc_b"),
         )
         self.ready = True
+
+        self.set_defaults()
+
+    def set_defaults(self):
+        """Set default values for custom lists"""
+
+        self.w_content_b.set_default()
+        self.w_content_a.set_default()
 
     def reset_event(self, change, indicator):
         """search within the content and trigger reset method"""
@@ -133,6 +134,8 @@ class Calculation(sw.List):
                 v.ListItemContent(
                     children=[
                         v.Card(
+                            min_height=225,
+                            max_height=225,
                             children=[
                                 v.CardTitle(
                                     children=[
@@ -160,7 +163,7 @@ class Calculation(sw.List):
                                         alert,
                                     ]
                                 ),
-                            ]
+                            ],
                         )
                     ]
                 ),
@@ -188,7 +191,6 @@ class Calculation(sw.List):
         Args:
             change["new"]: It's the v_model from CustomList component, it will contain the user selection for each of the subindicators.
         """
-
         # Get the space where the elements will be inserted
         span = self.get_children(id_=f"span_{indicator}")[0]
         alert = self.get_children(id_=f"alert_{indicator}")[0]
@@ -203,14 +205,44 @@ class Calculation(sw.List):
         data = change["new"]
 
         if indicator == "sub_b":
-            self.model.reporting_years_sub_b = [
-                next(iter(list(y.keys()))) for y in list(data.values())
+            baseline = data.get("baseline", {}).values()
+            report = {k: v for k, v in data.items() if k != "baseline"}.values()
+            if not all(
+                [
+                    all(val.get("asset") for val in baseline) if baseline else False,
+                    all(val.get("year") for val in baseline) if baseline else False,
+                    all(val.get("asset") for val in report) if report else False,
+                    all(val.get("year") for val in report) if report else False,
+                ]
+            ):
+                return
+
+            reporting_years_sub_b = cs.get_reporting_years(data, "sub_b")
+            baseline_chip = [
+                v.Chip(
+                    color="success",
+                    small=True,
+                    children=["-".join([str(y) for y in reporting_years_sub_b[0]])],
+                )
             ]
+            report_chip = [
+                v.Chip(
+                    color="success",
+                    small=True,
+                    children=[str(yr)],
+                )
+                for yr in reporting_years_sub_b[1:]
+            ]
+            span.children = (
+                ["Baseline: "] + baseline_chip + ["\nReport: "] + report_chip
+            )
+
+            self.model.reporting_years_sub_b = cs.get_reporting_years(data, "sub_b")
             return
 
         base_years = [str(val.get("year", "...")) for val in data.values()]
 
-        reporting_years = cs.get_sub_a_break_points(data)
+        reporting_years = cs.get_reporting_years(data, "sub_a")
 
         if base_years and not reporting_years:
             str_base_y = ", ".join(base_years)
@@ -225,7 +257,6 @@ class Calculation(sw.List):
             alert.hide()
 
         multichips = []
-
         for reporting_y in reporting_years.keys():
             multichips.append(
                 [
@@ -336,14 +367,12 @@ class CustomList(sw.List):
         self.indicator = indicator
         self.attributes = {"id": f"content_{indicator}"}
 
+        self.reporty_title = sw.CardTitle(children=["Reporting years"])
+
         super().__init__()
 
         self.add_btn = v.Btn(children=[v.Icon(children=["mdi-plus"])], icon=True)
-        self.children = self.get_element(single=True)
         self.add_btn.on_event("click", self.add_element)
-
-        if indicator == "sub_b":
-            self.get_children(id_="custom_list_sub_b")[0].validate_inputs()
 
     def remove_element(self, *args, id_):
         """Removes element from the current list"""
@@ -387,16 +416,16 @@ class CustomList(sw.List):
 
         tmp_vmodel = deepcopy(self.v_model)
 
-        if self.indicator == "sub_a":
-            value = str(data["new"]) if target == "asset" else int(data["new"])
-            # set a default value for the key if it doesn't exist
-            # do this for each level of the dict
-            # so we can set the value for the target
-            # key
-            tmp_vmodel.setdefault(id_, {})[target] = value
+        # if self.indicator == "sub_a":
+        value = str(data["new"]) if target == "asset" else int(data["new"])
+        # set a default value for the key if it doesn't exist
+        # do this for each level of the dict
+        # so we can set the value for the target
+        # key
+        tmp_vmodel.setdefault(id_, {})[target] = value
 
-        else:
-            tmp_vmodel[id_] = data["new"]
+        # else:
+        #     tmp_vmodel[id_] = data["new"]
 
         self.v_model = tmp_vmodel
 
@@ -412,9 +441,18 @@ class CustomList(sw.List):
         # flatten list
         self.errors = [val for sublist in errors for val in sublist]
 
-    def get_element(self, single=False):
-        """creates a double select widget with add and remove buttons. To allow user
-        calculate subindicator B and also perform multiple calculations at once"""
+    def populate(self, items):
+        """receive v.select items, save in object (to be reused by new elements) and
+        fill the current one ones in the view"""
+
+        self.items = items
+
+        select_wgts = self.get_children(id_="selects")
+
+        [setattr(select, "items", items) for select in select_wgts]
+
+    def get_actions(self):
+        """get the actions to be displayed in the list elements"""
 
         id_ = self.counter
 
@@ -423,21 +461,33 @@ class CustomList(sw.List):
         sub_btn = v.Btn(children=[v.Icon(children=["mdi-minus"])], icon=True)
         sub_btn.on_event("click", lambda *args: self.remove_element(*args, id_=id_))
 
-        actions = [self.add_btn, sub_btn]
+        actions = [sub_btn]
 
         if self.counter == 1:
-            actions = [actions[0]]
+            actions = [self.add_btn]
+
+        return actions, id_
+
+    def get_element(self):
+        """creates a double select widget with add and remove buttons. To allow user
+        calculate subindicator B and also perform multiple calculations at once"""
+
+        actions, id_ = self.get_actions()
 
         w_basep = v.Select(
             class_="mr-2 max-width-200",
             v_model=False,
-            attributes={"id": "selects"},
-            label=cm.calculation.y_base,
+            attributes={"id": "selects", "unique_id": f"report_asset_{id_}"},
+            label=cm.calculation.year,
             items=self.items,
         )
 
-        w_base_yref = SelectYear()
-        w_basep_container = sw.Flex(
+        w_base_yref = SelectYear(
+            label=cm.calculation.match_year,
+            attributes={"unique_id": f"report_ref_{id_}", "id_": "ref_select"},
+        )
+
+        sub_a_content = sw.Flex(
             class_="d-flex flex-row", children=[w_basep, w_base_yref] + actions
         )
 
@@ -450,25 +500,12 @@ class CustomList(sw.List):
             "v_model",
         )
 
-        if self.indicator == "sub_b":
-            # only display report widgets when using sub_b
-            sub_b_content = CustomListB(items=self.items, actions=actions, counter=id_)
-
-            sub_b_content.observe(
-                lambda chg: self.update_model(chg, id_=id_), "v_model"
-            )
-
-            # link errors to the main widget
-            sub_b_content.observe(self.get_errors, "errors")
-
-        item = [
+        return [
             v.ListItem(
                 attributes={"id": id_},
                 class_="ma-0 pa-0",
                 children=[
-                    sub_b_content
-                    if self.indicator == "sub_b"
-                    else v.ListItemContent(children=[w_basep_container]),
+                    v.ListItemContent(children=[sub_a_content]),
                 ],
             ),
             v.Divider(
@@ -476,23 +513,27 @@ class CustomList(sw.List):
             ),
         ]
 
-        return item
 
-    def populate(self, items):
-        """receive v.select items, save in object (to be reused by new elements) and
-        fill the current one ones in the view"""
+class CustomListA(CustomList):
+    def __init__(self, items):
+        super().__init__("sub_a", items=items)
+        self.children = [self.reporty_title] + self.get_element()
 
-        self.items = items
+    def set_default(self):
+        # Default values for sub_a
+        self.get_children(attr="unique_id", value="report_asset_1")[
+            0
+        ].v_model = param.DEFAULT_ASSETS["sub_a"][1]["asset_id"]
 
-        select_wgts = self.get_children(id_="selects")
-
-        [setattr(select, "items", items) for select in select_wgts]
+        self.get_children(attr="unique_id", value="report_ref_1")[
+            0
+        ].v_model = param.DEFAULT_ASSETS["sub_a"][1]["year"]
 
     def reset(self):
         """remove all selected values form selection widgets"""
 
         select_wgts = self.get_children(id_="selects")
-        ref_wgts = self.get_children(id_="ref_select")
+        ref_wgts = self.get_children(attr="id_", value="ref_select")
 
         [self.remove_element(id_=id) for id in self.ids if id != 1]
 
@@ -502,7 +543,101 @@ class CustomList(sw.List):
         self.v_model = {}
 
 
-class CustomListB(sw.ListItemContent):
+class CustomListB(CustomList):
+    def __init__(self, items):
+        super().__init__("sub_b", items=items)
+
+        self.reporty_title = sw.Flex(
+            children=[
+                sw.CardTitle(children=[cm.calculation.reporting_title]),
+                sw.CardSubtitle(children=[cm.calculation.reporting_subtitle]),
+            ]
+        )
+
+        # Create baseline widget
+        actions, _ = self.get_actions()
+        self.w_baseline = BaselineItem(items=self.items, actions=actions)
+
+        self.children = [self.w_baseline]
+
+        self.get_children(id_="custom_list_sub_b")[0].validate_inputs()
+
+        self.w_baseline.observe(self.update_baseline_model, "v_model")
+
+        # Add at leas one report year
+        self.add_element()
+
+    def remove_element(self, *args, id_):
+        """Inherit from CustomList and remove title if there's only one element left"""
+
+        if self.counter > 2:
+            super().remove_element(*args, id_=id_)
+
+    def get_element(self):
+        """Inherit from CustomList and overwrite get_element method to add
+        a title only to the first element"""
+
+        if self.counter == 2:
+            elements = (
+                [self.reporty_title] + super().get_element()
+                if not self.reporty_title in self.children
+                else super().get_element()
+            )
+            return elements
+
+        return super().get_element()
+
+    def update_baseline_model(self, change):
+        """inherith from CustomList and overwrite update_model method to add the baseline"""
+
+        if not change["new"]:
+            return
+
+        tmp_vmodel = deepcopy(self.v_model)
+
+        # combine the baseline and the default current v_model
+        tmp_vmodel.update(change["new"])
+
+        self.v_model = tmp_vmodel
+
+    def set_default(self):
+        """Set default values"""
+
+        baseline = param.DEFAULT_ASSETS["sub_b"]["baseline"]
+        report = param.DEFAULT_ASSETS["sub_b"]["report"]
+
+        self.w_baseline.w_basep.v_model = baseline["start_year"]["asset_id"]
+        self.w_baseline.w_base_yref.v_model = baseline["start_year"]["year"]
+
+        self.w_baseline.w_reportp.v_model = baseline["end_year"]["asset_id"]
+        self.w_baseline.w_report_yref.v_model = baseline["end_year"]["year"]
+
+        self.get_children(attr="unique_id", value="report_asset_2")[0].v_model = report[
+            "asset_id"
+        ]
+        self.get_children(attr="unique_id", value="report_ref_2")[0].v_model = report[
+            "year"
+        ]
+
+    def reset(self):
+        """remove all selected values form selection widgets"""
+
+        select_wgts = self.get_children(id_="selects")
+        ref_wgts = self.get_children(attr="id_", value="ref_select")
+
+        [self.remove_element(id_=id) for id in self.ids if id not in [1, 2]]
+
+        [setattr(select, "v_model", None) for select in (select_wgts + ref_wgts)]
+
+        # And also reset the v_model
+        self.v_model = {}
+
+
+class BaselineItem(sw.ListItemContent):
+    """Widget to allow the selection of the baseline period for the subindicator B.
+    It will be composed of two selects, one for the initial year and another for the final year.
+    """
+
     v_model = Dict(allow_none=True).tag(sync=True)
 
     errors = List([]).tag(sync=True)
@@ -515,15 +650,7 @@ class CustomListB(sw.ListItemContent):
 
         self.attributes = {"id": "custom_list_sub_b"}
 
-        self.w_report_yr = sw.Select(
-            label=cm.calculation.y_report,
-            style_="min-width: 200px; max-width: 2005px",
-            attributes={"id": "selects", "name": "report_year"},
-            items=param.REPORT_INTERVALS[2:],
-            v_model=False,
-        )
-
-        w_basep = v.Select(
+        self.w_basep = v.Select(
             class_="mr-2 max-width-200",
             v_model=False,
             attributes={
@@ -532,14 +659,14 @@ class CustomListB(sw.ListItemContent):
                 "target": "asset",
                 "clean": True,
             },
-            label=cm.calculation.y_base,
+            label=cm.calculation.y_start,
             items=sorted(self.items, reverse=False),
         )
 
-        w_base_yref = SelectYear(
+        self.w_base_yref = SelectYear(
             attributes={
                 "unique_id": "ref_select_base",
-                "id": "ref_select",
+                "id_": "ref_select",
                 "type": "base",
                 "target": "year",
                 "clean": True,
@@ -548,10 +675,10 @@ class CustomListB(sw.ListItemContent):
         )
 
         w_basep_container = sw.Flex(
-            class_="d-flex flex-row", children=[w_basep, w_base_yref]
+            class_="d-flex flex-row", children=[self.w_basep, self.w_base_yref]
         )
 
-        w_reportp = v.Select(
+        self.w_reportp = v.Select(
             class_="mr-3 ",
             v_model=False,
             attributes={
@@ -560,14 +687,14 @@ class CustomListB(sw.ListItemContent):
                 "target": "asset",
                 "clean": True,
             },
-            label=cm.calculation.y_report,
+            label=cm.calculation.y_end,
             items=sorted(self.items, reverse=True),
         )
 
-        w_report_yref = SelectYear(
+        self.w_report_yref = SelectYear(
             attributes={
                 "unique_id": "ref_select_report",
-                "id": "ref_select",
+                "id_": "ref_select",
                 "type": "report",
                 "target": "year",
                 "clean": True,
@@ -576,23 +703,23 @@ class CustomListB(sw.ListItemContent):
         )
 
         w_reportp_container = sw.Flex(
-            class_="d-flex flex-row", children=[w_reportp, w_report_yref]
+            class_="d-flex flex-row", children=[self.w_reportp, self.w_report_yref]
         )
 
         span_base = v.Html(
-            tag="span", class_="mr-2", children=["...."], attributes={"id": "span_base"}
+            tag="span", class_="mr-2", children=["2000"], attributes={"id": "span_base"}
         )
         span_report = v.Html(
             tag="span",
             class_="mr-2",
-            children=["...."],
+            children=["2015"],
             attributes={"id": "span_report"},
         )
 
         self.children = [
             sw.Card(
                 children=[
-                    sw.CardTitle(children=actions + [sw.Spacer(), self.w_report_yr]),
+                    sw.CardTitle(children=[cm.calculation.baseline_title]),
                     sw.CardText(
                         children=[
                             sw.Flex(
@@ -605,6 +732,7 @@ class CustomListB(sw.ListItemContent):
                             ),
                         ]
                     ),
+                    sw.CardActions(children=[v.Spacer()] + actions),
                 ]
             )
         ]
@@ -614,17 +742,11 @@ class CustomListB(sw.ListItemContent):
             for chld in self.get_children(id_="ref_select")
         ]
 
-        self.w_report_yr.observe(self.fill_span_values, "v_model")
+        self.w_basep.observe(self.set_v_model, "v_model")
+        self.w_base_yref.observe(self.set_v_model, "v_model")
 
-        w_basep.observe(self.set_v_model, "v_model")
-        w_base_yref.observe(self.set_v_model, "v_model")
-
-        w_reportp.observe(self.set_v_model, "v_model")
-        w_report_yref.observe(self.set_v_model, "v_model")
-
-        # Set default value for reporting year as the first item
-        # set after linking the observers
-        self.w_report_yr.v_model = self.w_report_yr.items[0]
+        self.w_reportp.observe(self.set_v_model, "v_model")
+        self.w_report_yref.observe(self.set_v_model, "v_model")
 
     def validate_inputs(self):
         """Validate the inputs"""
@@ -659,47 +781,14 @@ class CustomListB(sw.ListItemContent):
         """set the v_model of the w_reportp"""
 
         tmp_vmodel = deepcopy(self.v_model)
+        type_ = change["owner"].attributes.get("type")
+        target = change["owner"].attributes.get("target")
+        value = change["owner"].v_model
 
-        year = self.w_report_yr.v_model
-
-        if year:
-            type_ = change["owner"].attributes.get("type")
-            target = change["owner"].attributes.get("target")
-            value = change["owner"].v_model
-
-            tmp_vmodel.setdefault(year, {}).setdefault(type_, {})[target] = value
+        tmp_vmodel.setdefault("baseline", {}).setdefault(type_, {})[target] = value
 
         self.validate_inputs()
         self.v_model = tmp_vmodel
-
-    def fill_span_values(self, change):
-        """set the values of the span elements.
-
-        They will change according with the w_report_yr selected.
-
-        """
-
-        [
-            setattr(w, "v_model", None)
-            for w in self.get_children(attr="clean", value=True)
-        ]
-
-        self.v_model = {}
-
-        val = change["new"]
-
-        if val:
-            span_base = self.get_children(id_="span_base")[0]
-            span_report = self.get_children(id_="span_report")[0]
-
-            # from REPORT_INTERVALS, get the index of the selected value and
-            # substract 1 to get the previous value
-
-            current = param.REPORT_INTERVALS.index(val)
-            previous = param.REPORT_INTERVALS[max(0, current - 1)]
-
-            span_report.children = [f"{val}:"]
-            span_base.children = [f"{previous}:"]
 
 
 class SelectYear(v.Select):
@@ -715,8 +804,8 @@ class SelectYear(v.Select):
     ):
         super().__init__(*args, **kwargs)
 
-        self.v_model = False
+        self.v_model = None
         self.style_ = "min-width: 125px; max-width: 125px"
         self.label = label
         self.items = sorted(param.YEARS, reverse=reverse)
-        self.attributes = attributes or {"id": "ref_select"}
+        self.attributes = attributes

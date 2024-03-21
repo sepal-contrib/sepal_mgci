@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import Dict, Optional, Tuple, TYPE_CHECKING
 
 import pandas as pd
 
@@ -22,7 +22,7 @@ BELT_TABLE = pd.read_csv(param.BIOBELTS_DESC)
 "pd.Dataframe: bioclimatic belts classes and description"
 
 
-def get_degraded_area(parsed_df, model):
+def get_degraded_area(parsed_df: pd.DataFrame, model: "MgciModel"):
     """Return net and gross area of degraded land per belt class"""
 
     # Prepare df
@@ -31,9 +31,9 @@ def get_degraded_area(parsed_df, model):
 
     # get the degraded area
     degraded = (
-        df[df.impact == -1]
+        df[df.impact == 1]
         .groupby(["belt_class"])
-        .sum()
+        .sum(numeric_only=True)
         .reset_index()[["belt_class", "sum"]]
     )
     degraded.rename(columns={"sum": "degraded"}, inplace=True)
@@ -41,9 +41,9 @@ def get_degraded_area(parsed_df, model):
     # Get net degraded area per belt class as the sum of improved minus the sum of degraded
 
     improved = (
-        df[df.impact == 1]
+        df[df.impact == 3]
         .groupby(["belt_class"])
-        .sum()
+        .sum(numeric_only=True)
         .reset_index()[["belt_class", "sum"]]
     )
     improved.rename(columns={"sum": "improved"}, inplace=True)
@@ -89,7 +89,7 @@ def get_pdma_pt(parsed_df, model):
     pt_degraded = get_degraded_area(parsed_df, model=model)
 
     # get total area of each belt class
-    belt_area = parsed_df.groupby("belt_class").sum().reset_index()
+    belt_area = parsed_df.groupby("belt_class").sum(numeric_only=True).reset_index()
     # Merge pdma_area and belt_area
 
     pt_degraded = pd.merge(
@@ -119,11 +119,14 @@ def get_pdma_pt(parsed_df, model):
 
 
 def get_report(
-    parsed_df: pd.DataFrame, years: str, model, area: Optional[bool] = False
+    parsed_df: pd.DataFrame,
+    years: Dict[str, Tuple[int, int]],
+    model: "MgciModel",
+    area: Optional[bool] = False,
 ) -> pd.DataFrame:
     parsed_df = parsed_df.copy()
 
-    yr_list = years.split("_")
+    years = list(years.values())[0]
 
     if area:
         report_df = get_pdma_area(parsed_df, model)
@@ -131,36 +134,43 @@ def get_report(
         report_df["OBS_VALUE_NET"] = report_df["net_degraded"]
         report_df[
             "OBS_VALUE_RSA"
-        ] = "TBD"  # TODO: determine if we're going to use RSA or not
+        ] = param.TBD  # TODO: determine if we're going to use RSA or not
         report_df[
             "OBS_VALUE_RSA_NET"
-        ] = "TBD"  # TODO: determine if we're going to use RSA or not
+        ] = param.TBD  # TODO: determine if we're going to use RSA or not
         report_df["UNIT_MEASURE"] = "KM2"
-        report_df["UNIT_MULT"] = "TBD"
+        report_df["UNIT_MULT"] = param.TBD
         output_cols = sub_b_landtype_cols
     else:
         report_df = get_pdma_pt(parsed_df, model)
         report_df["OBS_VALUE"] = report_df["pt_degraded"]
         report_df["OBS_VALUE_NET"] = report_df["pt_net_degraded"]
         report_df["UNIT_MEASURE"] = "PT"
-        report_df["UNIT_MULT"] = "TBD"
+        report_df["UNIT_MULT"] = param.TBD
 
         output_cols = sub_b_perc_cols
 
     report_df["Indicator"] = "15.4.2"
-    report_df["SeriesID"] = "TBD"
-    report_df["SERIES"] = "TBD"
-    report_df["SeriesDesc"] = "TBD"
+    report_df["SeriesID"] = param.TBD
+    report_df["SERIES"] = param.TBD
+    report_df["SeriesDesc"] = param.TBD
     report_df["REF_AREA"] = cs.get_geoarea(model.aoi_model)[1]
     report_df["GeoAreaName"] = cs.get_geoarea(model.aoi_model)[0]
-    report_df["TIME_PERIOD"] = yr_list[1]
-    report_df["TIME_DETAIL"] = f"{yr_list[0]}-{yr_list[1]}"
+    report_df["TIME_PERIOD"] = f"{years[1]}"
+    report_df["TIME_DETAIL"] = f"{years[0]}-{years[1]}"
     report_df["SOURCE_DETAIL"] = model.source
     report_df["COMMENT_OBS"] = "FAO estimate"
 
     report_df["BIOCLIMATIC_BELT"] = report_df.apply(get_belt_desc, axis=1)
 
-    # fill NaN values with "N/A"
+    # round obs_value
+    report_df["OBS_VALUE"] = report_df["OBS_VALUE"].round(4)
+    report_df["OBS_VALUE_NET"] = report_df["OBS_VALUE"].round(4)
+
+    # Convert DataFrame to object type
+    report_df = report_df.astype(object)
+
+    # Now fill NaN values with "NA"
     report_df.fillna("NA", inplace=True)
 
     # fill zeros with "N/A"
@@ -169,15 +179,19 @@ def get_report(
     report_df["NATURE"] = report_df.apply(get_nature, axis=1)
     report_df["OBS_STATUS"] = report_df.apply(get_obs_status, axis=1)
 
-    return report_df[output_cols], f"{years[0]}_{years[1]}"
+    return report_df[output_cols]
 
 
 def get_reports(
-    parsed_df: pd.DataFrame, year_s: str, model: "MgciModel"
+    parsed_df: pd.DataFrame, year_s: Dict[str, Tuple[int, int]], model: "MgciModel"
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     SubIndB_pdma
     SubIndB_pdma_TransitionType
+
+    Args:
+        year_s: either {"baseline": (2000, 2015)} or {"report": (2015, 2018)"
+
     """
 
     pdma_perc_report = get_report(parsed_df, year_s, model)
