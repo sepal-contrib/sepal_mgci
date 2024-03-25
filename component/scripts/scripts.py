@@ -599,6 +599,12 @@ def export_reports(model: "MgciModel", output_folder) -> None:
     reporting_years_sub_b = get_reporting_years(model.sub_b_year, "sub_b")
     _, sub_b_years = get_sub_b_items(reporting_years_sub_b)
 
+    # These are some variables that will be used in the reports
+    geo_area_name = cs.get_geoarea(model.aoi_model)[0]
+    ref_area = cs.get_geoarea(model.aoi_model)[1]
+    source_detail = model.source
+    transition_matrix = model.transition_matrix
+
     for year in sub_a_years:
         print(f"Reporting {year} for sub_a")
         parsed_df = cs.parse_to_year_a(model.results, model.reporting_years_sub_a, year)
@@ -610,10 +616,18 @@ def export_reports(model: "MgciModel", output_folder) -> None:
         print(f"Reporting {year} for sub_b")
         # Get year label for the report
         parsed_df = cs.parse_to_year(model.results, year)
-        sub_b_reports.append(sub_b.get_reports(parsed_df, year, model))
+        sub_b_reports.append(
+            sub_b.get_reports(
+                parsed_df,
+                year,
+                geo_area_name,
+                ref_area,
+                source_detail,
+                transition_matrix,
+            )
+        )
 
     # Concat all reports
-
     mtn_reports_df = pd.concat(mtn_reports)
 
     # sub a reports

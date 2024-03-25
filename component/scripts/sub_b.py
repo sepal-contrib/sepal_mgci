@@ -22,12 +22,14 @@ BELT_TABLE = pd.read_csv(param.BIOBELTS_DESC)
 "pd.Dataframe: bioclimatic belts classes and description"
 
 
-def get_degraded_area(parsed_df: pd.DataFrame, model: "MgciModel"):
+def get_degraded_area(parsed_df: pd.DataFrame, transition_matrix: str):
     """Return net and gross area of degraded land per belt class"""
 
     # Prepare df
     df = parsed_df.copy()
-    df["impact"] = df.apply(lambda x: get_impact(x, model=model), axis=1)
+    df["impact"] = df.apply(
+        lambda x: get_impact(x, transition_matrix=transition_matrix), axis=1
+    )
 
     # get the degraded area
     degraded = (
@@ -63,10 +65,10 @@ def get_degraded_area(parsed_df: pd.DataFrame, model: "MgciModel"):
     return net_degraded
 
 
-def get_pdma_area(parsed_df, model):
+def get_pdma_area(parsed_df, transition_matrix: str):
     """Return net and gross area of degraded land per belt class"""
 
-    degraded = get_degraded_area(parsed_df, model=model)
+    degraded = get_degraded_area(parsed_df, transition_matrix=transition_matrix)
 
     # Add new row for total
     total_row = pd.DataFrame(
@@ -83,10 +85,10 @@ def get_pdma_area(parsed_df, model):
     return pd.concat([degraded, total_row])
 
 
-def get_pdma_pt(parsed_df, model):
+def get_pdma_pt(parsed_df, transition_matrix: str):
     """Return net and gross area (as percentage) of degraded land per belt class"""
 
-    pt_degraded = get_degraded_area(parsed_df, model=model)
+    pt_degraded = get_degraded_area(parsed_df, transition_matrix=transition_matrix)
 
     # get total area of each belt class
     belt_area = parsed_df.groupby("belt_class").sum(numeric_only=True).reset_index()
@@ -121,28 +123,30 @@ def get_pdma_pt(parsed_df, model):
 def get_report(
     parsed_df: pd.DataFrame,
     years: Dict[str, Tuple[int, int]],
-    model: "MgciModel",
+    geo_area_name: str,
+    ref_area: str,
+    source_detail: str,
+    transition_matrix: str,
     area: Optional[bool] = False,
 ) -> pd.DataFrame:
+
     parsed_df = parsed_df.copy()
 
     years = list(years.values())[0]
 
     if area:
-        report_df = get_pdma_area(parsed_df, model)
+        report_df = get_pdma_area(parsed_df, transition_matrix)
         report_df["OBS_VALUE"] = report_df["degraded"]
         report_df["OBS_VALUE_NET"] = report_df["net_degraded"]
-        report_df[
-            "OBS_VALUE_RSA"
-        ] = param.TBD  # TODO: determine if we're going to use RSA or not
-        report_df[
-            "OBS_VALUE_RSA_NET"
-        ] = param.TBD  # TODO: determine if we're going to use RSA or not
+        # TODO: determine if we're going to use RSA or not
+        report_df["OBS_VALUE_RSA"] = param.TBD
+        # TODO: determine if we're going to use RSA or not
+        report_df["OBS_VALUE_RSA_NET"] = param.TBD
         report_df["UNIT_MEASURE"] = "KM2"
         report_df["UNIT_MULT"] = param.TBD
         output_cols = sub_b_landtype_cols
     else:
-        report_df = get_pdma_pt(parsed_df, model)
+        report_df = get_pdma_pt(parsed_df, transition_matrix)
         report_df["OBS_VALUE"] = report_df["pt_degraded"]
         report_df["OBS_VALUE_NET"] = report_df["pt_net_degraded"]
         report_df["UNIT_MEASURE"] = "PT"
@@ -154,11 +158,11 @@ def get_report(
     report_df["SeriesID"] = param.TBD
     report_df["SERIES"] = param.TBD
     report_df["SeriesDesc"] = param.TBD
-    report_df["REF_AREA"] = cs.get_geoarea(model.aoi_model)[1]
-    report_df["GeoAreaName"] = cs.get_geoarea(model.aoi_model)[0]
+    report_df["REF_AREA"] = ref_area
+    report_df["GeoAreaName"] = geo_area_name
     report_df["TIME_PERIOD"] = f"{years[1]}"
     report_df["TIME_DETAIL"] = f"{years[0]}-{years[1]}"
-    report_df["SOURCE_DETAIL"] = model.source
+    report_df["SOURCE_DETAIL"] = source_detail
     report_df["COMMENT_OBS"] = "FAO estimate"
 
     report_df["BIOCLIMATIC_BELT"] = report_df.apply(get_belt_desc, axis=1)
@@ -183,7 +187,12 @@ def get_report(
 
 
 def get_reports(
-    parsed_df: pd.DataFrame, year_s: Dict[str, Tuple[int, int]], model: "MgciModel"
+    parsed_df: pd.DataFrame,
+    year_s: Dict[str, Tuple[int, int]],
+    geo_area_name,
+    ref_area,
+    source_detail,
+    transition_matrix,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     SubIndB_pdma
@@ -194,7 +203,23 @@ def get_reports(
 
     """
 
-    pdma_perc_report = get_report(parsed_df, year_s, model)
-    pdma_land_type_report = get_report(parsed_df, year_s, model, area=True)
+    pdma_perc_report = get_report(
+        parsed_df,
+        year_s,
+        geo_area_name,
+        ref_area,
+        source_detail,
+        transition_matrix,
+    )
+
+    pdma_land_type_report = get_report(
+        parsed_df,
+        year_s,
+        geo_area_name,
+        ref_area,
+        source_detail,
+        transition_matrix,
+        area=True,
+    )
 
     return pdma_perc_report, pdma_land_type_report
