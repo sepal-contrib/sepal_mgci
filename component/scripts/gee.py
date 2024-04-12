@@ -128,24 +128,132 @@ def reduce_regions(
                 }
             )
         )
-    # This is for subindicator A
+    # # This is for subindicator A
+    # return ee.Dictionary(
+    #     {
+    #         "sub_a": image_area.divide(param.UNITS["sqkm"][0])
+    #         .updateMask(clip_biobelt.mask())
+    #         .addBands(no_remap(ee_lc_start, remap_matrix))
+    #         .addBands(clip_biobelt)
+    #         .reduceRegion(
+    #             **{
+    #                 "reducer": ee.Reducer.sum().group(1).group(2),
+    #                 "geometry": aoi,
+    #                 "maxPixels": 1e19,
+    #                 "scale": scale,
+    #                 "bestEffort": True,
+    #                 "tileScale": 8,
+    #             }
+    #         )
+    #         .get("groups")
+    #     }
+    # )
+
+    from_ = [
+        190,
+        10,
+        11,
+        12,
+        20,
+        30,
+        40,
+        110,
+        130,
+        50,
+        60,
+        61,
+        62,
+        70,
+        71,
+        72,
+        80,
+        81,
+        82,
+        90,
+        100,
+        160,
+        170,
+        120,
+        121,
+        122,
+        180,
+        140,
+        150,
+        151,
+        152,
+        153,
+        200,
+        201,
+        202,
+        220,
+        210,
+    ]
+    to = [
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        5,
+        5,
+        5,
+        6,
+        7,
+        7,
+        7,
+        7,
+        7,
+        8,
+        8,
+        8,
+        9,
+        10,
+    ]
+    yyy = 2020
+    print(f"this is the experiment 3 {yyy}")
+    # table = ee.FeatureCollection("FAO/GAUL/2015/level2")
+    # aoi = table.filter(ee.Filter.eq("ADM2_CODE", 29224))
+    clip_biobelt = ee.Image("users/xavidelamo/SDG1542_Mntn_BioclimaticBelts").clip(aoi)
+    lc = ee.Image(f"users/amitghosh/sdg_module/esa/cci_landcover/{yyy}")
+
+    scale = lc.projection().nominalScale()
     return ee.Dictionary(
         {
-            "sub_a": image_area.divide(param.UNITS["sqkm"][0])
-            .updateMask(clip_biobelt.mask())
-            .addBands(no_remap(ee_lc_start, remap_matrix))
-            .addBands(clip_biobelt)
-            .reduceRegion(
-                **{
-                    "reducer": ee.Reducer.sum().group(1).group(2),
-                    "geometry": aoi,
-                    "maxPixels": 1e19,
-                    "scale": scale,
-                    "bestEffort": True,
-                    "tileScale": 8,
-                }
-            )
-            .get("groups")
+            "sub_a": (
+                ee.Image.pixelArea()
+                .divide(1000000)
+                .updateMask(clip_biobelt.mask())
+                .addBands(lc.remap(from_, to))
+                .addBands(clip_biobelt)
+                .reduceRegion(
+                    **{
+                        "reducer": ee.Reducer.sum().group(1).group(2),
+                        "geometry": aoi,
+                        "maxPixels": 1e19,
+                        "scale": scale,
+                        "bestEffort": True,
+                        "tileScale": 8,
+                    }
+                )
+            ).get("groups")
         }
     )
 

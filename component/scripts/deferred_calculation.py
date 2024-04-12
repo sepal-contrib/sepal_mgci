@@ -1,3 +1,4 @@
+from time import time
 from typing import Tuple
 import ee
 from pathlib import Path
@@ -98,7 +99,15 @@ def perform_calculation(
 
             # Try the process in on the fly
             try:
+                # Calculate the time it takes to process the data
+
+                # from here
+
+                start_time = time()
                 result = process.getInfo()
+                # Your code here
+                end_time = time()
+                print(f"Execution time: {end_time - start_time} seconds")
                 logger.set_msg(f"Calculating {process_id}... Done.", id_=process_id)
                 logger.set_state("success", id_=process_id)
                 on_the_fly.set(True)
