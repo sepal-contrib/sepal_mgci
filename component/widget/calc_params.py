@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import Literal
 
 import ipyvuetify as v
+from component.scripts.validation import validate_calc_params
 import sepal_ui.sepalwidgets as sw
 from traitlets import Bool, CInt, Dict, Int, List, directional_link, link
 
@@ -521,13 +522,13 @@ class CustomListA(CustomList):
 
     def set_default(self):
         # Default values for sub_a
-        self.get_children(attr="unique_id", value="report_asset_1")[
-            0
-        ].v_model = param.DEFAULT_ASSETS["sub_a"][1]["asset_id"]
+        self.get_children(attr="unique_id", value="report_asset_1")[0].v_model = (
+            param.DEFAULT_ASSETS["sub_a"][1]["asset_id"]
+        )
 
-        self.get_children(attr="unique_id", value="report_ref_1")[
-            0
-        ].v_model = param.DEFAULT_ASSETS["sub_a"][1]["year"]
+        self.get_children(attr="unique_id", value="report_ref_1")[0].v_model = (
+            param.DEFAULT_ASSETS["sub_a"][1]["year"]
+        )
 
     def reset(self):
         """remove all selected values form selection widgets"""

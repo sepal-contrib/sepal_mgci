@@ -179,11 +179,20 @@ class CalculationView(sw.Card):
     def export_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 
+        validate_calc_params(
+            self.model.calc_a,
+            self.model.calc_b,
+            self.model.sub_a_year,
+            self.model.sub_b_year,
+            None,
+        )
+
         self.alert.add_msg("Exporting tables...")
 
         report_folder = cs.get_report_folder(self.model)
 
         if not self.model.aoi_model.feature_collection:
+
             raise Exception(cm.error.no_aoi)
 
         cs.export_reports(self.model, report_folder)
