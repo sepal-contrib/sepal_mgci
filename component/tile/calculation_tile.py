@@ -273,8 +273,7 @@ class CalculationView(sw.Card):
 
         report_folder = cs.get_report_folder(self.model)
         task_filepath = (
-            DIR.TASKS_DIR
-            / f"Task_result_{report_folder.stem}_{self.model.session_id}.csv"
+            DIR.TASKS_DIR / f"Task_{report_folder.stem}_{self.model.session_id}.csv"
         )
 
         scale = None  # Default value
