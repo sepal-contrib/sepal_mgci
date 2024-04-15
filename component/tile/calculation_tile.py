@@ -179,6 +179,14 @@ class CalculationView(sw.Card):
     def export_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 
+        validate_calc_params(
+            self.model.calc_a,
+            self.model.calc_b,
+            self.model.sub_a_year,
+            self.model.sub_b_year,
+            None,
+        )
+
         self.alert.add_msg("Exporting tables...")
 
         report_folder = cs.get_report_folder(self.model)
@@ -273,8 +281,7 @@ class CalculationView(sw.Card):
 
         report_folder = cs.get_report_folder(self.model)
         task_filepath = (
-            DIR.TASKS_DIR
-            / f"Task_result_{report_folder.stem}_{self.model.session_id}.csv"
+            DIR.TASKS_DIR / f"Task_{report_folder.stem}_{self.model.session_id}.csv"
         )
 
         scale = None  # Default value
