@@ -184,9 +184,10 @@ def get_mgci(parsed_df: pd.DataFrame) -> pd.DataFrame:
 def get_report(
     parsed_df: pd.DataFrame,
     year: int,
-    model: Optional["MgciModel"] = None,
+    geo_area_name: str,
+    ref_area: str,
+    source_detail: str,
     land_type: Optional[bool] = False,
-    **details
 ) -> pd.DataFrame:
     """
     This function takes in a parsed DataFrame, a year, and an optional land_type
@@ -207,11 +208,6 @@ def get_report(
         - ref_area
         - source_detail
     """
-
-    # This is useful when function is called from outside the
-    geo_area_name = details.get("geo_area_name", None)
-    ref_area = details.get("ref_area", None)
-    source_detail = details.get("source_detail", None)
 
     if land_type:
         # Table2_1542a_LandCoverType
@@ -237,11 +233,11 @@ def get_report(
     report_df["SeriesID"] = param.TBD
     report_df["SERIES"] = param.TBD
     report_df["SeriesDesc"] = param.TBD
-    report_df["GeoAreaName"] = geo_area_name or cs.get_geoarea(model.aoi_model)[0]
-    report_df["REF_AREA"] = ref_area or cs.get_geoarea(model.aoi_model)[1]
+    report_df["GeoAreaName"] = geo_area_name
+    report_df["REF_AREA"] = ref_area
     report_df["TIME_PERIOD"] = year
     report_df["TIME_DETAIL"] = year
-    report_df["SOURCE_DETAIL"] = source_detail or model.source
+    report_df["SOURCE_DETAIL"] = source_detail
     report_df["COMMENT_OBS"] = "FAO estimate"
     report_df["BIOCLIMATIC_BELT"] = report_df.apply(get_belt_desc, axis=1)
 
@@ -268,16 +264,28 @@ def get_report(
 
 
 def get_reports(
-    parsed_df: pd.DataFrame, year_s: str, model: "MgciModel" = None, **extra_args
+    parsed_df: pd.DataFrame,
+    year_s: str,
+    geo_area_name: str,
+    ref_area: str,
+    source_detail: str,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     SubIndA_MGCI
     SubIndA_LandType
     """
 
-    mgci_report = get_report(parsed_df, year_s, model, **extra_args)
+    mgci_report = get_report(
+        parsed_df, year_s, geo_area_name, ref_area, source_detail, land_type=False
+    )
+
     mgci_land_type_report = get_report(
-        parsed_df, year_s, model, land_type=True, **extra_args
+        parsed_df,
+        year_s,
+        geo_area_name,
+        ref_area,
+        source_detail,
+        land_type=True,
     )
 
     return mgci_report, mgci_land_type_report

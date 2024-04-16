@@ -1,5 +1,4 @@
-from pathlib import Path
-from time import sleep
+from datetime import datetime
 
 import ipyvuetify as v
 import sepal_ui.scripts.utils as su
@@ -7,7 +6,7 @@ import sepal_ui.sepalwidgets as sw
 import sepal_ui.scripts.decorator as sd
 from traitlets import Bool, Int, directional_link, link
 import component.parameter.directory as DIR
-from component.scripts.deferred_calculation import perform_calculation
+from component.scripts.deferred_calculation import perform_calculation, task_process
 import component.scripts as cs
 from component.scripts.validation import validate_calc_params
 import component.widget as cw
@@ -27,17 +26,14 @@ class CalculationTile(v.Layout, sw.SepalWidget):
         self.model = model
 
         self.calculation_view = CalculationView(self.model)
-        self.download_task_view = DownloadTaskView(self.model)
 
         self.children = [
             cw.Tabs(
                 titles=[
                     "Calculation",
-                    "Calculation from Task",
                 ],
                 content=[
                     self.calculation_view,
-                    self.download_task_view,
                 ],
                 class_="mb-2",
             ),
@@ -75,9 +71,9 @@ class CalculationView(sw.Card):
         )
 
         self.w_background = v.Switch(
-            v_model=True,
+            v_model=False,
             label=cm.dashboard.label.background,
-            value=True,
+            value=False,
         )
 
         self.w_scale = Slider()
@@ -189,7 +185,8 @@ class CalculationView(sw.Card):
 
         self.alert.add_msg("Exporting tables...")
 
-        report_folder = cs.get_report_folder(self.model)
+        aoi_name = self.model.aoi_model.name
+        report_folder = cs.get_report_folder(aoi_name)
 
         if not self.model.aoi_model.feature_collection:
             raise Exception(cm.error.no_aoi)
@@ -279,9 +276,13 @@ class CalculationView(sw.Card):
             int(k): int(v) for k, v in self.model.matrix_sub_b.items()
         }
 
-        report_folder = cs.get_report_folder(self.model)
+        aoi_name = self.model.aoi_model.name
+        report_folder = cs.get_report_folder(aoi_name)
+
+        now = datetime.now()
         task_filepath = (
-            DIR.TASKS_DIR / f"Task_{report_folder.stem}_{self.model.session_id}.csv"
+            DIR.TASKS_DIR
+            / f"Task_{report_folder.stem}_{now.strftime('%Y-%m-%d-%H%M%S')}_{self.model.session_id}.json"
         )
 
         scale = None  # Default value
@@ -294,7 +295,7 @@ class CalculationView(sw.Card):
             scale = self.w_scale.v_model
 
         # Create a fucntion in order to be able to test it easily
-        results = perform_calculation(
+        done, results = perform_calculation(
             aoi=self.model.aoi_model.feature_collection,
             rsa=self.model.rsa,
             dem=self.model.dem,
@@ -302,26 +303,25 @@ class CalculationView(sw.Card):
             remap_matrix_b=self.model.matrix_sub_b,
             transition_matrix=self.model.transition_matrix,
             years=years,
-            task_filepath=task_filepath,
             logger=self.alert,
             background=self.w_background.v_model,
             scale=scale,
         )
 
-        # If result is None, we assume the computation was tasked
+        if not done:
 
-        if not all(results.values()):
-            task_filename = task_filepath.with_suffix(".csv")
+            model_state = self.model.get_data()
+            task_process(results, task_filepath, model_state)
 
             msg = sw.Markdown(
                 "The computation could not be completed on the fly. The task <i>'{}'</i> has been tasked in your <a href='https://code.earthengine.google.com/tasks'>GEE account</a>.".format(
-                    task_filename
+                    task_filepath
                 )
             )
 
             self.alert.append_msg(msg, type_="warning")
 
-        elif all(results.values()):
+        elif done and all(results.values()):
             self.model.results = results
             self.model.done = True
             self.alert.append_msg(
@@ -332,97 +332,6 @@ class CalculationView(sw.Card):
             self.alert.append_msg(
                 "There was an error in one of the steps", type_="error"
             )
-
-
-class DownloadTaskView(v.Card):
-    def __init__(self, model, *args, **kwargs):
-        """
-        Download tile tab: to search and select the tasks_id file, check if the task is
-        complete and then download the file.
-
-        """
-        self.class_ = "pa-2"
-
-        super().__init__(*args, **kwargs)
-
-        self.model = model
-
-        # Widgets
-        title = v.CardTitle(children=[cm.dashboard.tasks.title])
-        description = v.CardText(
-            children=[sw.Markdown(cm.dashboard.tasks.description.format(DIR.TASKS_DIR))]
-        )
-
-        v.Icon(children=["mdi-help-circle"], small=True)
-
-        self.w_file_input = sw.FileInput(
-            folder=DIR.TASKS_DIR, extentions=[".csv"], root=DIR.RESULTS_DIR
-        )
-
-        self.alert = sw.Alert()
-        self.alert.add_msg(cm.dashboard.tasks.warning, type_="warning")
-
-        self.btn = sw.Btn(cm.dashboard.label.calculate_from_task)
-
-        self.children = [
-            title,
-            description,
-            self.alert,
-            self.w_file_input,
-            self.btn,
-        ]
-
-        self.btn.on_event("click", self.run_statistics)
-
-    @su.loading_button()
-    def run_statistics(self, *_):
-        """From the gee result dictionary, extract the values and give a proper
-        format in a pd.DataFrame.
-
-        Args:
-            process (ee.reduceRegion): ee process (without execution).
-            task_file (path, str): full path of task file containing task_id(s)
-        """
-
-        self.model.done = False
-        self.model.results = {}
-
-        # Get and read file
-        tasks_file = Path(self.w_file_input.v_model)
-        task_df = self.model.read_tasks_file(tasks_file)
-
-        task_id = task_df.iloc[0, 1]
-        process_id = task_df.iloc[0, 0]
-
-        # re-build the filename
-        task_filename = f"{tasks_file.stem}.csv"
-
-        # Dowload from file
-        msg = cw.TaskMsg(f"Processing {process_id}..", process_id)
-        self.alert.append_msg(msg)
-
-        result_file = self.model.download_from_task_file(
-            task_id, tasks_file, task_filename
-        )
-
-        self.model.results = cs.read_from_csv(result_file)
-        msg.set_state("success")
-        self.model.done = True
-
-        # Write the results on a comma separated values file, or an excel file
-
-        self.alert.append_msg("Exporting tables...")
-
-        report_folder = cs.get_report_folder(self.model)
-
-        if not self.model.aoi_model.feature_collection:
-            raise Exception(cm.error.no_aoi)
-
-        cs.export_reports(self.model, report_folder)
-
-        self.alert.add_msg(
-            f"Reporting tables successfull exported {report_folder}", type_="success"
-        )
 
 
 class Slider(v.Row):

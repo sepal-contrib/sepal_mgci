@@ -2,6 +2,10 @@ from pathlib import Path
 import io
 import logging
 import json
+import component.parameter.directory as DIR
+
+from sepal_ui.scripts.warning import SepalWarning
+
 
 import ee
 import numpy as np
@@ -121,3 +125,32 @@ class GDrive:
                 return task
 
         raise Exception(f"The task id {task_id} doesn't exist in your tasks.")
+
+    def download_from_task_file(self, task_id, tasks_file, task_filename):
+        """Download csv file result from GDrive
+
+        Args:
+            task_id (str): id of the task tasked in GEE.
+            tasks_file (Path): path file containing all task_id, task_name
+            task_filename (str): name of the task file to be downloaded.
+        """
+
+        # Check if the task is completed
+        task = self.get_task(task_id.strip())
+
+        if task.state == "COMPLETED":
+            tmp_result_folder = Path(DIR.TASKS_DIR, Path(tasks_file.name).stem)
+            tmp_result_folder.mkdir(exist_ok=True)
+
+            tmp_result_file = tmp_result_folder / task_filename
+            self.download_file(task_filename, tmp_result_file)
+
+            return tmp_result_file
+
+        elif task.state == "FAILED":
+            raise Exception(f"The task {Path(task_filename).stem} failed.")
+
+        else:
+            raise SepalWarning(
+                f"The task '{Path(task_filename).stem}' state is: {task.state}."
+            )

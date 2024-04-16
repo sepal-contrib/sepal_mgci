@@ -8,6 +8,7 @@ import component.scripts as cs
 from component.scripts.gee import reduce_regions
 import component.widget as cw
 from component.message import cm
+import json
 
 
 class Logger:
@@ -20,10 +21,16 @@ class Logger:
         self.state = state
 
 
-def task_process(process: ee.FeatureCollection, task_filepath: str) -> None:
+def task_process(
+    process: ee.FeatureCollection, task_filepath: str, model_state: dict
+) -> None:
     """Send the task to the GEE servers and process it in background. This will be
-    neccessary when the process is timed out."""
-    print("changed")
+    neccessary when the process is timed out.
+
+    It will return a file with the task name and the task id to track when the process is done.
+    Also, it will return the current state of the model to a json file.
+    """
+
     task_name = Path(f"{task_filepath.stem}")
 
     task = ee.batch.Export.table.toDrive(
@@ -44,9 +51,14 @@ def task_process(process: ee.FeatureCollection, task_filepath: str) -> None:
 
     task.start()
 
-    # Create a file containing the task id to track when the process is done.
-    with open(task_filepath.with_suffix(".csv"), "w") as file:
-        file.write(f"{task_name}, {task.id}" + "\n")
+    with Path(task_filepath.with_suffix(".json")).open("w") as f:
+
+        data = {
+            "model_state": model_state,
+            "task": {"id": task.id, "name": str(task_name)},
+        }
+        print(data)
+        json.dump(data, f, indent=4)
 
 
 def perform_calculation(
@@ -57,7 +69,6 @@ def perform_calculation(
     remap_matrix_b: dict,
     transition_matrix: str,
     years: list,
-    task_filepath: Path,
     logger: cw.Alert = None,
     background: bool = False,
     scale: int = None,
@@ -134,9 +145,6 @@ def perform_calculation(
     if not on_the_fly.get():
         # If the process was not done on the fly, send it to the GEE servers
         # but first merge all the processes in one.
-        process = ee.FeatureCollection(list(results.values()))
-        task_process(process, task_filepath)
+        return False, ee.FeatureCollection(list(results.values()))
 
-        return {1: False}
-
-    return results
+    return True, results

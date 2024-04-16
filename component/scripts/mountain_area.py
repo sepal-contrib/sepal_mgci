@@ -36,7 +36,11 @@ def get_mountain_area(parsed_df):
 
 
 def get_report(
-    parsed_df: pd.DataFrame, year: int, model=None, **details
+    parsed_df: pd.DataFrame,
+    year: int,
+    geo_area_name: str,
+    ref_area: str,
+    source_detail: str,
 ) -> Tuple[pd.DataFrame, int]:
     """Create a report for Table1_MountainArea.
 
@@ -51,11 +55,6 @@ def get_report(
         - source_detail
     """
 
-    # This is useful when function is called from outside the
-    geo_area_name = details.get("geo_area_name", None)
-    ref_area = details.get("ref_area", None)
-    source_detail = details.get("source_detail", None)
-
     report_df = get_mountain_area(parsed_df)
     report_df["OBS_VALUE"] = report_df["sum"]
     report_df["OBS_VALUE_RSA"] = param.TBD  # TODO: check if we can report RSA
@@ -67,11 +66,11 @@ def get_report(
     report_df["SeriesID"] = param.TBD
     report_df["SERIES"] = param.TBD
     report_df["SeriesDesc"] = param.TBD
-    report_df["GeoAreaName"] = geo_area_name or cs.get_geoarea(model.aoi_model)[0]
-    report_df["REF_AREA"] = ref_area or cs.get_geoarea(model.aoi_model)[1]
+    report_df["GeoAreaName"] = geo_area_name
+    report_df["REF_AREA"] = ref_area
     report_df["TIME_PERIOD"] = year
     report_df["TIME_DETAIL"] = year
-    report_df["SOURCE_DETAIL"] = source_detail or model.source
+    report_df["SOURCE_DETAIL"] = source_detail
     report_df["COMMENT_OBS"] = "FAO estimate"
     report_df["BIOCLIMATIC_BELT"] = report_df.apply(get_belt_desc, axis=1)
 
