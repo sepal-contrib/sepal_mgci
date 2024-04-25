@@ -105,7 +105,8 @@ class CalculationView(sw.Card):
                 sw.Tooltip(
                     self.w_scale,
                     cm.dashboard.help.scale,
-                    right=True,
+                    top=True,
+                    rigth=False,
                     max_width=300,
                 )
             ],
