@@ -576,7 +576,7 @@ def export_reports(
     ref_area,
     source_detail,
     transition_matrix,
-    output_folder,
+    report_folder: str,
     session_id: str,
 ) -> None:
     """
@@ -604,7 +604,7 @@ def export_reports(
         output_folder (str): The output folder path
         session_id (str): The session id randomy created by the model
     """
-
+    output_folder = Path(report_folder)
     mtn_reports = []
     sub_a_reports = []
     sub_b_reports = []

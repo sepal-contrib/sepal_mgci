@@ -192,7 +192,7 @@ class CalculationView(sw.Card):
         if not self.model.aoi_model.feature_collection:
             raise Exception(cm.error.no_aoi)
 
-        cs.export_reports(self.model, report_folder)
+        cs.export_reports(results=self.model.results, **self.model.get_data())
 
         self.alert.add_msg(
             f"Reporting tables successfull exported {report_folder}", type_="success"
