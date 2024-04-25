@@ -1,6 +1,7 @@
 import ipyvuetify as v
 from sepal_ui import color
 import sepal_ui.sepalwidgets as sw
+from sepal_ui.frontend.resize_trigger import rt
 from traitlets import CBool, Int, link
 from ipyvuetify import Btn
 
@@ -51,14 +52,16 @@ class Tabs(v.Card):
                     v.TabItem(children=[content], key=key)
                     for key, content in enumerate(content)
                 ],
-            )
+            ),
         ]
 
-        self.children = self.tabs + self.content
+        self.children = self.tabs + self.content + [rt]
 
         link((self.tabs[0], "v_model"), (self.content[0], "v_model"))
 
         super().__init__(**kwargs)
+
+        self.content[0].observe(lambda *_: rt.resize(), "v_model")
 
 
 class Alert(sw.Alert):
