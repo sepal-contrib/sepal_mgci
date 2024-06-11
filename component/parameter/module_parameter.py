@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pandas as pd
-from sepal_ui import color
 
 from component.message import cm
 
@@ -34,7 +33,7 @@ BIOBELT_LEGEND = {
     2: ["Alpine", "#ffd500"],
     3: ["Montane", "#bbff00"],
     4: ["Remaining mountain area", "#034502"],
-    "total": [cm.aoi.legend.total, color.main],
+    "total": [cm.aoi.legend.total, "#24221f"],
 }
 
 LEGEND_NAMES = {

@@ -3,9 +3,8 @@ from typing import Literal
 
 import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
-from traitlets import Bool, CInt, Dict, Int, List, directional_link, link
+from traitlets import Bool, Dict, Int, List, directional_link
 
-import component.frontend
 import component.parameter.module_parameter as param
 import component.scripts.scripts as cs
 from component.message import cm
@@ -521,13 +520,13 @@ class CustomListA(CustomList):
 
     def set_default(self):
         # Default values for sub_a
-        self.get_children(attr="unique_id", value="report_asset_1")[
-            0
-        ].v_model = param.DEFAULT_ASSETS["sub_a"][1]["asset_id"]
+        self.get_children(attr="unique_id", value="report_asset_1")[0].v_model = (
+            param.DEFAULT_ASSETS["sub_a"][1]["asset_id"]
+        )
 
-        self.get_children(attr="unique_id", value="report_ref_1")[
-            0
-        ].v_model = param.DEFAULT_ASSETS["sub_a"][1]["year"]
+        self.get_children(attr="unique_id", value="report_ref_1")[0].v_model = (
+            param.DEFAULT_ASSETS["sub_a"][1]["year"]
+        )
 
     def reset(self):
         """remove all selected values form selection widgets"""

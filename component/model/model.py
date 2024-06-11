@@ -1,16 +1,13 @@
-from pathlib import Path
 import random
 from typing import List
 
-import pandas as pd
-from sepal_ui.scripts.warning import SepalWarning
 from sepal_ui.model import Model
 import sepal_ui.scripts.decorator as sd
 import component.scripts as cs
 from traitlets import Bool, CBool, Dict, List, Unicode
 
 import component.parameter.module_parameter as param
-from component.scripts.gdrive import GDrive
+from component.scripts.sepal_ui_scripts import get_geoarea
 
 
 class MgciModel(Model):
@@ -137,8 +134,8 @@ class MgciModel(Model):
         if not self.aoi_model:
             raise Exception("You have to select an AOI first.")
 
-        geo_area_name = cs.get_geoarea(self.aoi_model)[0]
-        ref_area = cs.get_geoarea(self.aoi_model)[1]
+        geo_area_name = get_geoarea(self.aoi_model)[0]
+        ref_area = get_geoarea(self.aoi_model)[1]
         report_folder = cs.get_report_folder(self.aoi_model.name)
 
         return {

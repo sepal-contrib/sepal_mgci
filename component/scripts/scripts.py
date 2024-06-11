@@ -8,7 +8,6 @@ import ipyvuetify as v
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
-from sepal_ui.aoi.aoi_model import AoiModel
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment
 
@@ -29,7 +28,6 @@ __all__ = [
     "get_random_color",
     "get_mgci_color",
     "get_report_folder",
-    "get_geoarea",
     "get_sub_b_items",
     "create_avatar",
     "get_a_years",
@@ -91,28 +89,6 @@ def get_report_folder(aoi_name: str) -> Path:
     report_folder = DIR.REPORTS_DIR / f"SDG1542_{aoi_name}"
     report_folder.mkdir(parents=True, exist_ok=True)
     return report_folder
-
-
-def get_geoarea(aoi_model: AoiModel) -> Tuple[str, str]:
-    """Create the geo area name to the excel report"""
-
-    if aoi_model.method in ["ADMIN0", "ADMIN1", "ADMIN2"]:
-        split_name = aoi_model.name.split("_")
-
-        iso31661 = split_name[0]
-
-        m49_df = pd.read_csv(param.M49_FILE, sep=";")
-
-        gaul_row = m49_df[m49_df.iso31661 == iso31661]
-
-        geoarea_name = gaul_row["country"].values[0]
-        m49_code = gaul_row["m49"].values[0]
-
-        if len(split_name) > 1:
-            geoarea_name = f"{geoarea_name}_" + "_".join(split_name[1:])
-        return geoarea_name, m49_code
-    else:
-        return aoi_model.name, ""
 
 
 def remove_duplicated_years(

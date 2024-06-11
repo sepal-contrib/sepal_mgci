@@ -4,7 +4,6 @@ from copy import deepcopy
 
 import ee
 import pandas as pd
-from sepal_ui import color
 
 from component.message import cm
 from component.parameter.module_parameter import BIOBELT, BIOBELT_LEGEND, BIOBELT_VIS
@@ -66,7 +65,7 @@ def get_belt_area(aoi, biobelt):
     )
 
     if len(df) == 1:
-        df.iloc[0] = [color.main, cm.legend.no_mountain, "-", "-"]
+        df.iloc[0] = ["#24221f", cm.legend.no_mountain, "-", "-"]
 
     return json.loads(df.to_json(orient="index")), df
 
