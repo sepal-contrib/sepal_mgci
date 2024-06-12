@@ -199,8 +199,9 @@ def validate_calc_params(calc_a: bool, calc_b: bool, sub_a_year, sub_b_year, sub
         if not sub_b_year:
             raise Exception("Subindicator B has no years selected")
 
-        if sub_b_val.errors:
-            raise Exception("Subindicator B has errors")
+        if sub_b_val:
+            if sub_b_val.errors:
+                raise Exception("Subindicator B has errors")
 
     if not any([calc_a, calc_b]):
         raise Exception("Please select at least one subindicator")

@@ -1,7 +1,4 @@
 import ee
-import sepal_ui.scripts.utils as su
-
-su.init_ee()
 
 # Script to calculate Real Surface Area based on Jenness(2004)
 # https://www.fs.fed.us/rm/pubs_other/rmrs_2004_jenness_j001.pdf

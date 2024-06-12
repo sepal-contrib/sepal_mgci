@@ -16,4 +16,4 @@ pytest
 pygaul
 seaborn
 
-ipyvuetify==1.8.10
+ipyvuetify

@@ -1,16 +1,13 @@
-from pathlib import Path
 import random
 from typing import List
 
-import pandas as pd
-from sepal_ui.scripts.warning import SepalWarning
 from sepal_ui.model import Model
 import sepal_ui.scripts.decorator as sd
+import component.scripts as cs
 from traitlets import Bool, CBool, Dict, List, Unicode
 
-import component.parameter.directory as DIR
 import component.parameter.module_parameter as param
-from component.scripts.gdrive import GDrive
+from component.scripts.sepal_ui_scripts import get_geoarea
 
 
 class MgciModel(Model):
@@ -131,43 +128,23 @@ class MgciModel(Model):
         # currently, we are not allowing user to change the dem
         self.dem = param.DEM_DEFAULT
 
-    def download_from_task_file(self, task_id, tasks_file, task_filename):
-        """Download csv file result from GDrive
+    def get_data(self):
+        """Return the current state of the model"""
 
-        Args:
-            task_id (str): id of the task tasked in GEE.
-            tasks_file (Path): path file containing all task_id, task_name
-            task_filename (str): name of the task file to be downloaded.
-        """
+        if not self.aoi_model:
+            raise Exception("You have to select an AOI first.")
 
-        gdrive = GDrive()
+        geo_area_name = get_geoarea(self.aoi_model)[0]
+        ref_area = get_geoarea(self.aoi_model)[1]
+        report_folder = cs.get_report_folder(self.aoi_model.name)
 
-        # Check if the task is completed
-        task = gdrive.get_task(task_id.strip())
-
-        if task.state == "COMPLETED":
-            tmp_result_folder = Path(DIR.TASKS_DIR, Path(tasks_file.name).stem)
-            tmp_result_folder.mkdir(exist_ok=True)
-
-            tmp_result_file = tmp_result_folder / task_filename
-            gdrive.download_file(task_filename, tmp_result_file)
-
-            return tmp_result_file
-
-        elif task.state == "FAILED":
-            raise Exception(f"The task {Path(task_filename).stem} failed.")
-
-        else:
-            raise SepalWarning(
-                f"The task '{Path(task_filename).stem}' state is: {task.state}."
-            )
-
-    def read_tasks_file(self, tasks_file):
-        """read tasks file"""
-
-        if not tasks_file.exists():
-            raise Exception("You have to download and select a task file.")
-
-        tasks_df = pd.read_csv(tasks_file, header=None).astype(str)
-
-        return tasks_df
+        return {
+            "reporting_years_sub_a": self.reporting_years_sub_a,
+            "sub_b_year": self.sub_b_year,
+            "geo_area_name": geo_area_name,
+            "ref_area": ref_area,
+            "source_detail": self.source,
+            "transition_matrix": str(self.transition_matrix),
+            "session_id": self.session_id,
+            "report_folder": str(report_folder),
+        }

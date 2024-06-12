@@ -11,6 +11,7 @@ import sepal_ui.scripts.decorator as su
 from component.model.model import MgciModel
 import component.parameter.visualization as visuals
 from component.scripts.layers import get_layer_a, get_layer_b
+from component.widget.custom_widgets import AlertDialog
 from component.widget.export_dialog import ExportMapDialog
 from component.widget.legend_control import LegendDashboard
 from component.message import cm
@@ -20,6 +21,9 @@ class LayerHandler(sw.Card):
     def __init__(self, map_: "Map", model: MgciModel):
         self.width = "450px"
         self.map_ = map_
+
+        self.alert = sw.Alert()
+        alert_dialog = AlertDialog(w_alert=self.alert)
 
         self.map_.add_legend(
             "lc_legend", "Land cover", visuals.LEGENDS["land_cover"], vertical=False
@@ -38,12 +42,12 @@ class LayerHandler(sw.Card):
         self._layers = []
 
         self.w_layers = sw.Select(items=[], v_model=[], label="Layers", class_="mr-2")
-        self.alert = sw.Alert()
         self.btn = sw.Btn("", gliph="mdi-plus")
         self.btn.v_icon.left = False
 
         self.children = [
-            v.Row(no_gutters=True, align="center", children=[self.w_layers, self.btn])
+            v.Row(no_gutters=True, align="center", children=[self.w_layers, self.btn]),
+            alert_dialog,
         ]
 
         self.btn.on_event("click", self.add_layer)

@@ -5,10 +5,7 @@ import ee
 import pandas as pd
 import component.parameter.module_parameter as param
 from component.scripts.surface_area import get_real_surface_area
-from component.parameter.module_parameter import TRANSITION_MATRIX
 from component.parameter.module_parameter import transition_degradation_matrix
-
-ee.Initialize()
 
 
 def no_remap(image: ee.Image, remap_matrix: Optional[dict] = None):

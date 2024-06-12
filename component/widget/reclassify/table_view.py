@@ -19,7 +19,6 @@ __all__ = ["TableView"]
 
 
 class ClassTable(sw.DataTable):
-
     """
     Custom data table to modify, display and save classification. From this interface, a user can modify a classification starting from a scratch or by loading a classification file. the display datatable allow all the CRUD fonctionality (create, read, update, delete).
 
@@ -594,7 +593,7 @@ class TableView(sw.Card):
             tag="h3", children=[cm.rec.table.classif.title], class_="mt-2"
         )
         self.w_class_file = sw.FileInput(
-            extentions=[".csv"],
+            extensions=[".csv"],
             label=cm.rec.table.classif.file_select,
             folder=self.class_path,
             root=dir_.RESULTS_DIR,

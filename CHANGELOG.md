@@ -1,3 +1,26 @@
+## 0.6.0 (2024-04-25)
+
+### Feat
+
+- function simplification
+- workflow to calculate subindicator B
+- allow max 10k as output scale
+- add activation switch to scale slider and wrap additional option on a expansion panel
+- use coarser scale if land cover map is too fine when querying the classes of the image
+- add scale optional parameter to the UI
+
+### Fix
+
+- fix export reports function
+- add alert dialog on dashboard map
+- resize dashboard map after changing tabs.
+
+### Refactor
+
+- reposition the tooltip of the scale slider
+- **download_task**: store app state on json file to download tables - Change the location of the download tile as a new independend tile - Save app state in a json file containing also the task id
+- rename sub a manual calculation notebook
+
 ## 0.5.0 (2024-03-04)
 
 ### Feat

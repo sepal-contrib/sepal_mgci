@@ -7,6 +7,7 @@
             "calculation" : "Indicator settings",
             "dashboard" : "Results",
             "about" : "About",
+            "task" : "Export from task",
             "disclaimer" : "Disclaimer"
         }
     },
@@ -162,8 +163,7 @@
         "advanced_options" : "Advanced options",
         "tasks" : {
             "title":"Process on the GEE background tasks",
-            "description" : "This section is designed to help you with calculations that are running in the background on Google Earth Engine. Here is what you can do:<br><br>- **Locate Your Task File**: A unique 'task file' is created for each calculation that was sent to the GEE background, which you can find at '<i>{}</i>' folder.<br>- **Monitor Your Task**: Keep an eye on your task's progress and check its current status at any time.<br>- **Download Results**: Once completed, you can download the results and reporting tables directly from here.<br>- **View Your Dashboard**: Your results will automatically populate the dashboard, making it easy to review and analyze the data.<br>Just follow the steps provided on this page to smoothly manage and retrieve your calculation outputs.",
-            "warning" : "Attention Returning Users: If you are accessing results from a previous session, please ensure that you start from the first step and select the same area of interest that you used for your initial calculation. This is necessary to retrieve the correct results from the Google Earth Engine (GEE)."
+            "description" : "This section is designed to help you with calculations that are running in the background on Google Earth Engine. Here is what you can do:<br><br>- **Locate Your Task File**: A unique 'task file' is created for each calculation that was sent to the GEE background, which you can find at '<i>{}</i>' folder.<br>- **Monitor Your Task**: Keep an eye on your task's progress and check its current status at any time.<br>- **Download Results**: Once completed, you can download the results and reporting tables directly from here.<br>- **View Your Dashboard**: Your results will automatically populate the dashboard, making it easy to review and analyze the data.<br>Just follow the steps provided on this page to smoothly manage and retrieve your calculation outputs."
         },
         "label": {
             "download" : "Export reporting tables",

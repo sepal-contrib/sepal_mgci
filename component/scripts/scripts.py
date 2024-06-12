@@ -8,7 +8,6 @@ import ipyvuetify as v
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
-from sepal_ui.aoi.aoi_model import AoiModel
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment
 
@@ -29,7 +28,6 @@ __all__ = [
     "get_random_color",
     "get_mgci_color",
     "get_report_folder",
-    "get_geoarea",
     "get_sub_b_items",
     "create_avatar",
     "get_a_years",
@@ -81,35 +79,16 @@ def get_mgci_color(mgci: float) -> str:
     return param.UPPER_THRESHOLDS[threshold]
 
 
-def get_report_folder(mgci_model: "MgciModel") -> Path:
-    """Get output report folder path"""
+def get_report_folder(aoi_name: str) -> Path:
+    """Get output report folder path
+    args:
+        aoi_name: coming from the aoi_model.name
+    """
 
     # Create a folder to store multiple year reports from the same area
-    report_folder = DIR.REPORTS_DIR / f"SDG1542_{mgci_model.aoi_model.name}"
+    report_folder = DIR.REPORTS_DIR / f"SDG1542_{aoi_name}"
     report_folder.mkdir(parents=True, exist_ok=True)
     return report_folder
-
-
-def get_geoarea(aoi_model: AoiModel) -> Tuple[str, str]:
-    """Create the geo area name to the excel report"""
-
-    if aoi_model.method in ["ADMIN0", "ADMIN1", "ADMIN2"]:
-        split_name = aoi_model.name.split("_")
-
-        iso31661 = split_name[0]
-
-        m49_df = pd.read_csv(param.M49_FILE, sep=";")
-
-        gaul_row = m49_df[m49_df.iso31661 == iso31661]
-
-        geoarea_name = gaul_row["country"].values[0]
-        m49_code = gaul_row["m49"].values[0]
-
-        if len(split_name) > 1:
-            geoarea_name = f"{geoarea_name}_" + "_".join(split_name[1:])
-        return geoarea_name, m49_code
-    else:
-        return aoi_model.name, ""
 
 
 def remove_duplicated_years(
@@ -565,7 +544,17 @@ def get_sub_a_break_points(user_input_years: list) -> dict:
     return break_points
 
 
-def export_reports(model: "MgciModel", output_folder) -> None:
+def export_reports(
+    results: dict,
+    reporting_years_sub_a: dict,
+    sub_b_year,
+    geo_area_name,
+    ref_area,
+    source_detail,
+    transition_matrix,
+    report_folder: str,
+    session_id: str,
+) -> None:
     """
     This function exports the reports of the model's results (calculation).
     It separates the reports into two categories: sub_a_reports and sub_b_reports.
@@ -579,13 +568,19 @@ def export_reports(model: "MgciModel", output_folder) -> None:
             - Appends the sub_a_report to the sub_a_reports list
         - Appends the sub_b_report to the sub_b_reports list
 
-    :param model: The model object containing the results to be exported
-    :type model: object
-    :return: A tuple containing two lists, the first one is sub_a_reports and the second
-        one is sub_b_reports
-    :rtype: tuple
-    """
 
+    Args:
+        results (dict): The results of the model's calculation
+        reporting_years_sub_a (dict): The reporting years for sub_a
+        sub_b_year (dict): The reporting years for sub_b (user's input)
+        geo_area_name (str): The name of the geographical area (calculated from the aoimodel)
+        ref_area (str): The reference area (calculated from the aoimodel)
+        source_detail (str): The source detail (from user's input)
+        transition_matrix (str): The transition matrix (from user's input)
+        output_folder (str): The output folder path
+        session_id (str): The session id randomy created by the model
+    """
+    output_folder = Path(report_folder)
     mtn_reports = []
     sub_a_reports = []
     sub_b_reports = []
@@ -594,26 +589,40 @@ def export_reports(model: "MgciModel", output_folder) -> None:
     # only loop over the ones that are of our interest.
     # use model.reporting_years_sub_b and model.reporting_years_sub_a
 
-    sub_a_years = list(model.reporting_years_sub_a.keys())
+    sub_a_years = list(reporting_years_sub_a.keys())
 
-    reporting_years_sub_b = get_reporting_years(model.sub_b_year, "sub_b")
+    reporting_years_sub_b = get_reporting_years(sub_b_year, "sub_b")
     _, sub_b_years = get_sub_b_items(reporting_years_sub_b)
+
+    # These are some variables that will be used in the reports
 
     for year in sub_a_years:
         print(f"Reporting {year} for sub_a")
-        parsed_df = cs.parse_to_year_a(model.results, model.reporting_years_sub_a, year)
-        sub_a_reports.append(sub_a.get_reports(parsed_df, year, model))
+        parsed_df = cs.parse_to_year_a(results, reporting_years_sub_a, year)
+        sub_a_reports.append(
+            sub_a.get_reports(parsed_df, year, geo_area_name, ref_area, source_detail)
+        )
         print(f"Reporting {year} for mtn")
-        mtn_reports.append(mntn.get_report(parsed_df, year, model))
+        mtn_reports.append(
+            mntn.get_report(parsed_df, year, geo_area_name, ref_area, source_detail)
+        )
 
     for year in sub_b_years:
         print(f"Reporting {year} for sub_b")
         # Get year label for the report
-        parsed_df = cs.parse_to_year(model.results, year)
-        sub_b_reports.append(sub_b.get_reports(parsed_df, year, model))
+        parsed_df = cs.parse_to_year(results, year)
+        sub_b_reports.append(
+            sub_b.get_reports(
+                parsed_df,
+                year,
+                geo_area_name,
+                ref_area,
+                source_detail,
+                transition_matrix,
+            )
+        )
 
     # Concat all reports
-
     mtn_reports_df = pd.concat(mtn_reports)
 
     # sub a reports
@@ -624,9 +633,7 @@ def export_reports(model: "MgciModel", output_folder) -> None:
     er_mtn_dgrp_df = pd.concat([report[0] for report in sub_b_reports])
     er_mtn_dgda_df = pd.concat([report[1] for report in sub_b_reports])
 
-    output_name = str(
-        Path(output_folder, output_folder.name + f"{model.session_id}.xlsx")
-    )
+    output_name = str(Path(output_folder, output_folder.name + f"{session_id}.xlsx"))
 
     with pd.ExcelWriter(output_name) as writer:
         mtn_reports_df.to_excel(writer, sheet_name="Table1_ER_MTN_TOTL", index=False)
