@@ -21,16 +21,13 @@ from pathlib import Path
 # %cd "/content/sepal_mgci"
 
 # Import parameters for the default DEM asset and a lookup table for land cover reclassification
-#from component.parameter.module_parameter import DEM_DEFAULT, LC_MAP_MATRIX
-
-
 DEM_DEFAULT = "CGIAR/SRTM90_V4"
 
 # Define the translation matrix between ESA and MGCI LC classes
 
-LC_MAP_MATRIX = Path(__file__).parent / "component/parameter/lc_map_matrix.csv"
+LC_MAP_MATRIX = Path(__file__).parents[1] / "parameter/lc_map_matrix.csv"
 
-TRANSITION_MATRIX_FILE =Path(__file__).parent / "component/parameter/transition_matrix.csv"
+TRANSITION_MATRIX_FILE =Path(__file__).parents[1] / "parameter/transition_matrix.csv"
 
 # # # # Import scripts and modules from cloned GitHub repository (i.e., functions for indicator calculation and formatting)
 from component.scripts.gee import reduce_regions # for running summary statistics in GEE
@@ -38,7 +35,6 @@ from component.scripts.gee import reduce_regions # for running summary statistic
 from component.scripts.scripts import (get_a_years, map_matrix_to_dict, parse_result, read_from_csv,
                                        get_b_years, map_matrix_to_dict, get_sub_b_items, get_reporting_years, parse_to_year)# parameter prep and reformatting
 from component.scripts import sub_a, sub_b, mountain_area as mntn ###TO DO: ADD DESCRIPTIONS
-
 
 from component.scripts.colab_combining_files import sanitize_description,append_excel_files
 
