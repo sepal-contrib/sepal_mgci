@@ -34,19 +34,14 @@ TRANSITION_MATRIX_FILE =Path(__file__).parent / "component/parameter/transition_
 
 # # # # Import scripts and modules from cloned GitHub repository (i.e., functions for indicator calculation and formatting)
 from component.scripts.gee import reduce_regions # for running summary statistics in GEE
+
 from component.scripts.scripts import (get_a_years, map_matrix_to_dict, parse_result, read_from_csv,
                                        get_b_years, map_matrix_to_dict, get_sub_b_items, get_reporting_years, parse_to_year)# parameter prep and reformatting
 from component.scripts import sub_a, sub_b, mountain_area as mntn ###TO DO: ADD DESCRIPTIONS
 
 
-#import component.parameter.module_parameter as param
+from component.scripts.colab_combining_files import sanitize_description,append_excel_files
 
-from component.scripts.scripts import get_b_years, map_matrix_to_dict, get_sub_b_items, get_reporting_years, parse_to_year
-
-
-
-from combining_files import sanitize_description,append_excel_files
-
-from drive_folders import folder_exists,create_folder, create_folder_if_not_exists
+from component.scripts.colab_drive_folders import folder_exists,create_folder, create_folder_if_not_exists
 
 print("Imports complete")
