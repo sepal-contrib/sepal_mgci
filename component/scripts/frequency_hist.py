@@ -1,5 +1,6 @@
 import ee
 from natsort import natsorted
+import concurrent.futures
 
 from component.message import cm
 
@@ -67,22 +68,17 @@ def get_unique_classes(aoi: ee.FeatureCollection, image_collection: ee.ImageColl
     image_ids = get_image_collection_ids(image_collection)
     subset_ids = subset_items(image_ids)
 
-    # with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-    #     futures = {
-    #         executor.submit(get_classes, image_id, aoi): image_id
-    #         for image_id in subset_ids
-    #     }
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {
+            executor.submit(get_classes, image_id, aoi): image_id
+            for image_id in subset_ids
+        }
 
-    #     result = {}
+        result = {}
 
-    #     for future in concurrent.futures.as_completed(futures):
-    #         future_name = futures[future]
-    #         result[future_name] = future.result()
-
-    result = {}
-
-    for image_id in subset_ids:
-        result[image_id] = get_classes(image_id, aoi)
+        for future in concurrent.futures.as_completed(futures):
+            future_name = futures[future]
+            result[future_name] = future.result()
 
     items = list(
         set([class_ for img_classes in result.values() for class_ in img_classes])
