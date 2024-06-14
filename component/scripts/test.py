@@ -72,9 +72,10 @@ def reduceGroups(reducer, featureCollection, groupKeys):
         path = reducedDict.getString(pathKey)
         groups = path.split("_").map(lambda group: ee.Number.parse(ee.String(group)))
 
-        def func2(levels, groupKey):
+        def create_level_structure(levels, groupKey):
 
-            i = groupKeys.index(groupKey)
+            # i = ee.List(groupKeys[:]).reverse().indexOf(groupKey)
+            i = list(reversed(groupKeys)).index(groupKey)
 
             group = groups.get(i)
             prevLevel = levels[len(levels) - 1]
@@ -100,18 +101,12 @@ def reduceGroups(reducer, featureCollection, groupKeys):
                 )
             )
             updatedPrevLevel = prevLevel.set("groups", updatedPrevLevelGroupDicts)
+
             return levels[:-1] + [updatedPrevLevel, groupDict]
 
-        # Use slicing ([:]) to copy the list, reverse it, and then reduce it
-        levels = reduce(
-            func2,
-            reversed(groupKeys[:]),
-            [acc],
-        )
+        levels = reduce(create_level_structure, reversed(groupKeys[:]), [acc])
 
-        leaf = levels[len(levels) - 1].combine(reducedDict.remove([pathKey]))
-
-        def func(acc, i_and_level):
+        def update_levels(acc, i_and_level):
 
             i, level = i_and_level
 
@@ -132,9 +127,18 @@ def reduceGroups(reducer, featureCollection, groupKeys):
             updatedLevel = level.set("groups", updatedGroups)
             return updatedLevel
 
+        leaf = levels[len(levels) - 1].combine(reducedDict.remove([pathKey]))
+
         # // TODO: We're missing previous values
-        return ee.Dictionary(reduce(func, enumerate(levels[:-1][::-1]), leaf))
+        # Use slicing ([:]) to copy the list, reverse it, and then reduce it
+        return ee.Dictionary(reduce(update_levels, enumerate(levels[:-1][::-1]), leaf))
 
     reduced = reduceFlattened(featureCollection, reducer, groupKeys)
 
-    return reduced.getInfo(), reduced.iterate(accumulate, ee.Dictionary())
+    # Iterate an algorithm over a list. The algorithm is expected to take two objects,
+    # the current list item, and the result from the previous iteration or the value of
+    # first for the first iteration.
+
+    return reduced.getInfo(), reduced.iterate(
+        function=accumulate, first=ee.Dictionary()
+    )
