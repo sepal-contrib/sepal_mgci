@@ -52,9 +52,7 @@ def reduceFlattened(featureCollection, reducer, groupKeys):
             ee.FeatureCollection([]),
         )
     )
-    # print("cols", merged.first().toDictionary().keys().getInfo())
     columns = merged.first().toDictionary().keys().remove(pathKey)
-    # print("columns", columns.getInfo())
 
     return ee.List(
         merged.reduceColumns(
@@ -74,7 +72,6 @@ def reduceGroups(reducer, featureCollection, groupKeys):
 
         def create_level_structure(levels, groupKey):
 
-            # i = ee.List(groupKeys[:]).reverse().indexOf(groupKey)
             i = list(reversed(groupKeys)).index(groupKey)
 
             group = groups.get(i)
@@ -138,7 +135,6 @@ def reduceGroups(reducer, featureCollection, groupKeys):
     # Iterate an algorithm over a list. The algorithm is expected to take two objects,
     # the current list item, and the result from the previous iteration or the value of
     # first for the first iteration.
-
-    return reduced.getInfo(), reduced.iterate(
-        function=accumulate, first=ee.Dictionary()
-    )
+    return ee.Dictionary(
+        reduced.iterate(function=accumulate, first=ee.Dictionary())
+    ).get("groups")

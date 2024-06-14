@@ -6,6 +6,7 @@ import pandas as pd
 import component.parameter.module_parameter as param
 from component.scripts.surface_area import get_real_surface_area
 from component.parameter.module_parameter import transition_degradation_matrix
+from component.scripts.gee_parse_reduce_regions import reduceGroups
 
 
 def no_remap(image: ee.Image, remap_matrix: Optional[dict] = None):
@@ -53,6 +54,10 @@ def reduce_regions(
 
     clip_biobelt = ee.Image(param.BIOBELT)
 
+    # This is the reducer that will be used to calculate the area of each class
+    reducer = ee.Reducer.sum().group(1, "lc").group(2, "biobelt")
+    group_keys = ["lc", "biobelt"]
+
     if rsa:
         # When using rsa, we need to use the dem scale, otherwise
         # we will end with wrong results.
@@ -78,22 +83,23 @@ def reduce_regions(
         )
 
         def reduce_by(image):
-            return (
+
+            feature_collection = (
                 image_area.divide(param.UNITS["sqkm"][0])
                 .updateMask(clip_biobelt.mask())
                 .addBands(image)
                 .addBands(clip_biobelt)
-                .reduceRegion(
+                .reduceRegions(
                     **{
-                        "reducer": ee.Reducer.sum().group(1).group(2),
-                        "geometry": aoi,
-                        "maxPixels": 1e19,
+                        "collection": ee.FeatureCollection(aoi),
+                        "reducer": reducer,
                         "scale": scale,
-                        "bestEffort": True,
                         "tileScale": 8,
                     }
                 )
-            ).get("groups")
+            )
+
+            return reduceGroups(ee.Reducer.sum(), feature_collection, group_keys)
 
         return (
             ee.Dictionary(
@@ -126,25 +132,24 @@ def reduce_regions(
             )
         )
     # This is for subindicator A
-    return ee.Dictionary(
-        {
-            "sub_a": image_area.divide(param.UNITS["sqkm"][0])
-            .updateMask(clip_biobelt.mask())
-            .addBands(no_remap(ee_lc_start, remap_matrix))
-            .addBands(clip_biobelt)
-            .reduceRegion(
-                **{
-                    "reducer": ee.Reducer.sum().group(1).group(2),
-                    "geometry": aoi,
-                    "maxPixels": 1e19,
-                    "scale": scale,
-                    "bestEffort": True,
-                    "tileScale": 8,
-                }
-            )
-            .get("groups")
-        }
+    feature_collection = (
+        image_area.divide(param.UNITS["sqkm"][0])
+        .updateMask(clip_biobelt.mask())
+        .addBands(no_remap(ee_lc_start, remap_matrix))
+        .addBands(clip_biobelt)
+        .reduceRegions(
+            **{
+                "collection": ee.FeatureCollection(aoi),
+                "reducer": reducer,
+                "scale": scale,
+                "tileScale": 8,
+            }
+        )
     )
+
+    reduced_collection = reduceGroups(ee.Reducer.sum(), feature_collection, group_keys)
+
+    return ee.Dictionary({"sub_a": reduced_collection})
 
 
 def get_transition(

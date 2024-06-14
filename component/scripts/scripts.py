@@ -395,7 +395,7 @@ def parse_result(result: dict, single: bool = False) -> pd.DataFrame:
         s = 0
         for belt in result:
             for lc_class in belt["groups"]:
-                df.loc[s] = [belt["group"], lc_class["group"], lc_class["sum"]]
+                df.loc[s] = [belt["biobelt"], lc_class["lc"], lc_class["sum"]]
                 s += 1
 
     else:
@@ -403,12 +403,12 @@ def parse_result(result: dict, single: bool = False) -> pd.DataFrame:
         rows = []
         for category, groups in result.items():
             for group_data in groups:
-                main_group = group_data["group"]
+                main_group = group_data["biobelt"]
                 for sub_group_data in group_data["groups"]:
                     row = {
                         "category": category,
                         "belt_class": main_group,
-                        "transition": sub_group_data["group"],
+                        "transition": sub_group_data["lc"],
                         "sum": sub_group_data["sum"],
                     }
                     rows.append(row)
