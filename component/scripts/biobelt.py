@@ -41,6 +41,9 @@ def get_belt_area(aoi, biobelt):
 
     df = pd.DataFrame(area, columns=["class", "area"])
 
+    # Cast class to int
+    df["class"] = df["class"].astype(float).astype(int)
+
     total_area = df.sum().iloc[1]
 
     df_area = pd.DataFrame({"class": ["total"], "area": [total_area]})
