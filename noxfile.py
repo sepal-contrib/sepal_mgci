@@ -18,11 +18,19 @@ def lint(session):
 @nox.session(reuse_venv=True)
 def app(session):
     """Run the application."""
-    entry_point = str(Path("nox_ui.ipynb"))
 
-    session.install("-r", "requirements.txt")
+    entry_point = str(Path("ui.ipynb"))
+
+    # Duplicate the entry point file
+    session.run("cp", entry_point, "nox_ui.ipynb")
+
+    # change the kernel name in the entry point
+    session.run("entry_point", "--test", "nox_ui.ipynb")
+
     session.run("jupyter", "trust", entry_point)
-    session.run("voila", "--show_tracebacks=True", entry_point)
+    session.run(
+        "voila", "--show_tracebacks=True", "--template=sepal-ui-base", "nox_ui.ipynb"
+    )
 
 
 @nox.session(reuse_venv=True)
