@@ -3,8 +3,6 @@
 from functools import reduce
 import ee
 
-ee.Initialize(project="ee-dfgm2006")
-
 pathKey = "__path__"
 parentPathKey = "__parentPath__"
 
