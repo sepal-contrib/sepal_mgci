@@ -11,6 +11,8 @@ typings/
 test*.ipynb
 # C extensions
 *.so
+*nox_ui.ipynb
+*Untitled*
 
 doc/demo/
 

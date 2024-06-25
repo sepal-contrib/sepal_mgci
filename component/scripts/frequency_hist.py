@@ -4,8 +4,6 @@ import concurrent.futures
 
 from component.message import cm
 
-ee.Initialize()
-
 
 def subset_items(list_: list):
     """from a list return first, middle and last element"""

@@ -4,8 +4,6 @@ import ee
 from component.model import MgciModel
 from component.scripts.surface_area import get_real_surface_area
 
-ee.Initialize()
-
 
 @pytest.fixture
 def aoi():
@@ -92,7 +90,6 @@ def test_rsa_values(aoi, dem):
 
 
 def test_planimetric_reduce(mgci_model):
-
     """
     Test to verify that the planimetric area that is calculated in the model
     is the same as the expected area.
@@ -128,7 +125,6 @@ def test_planimetric_reduce(mgci_model):
 
 
 def test_rsa_reduce(mgci_model):
-
     """
     Test to verify that the real surface area that is calculated in the model
     is the same as the expected area.

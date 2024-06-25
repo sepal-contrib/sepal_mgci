@@ -11,8 +11,6 @@ from component.message import cm
 from component.model.model import MgciModel
 from component.scripts.layers import get_layer_a, get_layer_b
 
-ee.Initialize()
-
 
 class ExportMapDialog(v.Dialog):
     def __init__(self, model: MgciModel, w_layers):
@@ -128,7 +126,7 @@ class ExportMapDialog(v.Dialog):
 
         # launch the task
         if self.w_method.v_model == "gee":
-            folder = Path(ee.data.getAssetRoots()[0]["id"])
+            folder = Path(f"projects/{ee.data._cloud_api_user_project}/assets/")
             export_params.update(assetId=str(folder / name))
             task = ee.batch.Export.image.toAsset(**export_params)
             task.start()

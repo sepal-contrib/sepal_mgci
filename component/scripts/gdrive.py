@@ -20,8 +20,6 @@ __all__ = ["GDrive"]
 
 class GDrive:
     def __init__(self):
-        self.initialize = ee.Initialize()
-
         home_path = Path.home()
         credentials_file = (
             ".config/earthengine/credentials"

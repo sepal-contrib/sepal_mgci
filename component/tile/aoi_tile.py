@@ -13,8 +13,6 @@ from component.message import cm
 
 __all__ = ["AoiTile"]
 
-ee.Initialize()
-
 
 class AoiTile(sw.Layout):
     """Custo AOI Tile"""
