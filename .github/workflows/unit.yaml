@@ -1,5 +1,6 @@
 name: Build
 # To test with act: gh act --secret-file $ENV_FILE --workflows .github/workflows/unit.yml
+# test
 on:
   push:
     branches:
