@@ -4,7 +4,7 @@ wheel
 voila
 earthengine-api
 
-git+https://github.com/12rambau/sepal_ui.git@sepal_pre_release
+sepal_ui==2.19.0
 scipy
 
 # custom libs
@@ -17,5 +17,3 @@ pygaul
 seaborn
 
 ipyvuetify
-
-# trigger build
