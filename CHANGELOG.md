@@ -1,3 +1,23 @@
+## 0.7.0 (2024-08-23)
+
+### Feat
+
+- reorder drawers
+- rebuild environment. init gee with sepal_ui. Add ui tests and workflows
+- nox s
+- use threadpoolexecutor again, after solving the issue related with multiple initializations of ee.initialize
+- cast strings to integers
+- reduceRegions to reduce_region_dict
+
+### Refactor
+
+- remove legacy unit test
+- remove legacy initialize
+- debug reduce region to regions
+- hard-copy  Translator class instead of importing from sepal_ui
+- initialize gee in ui
+- get rid off sepal_ui in scripts
+
 ## 0.6.0 (2024-04-25)
 
 ### Feat
