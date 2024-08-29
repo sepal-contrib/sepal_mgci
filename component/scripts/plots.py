@@ -6,11 +6,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from ipecharts.option import Option, Legend, Tooltip
+from ipecharts.option.series import Sankey
+from ipecharts.echarts import EChartsWidget
+
 
 def get_sankey_chart():
-    from ipecharts.option import Option, Legend, Tooltip
-    from ipecharts.option.series import Sankey
-    from ipecharts.echarts import EChartsWidget, EChartsRawWidget
 
     sankey_data = Sankey(smooth=True, areaStyle={})
     sankey_data.nodes = []
