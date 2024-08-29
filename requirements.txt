@@ -4,7 +4,7 @@ wheel
 voila
 earthengine-api
 
-sepal_ui==2.19.0
+sepal_ui==2.20.0
 scipy
 
 # custom libs
@@ -17,3 +17,4 @@ pygaul
 seaborn
 
 ipyvuetify
+ipecharts>=1.0.6
