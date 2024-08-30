@@ -212,16 +212,16 @@ class ReclassifyView(sw.Card):
                 [str(v) for v in input_data.to_code.unique() if v not in classes]
             )
             raise Exception(
-                f"Some of the targed land cover classes ({missing_values}) are not present in the destination land cover classes."
+                f"Some of the target land cover classes ({missing_values}) are not present in the destination land cover classes."
             )
 
         # fill the data
         for _, row in input_data.iterrows():
             src_code, dst_code = row.from_code, row.to_code
             if str(src_code) in self.reclassify_table.class_select_list:
-                self.reclassify_table.class_select_list[
-                    str(src_code)
-                ].v_model = dst_code
+                self.reclassify_table.class_select_list[str(src_code)].v_model = (
+                    dst_code
+                )
 
         self.import_dialog.close_dialog()
 
@@ -345,7 +345,6 @@ class ImportMatrixDialog(BaseDialog):
 
     def open_dialog(self):
         """show the dialog and set the matrix values"""
-
         self.w_map_matrix_file.unobserve(self.on_validate_input, "v_model")
 
         # Reset file name
