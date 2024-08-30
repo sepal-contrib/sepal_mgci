@@ -134,7 +134,6 @@ class Calculation(sw.List):
                     children=[
                         v.Card(
                             min_height=225,
-                            max_height=225,
                             children=[
                                 v.CardTitle(
                                     children=[
@@ -288,7 +287,7 @@ class EditionDialog(sw.Dialog):
     def __init__(self, custom_list, indicator):
         self.v_model = False
         self.scrollable = True
-        self.max_width = 650
+        self.max_width = 750
         self.style_ = "overflow-x: hidden;"
         self.persistent = True
 
@@ -306,7 +305,7 @@ class EditionDialog(sw.Dialog):
 
         self.children = [
             sw.Card(
-                max_width=650,
+                max_width=750,
                 min_height=420,
                 style_="height: 100%;",
                 class_="pa-4",
@@ -474,7 +473,8 @@ class CustomList(sw.List):
         actions, id_ = self.get_actions()
 
         w_basep = v.Select(
-            class_="mr-2 max-width-200",
+            style_="max-width: 550px;",
+            class_="mr-2",
             v_model=False,
             attributes={"id": "selects", "unique_id": f"report_asset_{id_}"},
             label=cm.calculation.year,
@@ -650,7 +650,8 @@ class BaselineItem(sw.ListItemContent):
         self.attributes = {"id": "custom_list_sub_b"}
 
         self.w_basep = v.Select(
-            class_="mr-2 max-width-200",
+            style_="max-width: 485px;",
+            class_="mr-2",
             v_model=False,
             attributes={
                 "id": "selects",
@@ -678,6 +679,7 @@ class BaselineItem(sw.ListItemContent):
         )
 
         self.w_reportp = v.Select(
+            style_="max-width: 485px;",
             class_="mr-3 ",
             v_model=False,
             attributes={

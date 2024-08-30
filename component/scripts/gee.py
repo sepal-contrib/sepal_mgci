@@ -8,13 +8,18 @@ from component.scripts.surface_area import get_real_surface_area
 from component.parameter.module_parameter import transition_degradation_matrix
 from component.scripts.gee_parse_reduce_regions import reduceGroups
 
+NO_DATA_VALUE = 0
+"""Union[int, None]: No data value for the remap process"""
+
 
 def no_remap(image: ee.Image, remap_matrix: Optional[dict] = None):
     """return remapped or raw image if there's a matrix"""
+    print(f"NO_DATA_VALUE {NO_DATA_VALUE}")
+    print(f"NO_DATA_VALUE {remap_matrix}")
 
     if remap_matrix:
         from_, to_ = list(zip(*remap_matrix.items()))
-        return image.remap(from_, to_, 9999)
+        return image.remap(from_, to_, NO_DATA_VALUE).selfMask()
 
     return image
 
@@ -192,13 +197,13 @@ def get_transition(
     baseline_degradation = baseline_transition.remap(
         transition_matrix["transition"].tolist(),
         transition_matrix["impact_code"].tolist(),
-        9999,
+        NO_DATA_VALUE,
     ).rename("baseline_degradation")
 
     report_degradation = report_transition.remap(
         transition_matrix["transition"].tolist(),
         transition_matrix["impact_code"].tolist(),
-        9999,
+        NO_DATA_VALUE,
     ).rename("report_degradation")
 
     # Create transition between degradation images
@@ -211,7 +216,7 @@ def get_transition(
     final_degradation = degraded_transition.remap(
         transition_degradation_matrix["transition"].tolist(),
         transition_degradation_matrix["impact_code"].tolist(),
-        9999,
+        NO_DATA_VALUE,
     ).rename("final_degradation")
 
     return (
