@@ -78,13 +78,13 @@ class DashView(sw.Layout):
         self.clear()
         self.alert.add_msg(cm.dashboard.alert.rendering)
 
-        # if not self.year_select.v_model:
-        #     raise Exception("Select a year.")
+        if not self.year_select.v_model:
+            raise Exception("Select a year.")
 
-        # if not self.model.results:
-        #     raise Exception(
-        #         "No results to display, go to the calculation step and perform the calculation first."
-        #     )
+        if not self.model.results:
+            raise Exception(
+                "No results to display, go to the calculation step and perform the calculation first."
+            )
 
 
 class DashViewA(DashView):
@@ -162,10 +162,11 @@ class DashViewB(DashView):
 
         super().__init__(indicator="sub_b", model=model, *args, **kwargs)
 
-        self.alert = sw.Alert()
-
         self.year_select = sw.Select(
-            class_="mr-2", label="Select a target year", v_model=None
+            style_="max-width: 300px",
+            class_="mr-2",
+            label="Select a target year",
+            v_model=None,
         )
         self.belt_select = sw.Select(class_="mr-2", label="Select a belt", v_model=None)
 
@@ -177,7 +178,6 @@ class DashViewB(DashView):
                 children=[self.year_select, self.belt_select],
             ),
             self.chart,
-            self.alert,
         ]
 
         # Observe reporting_years_{indicator} from model to update the year_select
@@ -187,8 +187,6 @@ class DashViewB(DashView):
         self.belt_select.observe(self.update_sankey_data, "v_model")
 
         self.set_years({"new": self.model.reporting_years_sub_b})
-
-        super().render_dashboard()
 
     def set_belt_items(self, change):
         """Set the belt items in the belt_select widget based on the year selected
@@ -203,7 +201,6 @@ class DashViewB(DashView):
 
         df = cs.parse_to_year(self.model.results, look_up_year)
         look_up_years = list(look_up_year.values())[0]
-        print(look_up_years)
         self.nodes_and_links = get_nodes_and_links(df, param.LC_CLASSES, look_up_years)
 
         # Get all belts that are available for the selected year
@@ -216,6 +213,8 @@ class DashViewB(DashView):
         ]
 
         self.belt_select.items = belt_items
+        self.belt_select.v_model = None
+        self.belt_select.v_model = belt_items[0]["value"]
 
     def set_years(self, change):
         """Set the years in the year_select:
@@ -234,6 +233,9 @@ class DashViewB(DashView):
     def update_sankey_data(self, change):
         """create the corresponding parsed dataframe based on the selected year.
         This dataframe will be used to calculate the MCGI"""
+
+        if not change["new"]:
+            return
 
         belt_data = self.nodes_and_links[change["new"]]
 
