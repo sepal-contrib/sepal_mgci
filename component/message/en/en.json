@@ -75,7 +75,7 @@
         "title" : "Reclassify table",
         "get_classes" : "Get classes",
         "no_data" : "No data",
-        "non_complete" : "You have classified {} classes. Empty classes will be classified as zero (0).",
+        "non_complete" : "You have classified {} classes. Empty classes will be masked out from the analysis.",
         "description" : "Please reclassify the land cover classes of your custom land cover datasets to the reference land cover legend used for this indicator",
         "tooltip": {
             "save_matrix" : "Save matrix as .csv file",

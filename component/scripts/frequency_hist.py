@@ -19,7 +19,9 @@ def get_image_collection_ids(image_collection):
     return ee.ImageCollection(image_collection).aggregate_array("system:id").getInfo()
 
 
-def get_unique_classes(aoi: ee.FeatureCollection, image_collection: ee.ImageCollection):
+def get_unique_classes_by_year(
+    aoi: ee.FeatureCollection, image_collection: ee.ImageCollection
+):
     """perfroms multiple (3) reductions over the image collection to luckly get all the
     classes. When no. images in image_collection <3, we extract all the classes in each
     image. If > 3 we expect that first, middle and last image contains all the classes
@@ -78,8 +80,21 @@ def get_unique_classes(aoi: ee.FeatureCollection, image_collection: ee.ImageColl
             future_name = futures[future]
             result[future_name] = future.result()
 
+    return result
+
+
+def get_unique_classes(aoi: ee.FeatureCollection, image_collection: ee.ImageCollection):
+
+    unique_classes_by_year = get_unique_classes_by_year(aoi, image_collection)
+
     items = list(
-        set([class_ for img_classes in result.values() for class_ in img_classes])
+        set(
+            [
+                class_
+                for img_classes in unique_classes_by_year.values()
+                for class_ in img_classes
+            ]
+        )
     )
 
     return {v: ("no_name", "#000000") for v in natsorted(items)}

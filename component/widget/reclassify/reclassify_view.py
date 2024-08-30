@@ -206,22 +206,24 @@ class ReclassifyView(sw.Card):
         # check that the destination values are all available
         widget = list(self.reclassify_table.class_select_list.values())[0]
         classes = [i["value"] for i in widget.items]
-        if not all(v in classes for v in input_data.to_code.unique()):
-            # get the missing values
-            missing_values = ",".join(
-                [str(v) for v in input_data.to_code.unique() if v not in classes]
-            )
+
+        # get the missing values
+        missing_values = [v for v in input_data.to_code.unique() if v not in classes]
+
+        # if missing values are only 0, we can pass
+        if missing_values and not (len(missing_values) == 1 and missing_values[0] == 0):
+            missing_values_str = ",".join(map(str, missing_values))
             raise Exception(
-                f"Some of the targed land cover classes ({missing_values}) are not present in the destination land cover classes."
+                f"Some of the target land cover classes ({missing_values_str}) are not present in the destination land cover classes."
             )
 
         # fill the data
         for _, row in input_data.iterrows():
             src_code, dst_code = row.from_code, row.to_code
             if str(src_code) in self.reclassify_table.class_select_list:
-                self.reclassify_table.class_select_list[
-                    str(src_code)
-                ].v_model = dst_code
+                self.reclassify_table.class_select_list[str(src_code)].v_model = (
+                    dst_code
+                )
 
         self.import_dialog.close_dialog()
 
@@ -345,7 +347,6 @@ class ImportMatrixDialog(BaseDialog):
 
     def open_dialog(self):
         """show the dialog and set the matrix values"""
-
         self.w_map_matrix_file.unobserve(self.on_validate_input, "v_model")
 
         # Reset file name
@@ -664,13 +665,16 @@ class ReclassifyTable(sw.Layout):
             .hide()
         )
 
-        self.message = sw.Html(tag="span", style_=f"color: {color.warning}")
+        self.message = sw.Html(
+            tag="span", style_=f"color: {color.warning}", class_="ml-2"
+        )
 
         self.toolbar = v.Toolbar(
             flat=True,
             children=[
                 default_lc_dialog,
                 cm.reclass.title,
+                self.message,
                 v.Spacer(),
                 v.Divider(vertical=True, class_="mx-2"),
                 self.btn_info.with_tooltip,
