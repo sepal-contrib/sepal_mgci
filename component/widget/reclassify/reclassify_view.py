@@ -663,13 +663,16 @@ class ReclassifyTable(sw.Layout):
             .hide()
         )
 
-        self.message = sw.Html(tag="span", style_=f"color: {color.warning}")
+        self.message = sw.Html(
+            tag="span", style_=f"color: {color.warning}", class_="ml-2"
+        )
 
         self.toolbar = v.Toolbar(
             flat=True,
             children=[
                 default_lc_dialog,
                 cm.reclass.title,
+                self.message,
                 v.Spacer(),
                 v.Divider(vertical=True, class_="mx-2"),
                 self.btn_info.with_tooltip,
