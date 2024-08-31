@@ -83,8 +83,20 @@ def reduce_by_region(
             }
         )
     )
+<<<<<<< Updated upstream
 
     return feature_collection.get("groups")
+=======
+    # Remove the empty groups (biobelts without any land cover class)
+    # I have to do like this because I want to reuse the filter_groups function
+    return (
+        ee.FeatureCollection([ee.Feature(None, feature_collection)])
+        .map(filter_groups)
+        .first()
+        .toDictionary()
+        .get("groups")
+    )
+>>>>>>> Stashed changes
 
 
 def reduce_regions(
@@ -155,12 +167,15 @@ def reduce_regions(
                         final_degradation.select("baseline_degradation"),
                         aoi,
                         scale,
+<<<<<<< Updated upstream
                     "baseline_degradation": reduce_by_regions(
                         image_area,
                         clip_biobelt,
                         final_degradation.select("baseline_degradation"),
                         aoi,
                         scale,
+=======
+>>>>>>> Stashed changes
                     )
                 }
             )
@@ -172,12 +187,15 @@ def reduce_regions(
                         final_degradation.select("final_degradation"),
                         aoi,
                         scale,
+<<<<<<< Updated upstream
                     "final_degradation": reduce_by_regions(
                         image_area,
                         clip_biobelt,
                         final_degradation.select("final_degradation"),
                         aoi,
                         scale,
+=======
+>>>>>>> Stashed changes
                     )
                 }
             )
@@ -189,12 +207,15 @@ def reduce_regions(
                         final_degradation.select("baseline_transition"),
                         aoi,
                         scale,
+<<<<<<< Updated upstream
                     "baseline_transition": reduce_by_regions(
                         image_area,
                         clip_biobelt,
                         final_degradation.select("baseline_transition"),
                         aoi,
                         scale,
+=======
+>>>>>>> Stashed changes
                     )
                 }
             )
@@ -210,6 +231,7 @@ def reduce_regions(
                 }
             )
         )
+<<<<<<< Updated upstream
 
     reduced_collection = reduce_by_regions(
         image_area, clip_biobelt, no_remap(ee_lc_start, remap_matrix), aoi, scale
@@ -224,6 +246,8 @@ def reduce_regions(
                 }
             )
         )
+=======
+>>>>>>> Stashed changes
 
     reduced_collection = reduce_by_regions(
         image_area, clip_biobelt, no_remap(ee_lc_start, remap_matrix), aoi, scale

@@ -23,6 +23,7 @@ def test_biobelt() -> ee.Image:
 
 
 @pytest.fixture()
+<<<<<<< Updated upstream
 def test_multipolygon_aoi() -> ee.FeatureCollection:
     """returns aoi"""
 
@@ -83,6 +84,8 @@ def test_biobelt() -> ee.Image:
 
 
 @pytest.fixture()
+=======
+>>>>>>> Stashed changes
 def test_land_cover() -> ee.ImageCollection:
     """returns land cover collection"""
 
