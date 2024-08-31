@@ -52,8 +52,10 @@ def compare_nested_dicts(dict1, dict2, rel_tol=1e-9):
     return True
 
 
-def test_reduce_by_regions_no_remap(test_land_cover, test_aoi, test_biobelt):
-    """Test reduce by function that is used to calculate the areas"""
+def test_reduce_by_regions_equals_reduce_region(
+    test_land_cover, test_aoi, test_biobelt
+):
+    """Test that reduce regions and reduce region return the same results without remapping the image"""
 
     image_area = ee.Image.pixelArea()
     biobelt = test_biobelt
@@ -87,12 +89,78 @@ def test_reduce_by_regions_no_remap(test_land_cover, test_aoi, test_biobelt):
     )
 
 
-def test_reduce_by_regions_remap(test_land_cover, test_aoi, test_biobelt):
+def test_reduce_by_regions_equals_reduce_region_remap(
+    test_land_cover, test_aoi, test_biobelt
+):
+    """Test that reduce regions and reduce region return the same results when the image is remapped"""
+
+    image_area = ee.Image.pixelArea()
+    biobelt = test_biobelt
+    image = test_land_cover.first()
+    aoi = test_aoi
+    scale = 1000
+
+    # Use only few values, it would throw empty groups so I can also test that those are filtered out
+    image = no_remap(image, {0: 0, 12: 1, 15: 1})
+
+    result_regions = reduce_by_regions(
+        image_area=image_area,
+        biobelt=biobelt,
+        image=image,
+        aoi=aoi,
+        scale=scale,
+    ).getInfo()
+
+    result_region = reduce_by_region(
+        image_area=image_area,
+        biobelt=biobelt,
+        image=image,
+        aoi=aoi,
+        scale=scale,
+    ).getInfo()
+
+    print(result_regions)
+    print(result_region)
+    # Sort the dictionaries for comparison
+    sorted_result_regions = sort_list_of_dicts(result_regions)
+    sorted_result_region = sort_list_of_dicts(result_region)
+
+    # Compare the results with a relative tolerance of 1e-9
+    assert compare_nested_dicts(
+        sorted_result_regions, sorted_result_region, rel_tol=1e-9
+    )
+
+
+def test_reduce_by_regions(test_land_cover, test_aoi, test_biobelt):
     """Test reduce by function that is used to calculate the areas with images remapped"""
 
-    # TODO: Add remap_matrix
+    expected_result = [
+        {"biobelt": 2, "groups": [{"lc": 1, "sum": 31.65054491544118}]},
+        {"biobelt": 3, "groups": [{"lc": 1, "sum": 7179.607115900761}]},
+        {"biobelt": 4, "groups": [{"lc": 1, "sum": 1976.3498643124992}]},
+    ]
 
-    return True
+    remap_dict = {
+        0: 0,
+        12: 1,
+        15: 1,
+    }
+
+    image_area = ee.Image.pixelArea()
+    biobelt = test_biobelt
+    image = no_remap(test_land_cover.first(), remap_dict)
+    aoi = test_aoi
+    scale = 1000
+
+    result_regions = reduce_by_regions(
+        image_area=image_area,
+        biobelt=biobelt,
+        image=image,
+        aoi=aoi,
+        scale=scale,
+    ).getInfo()
+
+    assert result_regions == expected_result
 
 
 def test_reduce_groups(test_multipolygon_aoi):

@@ -6,7 +6,7 @@ import pandas as pd
 import component.parameter.module_parameter as param
 from component.scripts.surface_area import get_real_surface_area
 from component.parameter.module_parameter import transition_degradation_matrix
-from component.scripts.gee_parse_reduce_regions import reduceGroups
+from component.scripts.gee_parse_reduce_regions import filter_groups, reduceGroups
 
 NO_DATA_VALUE = 0
 """Union[int, None]: No data value for the remap process"""
@@ -155,11 +155,23 @@ def reduce_regions(
                         final_degradation.select("baseline_degradation"),
                         aoi,
                         scale,
+                    "baseline_degradation": reduce_by_regions(
+                        image_area,
+                        clip_biobelt,
+                        final_degradation.select("baseline_degradation"),
+                        aoi,
+                        scale,
                     )
                 }
             )
             .combine(
                 {
+                    "final_degradation": reduce_by_regions(
+                        image_area,
+                        clip_biobelt,
+                        final_degradation.select("final_degradation"),
+                        aoi,
+                        scale,
                     "final_degradation": reduce_by_regions(
                         image_area,
                         clip_biobelt,
@@ -177,11 +189,31 @@ def reduce_regions(
                         final_degradation.select("baseline_transition"),
                         aoi,
                         scale,
+                    "baseline_transition": reduce_by_regions(
+                        image_area,
+                        clip_biobelt,
+                        final_degradation.select("baseline_transition"),
+                        aoi,
+                        scale,
                     )
                 }
             )
             .combine(
                 {
+                    "report_transition": reduce_by_regions(
+                        image_area,
+                        clip_biobelt,
+                        final_degradation.select("report_transition"),
+                        aoi,
+                        scale,
+                    )
+                }
+            )
+        )
+
+    reduced_collection = reduce_by_regions(
+        image_area, clip_biobelt, no_remap(ee_lc_start, remap_matrix), aoi, scale
+    )
                     "report_transition": reduce_by_regions(
                         image_area,
                         clip_biobelt,
