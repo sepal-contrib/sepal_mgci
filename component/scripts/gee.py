@@ -6,7 +6,7 @@ import pandas as pd
 import component.parameter.module_parameter as param
 from component.scripts.surface_area import get_real_surface_area
 from component.parameter.module_parameter import transition_degradation_matrix
-from component.scripts.gee_parse_reduce_regions import reduceGroups
+from component.scripts.gee_parse_reduce_regions import filter_groups, reduceGroups
 
 NO_DATA_VALUE = 0
 """Union[int, None]: No data value for the remap process"""
@@ -22,6 +22,76 @@ def no_remap(image: ee.Image, remap_matrix: Optional[dict] = None):
         return image.remap(from_, to_, NO_DATA_VALUE).selfMask()
 
     return image
+
+
+def reduce_by_regions(
+    image_area: ee.Image,
+    biobelt: ee.Image,
+    image: ee.Image,
+    aoi: ee.FeatureCollection,
+    scale: int,
+):
+    """Reduce image to bioclimatic belts regions using planimetric or real surface area"""
+
+    # This is the reducer that will be used to calculate the area of each class
+    reducer = ee.Reducer.sum().group(1, "lc").group(2, "biobelt")
+    group_keys = ["lc", "biobelt"]
+
+    feature_collection = (
+        image_area.divide(param.UNITS["sqkm"][0])
+        .updateMask(biobelt.mask())
+        .addBands(image)
+        .addBands(biobelt)
+        .reduceRegions(
+            **{
+                "collection": ee.FeatureCollection(aoi),
+                "reducer": reducer,
+                "scale": scale,
+                "tileScale": 8,
+            }
+        )
+    )
+
+    return reduceGroups(ee.Reducer.sum(), feature_collection, group_keys)
+
+
+def reduce_by_region(
+    image_area: ee.Image,
+    biobelt: ee.Image,
+    image: ee.Image,
+    aoi: ee.FeatureCollection,
+    scale: int,
+):
+    """Reduce image to bioclimatic belts regions using planimetric or real surface area"""
+
+    # This is the reducer that will be used to calculate the area of each class
+    reducer = ee.Reducer.sum().group(1, "lc").group(2, "biobelt")
+
+    feature_collection = (
+        image_area.divide(param.UNITS["sqkm"][0])
+        .updateMask(biobelt.mask())
+        .addBands(image)
+        .addBands(biobelt)
+        .reduceRegion(
+            **{
+                "reducer": reducer,
+                "geometry": ee.FeatureCollection(aoi).geometry(),
+                "scale": scale,
+                "bestEffort": True,
+                "maxPixels": 1e13,
+                "tileScale": 8,
+            }
+        )
+    )
+    # Remove the empty groups (biobelts without any land cover class)
+    # I have to do like this because I want to reuse the filter_groups function
+    return (
+        ee.FeatureCollection([ee.Feature(None, feature_collection)])
+        .map(filter_groups)
+        .first()
+        .toDictionary()
+        .get("groups")
+    )
 
 
 def reduce_regions(
@@ -59,10 +129,6 @@ def reduce_regions(
 
     clip_biobelt = ee.Image(param.BIOBELT)
 
-    # This is the reducer that will be used to calculate the area of each class
-    reducer = ee.Reducer.sum().group(1, "lc").group(2, "biobelt")
-    group_keys = ["lc", "biobelt"]
-
     if rsa:
         # When using rsa, we need to use the dem scale, otherwise
         # we will end with wrong results.
@@ -87,72 +153,56 @@ def reduce_regions(
             ee_lc_start, ee_end_base, ee_report, aoi, transition_matrix, remap_matrix
         )
 
-        def reduce_by(image):
-
-            feature_collection = (
-                image_area.divide(param.UNITS["sqkm"][0])
-                .updateMask(clip_biobelt.mask())
-                .addBands(image)
-                .addBands(clip_biobelt)
-                .reduceRegions(
-                    **{
-                        "collection": ee.FeatureCollection(aoi),
-                        "reducer": reducer,
-                        "scale": scale,
-                        "tileScale": 8,
-                    }
-                )
-            )
-
-            return reduceGroups(ee.Reducer.sum(), feature_collection, group_keys)
-
         return (
             ee.Dictionary(
                 {
-                    "baseline_degradation": reduce_by(
-                        final_degradation.select("baseline_degradation")
+                    "baseline_degradation": reduce_by_regions(
+                        image_area,
+                        clip_biobelt,
+                        final_degradation.select("baseline_degradation"),
+                        aoi,
+                        scale,
                     )
                 }
             )
             .combine(
                 {
-                    "final_degradation": reduce_by(
-                        final_degradation.select("final_degradation")
+                    "final_degradation": reduce_by_regions(
+                        image_area,
+                        clip_biobelt,
+                        final_degradation.select("final_degradation"),
+                        aoi,
+                        scale,
                     )
                 }
             )
             .combine(
                 {
-                    "baseline_transition": reduce_by(
-                        final_degradation.select("baseline_transition")
+                    "baseline_transition": reduce_by_regions(
+                        image_area,
+                        clip_biobelt,
+                        final_degradation.select("baseline_transition"),
+                        aoi,
+                        scale,
                     )
                 }
             )
             .combine(
                 {
-                    "report_transition": reduce_by(
-                        final_degradation.select("report_transition")
+                    "report_transition": reduce_by_regions(
+                        image_area,
+                        clip_biobelt,
+                        final_degradation.select("report_transition"),
+                        aoi,
+                        scale,
                     )
                 }
             )
         )
-    # This is for subindicator A
-    feature_collection = (
-        image_area.divide(param.UNITS["sqkm"][0])
-        .updateMask(clip_biobelt.mask())
-        .addBands(no_remap(ee_lc_start, remap_matrix))
-        .addBands(clip_biobelt)
-        .reduceRegions(
-            **{
-                "collection": ee.FeatureCollection(aoi),
-                "reducer": reducer,
-                "scale": scale,
-                "tileScale": 8,
-            }
-        )
-    )
 
-    reduced_collection = reduceGroups(ee.Reducer.sum(), feature_collection, group_keys)
+    reduced_collection = reduce_by_regions(
+        image_area, clip_biobelt, no_remap(ee_lc_start, remap_matrix), aoi, scale
+    )
 
     return ee.Dictionary({"sub_a": reduced_collection})
 
