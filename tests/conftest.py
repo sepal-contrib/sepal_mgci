@@ -23,69 +23,6 @@ def test_biobelt() -> ee.Image:
 
 
 @pytest.fixture()
-<<<<<<< Updated upstream
-def test_multipolygon_aoi() -> ee.FeatureCollection:
-    """returns aoi"""
-
-    return ee.FeatureCollection(
-        [
-            ee.Feature(
-                ee.Geometry.Polygon(
-                    [
-                        [
-                            [5.262516683862475, 46.39655013792998],
-                            [5.262516683862475, 45.63360136660453],
-                            [6.580876058862475, 45.63360136660453],
-                            [6.580876058862475, 46.39655013792998],
-                        ]
-                    ],
-                    None,
-                    False,
-                ),
-                {"system:index": "0"},
-            ),
-            ee.Feature(
-                ee.Geometry.Polygon(
-                    [
-                        [
-                            [9.569157308862474, 47.74335902540055],
-                            [9.569157308862474, 46.99933410813134],
-                            [10.931461996362474, 46.99933410813134],
-                            [10.931461996362474, 47.74335902540055],
-                        ]
-                    ],
-                    None,
-                    False,
-                ),
-                {"system:index": "1"},
-            ),
-            ee.Feature(
-                ee.Geometry.Polygon(
-                    [
-                        [
-                            [13.084782308862474, 46.6082900232144],
-                            [13.084782308862474, 45.87889028991833],
-                            [14.315251058862474, 45.87889028991833],
-                            [14.315251058862474, 46.6082900232144],
-                        ]
-                    ],
-                    None,
-                    False,
-                ),
-                {"system:index": "2"},
-            ),
-        ]
-    )
-
-
-@pytest.fixture()
-def test_biobelt() -> ee.Image:
-    return ee.Image("users/xavidelamo/SDG1542_Mntn_BioclimaticBelts")
-
-
-@pytest.fixture()
-=======
->>>>>>> Stashed changes
 def test_land_cover() -> ee.ImageCollection:
     """returns land cover collection"""
 
