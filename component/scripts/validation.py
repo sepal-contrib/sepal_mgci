@@ -1,7 +1,9 @@
+from typing import Dict, Tuple
 import pandas as pd
 from component.parameter.reclassify_parameters import NO_VALUE, MATRIX_NAMES
 from component.message import cm
 from .scripts import set_transition_code
+import ipyvuetify as v
 
 
 def read_file(file_, text_field_msg):
@@ -31,8 +33,15 @@ def read_file(file_, text_field_msg):
     return df
 
 
-def validate_transition_matrix(file_, text_field_msg):
-    """Read user inputs from custom transition matrix and custom green/non green"""
+def validate_transition_matrix(
+    file_: str,
+    lulc_classes_sub_b: Dict[int, Tuple[str, str]],
+    text_field_msg: v.TextField,
+):
+    """Read user inputs from custom transition matrix.
+
+    lulc_classes_sub_b: dict in the form key: value, where key is the land cover class code and value is a tuple of description and color.
+    """
 
     df = read_file(file_, text_field_msg)
 
@@ -75,6 +84,24 @@ def validate_transition_matrix(file_, text_field_msg):
 
     if len(df) != len(df.drop_duplicates(subset=["from_code", "to_code"])):
         error_msg = f"The from_code and to_code columns must not have repeated values."
+        text_field_msg.error_messages = error_msg
+        raise ValueError(error_msg)
+
+    # Validate that the file contains all lulc_classes_sub_b codes
+    required_lulc_codes = set(lulc_classes_sub_b.keys())
+    from_codes = set(df["from_code"].unique())
+    to_codes = set(df["to_code"].unique())
+
+    if not required_lulc_codes.issubset(from_codes) or not required_lulc_codes.issubset(
+        to_codes
+    ):
+        missing_from_codes = required_lulc_codes.difference(from_codes)
+        missing_to_codes = required_lulc_codes.difference(to_codes)
+        error_msg = (
+            f"The file is missing the following LULC codes in 'from_code' or 'to_code': "
+            f"From_code missing: {', '.join(map(str, missing_from_codes))} "
+            f"To_code missing: {', '.join(map(str, missing_to_codes))}"
+        )
         text_field_msg.error_messages = error_msg
         raise ValueError(error_msg)
 
