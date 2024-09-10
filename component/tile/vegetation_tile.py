@@ -239,7 +239,6 @@ class VegetationView(sw.Layout):
 
             self.transition_view.show_matrix = False
             self.w_reclass_a.btn_get_table.show()
-            self.w_reclass_a.reclassify_table.btn_info.show()
 
         else:
             self.stepper_b.v_model = 1
