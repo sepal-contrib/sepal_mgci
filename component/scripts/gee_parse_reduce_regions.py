@@ -7,6 +7,41 @@ pathKey = "__path__"
 parentPathKey = "__parentPath__"
 
 
+def filter_groups(feature: ee.Feature) -> ee.Feature:
+    """Filter out empty groups from a feature.
+
+    input = {
+        'groups': [
+            {'biobelt': 1, 'groups': []},
+            {'biobelt': 2, 'groups': [{'lc': 1, 'sum': 31650.544915441176}]},
+            {'biobelt': 3, 'groups': [{'lc': 1, 'sum': 7179607.11590074}]},
+            {'biobelt': 4, 'groups': [{'lc': 1, 'sum': 1976349.8643124988}]}
+        ]
+    }
+
+    output = {
+        'groups': [
+            {'biobelt': 2, 'groups': [{'lc': 1, 'sum': 31650.544915441176}]},
+            {'biobelt': 3, 'groups': [{'lc': 1, 'sum': 7179607.11590074}]},
+            {'biobelt': 4, 'groups': [{'lc': 1, 'sum': 1976349.8643124988}]}
+        ]
+    }
+
+    """
+
+    groups = ee.List(feature.get("groups"))
+
+    def filter_biobelt(group):
+        group_dict = ee.Dictionary(group)
+        sub_groups = group_dict.get("groups")
+        return ee.Algorithms.If(ee.List(sub_groups).size().gt(0), group_dict, None)
+
+    # Filter out any None (i.e., null) values after filtering the groups
+    filtered_groups = groups.map(filter_biobelt).filter(ee.Filter.neq("item", None))
+
+    return feature.set("groups", filtered_groups)
+
+
 def reduceFlattened(featureCollection, reducer, groupKeys):
 
     def flatten(feature):
@@ -128,7 +163,8 @@ def reduceGroups(reducer, featureCollection, groupKeys):
         # Use slicing ([:]) to copy the list, reverse it, and then reduce it
         return ee.Dictionary(reduce(update_levels, enumerate(levels[:-1][::-1]), leaf))
 
-    reduced = reduceFlattened(featureCollection, reducer, groupKeys)
+    filtered_collection = ee.FeatureCollection(featureCollection.map(filter_groups))
+    reduced = reduceFlattened(filtered_collection, reducer, groupKeys)
 
     # Iterate an algorithm over a list. The algorithm is expected to take two objects,
     # the current list item, and the result from the previous iteration or the value of

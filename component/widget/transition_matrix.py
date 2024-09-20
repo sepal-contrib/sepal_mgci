@@ -1,16 +1,70 @@
+from typing import Tuple
 import ipyvuetify as v
 import numpy as np
 import pandas as pd
 import sepal_ui.sepalwidgets as sw
 from sepal_ui import color
 from sepal_ui.scripts.decorator import switch
-from traitlets import Bool, Dict, Unicode, directional_link, observe
+from traitlets import Bool, Dict, List, Unicode, directional_link, observe
 from component.model.model import MgciModel
 
 import component.parameter.directory as dir_
 import component.parameter.module_parameter as param
 from component.scripts import validation as validation
 from component.scripts.scripts import set_transition_code
+
+
+class CustomTransitionMatrix(sw.Layout):
+    """Widget with FileInput to allow user to upload a custom transition matrix"""
+
+    custom_transition_matrix = Unicode("").tag(sync=True)
+    "str: path to the transition matrix file"
+
+    lulc_classes_sub_b = Dict([]).tag(sync=True)
+    "Dict[int, Tuple[str, str]]: list of sub-b classes names. Comes from land cover classification file"
+
+    def __init__(self, lulc_classes_sub_b={}):
+
+        super().__init__()
+
+        self.attributes = {"id": "custom_inputs"}
+        self.hide()
+
+        self.lulc_classes_sub_b = lulc_classes_sub_b
+
+        # Create input file widget wrapped in a layout
+        self.input_impact = sw.FileInput(
+            ".csv", folder=dir_.TRANSITION_DIR, root=dir_.RESULTS_DIR
+        )
+        self.children = [
+            sw.Card(
+                row=True,
+                children=[
+                    sw.CardTitle(children=["Transition file"]),
+                    sw.CardText(
+                        children=[
+                            "Select a custom transition file containing all the possible transitions in your custom data. The file must contain the following columns: from_code, to_code, impact_code, columns names have to be exactly the same.",
+                            self.input_impact,
+                        ]
+                    ),
+                ],
+            )
+        ]
+        self.input_impact.observe(self.read_inputs, "v_model")
+
+    def read_inputs(self, change):
+        """Read user custom input from custom transition matrix"""
+
+        if change["new"]:
+            # Get TextField from change widget
+            text_field_msg = change["owner"].children[-1]
+            text_field_msg.error_messages = []
+
+            validation.validate_transition_matrix(
+                change["new"], self.lulc_classes_sub_b, text_field_msg
+            )
+
+            self.custom_transition_matrix = change["new"]
 
 
 class TransitionMatrix(sw.Layout):
@@ -81,25 +135,16 @@ class TransitionMatrix(sw.Layout):
             indeterminate=False,
         )
 
-        # Create input file widget wrapped in a layout
-        self.input_impact = sw.FileInput(
-            ".csv", folder=dir_.TRANSITION_DIR, root=dir_.RESULTS_DIR
-        )
-        self.input_impact_layout = sw.Card(
-            attributes={"id": "custom_inputs"},
-            row=True,
-            children=[
-                sw.CardTitle(children=["Transition file"]),
-                sw.CardText(
-                    children=[
-                        "Select a custom transition file containing all the possible transitions in your custom data. The file must contain the following columns: from_code, to_code, impact_code, columns names have to be exactly the same.",
-                        self.input_impact,
-                    ]
-                ),
-            ],
-        ).hide()
+        self.custom_transition_matrix = CustomTransitionMatrix()
 
-        self.input_impact.observe(self.read_inputs, "v_model")
+        directional_link(
+            (self.custom_transition_matrix, "custom_transition_matrix"),
+            (self, "transition_matrix"),
+        )
+        directional_link(
+            (self.model, "lulc_classes_sub_b"),
+            (self.custom_transition_matrix, "lulc_classes_sub_b"),
+        )
 
         # create the simple table
         super().__init__()
@@ -107,7 +152,7 @@ class TransitionMatrix(sw.Layout):
         self.children = [
             toolbar,
             self.progress,
-            self.input_impact_layout,
+            self.custom_transition_matrix,
         ]
 
         self.set_rows()
@@ -122,7 +167,7 @@ class TransitionMatrix(sw.Layout):
 
     @observe("show_matrix")
     def toggle_viz(self, change):
-        """toogle visualization style, show only impact matrix or input_impact_file wiedget"""
+        """toogle visualization style, show only impact matrix or input_impact_file widget"""
 
         if change["new"]:
             # hide inputs to custom transition matrix and custom green/non green
@@ -138,20 +183,8 @@ class TransitionMatrix(sw.Layout):
             [ch.show() for ch in self.get_children(id_="custom_inputs")]
             [ch.hide() for ch in self.get_children(id_="transition_matrix")]
 
-            self.input_impact.reset()
+            self.custom_transition_matrix.input_impact.reset()
             self.transition_matrix = ""
-
-    def read_inputs(self, change):
-        """Read user custom input from custom transition matrix"""
-
-        if change["new"]:
-            # Get TextField from change widget
-            text_field_msg = change["owner"].children[-1]
-            text_field_msg.error_messages = []
-
-            validation.validate_transition_matrix(change["new"], text_field_msg)
-
-            self.transition_matrix = change["new"]
 
     @switch("indeterminate", on_widgets=["progress"], targets=[False])
     def set_rows(self):

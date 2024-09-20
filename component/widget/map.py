@@ -41,7 +41,13 @@ class LayerHandler(sw.Card):
 
         self._layers = []
 
-        self.w_layers = sw.Select(items=[], v_model=[], label="Layers", class_="mr-2")
+        self.w_layers = sw.Select(
+            style_="max-width: 362px",
+            items=[],
+            v_model=[],
+            label="Layers",
+            class_="mr-2",
+        )
         self.btn = sw.Btn("", gliph="mdi-plus")
         self.btn.v_icon.left = False
 

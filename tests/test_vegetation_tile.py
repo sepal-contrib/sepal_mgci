@@ -1,30 +1,13 @@
 import pytest
 import pandas as pd
 
-from sepal_ui.aoi.aoi_model import AoiModel
-from component.model.model import MgciModel
 from component.tile.vegetation_tile import VegetationTile
 import component.parameter.directory as dir_
 import component.parameter.module_parameter as param
 from component.scripts.scripts import map_matrix_to_dict
 
 
-@pytest.fixture
-def mgci_model():
-    aoi_model = AoiModel(admin="959")
-    return MgciModel(aoi_model)
-
-
-@pytest.fixture
-def default_target_classes():
-    dst_class_file = dir_.LOCAL_LC_CLASSES
-    return {
-        row.lc_class: (row.desc, row.color)
-        for _, row in pd.read_csv(dst_class_file).iterrows()
-    }
-
-
-def test_default(mgci_model):
+def test_default(mgci_model) -> None:
     """Test that links between view and model are correct"""
 
     vegetation_tile = VegetationTile(mgci_model)
@@ -48,7 +31,7 @@ def test_default(mgci_model):
     assert mgci_model.lc_asset_sub_b == default_asset
 
 
-def test_on_change(mgci_model):
+def test_on_change(mgci_model) -> None:
     """Test that links will change when the user changes values from view"""
 
     vegetation_tile = VegetationTile(mgci_model)

@@ -120,7 +120,7 @@ class TaskMsg(sw.Flex):
 
 class AlertDialog(sw.Dialog):
     def __init__(self, w_alert: sw.Alert):
-        self.max_width = 650
+        self.max_width = 750
         self.persistent = True
         self.style_ = "margin: 0 !important;"
 

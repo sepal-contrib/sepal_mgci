@@ -1,5 +1,6 @@
 from copy import deepcopy
 from pathlib import Path
+from typing import Dict, Tuple
 
 import ipyvuetify as v
 import pandas as pd
@@ -206,22 +207,26 @@ class ReclassifyView(sw.Card):
         # check that the destination values are all available
         widget = list(self.reclassify_table.class_select_list.values())[0]
         classes = [i["value"] for i in widget.items]
-        if not all(v in classes for v in input_data.to_code.unique()):
-            # get the missing values
-            missing_values = ",".join(
-                [str(v) for v in input_data.to_code.unique() if v not in classes]
+
+        # get the missing values
+        missing_values = [v for v in input_data.to_code.unique() if v not in classes]
+
+        # if missing values are only 0, we can pass
+        if missing_values and not (len(missing_values) == 1 and missing_values[0] == 0):
+            missing_values_str = ",".join(
+                [str(miss) for miss in missing_values if miss != 0]
             )
             raise Exception(
-                f"Some of the targed land cover classes ({missing_values}) are not present in the destination land cover classes."
+                f"Some of the target land cover classes ({missing_values_str}) are not present in the destination land cover classes."
             )
 
         # fill the data
         for _, row in input_data.iterrows():
             src_code, dst_code = row.from_code, row.to_code
             if str(src_code) in self.reclassify_table.class_select_list:
-                self.reclassify_table.class_select_list[
-                    str(src_code)
-                ].v_model = dst_code
+                self.reclassify_table.class_select_list[str(src_code)].v_model = (
+                    dst_code
+                )
 
         self.import_dialog.close_dialog()
 
@@ -346,14 +351,15 @@ class ImportMatrixDialog(BaseDialog):
     def open_dialog(self):
         """show the dialog and set the matrix values"""
 
-        self.w_map_matrix_file.unobserve(self.on_validate_input, "v_model")
-
-        # Reset file name
-        self.w_map_matrix_file.v_model = ""
-
-        self.w_map_matrix_file.observe(self.on_validate_input, "v_model")
-
-        super().open_dialog()
+        try:
+            self.w_map_matrix_file.unobserve(self.on_validate_input, "v_model")
+        except:
+            raise Exception("The widget is not observed")
+        finally:
+            # Reset file name
+            self.w_map_matrix_file.v_model = ""
+            self.w_map_matrix_file.observe(self.on_validate_input, "v_model")
+            super().open_dialog()
 
 
 class SaveMatrixDialog(BaseDialog):
@@ -626,16 +632,12 @@ class ReclassifyTable(sw.Layout):
         default_lc_dialog = InfoDialog()
 
         # Create button to show the default classification
-        self.btn_info = (
-            sw.Btn(
-                gliph="mdi-information",
-                icon=True,
-                color="primary",
-                class_="mr-2",
-            )
-            .set_tooltip(cm.reclass.tooltip.info, bottom=True)
-            .hide()
-        )
+        self.btn_info = sw.Btn(
+            gliph="mdi-information",
+            icon=True,
+            color="primary",
+            class_="mr-2",
+        ).set_tooltip(cm.reclass.tooltip.info, bottom=True)
 
         # Create button to save the matrix from a file
         self.btn_save_table = sw.Btn(
@@ -664,13 +666,16 @@ class ReclassifyTable(sw.Layout):
             .hide()
         )
 
-        self.message = sw.Html(tag="span", style_=f"color: {color.warning}")
+        self.message = sw.Html(
+            tag="span", style_=f"color: {color.warning}", class_="ml-2"
+        )
 
         self.toolbar = v.Toolbar(
             flat=True,
             children=[
                 default_lc_dialog,
                 cm.reclass.title,
+                self.message,
                 v.Spacer(),
                 v.Divider(vertical=True, class_="mx-2"),
                 self.btn_info.with_tooltip,
@@ -708,7 +713,9 @@ class ReclassifyTable(sw.Layout):
 
         self.model.observe(self.set_info_message, "matrix")
         self.progress.observe(self.set_progress_color, "v_model")
-        self.btn_info.on_event("click", lambda *_: default_lc_dialog.open_dialog())
+        self.btn_info.on_event(
+            "click", lambda *_: default_lc_dialog.open_dialog(self.model.dst_class_file)
+        )
 
     def set_progress_color(self, change):
         """set progress bar colors based on v_model trait instead of setting when
@@ -902,53 +909,72 @@ class Btn(v.Btn, sw.SepalWidget):
         return self
 
 
-def InfoDialog():
-    # read csv
-    df = pd.read_csv(dir_.LOCAL_LC_CLASSES, header=0)
-    headers = [cm.reclass.default_table.header[col] for col in df.columns.tolist()]
-    content = df.values.tolist()
+class InfoDialog(BaseDialog):
 
-    thead = v.Html(
-        tag="thead",
-        children=[
-            v.Html(tag="tr", children=[v.Html(tag="th", children=[h]) for h in headers])
-        ],
-    )
+    def __init__(self):
 
-    tbody = v.Html(
-        tag="tbody",
-        children=[
-            v.Html(
-                tag="tr",
-                children=[
-                    v.Html(
-                        tag="td", class_="caption text-center", children=[str(row[0])]
-                    ),
-                    v.Html(tag="td", class_="caption", children=[str(row[1])]),
-                    v.Html(
-                        tag="td",
-                        style_=f"background-color: {row[-1]};",
-                        class_="caption",
-                        children=["  "],
-                    ),
-                ],
-            )
-            for row in content
-        ],
-    )
+        super().__init__(title="Land cover classes", content=[], action_text="")
 
-    table = v.SimpleTable(
-        max_width="500px",
-        dense=True,
-        children=[
-            thead,
-            tbody,
-        ],
-    )
+        self.cancel_btn.on_event("click", lambda *_: self.close_dialog())
+        self.action_btn.hide()
 
-    dialog = BaseDialog(title="Default classification", content=[table], action_text="")
-    dialog.cancel_btn.on_event("click", lambda *_: dialog.close_dialog())
+    def open_dialog(self, dst_class_file: str):
 
-    dialog.action_btn.hide()
+        try:
+            super().open_dialog()
+            self.get_table(dst_class_file)
+        except Exception as e:
+            raise Exception(f"The table couldn't be created. {e}")
+        finally:
+            return
 
-    return dialog
+    def get_table(self, lulc_classes_path: str = dir_.LOCAL_LC_CLASSES) -> BaseDialog:
+        # read csv
+
+        df = pd.read_csv(lulc_classes_path, header=0)
+        headers = [cm.reclass.default_table.header[col] for col in df.columns.tolist()]
+        content = df.values.tolist()
+
+        thead = v.Html(
+            tag="thead",
+            children=[
+                v.Html(
+                    tag="tr", children=[v.Html(tag="th", children=[h]) for h in headers]
+                )
+            ],
+        )
+
+        tbody = v.Html(
+            tag="tbody",
+            children=[
+                v.Html(
+                    tag="tr",
+                    children=[
+                        v.Html(
+                            tag="td",
+                            class_="caption text-center",
+                            children=[str(row[0])],
+                        ),
+                        v.Html(tag="td", class_="caption", children=[str(row[1])]),
+                        v.Html(
+                            tag="td",
+                            style_=f"background-color: {row[-1]};",
+                            class_="caption",
+                            children=["  "],
+                        ),
+                    ],
+                )
+                for row in content
+            ],
+        )
+
+        table = v.SimpleTable(
+            max_width="500px",
+            dense=True,
+            children=[
+                thead,
+                tbody,
+            ],
+        )
+
+        self.set_content([table])

@@ -32,6 +32,9 @@ class BaseDialog(v.Dialog):
             ),
         ]
 
+    def set_content(self, content: list):
+        self.children[0].children[1].children = content
+
     def open_dialog(self, *_):
         """Call vegetation view build and open the dialog."""
 
