@@ -1,12 +1,7 @@
-from IPython.display import display
 import ipyvuetify as v
 import pandas as pd
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
-from ipywidgets import Output
-from matplotlib import pyplot as plt
-from traitlets import link
-from component.model.model import MgciModel
 
 import component.parameter.module_parameter as param
 import component.scripts as cs
@@ -15,9 +10,7 @@ import component.widget as cw
 from component.message import cm
 from component.scripts.plots import (
     get_nodes_and_links,
-    get_pyecharts_sankey,
     get_sankey_chart,
-    sankey,
 )
 from component.scripts.report_scripts import get_belt_desc
 from component.widget.map import MapView
@@ -111,9 +104,7 @@ class DashViewA(DashView):
         # Observe reporting_years_{indicator} from model to update the year_select
 
         self.model.observe(self.set_years, f"reporting_years_sub_a")
-
         self.btn.on_event("click", self.render_dashboard)
-
         self.set_years({"new": self.model.reporting_years_sub_a})
 
     def set_years(self, change):
@@ -196,6 +187,7 @@ class DashViewB(DashView):
                 {"baseline": [year1, year2]} or,
                 {"report": [base_start, report_year]}
         """
+        print(change["new"])
 
         look_up_year = change["new"]
 

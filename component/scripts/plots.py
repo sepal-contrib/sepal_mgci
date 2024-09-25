@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 
-from ipecharts.option import Option, Legend, Tooltip
+from ipecharts.option import Option, Legend, Tooltip, XAxis, YAxis
 from ipecharts.option.series import Sankey
 from ipecharts.echarts import EChartsWidget
 
@@ -15,7 +15,7 @@ def get_sankey_chart():
     sankey_data.links = []
     option = Option(series=[sankey_data], tooltip=Tooltip(), legend=Legend())
 
-    chart = EChartsWidget(option=option)
+    chart = EChartsWidget(option=option, style={"height": "700px", "width": "80%"})
 
     return sankey_data, chart
 
@@ -82,25 +82,55 @@ def get_nodes_and_links(
     return biobelt_dict
 
 
-def get_pyecharts_sankey(df: pd.DataFrame, lc_classes_path: str):
-    """Generate a Sankey diagram using Pyecharts
+from ipecharts.option.series import Bar
 
-    Args:
-        df (pd.DataFrame): A DataFrame with columns 'from', 'to', and 'sum'
-        lc_classes_path (str): Path to the land cover classes CSV file
 
-    Returns:
-        EChartsWidget: A Pyecharts EChartsWidget object
-    """
+def get_series_data(df):
+    """Generate series data for a bar chart."""
 
-    from ipecharts.option import Option, Legend, Tooltip
-    from ipecharts.option.series import Sankey
-    from ipecharts.echarts import EChartsWidget, EChartsRawWidget
-    import numpy as np
+    series_data = []
+    for col in df.columns:
+        if col == "year":
+            continue
+        series_data.append(
+            {
+                "name": col,
+                "data": df[col].tolist(),
+                "itemStyle": {"color": "#5f8b95"},
+            }
+        )
+    return series_data
 
-    s = Sankey(smooth=True, areaStyle={})
-    s.data = nodes
-    s.links = links
 
-    option = Option(series=[s], tooltip=Tooltip(), legend=Legend())
+def get_bars(series_data):
+    """Create a list of bar series from the series data."""
+    bars = []
+    for series in series_data:
+        bars.append(
+            Bar(
+                **{
+                    "type": "bar",
+                    "name": series["name"],
+                    "stack": True,
+                    "data": series["data"],
+                    "itemStyle": series["itemStyle"],
+                }
+            )
+        )
+    return bars
+
+
+def get_chart(df):
+
+    landcov_names, series_data = get_series_data(df)
+    bars = get_bars(series_data)
+
+    option = Option(
+        backgroundColor="#1e1e1e00",
+        legend=Legend(data=landcov_names),
+        yAxis=YAxis(type="category", data=landcov_names),
+        xAxis=XAxis(type="value"),
+        series=bars,
+        tooltip=Tooltip(),
+    )
     return EChartsWidget(option=option)
