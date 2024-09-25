@@ -14,8 +14,6 @@ NO_DATA_VALUE = 0
 
 def no_remap(image: ee.Image, remap_matrix: Optional[dict] = None):
     """return remapped or raw image if there's a matrix"""
-    print(f"NO_DATA_VALUE {NO_DATA_VALUE}")
-    print(f"NO_DATA_VALUE {remap_matrix}")
 
     if remap_matrix:
         from_, to_ = list(zip(*remap_matrix.items()))
