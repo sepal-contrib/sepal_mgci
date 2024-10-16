@@ -1,11 +1,9 @@
-import ipyvuetify as v
 import pandas as pd
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
 
 import component.parameter.module_parameter as param
 import component.scripts as cs
-from component.scripts.validation import validate_sankey_classes
 import component.widget as cw
 from component.message import cm
 from component.scripts.plots import (

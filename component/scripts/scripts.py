@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from component.types import Pathlike
 import random
 import re
 from pathlib import Path
@@ -38,7 +39,6 @@ __all__ = [
     "years_from_dict",
     "parse_to_year_a",
     "parse_to_year",
-    "get_sub_b_break_points",
     "parse_result",
     "get_reporting_years",
 ]
@@ -418,7 +418,7 @@ def parse_result(result: dict, single: bool = False) -> pd.DataFrame:
     return df
 
 
-def read_from_csv(task_file) -> dict:
+def read_from_csv(task_file: Pathlike) -> dict:
     """read csv format from feature collection exportation in gee
 
     Args:
@@ -446,28 +446,9 @@ def read_from_csv(task_file) -> dict:
             for cat in sub_b_cats:
                 results[row["process_id"]][cat] = read_line(row[cat])
         else:
-            results[row["process_id"]] = {"sub_a": read_line(row["sub_a"])}
+            results[str(row["process_id"])] = {"sub_a": read_line(row["sub_a"])}
 
     return results
-
-
-def get_sub_b_break_points(
-    user_input_years: Dict[str, Dict[str, Dict[str, int]]]
-) -> List[List[int]]:
-    """Extract years from user input.
-
-    This functions extracts all the assets in the form of
-    [{asset:xx, year:xx}, ...] from the user input, to easier manipulataion.
-
-    """
-
-    # extract tuple of years from user input
-    reporting_years: List[List[int]] = []
-    for user_year in user_input_years.values():
-        for user_tuple in user_year.values():
-            reporting_years.append([user_tuple.get("base"), user_tuple.get("report")])
-
-    return reporting_years
 
 
 def get_sub_a_break_points(user_input_years: list) -> dict:
@@ -544,6 +525,61 @@ def get_sub_a_break_points(user_input_years: list) -> dict:
     return break_points
 
 
+def get_sub_a_data_reports(
+    results: dict, reporting_years_sub_a, geo_area_name, ref_area, source_detail
+) -> Tuple[List, List]:
+
+    mtn_reports = []
+    sub_a_reports = []
+
+    sub_a_years = list(reporting_years_sub_a.keys())
+
+    for year in sub_a_years:
+        print(f"Reporting {year} for sub_a")
+        parsed_df = cs.parse_to_year_a(results, reporting_years_sub_a, year)
+        sub_a_reports.append(
+            sub_a.get_reports(parsed_df, year, geo_area_name, ref_area, source_detail)
+        )
+        print(f"Reporting {year} for mtn")
+        mtn_reports.append(
+            mntn.get_report(parsed_df, year, geo_area_name, ref_area, source_detail)
+        )
+
+    return sub_a_reports, mtn_reports
+
+
+def get_sub_b_data_reports(
+    results: dict,
+    sub_b_year,
+    transition_matrix,
+    geo_area_name,
+    ref_area,
+    source_detail,
+) -> List:
+
+    sub_b_reports = []
+
+    reporting_years_sub_b = get_reporting_years(sub_b_year, "sub_b")
+    _, sub_b_years = get_sub_b_items(reporting_years_sub_b)
+
+    for year in sub_b_years:
+        print(f"Reporting {year} for sub_b")
+        # Get year label for the report
+        parsed_df = cs.parse_to_year(results, year)
+        sub_b_reports.append(
+            sub_b.get_reports(
+                parsed_df,
+                year,
+                geo_area_name,
+                ref_area,
+                source_detail,
+                transition_matrix,
+            )
+        )
+
+    return sub_b_reports
+
+
 def export_reports(
     results: dict,
     reporting_years_sub_a: dict,
@@ -581,46 +617,14 @@ def export_reports(
         session_id (str): The session id randomy created by the model
     """
     output_folder = Path(report_folder)
-    mtn_reports = []
-    sub_a_reports = []
-    sub_b_reports = []
 
-    # Instead of looping over all "results" in the model, we
-    # only loop over the ones that are of our interest.
-    # use model.reporting_years_sub_b and model.reporting_years_sub_a
+    sub_a_reports, mtn_reports = get_sub_a_data_reports(
+        results, reporting_years_sub_a, geo_area_name, ref_area, source_detail
+    )
 
-    sub_a_years = list(reporting_years_sub_a.keys())
-
-    reporting_years_sub_b = get_reporting_years(sub_b_year, "sub_b")
-    _, sub_b_years = get_sub_b_items(reporting_years_sub_b)
-
-    # These are some variables that will be used in the reports
-
-    for year in sub_a_years:
-        print(f"Reporting {year} for sub_a")
-        parsed_df = cs.parse_to_year_a(results, reporting_years_sub_a, year)
-        sub_a_reports.append(
-            sub_a.get_reports(parsed_df, year, geo_area_name, ref_area, source_detail)
-        )
-        print(f"Reporting {year} for mtn")
-        mtn_reports.append(
-            mntn.get_report(parsed_df, year, geo_area_name, ref_area, source_detail)
-        )
-
-    for year in sub_b_years:
-        print(f"Reporting {year} for sub_b")
-        # Get year label for the report
-        parsed_df = cs.parse_to_year(results, year)
-        sub_b_reports.append(
-            sub_b.get_reports(
-                parsed_df,
-                year,
-                geo_area_name,
-                ref_area,
-                source_detail,
-                transition_matrix,
-            )
-        )
+    sub_b_reports = get_sub_b_data_reports(
+        results, sub_b_year, transition_matrix, geo_area_name, ref_area, source_detail
+    )
 
     # Concat all reports
     mtn_reports_df = pd.concat(mtn_reports)
