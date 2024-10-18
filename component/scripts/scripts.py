@@ -29,6 +29,7 @@ __all__ = [
     "get_random_color",
     "get_mgci_color",
     "get_report_folder",
+    "get_sub_b_years",
     "get_sub_b_items",
     "create_avatar",
     "get_a_years",
@@ -38,7 +39,7 @@ __all__ = [
     "get_sub_a_break_points",
     "years_from_dict",
     "parse_to_year_a",
-    "parse_to_year",
+    "parse_sub_b_year",
     "parse_result",
     "get_reporting_years",
 ]
@@ -330,10 +331,10 @@ def interpolate_sub_a_data(
     return df_interpolated
 
 
-def parse_to_year(
+def parse_sub_b_year(
     results: Dict, target_year: Dict[str, Tuple[int, int]]
 ) -> pd.DataFrame:
-    """Return the results for the given year.
+    """Return the parsed df for the given year .
 
     Args:
         target_year: a dictionary with the following structure:
@@ -560,12 +561,12 @@ def get_sub_b_data_reports(
     sub_b_reports = []
 
     reporting_years_sub_b = get_reporting_years(sub_b_year, "sub_b")
-    _, sub_b_years = get_sub_b_items(reporting_years_sub_b)
+    sub_b_years = get_sub_b_years(reporting_years_sub_b)
 
     for year in sub_b_years:
         print(f"Reporting {year} for sub_b")
         # Get year label for the report
-        parsed_df = cs.parse_to_year(results, year)
+        parsed_df = cs.parse_sub_b_year(results, year)
         sub_b_reports.append(
             sub_b.get_reports(
                 parsed_df,
@@ -712,19 +713,35 @@ def get_reporting_years(years: Dict, indicator: Literal["sub_a", "sub_b"]):
         return get_sub_a_break_points(years)
 
 
-def get_sub_b_items(
-    reporting_years_sub_b: list,
-) -> Tuple[List, List[Dict[str, Tuple[int, int]]]]:
-    """From sub b user input, transform it into items for v_select"""
+def get_transition_years(reporting_years_sub_b: list) -> List[list]:
+    """Generate transition years from reporting years."""
 
-    transition_years = [reporting_years_sub_b[0]] + [
+    return [reporting_years_sub_b[0]] + [
         [reporting_years_sub_b[0][1], report_y]
         for report_y in reporting_years_sub_b[1:]
     ]
 
+
+def get_sub_b_years(
+    reporting_years_sub_b: List[list],
+) -> List[Dict[str, Tuple[int, int]]]:
+    """Generate values from transition years."""
+
+    transition_years = get_transition_years(reporting_years_sub_b)
+
     values = [{"baseline": years} for years in [transition_years[0]]] + [
         {"report": years} for years in transition_years[1:]
     ]
+    return values
+
+
+def get_sub_b_items(
+    reporting_years_sub_b: List[list],
+) -> List[Dict[str, Dict[str, Tuple[int, int]]]]:
+    """Generate items with labels from transition years and values."""
+
+    values = get_sub_b_years(reporting_years_sub_b)
+    transition_years = get_transition_years(reporting_years_sub_b)
 
     labels = [
         " -> ".join([str(y) for y in years]) for years in [transition_years[0]]
@@ -732,7 +749,7 @@ def get_sub_b_items(
 
     items = [{"text": label, "value": value} for label, value in zip(labels, values)]
 
-    return items, values
+    return items
 
 
 def set_transition_code(df):

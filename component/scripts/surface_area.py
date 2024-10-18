@@ -43,7 +43,7 @@ TRIANGLES_MATRIX = ee.Dictionary(
 )
 
 
-def get_real_surface_area(dem_asset, clip_geometry):
+def get_real_surface_area(dem_asset: str, clip_geometry):
     """
     Calculates real surface area from a Digital Elevation Model. Based on
     https://www.fs.fed.us/rm/pubs_other/rmrs_2004_jenness_j001.pdf paper from

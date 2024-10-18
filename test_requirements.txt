@@ -1,0 +1,11 @@
+nbclient
+nox
+pytest
+pytest-sugar
+pytest-icdiff
+pytest-cov
+pytest-deadfixtures
+Flake8-pyproject
+nbmake
+pytest-regressions
+tomli
