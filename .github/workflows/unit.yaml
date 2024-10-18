@@ -28,4 +28,4 @@ jobs:
       - name: set entry point and run tests
         run: nox -s test_ui
       - name: test functions
-        run: nox -s test_functions
+        run: nox -s test
