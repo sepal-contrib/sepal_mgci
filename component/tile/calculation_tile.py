@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import ee
 import ipyvuetify as v
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
@@ -296,7 +297,7 @@ class CalculationView(sw.Card):
             scale = self.w_scale.v_model
 
         # Create a fucntion in order to be able to test it easily
-        done, results = perform_calculation(
+        results = perform_calculation(
             aoi=self.model.aoi_model.feature_collection,
             rsa=self.model.rsa,
             dem=self.model.dem,
@@ -309,7 +310,7 @@ class CalculationView(sw.Card):
             scale=scale,
         )
 
-        if not done:
+        if isinstance(results, ee.FeatureCollection):
 
             model_state = self.model.get_data()
             task_process(results, task_filepath, model_state)
@@ -322,11 +323,11 @@ class CalculationView(sw.Card):
 
             self.alert.append_msg(msg, type_="warning")
 
-        elif done and all(results.values()):
+        elif isinstance(results, dict):
             self.model.results = results
             self.model.done = True
             self.alert.append_msg(
-                "The computation has been performed.", type_="success"
+                "The computation has been completed.", type_="success"
             )
 
         else:

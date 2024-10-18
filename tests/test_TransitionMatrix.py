@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+from traitlets import Dict, HasTraits, Unicode
 
 import component.parameter.directory as dir_
 from component.parameter.module_parameter import TRANSITION_MATRIX_FILE, DECODE
@@ -11,8 +12,10 @@ from component.widget.transition_matrix import TransitionMatrix
 
 @pytest.fixture
 def transition_matrix():
-    class Model:
+    class Model(HasTraits):
         session_id = 1292
+        transition_matrix = Unicode()
+        lulc_classes_sub_b = Dict()
 
     model = Model()
 
@@ -27,11 +30,13 @@ def test_transition_matrix(transition_matrix):
 def test_change_value(transition_matrix):
     """Check that new transition matrix file is created once any value is changed"""
 
+    new_value = 0
+
     # Change value of transition matrix
     transition_matrix.get_children(id_="1_1")[0].v_model = {
         "row": 1,
         "col": 1,
-        "value": 2,
+        "value": new_value,
     }
 
     suffix = transition_matrix.suffix
@@ -49,7 +54,7 @@ def test_change_value(transition_matrix):
         edited_df.loc[
             (edited_df.from_code == 1) & (edited_df.to_code == 1), "impact_code"
         ][0]
-        == 2
+        == new_value
     )
 
     # Check that default values are loaded when transition matrix is reset

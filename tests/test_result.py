@@ -5,9 +5,9 @@ items = [f"{LULC_DEFAULT}/{year}" for year in range(2000, 2021)]
 ic_items_sub_a = items
 ic_items_sub_b = items
 
-results = {
+results_a = {
     "2000": {
-        "groups": [
+        "sub_a": [
             {
                 "group": 2,
                 "groups": [

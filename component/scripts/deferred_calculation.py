@@ -1,4 +1,6 @@
-from typing import Tuple
+from typing import Tuple, Union
+from component.types import ResultsDict, SubAYearDict, SubBYearDict
+
 import ee
 from pathlib import Path
 import component.parameter.directory as DIR
@@ -72,79 +74,59 @@ def perform_calculation(
     logger: cw.Alert = None,
     background: bool = False,
     scale: int = None,
-):
+    test_time_out: bool = False,
+) -> Union[ResultsDict, ee.FeatureCollection, None]:
     if not aoi:
         raise Exception(cm.error.no_aoi)
 
     if not logger:
         logger = Logger()
 
-    class Fly:
-        def __init__(self):
-            self.on_the_fly = True
+    results: ResultsDict = {}
+    tasks = {}
+    all_succeeded = True
 
-        def set(self, value):
-            self.on_the_fly = value
-
-        def get(self):
-            return self.on_the_fly
-
-    on_the_fly = Fly()
-    on_the_fly.set(not background)
-
-    def calculation(years: Tuple, on_the_fly: bool):
-        """perform the computation on the fly or fallback to gee background
-
-        args:
-            year (list(list)) : list of year list to perform calculation
-            task_filename: name of the task file (result ids will be append to the file)
-        """
-        process_id = cs.years_from_dict(years)
+    for year in years:
+        process_id = cs.years_from_dict(year)
         logger.set_msg(f"Calculating {process_id}...", id_=process_id)
 
         matrix = remap_matrix_a if len(years) == 1 else remap_matrix_b
-        process = reduce_regions(aoi, matrix, rsa, dem, years, transition_matrix, scale)
 
-        if on_the_fly.get():
+        process = reduce_regions(aoi, matrix, rsa, dem, year, transition_matrix, scale)
 
-            # Try the process in on the fly
+        tasks[process_id] = ee.Feature(None, process).set("process_id", process_id)
+
+        if not background:
             try:
-                result = process.getInfo()
+                if test_time_out:
+                    raise Exception("Computation timed out.")
+
+                result: Union[SubAYearDict, SubBYearDict] = process.getInfo()
                 logger.set_msg(f"Calculating {process_id}... Done.", id_=process_id)
                 logger.set_state("success", id_=process_id)
-                on_the_fly.set(True)
-
-                return result
-
+                results[process_id] = result
             except Exception as e:
-                if e.args[0] == "Computation timed out.":
-                    # Create an unique name (to search after in Drive)
+                if "Computation timed out." in str(e):
                     logger.set_msg(
-                        f"Warning: {process_id} failed on the fly.", id_=process_id
+                        f"Warning: {process_id} failed on the fly, it will be processed on the background.",
+                        id_=process_id,
                     )
                     logger.set_state("warning", id_=process_id)
-                    on_the_fly.set(False)
-
-                    return ee.Feature(None, process).set("process_id", process_id)
-
                 else:
+                    # For other exceptions, raise an error
                     raise Exception(f"There was an error trying to compute {e}")
 
+                all_succeeded = False
         else:
+            all_succeeded = False
             logger.set_msg(
-                f"Warning: {process_id} has been tasked on GEE background.",
+                f"{process_id} has been scheduled for background processing.",
                 id_=process_id,
             )
-            logger.set_state("warning", id_=process_id)
-            return ee.Feature(None, process).set("process_id", process_id)
+            logger.set_state("info", id_=process_id)
 
-    results = {}
-    for year in years:
-        results[cs.years_from_dict(year)] = calculation(year, on_the_fly)
-
-    if not on_the_fly.get():
-        # If the process was not done on the fly, send it to the GEE servers
-        # but first merge all the processes in one.
-        return False, ee.FeatureCollection(list(results.values()))
-
-    return True, results
+    if all_succeeded:
+        return results
+    else:
+        # At least one computation failed or background is True
+        return ee.FeatureCollection(list(tasks.values()))

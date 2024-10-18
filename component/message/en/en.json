@@ -1,6 +1,6 @@
 {
     "app": {
-        "title" : "SDG Indicator 15.4.2 (BETA)",
+        "title" : "SDG Indicator 15.4.2",
         "drawer_item" : {
             "aoi": "Area of Interest",
             "vegetation" : "Land cover dataset",

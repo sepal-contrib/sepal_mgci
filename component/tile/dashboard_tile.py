@@ -189,7 +189,7 @@ class DashViewB(DashView):
 
         look_up_year = change["new"]
 
-        df = cs.parse_to_year(self.model.results, look_up_year)
+        df = cs.parse_sub_b_year(self.model.results, look_up_year)
         look_up_years = list(look_up_year.values())[0]
         self.nodes_and_links = get_nodes_and_links(df, param.LC_CLASSES, look_up_years)
 
@@ -215,7 +215,7 @@ class DashViewB(DashView):
         """
 
         if change["new"]:
-            items, _ = cs.get_sub_b_items(change["new"])
+            items = cs.get_sub_b_items(change["new"])
             self.year_select.items = items
         else:
             self.year_select.items = []

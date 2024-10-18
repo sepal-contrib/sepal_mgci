@@ -69,6 +69,15 @@ def test_ui(session):
             raise e
 
 
+@nox.session()
+def test(session):
+    test_files = session.posargs or ["tests"]
+    # instal test_requirements.txt
+    session.install("-r", "requirements.txt")
+    session.install("-r", "test_requirements.txt")
+    session.run("pytest", "--color=yes", "--cov", "--cov-report=xml", *test_files)
+
+
 @nox.session(reuse_venv=True)
 def jupyter(session):
     """Run the application."""
