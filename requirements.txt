@@ -19,4 +19,4 @@ pygaul
 seaborn
 
 ipyvuetify
-ipecharts==1.0.7
+ipecharts>=1.0.8
