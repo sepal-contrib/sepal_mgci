@@ -64,6 +64,9 @@ class LegendControl(LegendDashboard):
     vertical = Bool(None).tag(sync=True)
     "Bool: whether to display the legend in a vertical or horizontal way"
 
+    loading = Bool(False).tag(sync=True)
+    "Bool: whether to display a loading message in the legend"
+
     _html_table = None
 
     _html_title = None
@@ -78,6 +81,15 @@ class LegendControl(LegendDashboard):
         self._html_title = sw.Html(tag="h4", children=[f"{self.title}"])
         self._html_table = sw.Html(tag="table", class_="pa-1", children=[])
 
+        self.loading_progress = sw.CardText(
+            children=[
+                v.ProgressCircular(
+                    indeterminate=True,
+                ),
+                " Calculating areas...",
+            ]
+        )
+
         # create a card inside the widget
         # Be sure that the scroll bar will be shown up when legend horizontal
         self.legend_card = sw.Card(
@@ -85,6 +97,8 @@ class LegendControl(LegendDashboard):
             style_="overflow-x:auto; white-space: nowrap;",
             max_width=450,
             max_height=350,
+            min_height=100,
+            min_width=100,
             children=[self._html_table],
         ).hide()
 
@@ -119,6 +133,7 @@ class LegendControl(LegendDashboard):
         if not self.legend_dict:
             self.hide()
             return
+
         self.show()
 
         if self.vertical:
@@ -131,17 +146,21 @@ class LegendControl(LegendDashboard):
                     children=[
                         sw.Html(
                             tag="td",
-                            children=self.color_box(class_[param.LEGEND_NAMES["color"]])
-                            if class_[param.LEGEND_NAMES["desc"]]
-                            != param.LEGEND_NAMES["total"]
-                            else "",
+                            children=(
+                                self.color_box(class_[param.LEGEND_NAMES["color"]])
+                                if class_[param.LEGEND_NAMES["desc"]]
+                                != param.LEGEND_NAMES["total"]
+                                else ""
+                            ),
                         ),
                     ]
                     + [
                         sw.Html(
-                            style_="text-align: center;"
-                            if name != param.LEGEND_NAMES["desc"]
-                            else "text-align: left;",
+                            style_=(
+                                "text-align: center;"
+                                if name != param.LEGEND_NAMES["desc"]
+                                else "text-align: left;"
+                            ),
                             tag="td",
                             children=item,
                         )
@@ -181,3 +200,17 @@ class LegendControl(LegendDashboard):
         self._html_title.children = change["new"]
 
         return
+
+    @observe("loading")
+    def loading_legend(self, change: dict):
+        """Trait method to display a loading message in the legend"""
+
+        if change["new"]:
+            self.show()
+            self._html_table.children = [self.loading_progress]
+
+    def set_error(self, error: str):
+        """Display an error message in the legend"""
+
+        self._html_table.children = [sw.Html(tag="tr", children=[error])]
+        self.loading = False

@@ -123,7 +123,7 @@ class VegetationView(sw.Layout):
             save=False,
             aoi_model=self.aoi_model,
             default_class={
-                "IPCC": str(dir_.LOCAL_LC_CLASSES),
+                "SEEA": str(dir_.LOCAL_LC_CLASSES),
             },
             id_="sub_a",
             alert=self.alert,
@@ -140,7 +140,7 @@ class VegetationView(sw.Layout):
             save=False,
             aoi_model=self.aoi_model,
             default_class={
-                "IPCC": str(dir_.LOCAL_LC_CLASSES),
+                "SEEA": str(dir_.LOCAL_LC_CLASSES),
             },
             id_="sub_b",
             alert=self.alert,

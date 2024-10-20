@@ -21,7 +21,6 @@ REPORT_INTERVALS = [2000, 2005, 2010, 2015] + list(range(2018, current_year + 1,
 # SET SOME PARAMETERS
 UPPER_THRESHOLDS = {98: "green", 95: "orange", 90: "red"}
 
-# Specify which are the IPCC green classes
 # Forest, grassland, cropland, wetland
 GREEN_CLASSES = [1, 2, 3, 4]
 

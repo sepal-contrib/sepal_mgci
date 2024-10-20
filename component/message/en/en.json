@@ -111,7 +111,7 @@
             },
             "target" : {
                 "btn_label" : "Load",
-                "description" : "This module allows users to modify the default target land cover classes used in the reclassification process. The module is set to use the standard 10 IPCC classes by default, but for sub indicator B, users have the option to either use these default classes or create their own custom classification. To use the custom classification option, simply select the 'custom' button and upload a file containing the target classifications that will be used in the reclassification table."
+                "description" : "This module allows users to modify the default target land cover classes used in the reclassification process. The module is set to use the standard 10 SEEA classes by default, but for sub indicator B, users have the option to either use these default classes or create their own custom classification. To use the custom classification option, simply select the 'custom' button and upload a file containing the target classifications that will be used in the reclassification table."
             },
             "import_" : {
                 "title" : "Load remapping table",
@@ -193,15 +193,15 @@
         },
         "global_" : {
             "title" : "Overall Mountain Green Cover Index",
-            "desc" : "The last four IPCC classes are considered as green cover in accordance to SDG Indicator 15.4.2 Metadata. All the units are shown in {}."
+            "desc" : "The last four SEEA land cover classes in the bar chart plot are considered as green cover in accordance to SDG Indicator 15.4.2 Metadata. All units are shown in {}."
         },
         "individual" : {
             "title" : "Bioclimatic belt {}",
             "desc" : {
-                "belt_1":"Where elevation >= 4,500 meters",
-                "belt_2":"Where elevation is between 3,500 and 4,500 meters",
-                "belt_3":"Where elevation is between 2,500 and 3,500 meters",
-                "belt_4":"Where elevation is between 1,500 and 2,500 meters and the slope is greather than 2%"
+                "belt_1":"Mountain areas where the growing season mean temperature is below < 3.5 °C and the growing season length is less than 10 days",
+                "belt_2":"Mountain areas where the growing season mean temperature is between 3.5 °C and 6.4 °C and the growing season length is between 10 and 54 days.",
+                "belt_3":"Mountain areas where the growing season mean temperature is between 6.4 °C and 15 °C’",
+                "belt_4":"Mountain areas where the growing season mean temperature is above 15 °C’"
             }
         }
     },
