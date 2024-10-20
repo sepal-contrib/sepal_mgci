@@ -78,8 +78,7 @@ class AoiView(AoiView):
                 legend.loading = False
 
         try:
-            map_.zoom = 10
-            map_.center = [0, 0]
+            map_.zoom = 8
 
             aoi = aoi_model.feature_collection.geometry().simplify(1000)
             map_.zoom_ee_object(aoi.bounds())
