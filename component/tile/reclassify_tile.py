@@ -69,11 +69,6 @@ class ReclassifyTile(sw.Layout):
             alert=alert,
         )
 
-        # Create a default destination classification file
-        # I did this because in version 0 I didn't wanted to modify view.
-        # self.w_reclass.w_dst_class_file.select_file(default_class["IPCC"]).hide()
-        # self.w_reclass.model.dst_class_file = default_class["IPCC"]
-
         self.w_reclass.model.dst_class = self.model.get_classes()
         self.w_reclass.w_ic_select.label = cm.reclass_view.ic_custom_label
 
