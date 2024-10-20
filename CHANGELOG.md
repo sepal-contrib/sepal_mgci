@@ -1,3 +1,24 @@
+## 0.8.0 (2024-10-20)
+
+### Feat
+
+- reorder drawers
+
+### Fix
+
+- remove proje4ct from imports, update repo if it is already cloned (#68)
+- remove proje4ct from imports, update repo if it is already cloned (#68)
+- selfmask from remapped images. closes #61
+
+### Refactor
+
+- remove legacy graphs
+- remove legacy graphs
+- allow 0 as missing values
+- update on change
+- move imports
+- use ipecharts and replace old sankey
+
 ## 0.7.0 (2024-08-23)
 
 ### Feat
