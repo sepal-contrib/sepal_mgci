@@ -80,9 +80,10 @@ class AoiView(AoiView):
         try:
             map_.zoom = 4
 
-            aoi = aoi_model.feature_collection.geometry().simplify(1000)
+            aoi = aoi_model.feature_collection.geometry()
             map_.zoom_ee_object(aoi.bounds())
-            biobelt = ee.Image(BIOBELT).clip(aoi)
+
+            biobelt = ee.Image(BIOBELT).clip(aoi.simplify(1000))
             map_.addLayer(biobelt, BIOBELT_VIS, cm.aoi.legend.belts)
 
         except Exception as e:
