@@ -27,9 +27,16 @@ def get_degraded_area(parsed_df: pd.DataFrame, transition_matrix: str):
 
     # Prepare df
     df = parsed_df.copy()
-    df["impact"] = df.apply(
-        lambda x: get_impact(x, transition_matrix=transition_matrix), axis=1
-    )
+    df_type = df.reset_index().loc[0, "category"]
+
+    if df_type == "baseline_transition":
+        df["impact"] = df.apply(
+            lambda x: get_impact(x, transition_matrix=transition_matrix), axis=1
+        )
+    elif df_type == "final_degradation":
+        df["impact"] = df["transition"]
+    else:
+        raise ValueError("Invalid df_type")
 
     # get the degraded area
     degraded = (
@@ -40,7 +47,16 @@ def get_degraded_area(parsed_df: pd.DataFrame, transition_matrix: str):
     )
     degraded.rename(columns={"sum": "degraded"}, inplace=True)
 
-    # Get net degraded area per belt class as the sum of improved minus the sum of degraded
+    # get the stable area
+    stable = (
+        df[df.impact == 2]
+        .groupby(["belt_class"])
+        .sum(numeric_only=True)
+        .reset_index()[["belt_class", "sum"]]
+    )
+    stable.rename(columns={"sum": "stable"}, inplace=True)
+
+    # Get net degraded area per belt class as the sum of degraded minus improved
 
     improved = (
         df[df.impact == 3]
@@ -53,6 +69,9 @@ def get_degraded_area(parsed_df: pd.DataFrame, transition_matrix: str):
     net_degraded = degraded.merge(improved, on="belt_class", how="outer")
     net_degraded["net_degraded"] = net_degraded.degraded - net_degraded.improved
 
+    # Add stable area
+    net_degraded = net_degraded.merge(stable, on="belt_class", how="outer")
+
     # we must be sure that all belt classes are present.
     # if not, we must add them with 0 values
     net_degraded = net_degraded.merge(
@@ -60,7 +79,7 @@ def get_degraded_area(parsed_df: pd.DataFrame, transition_matrix: str):
         left_on="belt_class",
         right_on="belt_class",
         how="outer",
-    )
+    )[["belt_class", "degraded", "stable", "improved", "net_degraded"]]
 
     return net_degraded
 
@@ -76,10 +95,12 @@ def get_pdma_area(parsed_df, transition_matrix: str):
             [
                 "Total",
                 degraded.degraded.sum(),
+                degraded.stable.sum(),
+                degraded.improved.sum(),
                 degraded.degraded.sum() - degraded.improved.sum(),
             ]
         ],
-        columns=["belt_class", "degraded", "net_degraded"],
+        columns=["belt_class", "degraded", "stable", "improved", "net_degraded"],
     )
 
     return pd.concat([degraded, total_row])
@@ -88,36 +109,15 @@ def get_pdma_area(parsed_df, transition_matrix: str):
 def get_pdma_pt(parsed_df, transition_matrix: str):
     """Return net and gross area (as percentage) of degraded land per belt class"""
 
-    pt_degraded = get_degraded_area(parsed_df, transition_matrix=transition_matrix)
+    pdma_area = get_pdma_area(parsed_df, transition_matrix=transition_matrix)
 
-    # get total area of each belt class
-    belt_area = parsed_df.groupby("belt_class").sum(numeric_only=True).reset_index()
-    # Merge pdma_area and belt_area
-
-    pt_degraded = pd.merge(
-        pt_degraded, belt_area[["belt_class", "sum"]], how="left", on="belt_class"
+    pdma_area["belt_area"] = pdma_area[["degraded", "stable", "improved"]].sum(axis=1)
+    pdma_area["pt_degraded"] = pdma_area["degraded"] / pdma_area["belt_area"] * 100
+    pdma_area["pt_net_degraded"] = (
+        pdma_area["net_degraded"] / pdma_area["belt_area"] * 100
     )
 
-    pt_degraded["pt_degraded"] = pt_degraded["degraded"] / pt_degraded["sum"]
-    pt_degraded["pt_net_degraded"] = (
-        pt_degraded["net_degraded"] / pt_degraded["sum"] * 100
-    )
-
-    # Add new row for total
-    total_row = pd.DataFrame(
-        [
-            [
-                "Total",
-                pt_degraded.degraded.sum() / pt_degraded["sum"].sum() * 100,
-                (pt_degraded.degraded.sum() - pt_degraded.improved.sum())
-                / pt_degraded["sum"].sum()
-                * 100,
-            ]
-        ],
-        columns=["belt_class", "pt_degraded", "pt_net_degraded"],
-    )
-
-    return pd.concat([pt_degraded, total_row])
+    return pd.concat([pdma_area]).reset_index()
 
 
 def get_report(
@@ -132,7 +132,18 @@ def get_report(
 
     parsed_df = parsed_df.copy()
 
-    years = list(years.values())[0]
+    if list(years.keys())[0] == "baseline":
+        years = list(years.values())[0]
+        time_period = f"{years[1]}"
+        time_detail = f"{years[0]}-{years[1]}"
+
+    elif list(years.keys())[0] == "report":
+        years = list(years.values())[0]
+        time_period = f"{years[1]}"
+        time_detail = f"2000-{years[1]}"
+
+    else:
+        raise ValueError("Invalid year")
 
     if area:
         report_df = get_pdma_area(parsed_df, transition_matrix)
@@ -160,8 +171,8 @@ def get_report(
     report_df["SeriesDesc"] = param.TBD
     report_df["REF_AREA"] = ref_area
     report_df["GeoAreaName"] = geo_area_name
-    report_df["TIME_PERIOD"] = f"{years[1]}"
-    report_df["TIME_DETAIL"] = f"{years[0]}-{years[1]}"
+    report_df["TIME_PERIOD"] = time_period
+    report_df["TIME_DETAIL"] = time_detail
     report_df["SOURCE_DETAIL"] = source_detail
     report_df["COMMENT_OBS"] = "FAO estimate"
 
@@ -169,7 +180,7 @@ def get_report(
 
     # round obs_value
     report_df["OBS_VALUE"] = report_df["OBS_VALUE"].round(4)
-    report_df["OBS_VALUE_NET"] = report_df["OBS_VALUE"].round(4)
+    report_df["OBS_VALUE_NET"] = report_df["OBS_VALUE_NET"].round(4)
 
     # Convert DataFrame to object type
     report_df = report_df.astype(object)

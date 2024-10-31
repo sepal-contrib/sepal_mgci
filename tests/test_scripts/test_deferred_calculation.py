@@ -86,7 +86,7 @@ def test_perform_calculation_on_the_background(
     assert isinstance(result, ee.featurecollection.FeatureCollection)
 
     result = result.getInfo()
-    assert result == antioquia_default_result
+    assert compare_nested_dicts(result, antioquia_default_result)
 
 
 def test_perform_calculation_timed_out(
