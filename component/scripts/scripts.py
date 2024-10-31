@@ -356,10 +356,7 @@ def parse_sub_b_year(
         if len(key.split("_")) > 1:
             if str(year) in key:
                 df = parse_result(results[key], single=False)
-                # Decode transition to from_code and to_code
-                df.loc[:, "from_lc"] = df.transition // 100
-                df.loc[:, "to_lc"] = df.transition % 100
-                return df[df.category == "report_transition"]
+                return df[df.category == "final_degradation"]
 
 
 def parse_result(result: dict, single: bool = False) -> pd.DataFrame:
@@ -549,6 +546,35 @@ def get_sub_a_data_reports(
     return sub_a_reports, mtn_reports
 
 
+def filter_report_years(sub_b_years):
+    """This function filtersout reports which doesn't have to be reported"""
+    result = []
+
+    # Include the 'baseline' dictionary
+    for item in sub_b_years:
+        if "baseline" in item:
+            result.append(item)
+            break  # Assuming there's only one 'baseline'
+
+    # Find the 'report' with the highest second value
+    max_report = None
+    max_second_value = None
+    for item in sub_b_years:
+        if "report" in item:
+            report_values = item["report"]
+            if len(report_values) >= 2:
+                second_value = report_values[1]
+                if max_second_value is None or second_value > max_second_value:
+                    max_second_value = second_value
+                    max_report = item
+
+    # Include the 'report' with the highest second value
+    if max_report:
+        result.append(max_report)
+
+    return result
+
+
 def get_sub_b_data_reports(
     results: dict,
     sub_b_year,
@@ -562,6 +588,9 @@ def get_sub_b_data_reports(
 
     reporting_years_sub_b = get_reporting_years(sub_b_year, "sub_b")
     sub_b_years = get_sub_b_years(reporting_years_sub_b)
+    sub_b_years = filter_report_years(sub_b_years)
+
+    # Filterout reports which doesn't have to be reported
 
     for year in sub_b_years:
         print(f"Reporting {year} for sub_b")
