@@ -699,7 +699,7 @@ def export_reports(
                     for cell in col:
                         cell.alignment = Alignment(horizontal="right")
 
-    return True
+    return output_name
 
 
 def map_matrix_to_dict(matrix_file_path: str):

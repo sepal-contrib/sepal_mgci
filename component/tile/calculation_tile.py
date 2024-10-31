@@ -193,11 +193,14 @@ class CalculationView(sw.Card):
         if not self.model.aoi_model.feature_collection:
             raise Exception(cm.error.no_aoi)
 
-        cs.export_reports(results=self.model.results, **self.model.get_data())
-
-        self.alert.add_msg(
-            f"Reporting tables successfull exported {report_folder}", type_="success"
+        output_report_path = cs.export_reports(
+            results=self.model.results, **self.model.get_data()
         )
+        download_link = su.create_download_link(output_report_path)
+        msg = sw.Markdown(
+            f"Reporting tables successfull exported {report_folder}, <u><i><a href = '{download_link}'>Click to download</a><i></u>"
+        )
+        self.alert.add_msg(msg, type_="success")
 
     @su.loading_button()
     def run_statistics(self, *args):
