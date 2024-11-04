@@ -99,7 +99,7 @@ def reduce_regions(
     dem: str,
     lc_years: List[Tuple[Dict]],
     transition_matrix: str,
-    scale: int = None,
+    scale: Optional[int] = None,
 ) -> ee.Dictionary:
     """Reduce land use/land cover image to bioclimatic belts regions using planimetric
     or real surface area
@@ -131,11 +131,11 @@ def reduce_regions(
         # When using rsa, we need to use the dem scale, otherwise
         # we will end with wrong results.
         image_area = get_real_surface_area(dem, aoi)
-        scale = ee_lc_start.projection().nominalScale().getInfo()
+        scale = scale or ee_lc_start.projection().nominalScale().getInfo()
     else:
         # Otherwise, we will use the coarse scale to the output.
         image_area = ee.Image.pixelArea()
-        scale = (
+        scale = scale or (
             ee_lc_start.projection()
             .nominalScale()
             .max(ee_lc_start.projection().nominalScale())
