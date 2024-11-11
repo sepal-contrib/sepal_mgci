@@ -107,6 +107,11 @@ class DownloadTaskView(v.Card):
             report_folder = Path(data["model_state"]["report_folder"])
             session_id = data["model_state"]["session_id"]
 
+        # reporting_years_sub_a always have to be inteners
+        reporting_years_sub_a = {
+            int(key): value for key, value in reporting_years_sub_a.items()
+        }
+
         # re-build the filename
         task_filename = f"{tasks_file.stem}.csv"
 
