@@ -1,4 +1,4 @@
-from typing import Tuple
+import concurrent.futures
 import ipyvuetify as v
 import numpy as np
 import pandas as pd
@@ -278,7 +278,8 @@ class TransitionMatrix(sw.Layout):
         create execute them as a pool executor"""
 
         selectables = self.get_children(id_="impact")
-        [setattr(s, "disabled", not s.disabled) for s in selectables]
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            executor.map(lambda s: setattr(s, "disabled", not s.disabled), selectables)
 
     def truncate_string(self, string):
         """truncate the content if it's too long"""
