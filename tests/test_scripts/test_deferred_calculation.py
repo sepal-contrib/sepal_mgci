@@ -49,7 +49,7 @@ def test_perform_calculation_on_the_fly(
         "years": years,
         "logger": None,
         "background": False,
-        "scale": 1000,
+        "scale": None,
     }
 
     result = perform_calculation(**calculation_parms)
@@ -97,7 +97,6 @@ def test_perform_calculation_timed_out(
     default_remap_matrix_b,
     default_transition_matrix,
 ) -> None:
-
     calculation_parms = {
         "aoi": test_antioquia_aoi,
         "rsa": False,
@@ -115,6 +114,8 @@ def test_perform_calculation_timed_out(
     with pytest.raises(Exception) as e:
 
         result = perform_calculation(**calculation_parms)
+        assert ee.featurecollection.FeatureCollection == ee.FeatureCollection
+        assert isinstance(result, ee.FeatureCollection)
         assert "Computation timed out." in str(e)
         assert result is None
 
