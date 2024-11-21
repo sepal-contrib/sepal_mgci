@@ -134,7 +134,7 @@ def test_reduce_groups(test_multipolygon_aoi):
             **{
                 "reducer": reducer,
                 "geometry": test_multipolygon_aoi.geometry(),
-                "scale": 1000,
+                "scale": None,
             }
         )
     )
@@ -144,7 +144,7 @@ def test_reduce_groups(test_multipolygon_aoi):
         .addBands(group2)
         .addBands(group3)
         .reduceRegions(
-            **{"collection": test_multipolygon_aoi, "reducer": reducer, "scale": 1000}
+            **{"collection": test_multipolygon_aoi, "reducer": reducer, "scale": None}
         )
     )
 
