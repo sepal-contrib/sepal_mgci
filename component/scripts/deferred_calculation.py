@@ -96,19 +96,23 @@ def perform_calculation(
 
         tasks[process_id] = ee.Feature(None, process).set("process_id", process_id)
 
-        if not background:
+        if not background and all_succeeded:
             try:
                 if test_time_out:
                     raise Exception("Computation timed out.")
 
                 result: Union[SubAYearDict, SubBYearDict] = process.getInfo()
+
                 logger.set_msg(f"Calculating {process_id}... Done.", id_=process_id)
                 logger.set_state("success", id_=process_id)
                 results[process_id] = result
+
             except Exception as e:
-                if "Computation timed out." in str(e):
+                if "Computation timed out." in str(
+                    e
+                ) or "User memory limit exceeded" in str(e):
                     logger.set_msg(
-                        f"Warning: {process_id} failed on the fly, it will be processed on the background.",
+                        f"Warning: {process_id} failed on the fly. All tasks will be processed on the background. Skipping...",
                         id_=process_id,
                     )
                     logger.set_state("warning", id_=process_id)
@@ -117,7 +121,8 @@ def perform_calculation(
                     raise Exception(f"There was an error trying to compute {e}")
 
                 all_succeeded = False
-        else:
+
+        elif background:
             all_succeeded = False
             logger.set_msg(
                 f"{process_id} has been scheduled for background processing.",
