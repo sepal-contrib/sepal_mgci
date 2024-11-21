@@ -79,7 +79,7 @@ def test_perform_calculation_on_the_background(
         "years": years,
         "logger": None,
         "background": True,
-        "scale": 1000,
+        "scale": None,
     }
 
     result = perform_calculation(**calculation_parms)
