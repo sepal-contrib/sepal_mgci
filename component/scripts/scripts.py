@@ -620,6 +620,7 @@ def export_reports(
     transition_matrix,
     report_folder: str,
     session_id: str,
+    which: Literal["both", "sub_a", "sub_b"] = "both",
 ) -> None:
     """
     This function exports the reports of the model's results (calculation).
@@ -696,6 +697,93 @@ def export_reports(
 
                 # Align "obs_value" column to the right
                 if "OBS" in column.value:
+                    for cell in col:
+                        cell.alignment = Alignment(horizontal="right")
+
+    return output_name
+
+
+def export_reports(
+    results: dict,
+    reporting_years_sub_a: dict,
+    sub_b_year,
+    geo_area_name,
+    ref_area,
+    source_detail,
+    transition_matrix,
+    report_folder: str,
+    session_id: str,
+    which: Literal["both", "sub_a", "sub_b"] = "both",
+) -> str:
+
+    output_folder = Path(report_folder)
+    output_name = str(Path(output_folder, output_folder.name + f"{session_id}.xlsx"))
+    if which != "both":
+        output_name = str(
+            Path(output_folder, output_folder.name + f"{session_id}_{which}.xlsx")
+        )
+
+    with pd.ExcelWriter(output_name) as writer:
+        if which in ["both", "sub_a"]:
+            # Get and process Sub A reports
+            sub_a_reports, mtn_reports = get_sub_a_data_reports(
+                results, reporting_years_sub_a, geo_area_name, ref_area, source_detail
+            )
+            mtn_reports_df = pd.concat(mtn_reports)
+            er_mtn_grnvi_df = pd.concat([report[0] for report in sub_a_reports])
+            er_mtn_grncov_df = pd.concat([report[1] for report in sub_a_reports])
+
+            # Write Sub A reports to Excel
+            mtn_reports_df.to_excel(
+                writer, sheet_name="Table1_ER_MTN_TOTL", index=False
+            )
+            er_mtn_grncov_df.to_excel(
+                writer, sheet_name="Table2_ER_MTN_GRNCOV", index=False
+            )
+            er_mtn_grnvi_df.to_excel(
+                writer, sheet_name="Table3_ER_MTN_GRNCVI", index=False
+            )
+
+        if which in ["both", "sub_b"]:
+            # Get and process Sub B reports
+            sub_b_reports = get_sub_b_data_reports(
+                results,
+                sub_b_year,
+                transition_matrix,
+                geo_area_name,
+                ref_area,
+                source_detail,
+            )
+            er_mtn_dgrp_df = pd.concat([report[0] for report in sub_b_reports])
+            er_mtn_dgda_df = pd.concat([report[1] for report in sub_b_reports])
+
+            # Write Sub B reports to Excel
+            er_mtn_dgda_df.to_excel(
+                writer, sheet_name="Table4_ER_MTN_DGRDA", index=False
+            )
+            er_mtn_dgrp_df.to_excel(
+                writer, sheet_name="Table5_ER_MTN_DGRDP", index=False
+            )
+
+        # Formatting
+        for sheetname in writer.sheets:
+            worksheet = writer.sheets[sheetname]
+            for col in worksheet.columns:
+                max_length = 0
+                column = col[0]
+                for cell in col:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = max(max_length, len(str(column.value))) + 4
+                worksheet.column_dimensions[get_column_letter(column.column)].width = (
+                    adjusted_width
+                )
+
+                # Align "obs_value" column to the right
+                if "OBS" in str(column.value).upper():
                     for cell in col:
                         cell.alignment = Alignment(horizontal="right")
 
