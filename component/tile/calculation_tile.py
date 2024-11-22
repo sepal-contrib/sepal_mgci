@@ -184,6 +184,11 @@ class CalculationView(sw.Card):
             self.model.sub_b_year,
             None,
         )
+        which = (
+            "both"
+            if self.model.calc_a and self.model.calc_b
+            else "sub_a" if self.model.calc_a else "sub_b"
+        )
 
         self.alert.add_msg("Exporting tables...")
 
@@ -194,7 +199,7 @@ class CalculationView(sw.Card):
             raise Exception(cm.error.no_aoi)
 
         output_report_path = cs.export_reports(
-            results=self.model.results, **self.model.get_data()
+            results=self.model.results, **self.model.get_data(), which=which
         )
         download_link = su.create_download_link(output_report_path)
         msg = sw.Markdown(
