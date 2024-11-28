@@ -52,5 +52,4 @@ if not LOCAL_LCMAP_MATRIX.exists():
 
 # copy param.LC_MAP_MATRIX to MATRIX_DIR and make it read only
 LOCAL_TRANSITION_MATRIX = TRANSITION_DIR.joinpath("transition_matrix.csv")
-if not LOCAL_TRANSITION_MATRIX.exists():
-    shutil.copy(param.TRANSITION_MATRIX_FILE, LOCAL_TRANSITION_MATRIX)
+shutil.copy(param.TRANSITION_MATRIX_FILE, LOCAL_TRANSITION_MATRIX)
