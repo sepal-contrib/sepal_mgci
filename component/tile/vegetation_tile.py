@@ -227,6 +227,7 @@ class VegetationView(sw.Layout):
         """
 
         custom_lulc = self.w_questionnaire.ans_custom_lulc
+        need_reclassify = self.w_questionnaire.ans_reclassify_custom_lulc
         transition_matrix = self.w_questionnaire.ans_transition_matrix
 
         self.w_reclass_a.w_ic_select.disabled = not custom_lulc
@@ -234,11 +235,18 @@ class VegetationView(sw.Layout):
 
         # Would you like to use a custom land use/land cover map?
         if custom_lulc:
-            self.stepper_a.v_model = 1
-            self.children = [self.stepper_a]
-
-            self.transition_view.show_matrix = False
-            self.w_reclass_a.btn_get_table.show()
+            if need_reclassify:
+                self.stepper_a.v_model = 1
+                self.children = [self.stepper_a]
+                self.transition_view.show_matrix = False
+                self.w_reclass_a.btn_get_table.show()
+            else:
+                self.stepper_b.v_model = 1
+                self.children = [self.stepper_b]
+                self.w_reclass_a.btn_get_table.hide()
+                self.transition_view.disabled = True
+                self.transition_view.set_default_values()
+                self.transition_view.show_matrix = True
 
         else:
             self.stepper_b.v_model = 1

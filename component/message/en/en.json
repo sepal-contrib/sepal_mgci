@@ -56,8 +56,10 @@
         "questionnaire" : {
                 "q1":"Would you like to use a custom land use/land cover map?",
                 "q2":"Would you like to change the default land cover transition matrix?",
+                "q3":"Do you need to reclassify your custom land use/cover map to ESA CCI classification?",
                 "sub_a" : "<p><span class='title'>Sub-indicator 15.4.2a</span></p><p>Mountain Green Cover Index (MGCI), measures the extent and changes of green cover in mountain areas. In this sub-indicator, land cover is used to categorize land into green and non-green cover areas. Green cover includes areas covered by both natural vegetation and vegetation resulting from anthropic activity, whereas non-green areas include non-vegetated areas such as bare land, water, permanent ice/snow, urban areas and sparsely vegetated areas.</p>",
                 "sub_b" : "<p><span class='title'>Sub-indicator 15.4.2b</span></p><p>Proportion of degraded mountain land, monitors the extent of degraded mountain land as a result of land cover change. In this sub-indicator, land cover is used to identify areas where changes in the type of land cover (land cover transitions) may indicate a decline or loss of biodiversity, mountain ecosystem functions or services that are considered desirable in a local or national context.</p>",
+                "alert_not_classify" : "You have chose not to reclassify a custom land cover map. The module will assume that the selected land cover map is already classified according to the ESA CCI classification and it will use the default transition matrix.",
                 "btn" : {
                     "label" : "Validate settings"
                 }
