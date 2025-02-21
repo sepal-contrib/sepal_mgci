@@ -181,7 +181,8 @@ class VegetationView(sw.Layout):
         self.model.observe(self.set_default_asset, "dash_ready")
 
         self.w_questionnaire.observe(
-            self.on_questionnaire, ["ans_custom_lulc", "ans_transition_matrix"]
+            self.on_questionnaire,
+            ["ans_custom_lulc", "ans_transition_matrix", "ans_reclassify_custom_lulc"],
         )
 
     def on_get_table(self, *_):
@@ -210,7 +211,10 @@ class VegetationView(sw.Layout):
         self.w_reclass_a.reclassify_table.set_table({}, {})
         self.w_reclass_b.reclassify_table.set_table({}, {})
 
-        if not self.w_questionnaire.ans_custom_lulc:
+        if not self.w_questionnaire.ans_custom_lulc or (
+            self.w_questionnaire.ans_custom_lulc
+            and not self.w_questionnaire.ans_reclassify_custom_lulc
+        ):
             self.reclassify_tile_a.use_default()
             self.reclassify_tile_b.use_default()
 
