@@ -72,9 +72,16 @@ def test_default_matrix(mgci_model, default_target_classes):
 
     # If user wants to use a custom land cover, the default matrices have to be empty
     vegetation_tile.vegetation_view.w_questionnaire.ans_custom_lulc = True
+    vegetation_tile.vegetation_view.w_questionnaire.ans_reclassify_custom_lulc = True
 
     assert mgci_model.matrix_sub_a == {}
     assert mgci_model.matrix_sub_b == {}
+
+    # if user doesn't want to reclassify custom land cover, the default matrices have to be the default ones
+    vegetation_tile.vegetation_view.w_questionnaire.ans_reclassify_custom_lulc = False
+
+    assert mgci_model.matrix_sub_a == default_map_matrix
+    assert mgci_model.matrix_sub_b == default_map_matrix
 
 
 def test_target_classes(mgci_model, default_target_classes):
