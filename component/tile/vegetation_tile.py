@@ -1,3 +1,5 @@
+from time import sleep
+from component.widget.buttons import TextBtn
 import ipyvuetify as v
 import sepal_ui.sepalwidgets as sw
 from traitlets import directional_link
@@ -78,14 +80,33 @@ class VegetationTile(sw.Layout):
 
 class VegetationDialog(sw.Dialog):
     def __init__(self, vegetation_view: "VegetationView", *args, **kwargs):
-        kwargs["persistent"] = kwargs.get("persistent", False)
+        kwargs["persistent"] = kwargs.get("persistent", True)
         kwargs["v_model"] = kwargs.get("v_model", False)
         kwargs["max_width"] = 1200
 
         super().__init__(*args, **kwargs)
 
+        self.btn_close = TextBtn("Validate & close", class_="ma-2")
+
         self.vegetation_view = vegetation_view
-        self.children = [self.vegetation_view]
+        self.children = [
+            sw.Card(
+                children=[
+                    self.vegetation_view,
+                    sw.CardActions(children=[v.Spacer(), self.btn_close]),
+                ]
+            )
+        ]
+
+        # Validate on close
+        self.observe(self.validate_on_close, "v_model")
+        self.btn_close.on_event("click", self.close_dialog)
+
+    def validate_on_close(self, change):
+        """Validate the questionnaire on close"""
+
+        if not change["new"]:
+            self.vegetation_view.validate()
 
     def open_dialog(self, *_):
         """Call vegetation view build and open the dialog."""
@@ -93,8 +114,10 @@ class VegetationDialog(sw.Dialog):
         self.vegetation_view.get_view()
         self.v_model = True
 
+    @sd.switch("loading", on_widgets=["btn_close"])
     def close_dialog(self, *_):
         """Close dialog."""
+        sleep(2)
         self.v_model = False
 
 
@@ -109,6 +132,7 @@ class VegetationView(sw.Layout):
         **kwargs,
     ):
         self.class_ = "d-block"
+        self.elevation = 0
 
         super().__init__(*args, **kwargs)
 
@@ -127,11 +151,9 @@ class VegetationView(sw.Layout):
             },
             id_="sub_a",
             alert=self.alert,
+            default_asset=[str(param.LULC_DEFAULT)],
         )
 
-        self.reclassify_tile_a.w_reclass.w_ic_select.default_asset = [
-            str(param.LULC_DEFAULT)
-        ]
         self.reclassify_tile_a.w_reclass.reclassify_table.btn_load_target.hide()
 
         self.reclassify_tile_b = rt.ReclassifyTile(
@@ -147,6 +169,9 @@ class VegetationView(sw.Layout):
             w_asset_selection=self.reclassify_tile_a.w_reclass.w_asset_selection,
         )
         self.reclassify_tile_b.w_reclass.reclassify_table.btn_load_target.show()
+
+        self.reclassify_tile_b.elevation = 0
+        self.reclassify_tile_a.elevation = 0
 
         self.w_reclass_a = self.reclassify_tile_a.w_reclass
         self.w_reclass_b = self.reclassify_tile_b.w_reclass
@@ -269,8 +294,32 @@ class VegetationView(sw.Layout):
                 self.transition_view.set_default_values()
                 self.transition_view.show_matrix = True
 
+    def validate(self):
+        """Validate the questionnaire"""
+
+        custom_lulc = self.w_questionnaire.ans_custom_lulc
+        need_reclassify = self.w_questionnaire.ans_reclassify_custom_lulc
+        if custom_lulc:
+            if not need_reclassify:
+                self.transition_view.set_default_values()
+                self.reclassify_tile_a.use_default_matrix()
+                self.reclassify_tile_b.use_default_matrix()
+
+        if not custom_lulc:
+            self.transition_view.set_default_values()
+            self.reclassify_tile_a.use_default()
+            self.reclassify_tile_b.use_default()
+
+        if not self.model.lc_asset_sub_a:
+            raise ValueError("Please select a land cover asset for sub A")
+
 
 class Stepper(sw.Stepper):
+    def __init__(self, *args, **kwargs):
+        self.elevation = 0
+        self.style_ = "box-shadow: inherit !important"
+        super().__init__(*args, **kwargs)
+
     def get_steps(self, headers: list, steps: list):
         """Set the steps and titles of the stepper"""
 

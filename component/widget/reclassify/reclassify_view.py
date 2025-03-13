@@ -78,6 +78,7 @@ class ReclassifyView(sw.Card):
         enforce_aoi=False,
         id_="",
         alert: sw.Alert = None,
+        default_asset: list = [],
         **kwargs,
     ):
         # create metadata to make it compatible with the framwork app system
@@ -127,6 +128,7 @@ class ReclassifyView(sw.Card):
             types=["IMAGE_COLLECTION"],
             label=cm.reclass_view.ic_default_label,
             disabled=True,
+            default_asset=default_asset,
         )
 
         # Reuse component from a different instance or create a new one

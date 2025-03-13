@@ -32,9 +32,18 @@ class ReclassifyTile(sw.Layout):
         save=False,
         id_="",
         alert: sw.Alert = None,
+        default_asset: list = [],
         *args,
         **kwargs,
     ):
+        """
+
+        Args:
+
+            default_asset: list, default asset to pass to the w_reclass component
+
+
+        """
         super().__init__(*args, **kwargs)
 
         # output directory
@@ -67,6 +76,7 @@ class ReclassifyTile(sw.Layout):
             enforce_aoi=True,
             id_=id_,
             alert=alert,
+            default_asset=default_asset,
         )
 
         self.w_reclass.model.dst_class = self.model.get_classes()
@@ -100,5 +110,8 @@ class ReclassifyTile(sw.Layout):
         """Define a default asset to the w_image component from w_reclass"""
 
         self.w_reclass.w_ic_select.v_model = str(param.LULC_DEFAULT)
+        self.use_default_matrix()
 
+    def use_default_matrix(self):
+        """Define a default matrix to the w_reclass component"""
         self.w_reclass.model.matrix = map_matrix_to_dict(param.LC_MAP_MATRIX)
