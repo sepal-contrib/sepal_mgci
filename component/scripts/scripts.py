@@ -93,7 +93,7 @@ def get_report_folder(aoi_name: str) -> Path:
 
 
 def remove_duplicated_years(
-    breakpoints: List[List[Dict[str, Union[int, float]]]]
+    breakpoints: List[List[Dict[str, Union[int, float]]]],
 ) -> List[List[Dict[str, Union[int, float]]]]:
     """Remove duplicated years from a list of years"""
 
@@ -124,7 +124,7 @@ def years_from_dict(year_dict: Tuple[Dict]) -> str:
 
 
 def get_interpolation_years(
-    breaking_points: Dict[str, List[Dict[str, str]]]
+    breaking_points: Dict[str, List[Dict[str, str]]],
 ) -> List[List[Dict[str, str]]]:
     """Get interpolation years (assets) from the breaking points.
 
@@ -588,7 +588,7 @@ def get_sub_b_data_reports(
 
     reporting_years_sub_b = get_reporting_years(sub_b_year, "sub_b")
     sub_b_years = get_sub_b_years(reporting_years_sub_b)
-    sub_b_years = filter_report_years(sub_b_years)
+    # sub_b_years = filter_report_years(sub_b_years)
 
     # Filterout reports which doesn't have to be reported
 
