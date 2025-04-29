@@ -80,7 +80,7 @@ class AoiModel(AoiModel):
 
         feature_collection = ee.FeatureCollection(
             {
-                "ADMIN0": "projects/ee-andyarnellgee/assets/crosscutting/GAUL_2024_L0_simplify_0_001deg",
+                "ADMIN0": "projects/ee-andyarnellgee/assets/crosscutting/GAUL_2024_L0_simplify_0_001deg_dice10k",
                 "ADMIN1": "projects/sat-io/open-datasets/FAO/GAUL/GAUL_2024_L1",
                 "ADMIN2": "projects/sat-io/open-datasets/FAO/GAUL/GAUL_2024_L2",
             }[self.method]
