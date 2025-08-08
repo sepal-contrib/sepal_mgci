@@ -1,12 +1,23 @@
 from copy import deepcopy
 from pathlib import Path
 from typing import Dict, Tuple
+import logging
+
+log = logging.getLogger("MGCI.reclassify_view")
+
 
 import ipyvuetify as v
 import pandas as pd
+from component.scripts.file_handler import df_to_csv, read_file
 import sepal_ui.sepalwidgets as sw
 from sepal_ui import color
 from sepal_ui.scripts import utils as su
+from sepal_ui.scripts.sepal_client import SepalClient
+from sepal_ui.sepalwidgets.file_input import FileInput
+from sepal_ui.sepalwidgets.btn import TaskButton
+from sepal_ui.solara import get_current_gee_interface
+from sepal_ui.scripts.gee_task import GEETask
+
 import sepal_ui.scripts.decorator as sd
 from sepal_ui.scripts.decorator import loading_button, switch
 from traitlets import Unicode, directional_link
@@ -15,12 +26,13 @@ from component.scripts.validation import (
     validate_remapping_table,
     validate_target_class_file,
 )
-import component.parameter.directory as dir_
+from component.parameter.directory import dir_
 import component.scripts.frequency_hist as scripts
 from component.message import cm
 from component.parameter.reclassify_parameters import MATRIX_NAMES
 from component.widget.reclassify.reclassify_model import ReclassifyModel
 from component.widget.base_dialog import BaseDialog
+import component.parameter.module_parameter as param
 
 __all__ = ["ReclassifyView"]
 
@@ -68,7 +80,7 @@ class ReclassifyView(sw.Card):
         self,
         model: ReclassifyModel = None,
         class_path=Path.home(),
-        out_path=dir_.MATRIX_DIR,
+        out_path=dir_.matrix_dir,
         gee=False,
         dst_class=None,
         default_class={},
@@ -79,11 +91,14 @@ class ReclassifyView(sw.Card):
         id_="",
         alert: sw.Alert = None,
         default_asset: list = [],
+        sepal_client: SepalClient = None,
         **kwargs,
     ):
         # create metadata to make it compatible with the framwork app system
         self._metadata = {"mount_id": "reclassify_tile"}
         self.attributes = {"id": f"reclassify_view_{id_}"}
+        self.id_ = id_
+        self._tasks: dict[str, GEETask] = {}
 
         # init card parameters
         self.class_ = "pa-5"
@@ -116,19 +131,31 @@ class ReclassifyView(sw.Card):
             su.init_ee()
         # create an alert to display information to the user
         self.alert = alert or sw.Alert()
-        self.btn_get_table = Btn(
-            children=[cm.reclass.get_classes],
-            color="primary",
-            small=True,
-            class_="ml-2",
-            attributes={"id": "btn_get_table"},
+
+        self.btn_get_table = TaskButton(cm.reclass.get_classes, small=True)
+
+        log.debug(
+            f">>>>>>>>>>>>>>>>>>>> Initializing AssetSelect for {self.id_} with default_asset={default_asset}"
         )
 
+        self._configure_tasks()
         self.w_ic_select = sw.AssetSelect(
+            folder=folder,
             types=["IMAGE_COLLECTION"],
             label=cm.reclass_view.ic_default_label,
             disabled=True,
-            default_asset=default_asset,
+            gee_interface=get_current_gee_interface(),
+            test=True,
+        )
+
+        def log_asset_change(change):
+            """Log the change of the asset selection"""
+            log.debug(f"AssetSelect changed to {change['new']}")
+
+        self.w_ic_select.observe(log_asset_change, "v_model")
+
+        log.debug(
+            f"++++++++++++++++++++++++++++++ AssetSelect id {id(self.w_ic_select)} created"
         )
 
         # Reuse component from a different instance or create a new one
@@ -148,12 +175,14 @@ class ReclassifyView(sw.Card):
             folder=out_path,
             error_alert=self.alert,
             attributes={"id": "2"},
+            sepal_client=sepal_client,
         )
         self.target_dialog = TargetClassesDialog(
             model=self.model,
             reclassify_table=self.reclassify_table,
             error_alert=self.alert,
             default_class=default_class,
+            sepal_client=sepal_client,
         )
 
         # create the layout
@@ -163,11 +192,6 @@ class ReclassifyView(sw.Card):
             self.import_dialog,
             self.target_dialog,
         ]
-
-        # Decorate functions
-        self.get_reclassify_table = loading_button(self.alert, self.btn_get_table)(
-            self.get_reclassify_table
-        )
 
         # Decorate functions
         self.load_matrix_content = loading_button(
@@ -193,10 +217,22 @@ class ReclassifyView(sw.Card):
         # Reset table everytime an image image collection is changed.
         self.w_ic_select.observe(self.set_ids, "v_model")
 
-    def load_matrix_content(self, *_):
-        if not self.import_dialog.w_map_matrix_file.v_model:
-            raise Exception(cm.reclass.dialog.import_.error.no_file)
+    def hide_button(self):
+        log.debug("Hiding button")
 
+        self.w_asset_selection.children = [
+            w for w in self.w_asset_selection.children if w != self.btn_get_table
+        ]
+
+    def show_button(self):
+        log.debug("Showing button")
+
+        self.w_asset_selection.children = [
+            self.w_ic_select,
+            self.btn_get_table,
+        ]
+
+    def load_matrix_content(self, *_):
         # exit if no table is loaded
         if not self.model.table_created:
             raise Exception(cm.reclass.dialog.import_.error.no_table)
@@ -204,7 +240,7 @@ class ReclassifyView(sw.Card):
         if not self.model.matrix_file:
             raise Exception(cm.reclass.dialog.import_.error.no_valid)
 
-        input_data = pd.read_csv(self.model.matrix_file)
+        input_data = read_file(self.model.matrix_file)
 
         # check that the destination values are all available
         widget = list(self.reclassify_table.class_select_list.values())[0]
@@ -232,12 +268,28 @@ class ReclassifyView(sw.Card):
 
         self.import_dialog.close_dialog()
 
+    def _configure_tasks(self) -> None:
+
+        gee_interface = get_current_gee_interface()
+
+        def set_ids(result):
+            """Set image collection ids to ic_items model attribute on change. set empty
+            table"""
+            log.debug("QQQQQQQQQQQQQQQQQQQQQQ Setting ids")
+            self.model.ic_items = result
+            # self.reclassify_table.set_table({}, {})
+
+        self._tasks["set_ic_items"] = gee_interface.create_task(
+            func=gee_interface.get_info_async, key="set_ic_items", on_done=set_ids
+        )
+
     def set_ids(self, change):
         """set image collection ids to ic_items model attribute on change. set empty
         table"""
 
-        self.model.ic_items = scripts.get_image_collection_ids(change["new"])
-        self.reclassify_table.set_table({}, {})
+        if change["new"]:
+            collection_ids = scripts.get_image_collection_ids(change["new"])
+            self._tasks["set_ic_items"].start(collection_ids)
 
     @sd.switch("loading", "disabled", on_widgets=["w_code"])
     def _update_band(self, change):
@@ -251,29 +303,15 @@ class ReclassifyView(sw.Card):
 
         return self
 
-    @sd.switch("table_created", on_widgets=["model"], targets=[True])
-    def get_reclassify_table(self, *_):
-        """
-        Display a reclassify table which will lead the user to select
-        a local code 'from user' to a target code based on a classes file
+    async def get_unique_classes(self):
+        return await scripts.get_unique_classes(self.model, self.w_ic_select.v_model)
 
-        Return:
-            self
-        """
-
-        image_collection = self.w_ic_select.v_model
-
-        # get the destination classes
+    def on_get_classes_done(self, result):
         self.model.dst_class = self.model.get_classes()
-
-        # get the src_classes and selected image collection items (aka images)
-        self.model.src_class = scripts.get_unique_classes(
-            self.model.aoi_model.feature_collection, image_collection
-        )
-
+        self.model.src_class = result
+        self.model.table_created = True
+        log.debug(f"//////////////////// on get_classes_done///////////////")
         self.reclassify_table.set_table(self.model.dst_class, self.model.src_class)
-
-        return self
 
     def nest_tile(self):
         """
@@ -313,14 +351,22 @@ class ImportMatrixDialog(BaseDialog):
 
     file = Unicode("").tag(sync=True)
 
-    def __init__(self, model: ReclassifyModel, folder, error_alert: sw.Alert, **kwargs):
+    def __init__(
+        self,
+        model: ReclassifyModel,
+        folder,
+        error_alert: sw.Alert,
+        sepal_client: SepalClient = None,
+        **kwargs,
+    ):
         self.model = model
 
-        self.w_map_matrix_file = sw.FileInput(
+        self.w_map_matrix_file = FileInput(
             label="filename",
-            folder=folder,
+            initial_folder=str(folder),
             attributes={"id": "1"},
-            root=dir_.RESULTS_DIR,
+            root=str(dir_.results_dir),
+            sepal_client=sepal_client,
         )
 
         content = [self.w_map_matrix_file]
@@ -345,7 +391,7 @@ class ImportMatrixDialog(BaseDialog):
             return
 
         # Get TextField from change widget
-        text_field_msg = change["owner"].children[-1]
+        text_field_msg = change["owner"]
         text_field_msg.error_messages = []
 
         self.model.matrix_file = validate_remapping_table(change["new"], text_field_msg)
@@ -438,7 +484,8 @@ class SaveMatrixDialog(BaseDialog):
 
         matrix = pd.DataFrame.from_dict(self._matrix, orient="index").reset_index()
         matrix.columns = MATRIX_NAMES
-        matrix.to_csv(file, index=False)
+
+        df_to_csv(df=matrix, file_path=file, index=False)
 
         # hide the dialog
         super().close_dialog()
@@ -479,6 +526,7 @@ class TargetClassesDialog(BaseDialog):
         reclassify_table,
         error_alert: sw.Alert,
         default_class: dict = {},
+        sepal_client: SepalClient = None,
     ):
         self.attributes = {"id": "target_classes_dialog"}
         self.model = model
@@ -490,13 +538,14 @@ class TargetClassesDialog(BaseDialog):
         # from default_class dictionary get the first value (it's the path of the default)
         self.dst_class_file = list(default_class.values())[0]
 
-        self.w_dst_class_file = sw.FileInput(
-            [".csv"],
+        self.w_dst_class_file = FileInput(
+            extensions=[".csv"],
             label=cm.rec.rec.input.classif.label,
-            folder=dir_.RESULTS_DIR,
-            root=dir_.RESULTS_DIR,
+            initial_folder=str(dir_.results_dir),
+            root=str(dir_.results_dir),
+            sepal_client=sepal_client,
         )
-        self.w_dst_class_file.select_file(self.dst_class_file)
+        # self.w_dst_class_file.select_file(self.dst_class_file)
 
         self.btn_list = [
             sw.Btn(
@@ -555,7 +604,7 @@ class TargetClassesDialog(BaseDialog):
             to_default (bool): whether to set the default class file or not. default to True
         """
 
-        to_default and self.w_dst_class_file.select_file(self.dst_class_file)
+        # to_default and self.w_dst_class_file.select_file(self.dst_class_file)
         super().close_dialog()
 
     def on_validate_input(self, change):
@@ -564,7 +613,7 @@ class TargetClassesDialog(BaseDialog):
         self.model.dst_class_file = None
 
         # Get TextField from change widget
-        text_field_msg = change["owner"].children[-1]
+        text_field_msg = change["owner"]
         text_field_msg.error_messages = []
 
         self.model.dst_class_file = validate_target_class_file(
@@ -591,9 +640,9 @@ class TargetClassesDialog(BaseDialog):
 
         if filename == "custom":
             self.w_dst_class_file.show()
-        else:
-            self.w_dst_class_file.hide()
-            self.w_dst_class_file.select_file(filename)
+        # else:
+        #     self.w_dst_class_file.hide()
+        # self.w_dst_class_file.select_file(filename)
 
         # change the visibility of the btns
         for btn in self.btn_list:
@@ -674,6 +723,7 @@ class ReclassifyTable(sw.Layout):
 
         self.toolbar = v.Toolbar(
             flat=True,
+            color="accent",
             children=[
                 default_lc_dialog,
                 cm.reclass.title,
@@ -799,7 +849,9 @@ class ReclassifyTable(sw.Layout):
 
         # reset the matrix
         self.progress.v_model = 0
+        log.debug("Setting matrix set_table")
         self.model.matrix = {code: 0 for code in src_classes.keys()}
+        log.debug("Set matrix set_table")
 
         # create the select list
         # they need to observe each other to adapt the available class list dynamically
@@ -861,7 +913,7 @@ class ReclassifyTable(sw.Layout):
 
         # bind it to classes in the dst classification
         temp_matrix[code] = change["new"] if change["new"] else 0
-
+        log.debug(f"Updating matrix value for {code} to {temp_matrix[code]}")
         self.model.matrix = temp_matrix
 
         return self
@@ -930,10 +982,10 @@ class InfoDialog(BaseDialog):
         finally:
             return
 
-    def get_table(self, lulc_classes_path: str = dir_.LOCAL_LC_CLASSES) -> BaseDialog:
+    def get_table(self, lulc_classes_path: str = param.LC_CLASSES) -> BaseDialog:
         # read csv
 
-        df = pd.read_csv(lulc_classes_path, header=0)
+        df = read_file(lulc_classes_path, header=0)
         headers = [cm.reclass.default_table.header[col] for col in df.columns.tolist()]
         content = df.values.tolist()
 

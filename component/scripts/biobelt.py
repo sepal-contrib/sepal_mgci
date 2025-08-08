@@ -6,6 +6,7 @@ import pandas as pd
 
 from component.message import cm
 from component.parameter.module_parameter import BIOBELT_LEGEND
+from sepal_ui.solara import get_current_gee_interface
 
 
 def unnest(group):
@@ -13,11 +14,13 @@ def unnest(group):
     return ee.List([[ee.String(d_group.get("group"))], [d_group.get("sum")]]).flatten()
 
 
-def get_belt_area(aoi, biobelt) -> tuple:
+async def get_belt_area(aoi, biobelt) -> tuple:
     """returns legend-dict"""
 
+    gee_interface = get_current_gee_interface()
+
     try:
-        area = (
+        area = await gee_interface.get_info_async(
             ee.List(
                 ee.Image.pixelArea()
                 .divide(1e6)  # To display in square kilometers
@@ -31,9 +34,7 @@ def get_belt_area(aoi, biobelt) -> tuple:
                     }
                 )
                 .get("groups")
-            )
-            .map(unnest)
-            .getInfo()
+            ).map(unnest)
         )
 
         df = pd.DataFrame(area, columns=["class", "area"])

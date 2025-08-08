@@ -1,6 +1,7 @@
 import pandas as pd
 
 import component.parameter.module_parameter as param
+from component.scripts.file_handler import read_file
 
 BELT_TABLE = pd.read_csv(param.BIOBELTS_DESC)
 "pd.Dataframe: bioclimatic belts classes and description"
@@ -81,7 +82,7 @@ def get_impact(row, transition_matrix: str):
     """
 
     # Read the transition matrix safely with pandas
-    transition_table = pd.read_csv(transition_matrix)
+    transition_table = read_file(transition_matrix)
 
     # Check that both
     if not all([row["from_lc"], row["to_lc"]]):

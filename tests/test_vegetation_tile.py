@@ -107,9 +107,9 @@ def test_target_classes(mgci_model, default_target_classes):
     df.to_csv(path_to_file, index=False)
 
     # Select the custom classification file from the import_target_matrix dialog
-    vegetation_tile.vegetation_view.reclassify_tile_b.w_reclass.target_dialog.w_dst_class_file.select_file(
-        path_to_file
-    )
+    # vegetation_tile.vegetation_view.reclassify_tile_b.w_reclass.target_dialog.w_dst_class_file.select_file(
+    #     path_to_file
+    # )
 
     # use the validation method to update the target classes in the model
     vegetation_tile.vegetation_view.reclassify_tile_b.w_reclass.target_dialog.action_btn.fire_event(

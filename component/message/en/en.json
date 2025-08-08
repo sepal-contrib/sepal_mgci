@@ -2,10 +2,10 @@
     "app": {
         "title" : "SDG Indicator 15.4.2",
         "drawer_item" : {
-            "aoi": "Area of Interest",
-            "vegetation" : "Land cover dataset",
-            "calculation" : "Indicator settings",
-            "dashboard" : "Results",
+            "aoi": "1. Area of Interest",
+            "vegetation" : "2. Land cover dataset",
+            "calculation" : "3. Indicator settings",
+            "dashboard" : "4. Results",
             "about" : "About",
             "task" : "Export from task",
             "disclaimer" : "Disclaimer"

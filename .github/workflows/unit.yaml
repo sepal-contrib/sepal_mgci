@@ -9,6 +9,7 @@ on:
 
 env:
   EARTHENGINE_TOKEN: ${{ secrets.EARTHENGINE_TOKEN }}
+  PYTHONUNBUFFERED: 1
 
 jobs:
   test:

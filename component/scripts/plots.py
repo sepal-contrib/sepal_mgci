@@ -7,6 +7,8 @@ from ipecharts.option import Option, Legend, Tooltip, XAxis, YAxis
 from ipecharts.option.series import Sankey
 from ipecharts.echarts import EChartsWidget
 
+from component.scripts.file_handler import read_file
+
 
 def get_sankey_chart():
 
@@ -30,7 +32,7 @@ def get_nodes_and_links(
     from_lc, to_lc = [str(y) for y in years]
 
     # Load labels dictionary
-    labels_df = pd.read_csv(lc_classes_path)
+    labels_df = read_file(lc_classes_path)
 
     # Generate a dictionary to map land cover classes to descriptions and colors
     desc_color_map = labels_df.set_index("lc_class")[["desc", "color"]].to_dict("index")

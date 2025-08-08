@@ -86,7 +86,7 @@ class LegendControl(LegendDashboard):
                 v.ProgressCircular(
                     indeterminate=True,
                 ),
-                " Calculating areas...",
+                " Calculating mountain area...",
             ]
         )
 

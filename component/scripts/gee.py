@@ -3,6 +3,11 @@
 from typing import Dict, List, Optional, Tuple
 import ee
 import pandas as pd
+from pathlib import Path
+
+from component.scripts.file_handler import read_file
+from sepal_ui.scripts.gee_interface import GEEInterface
+
 import component.parameter.module_parameter as param
 from component.scripts.surface_area import get_real_surface_area
 from component.parameter.module_parameter import transition_degradation_matrix
@@ -131,7 +136,7 @@ def reduce_regions(
         # When using rsa, we need to use the dem scale, otherwise
         # we will end with wrong results.
         image_area = get_real_surface_area(dem, aoi)
-        scale = scale or ee_lc_start.projection().nominalScale().getInfo()
+        scale = scale or ee_lc_start.projection().nominalScale()
     else:
         # Otherwise, we will use the coarse scale to the output.
         image_area = ee.Image.pixelArea()
@@ -139,7 +144,6 @@ def reduce_regions(
             ee_lc_start.projection()
             .nominalScale()
             .max(ee_lc_start.projection().nominalScale())
-            .getInfo()
         )
 
     if len(lc_years) == 3:
@@ -229,7 +233,7 @@ def get_transition(
     ee_start_base = no_remap(ee_start_base, remap_matrix).rename("land_cover_start")
     ee_end_base = no_remap(ee_end_base, remap_matrix).rename("land_cover_end")
     ee_report = no_remap(ee_report, remap_matrix).rename("land_cover_report")
-    transition_matrix = pd.read_csv(transition_matrix)
+    transition_matrix = read_file(transition_matrix)
 
     # Compute transition between baseline images
     baseline_transition = (
@@ -283,3 +287,10 @@ def get_transition(
 def read_asset(asset_id: str) -> ee.Image:
     """Converts an asset id to an ee.Image"""
     return ee.Image(asset_id)
+
+
+def get_gee_recipe_folder(recipe_name: str, gee_interface: GEEInterface) -> Path:
+    """Create a folder for the recipe in GEE"""
+
+    recipe_folder = Path("sepal_sdg15.4.2") / recipe_name
+    return Path(gee_interface.create_folder(recipe_folder))

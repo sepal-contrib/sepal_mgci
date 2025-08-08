@@ -1,8 +1,10 @@
+from io import BytesIO
 from typing import TYPE_CHECKING
+from component.scripts.file_handler import read_file
 from component.types import Pathlike
 import random
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Dict, List, Literal, Tuple, Union
 
 import ipyvuetify as v
@@ -13,7 +15,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment
 
 
-import component.parameter.directory as DIR
+from component.parameter.directory import dir_
 import component.parameter.module_parameter as param
 import component.scripts as cs
 from component.scripts import mountain_area as mntn
@@ -42,6 +44,7 @@ __all__ = [
     "parse_sub_b_year",
     "parse_result",
     "get_reporting_years",
+    "create_folder",
 ]
 
 
@@ -80,16 +83,23 @@ def get_mgci_color(mgci: float) -> str:
     return param.UPPER_THRESHOLDS[threshold]
 
 
-def get_report_folder(aoi_name: str) -> Path:
+def create_folder(folder, sepal_client=None) -> PurePosixPath:
+    if sepal_client:
+        return sepal_client.get_remote_dir(folder, parents=True)
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def get_report_folder(aoi_name: str, sepal_client=None) -> Path:
     """Get output report folder path
     args:
         aoi_name: coming from the aoi_model.name
     """
 
     # Create a folder to store multiple year reports from the same area
-    report_folder = DIR.REPORTS_DIR / f"SDG1542_{aoi_name}"
-    report_folder.mkdir(parents=True, exist_ok=True)
-    return report_folder
+    report_folder = dir_.reports_dir / f"SDG1542_{aoi_name}"
+
+    return create_folder(report_folder, sepal_client=sepal_client)
 
 
 def remove_duplicated_years(
@@ -430,7 +440,7 @@ def read_from_csv(task_file: Pathlike) -> dict:
         "report_transition",
     ]
     results = {}
-    raw_results_df = pd.read_csv(task_file)
+    raw_results_df = read_file(task_file)
 
     def read_line(line):
         return eval(
@@ -621,99 +631,7 @@ def export_reports(
     report_folder: str,
     session_id: str,
     which: Literal["both", "sub_a", "sub_b"] = "both",
-) -> None:
-    """
-    This function exports the reports of the model's results (calculation).
-    It separates the reports into two categories: sub_a_reports and sub_b_reports.
-    For each group in the results, it performs the following steps:
-        - Splits the group name by "_" to get the year(s)
-        - If there is only one year, it parses the result and appends the sub_a_report
-            to the sub_a_reports list
-        - If there are multiple years, it parses the result and for each year:
-            - Groups the parsed dataframe by belt_class and target_lc
-            - Renames the target_lc column to lc_class
-            - Appends the sub_a_report to the sub_a_reports list
-        - Appends the sub_b_report to the sub_b_reports list
-
-
-    Args:
-        results (dict): The results of the model's calculation
-        reporting_years_sub_a (dict): The reporting years for sub_a
-        sub_b_year (dict): The reporting years for sub_b (user's input)
-        geo_area_name (str): The name of the geographical area (calculated from the aoimodel)
-        ref_area (str): The reference area (calculated from the aoimodel)
-        source_detail (str): The source detail (from user's input)
-        transition_matrix (str): The transition matrix (from user's input)
-        output_folder (str): The output folder path
-        session_id (str): The session id randomy created by the model
-    """
-    output_folder = Path(report_folder)
-
-    sub_a_reports, mtn_reports = get_sub_a_data_reports(
-        results, reporting_years_sub_a, geo_area_name, ref_area, source_detail
-    )
-
-    sub_b_reports = get_sub_b_data_reports(
-        results, sub_b_year, transition_matrix, geo_area_name, ref_area, source_detail
-    )
-
-    # Concat all reports
-    mtn_reports_df = pd.concat(mtn_reports)
-
-    # sub a reports
-    er_mtn_grnvi_df = pd.concat([report[0] for report in sub_a_reports])
-    er_mtn_grncov_df = pd.concat([report[1] for report in sub_a_reports])
-
-    # sub b reports
-    er_mtn_dgrp_df = pd.concat([report[0] for report in sub_b_reports])
-    er_mtn_dgda_df = pd.concat([report[1] for report in sub_b_reports])
-
-    output_name = str(Path(output_folder, output_folder.name + f"{session_id}.xlsx"))
-
-    with pd.ExcelWriter(output_name) as writer:
-        mtn_reports_df.to_excel(writer, sheet_name="Table1_ER_MTN_TOTL", index=False)
-        er_mtn_grncov_df.to_excel(
-            writer, sheet_name="Table2_ER_MTN_GRNCOV", index=False
-        )
-        er_mtn_grnvi_df.to_excel(writer, sheet_name="Table3_ER_MTN_GRNCVI", index=False)
-        er_mtn_dgda_df.to_excel(writer, sheet_name="Table4_ER_MTN_DGRDA", index=False)
-        er_mtn_dgrp_df.to_excel(writer, sheet_name="Table5_ER_MTN_DGRDP", index=False)
-
-        for sheetname in writer.sheets:
-            worksheet = writer.sheets[sheetname]
-            for col in worksheet.columns:
-                max_length = 0
-                column = col[0]
-                for cell in col:
-                    try:
-                        if len(str(cell.value)) > max_length:
-                            max_length = len(cell.value)
-                    except:
-                        pass
-                adjusted_width = max(max_length, len(str(column.value))) + 4
-                worksheet.column_dimensions[get_column_letter(column.column)].width = (
-                    adjusted_width
-                )
-
-                # Align "obs_value" column to the right
-                if "OBS" in column.value:
-                    for cell in col:
-                        cell.alignment = Alignment(horizontal="right")
-
-    return output_name
-
-
-def export_reports(
-    results: dict,
-    reporting_years_sub_a: dict,
-    sub_b_year,
-    geo_area_name,
-    ref_area,
-    source_detail,
-    transition_matrix,
-    report_folder: str,
-    session_id: str,
-    which: Literal["both", "sub_a", "sub_b"] = "both",
+    sepal_client=None,
 ) -> str:
 
     output_folder = Path(report_folder)
@@ -723,7 +641,8 @@ def export_reports(
             Path(output_folder, output_folder.name + f"{session_id}_{which}.xlsx")
         )
 
-    with pd.ExcelWriter(output_name) as writer:
+    def build_excel_document(writer):
+
         if which in ["both", "sub_a"]:
             # Get and process Sub A reports
             sub_a_reports, mtn_reports = get_sub_a_data_reports(
@@ -787,7 +706,22 @@ def export_reports(
                     for cell in col:
                         cell.alignment = Alignment(horizontal="right")
 
-    return output_name
+    if not sepal_client:
+        with pd.ExcelWriter(output_name, engine="openpyxl") as writer:
+            build_excel_document(writer)
+        return output_name
+
+    else:
+        buffer = BytesIO()
+        with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+            build_excel_document(writer)
+        buffer.seek(0)
+        excel_bytes = buffer.getvalue()
+        # make sure the folder exists
+        sepal_client.get_remote_dir(output_folder, parents=True)
+        sepal_client.set_file(output_name, excel_bytes)
+
+        return output_name
 
 
 def map_matrix_to_dict(matrix_file_path: str):
@@ -800,7 +734,7 @@ def map_matrix_to_dict(matrix_file_path: str):
         list(
             zip(
                 *list(
-                    pd.read_csv(matrix_file_path)[["from_code", "to_code"]]
+                    read_file(matrix_file_path)[["from_code", "to_code"]]
                     .to_dict("list")
                     .values()
                 )
