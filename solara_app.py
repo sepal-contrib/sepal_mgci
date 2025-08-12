@@ -1,27 +1,26 @@
-from component.scripts.logger import setup_logging
-from component.widget.custom_widgets import AlertDialog
+from sepal_ui.logger import setup_logging
 
-setup_logging()
+logger = setup_logging(logger_name="MGCI")
 
 import solara
-import solara.server.settings
 from solara.lab.components.theming import theme
-from sepal_ui.scripts.utils import init_ee
-from sepal_ui.sepalwidgets.vue_app import ThemeToggle
-from sepal_ui.sepalwidgets.vue_app import MapApp
+
 import sepal_ui.sepalwidgets as sw
+from sepal_ui.scripts.utils import init_ee
+from sepal_ui.sepalwidgets.vue_app import ThemeToggle, MapApp
+from sepal_ui.solara.components.admin import AdminButton
 from sepal_ui.solara import (
     setup_sessions,
     with_sepal_sessions,
     get_current_gee_interface,
     get_current_sepal_client,
     get_current_drive_interface,
-    setup_theme_colors,
-    get_sessions_overview,
     get_current_session_info,
+    setup_theme_colors,
+    setup_solara_server,
 )
-from sepal_ui.solara.components.admin import AdminButton
 
+from component.widget.custom_widgets import AlertDialog
 from component.tile.calculation_tile import CalculationView
 from component.tile.dashboard_tile import DashViewA, DashViewB
 from component.tile.vegetation_tile import VegetationTile
@@ -30,14 +29,13 @@ from component.tile.task_tile import DownloadTaskView
 from component.model import MgciModel
 from component.message import cm
 from component.widget.mgci_map import MgciMap
-from component.parameter.directory import initialize_remote
 from component.widget.map import LayerHandler
+from component.parameter.directory import initialize_remote
 
-import logging
-
-logger = logging.getLogger("MGCI")
 logger.debug(">>>>>>>>>>> Starting MGCI application <<<<<<<<<<")
+
 init_ee()
+setup_solara_server()
 
 
 @solara.lab.on_kernel_start
@@ -45,16 +43,11 @@ def init_gee():
     return setup_sessions()
 
 
-solara.server.settings.assets.fontawesome_path = (
-    "/@fortawesome/fontawesome-free@6.7.2/css/all.min.css"
-)
-solara.server.settings.assets.extra_locations = ["./assets/"]
-solara.server.settings.kernel.cull_timeout = "0s"
-
-
 @solara.component
 @with_sepal_sessions(module_name="sdg_indicators/15.4.2")
 def Page():
+
+    logger.debug("Starting MGCI Page")
 
     setup_theme_colors()
     theme_toggle = ThemeToggle()
