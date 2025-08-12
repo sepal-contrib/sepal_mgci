@@ -262,7 +262,7 @@ class ReclassifyView(sw.Card):
         for _, row in input_data.iterrows():
             src_code, dst_code = row.from_code, row.to_code
             if str(src_code) in self.reclassify_table.class_select_list:
-                self.reclassify_table.class_select_list[str(src_code)].v_model = (
+                self.reclassify_table.class_select_list[str(src_code)].v_model = int(
                     dst_code
                 )
 
