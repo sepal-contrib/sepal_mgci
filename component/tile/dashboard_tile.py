@@ -127,6 +127,13 @@ class DashViewA(DashView):
 
         super().render_dashboard()
 
+        # Create title at render time when AOI is available
+        title = sw.Html(
+            tag="h3",
+            class_="mb-3",
+            children=[f"Sub-indicator A Dashboard - {self.model.get_geo_area_name()}"],
+        )
+
         df = cs.parse_to_year_a(
             self.model.results,
             self.model.reporting_years_sub_a,
@@ -145,7 +152,7 @@ class DashViewA(DashView):
         statistics = sw.Layout(
             attributes={"id": "render_sub_a"},
             class_="d-block",
-            children=[w_overall] + w_individual,
+            children=[title, w_overall] + w_individual,
         )
 
         self.results_dialog.set_content([statistics])
@@ -195,11 +202,19 @@ class DashViewB(DashView):
         # Observe reporting_years_{indicator} from model to update the year_select
 
         self.model.observe(self.set_years, "reporting_years_sub_b")
+        self.model.observe(
+            self.on_results_updated, "results"
+        )  # Update belt items when results change
         self.year_select.observe(self.set_belt_items, "v_model")
         self.belt_select.observe(self.update_sankey_data, "v_model")
         self.btn.on_event("click", self.render_dashboard)
 
         self.set_years({"new": self.model.reporting_years_sub_b})
+
+    def on_results_updated(self, change):
+        """Update belt items when results are updated"""
+        if change["new"] and self.year_select.v_model:
+            self.set_belt_items({"new": self.year_select.v_model})
 
     def set_belt_items(self, change):
         """Set the belt items in the belt_select widget based on the year selected
@@ -209,11 +224,10 @@ class DashViewB(DashView):
                 {"baseline": [year1, year2]} or,
                 {"report": [base_start, report_year]}
         """
-        print(change["new"])
 
         look_up_year = change["new"]
 
-        if not look_up_year:
+        if not look_up_year or not self.model.results:
             return
 
         df = cs.parse_sub_b_year(self.model.results, look_up_year)
@@ -260,11 +274,19 @@ class DashViewB(DashView):
         if not self.belt_select.v_model:
             raise Exception("Select a belt.")
 
-        # Create the sankey chart layout
+        # Create title at render time when AOI is available
+        title = sw.Html(
+            tag="h3",
+            class_="mb-3",
+            children=[f"Sub-indicator B Dashboard - {self.model.get_geo_area_name()}"],
+        )
+
+        # Create the sankey chart layout with proper width
         sankey_layout = sw.Layout(
             attributes={"id": "render_sub_b"},
             class_="d-block",
-            children=[self.chart],
+            style_="width: 100%; min-width: 800px;",  # Ensure proper width
+            children=[title, self.chart],
         )
 
         # Update the sankey data
