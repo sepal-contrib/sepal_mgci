@@ -17,8 +17,10 @@ from sepal_ui.solara import (
     get_current_sepal_client,
     get_current_drive_interface,
     setup_theme_colors,
-    get_session_info,
+    get_sessions_overview,
+    get_current_session_info,
 )
+from sepal_ui.solara.components.admin import AdminButton
 
 from component.tile.calculation_tile import CalculationView
 from component.tile.dashboard_tile import DashViewA, DashViewB
@@ -34,7 +36,7 @@ from component.widget.map import LayerHandler
 import logging
 
 logger = logging.getLogger("MGCI")
-logger.debug("Starting MGCI application...")
+logger.debug(">>>>>>>>>>> Starting MGCI application <<<<<<<<<<")
 init_ee()
 
 
@@ -65,6 +67,7 @@ def Page():
     gee_interface = get_current_gee_interface()
     drive_interface = get_current_drive_interface()
     sepal_client = get_current_sepal_client()
+    username = get_current_session_info()["username"]
 
     logger.debug(
         f"THIS IS THE GEE INTERFACE IM PASSING TO COMPONENTS {id(gee_interface)}..."
@@ -76,7 +79,7 @@ def Page():
     logger.debug("Map initialized")
     aoi_view = AoiView(map_=map_)
     logger.debug("AOI view initialized")
-    model = MgciModel(aoi_view.model, sepal_client=sepal_client)
+    model = MgciModel(aoi_view, sepal_client=sepal_client)
     logger.debug("Model initialized")
     vegetation_tile = VegetationTile(
         model=model, aoi_model=model.aoi_model, sepal_client=sepal_client, alert=alert
@@ -104,11 +107,7 @@ def Page():
     dash_view_a = DashViewA(model, alert=alert)
     dash_view_b = DashViewB(model, alert=alert)
 
-    # Debug button to log MGCI model
-    def log_mgci_model():
-        logger.debug(f"{model}")
-
-    debug_button = solara.Button("Debug MGCI Model", on_click=log_mgci_model)
+    solara_admin = AdminButton(username, model, logger_instance=logger)
 
     steps_data = [
         {
@@ -174,13 +173,17 @@ def Page():
             "title": "Sub indicator B",
             "icon": "mdi-chart-bar",
         },
-        {
-            "title": "Debug Tools",
-            "icon": "mdi-bug",
-            "content": [debug_button],
-            "description": "Debug tools for development and troubleshooting.",
-        },
     ]
+
+    if username == "admin":
+        extra_content_data.append(
+            {
+                "title": "Admin",
+                "icon": "mdi-shield-account",
+                "content": [solara_admin],
+                "description": "Admin tools for development and troubleshooting.",
+            }
+        )
 
     MapApp.element(
         app_title="SDG 15.4.2",
@@ -193,8 +196,3 @@ def Page():
         dialog_width=750,
         repo_url="https://github.com/sepal-contrib/sepal_mgci",
     )
-
-    sessions = get_session_info()
-    logger.debug(f"Current sessions: {sessions}")
-
-    logger.debug(model)
