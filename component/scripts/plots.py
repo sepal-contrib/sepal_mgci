@@ -17,7 +17,7 @@ def get_sankey_chart():
     sankey_data.links = []
     option = Option(series=[sankey_data], tooltip=Tooltip(), legend=Legend())
 
-    chart = EChartsWidget(option=option, style={"height": "700px", "width": "80%"})
+    chart = EChartsWidget(option=option, style={"height": "700px", "width": "100%"})
 
     return sankey_data, chart
 
@@ -32,7 +32,7 @@ def get_nodes_and_links(
     from_lc, to_lc = [str(y) for y in years]
 
     # Load labels dictionary
-    labels_df = read_file(lc_classes_path)
+    labels_df = pd.read_csv(lc_classes_path)
 
     # Generate a dictionary to map land cover classes to descriptions and colors
     desc_color_map = labels_df.set_index("lc_class")[["desc", "color"]].to_dict("index")

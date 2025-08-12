@@ -169,7 +169,7 @@ class ReclassifyModel(Model):
                 {code: (name, color)}
         """
 
-        df = read_file(self.dst_class_file)
+        df = read_file(str(self.dst_class_file))
 
         # save the df for reclassify usage
         class_list = {row.lc_class: (row.desc, row.color) for _, row in df.iterrows()}

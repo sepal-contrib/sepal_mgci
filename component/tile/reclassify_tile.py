@@ -67,7 +67,7 @@ class ReclassifyTile(sw.Layout):
             folder=folder,
             save=save,
             enforce_aoi=True,
-            dst_class_file=param.LC_CLASSES,
+            dst_class_file=str(dir_.class_dir / "default_lc_classification.csv"),
         )
 
         # set the tabs elements

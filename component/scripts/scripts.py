@@ -730,11 +730,13 @@ def map_matrix_to_dict(matrix_file_path: str):
     Args:
         matrix_file_path (pathlike):
     """
+    # This method is only called to use the default matrix, so
+    # We can use the module file
     return dict(
         list(
             zip(
                 *list(
-                    read_file(matrix_file_path)[["from_code", "to_code"]]
+                    pd.read_csv(matrix_file_path)[["from_code", "to_code"]]
                     .to_dict("list")
                     .values()
                 )

@@ -5,7 +5,7 @@ import pandas as pd
 
 from traitlets import Bool, Dict, List, Unicode, directional_link, link, observe
 
-from component.scripts.file_handler import df_to_csv
+from component.scripts.file_handler import df_to_csv, read_file
 import sepal_ui.sepalwidgets as sw
 
 from sepal_ui.sepalwidgets.file_input import FileInput
@@ -88,7 +88,10 @@ class TransitionMatrix(sw.Layout):
     show_matrix = Bool(True).tag(sync=True)
     "bool: either to show or hide the impact matrix and replace by input file widget"
 
-    transition_matrix = Unicode(str(param.TRANSITION_MATRIX_FILE)).tag(sync=True)
+    transition_matrix = Unicode(str(dir_.transition_dir / "transition_matrix.csv")).tag(
+        sync=True
+    )
+
     "str: path to the transition matrix file"
 
     def __init__(self, model: MgciModel = None, sepal_client: SepalClient = None):
@@ -102,7 +105,7 @@ class TransitionMatrix(sw.Layout):
             sepal_client=sepal_client
         )
         self.transition_matrix_view = TransitionMatrixInput(
-            transition_matrix_file=str(param.TRANSITION_MATRIX_FILE),
+            transition_matrix_file=str(dir_.transition_dir / "transition_matrix.csv"),
             classes=self.CLASSES,
             decode_options=param.DECODE,
         )
@@ -234,7 +237,7 @@ class TransitionMatrixInput(v.VuetifyTemplate, sw.SepalWidget):
             self.loading = True
 
             # Read the default transition matrix
-            self.default_df = pd.read_csv(self.transition_matrix)
+            self.default_df = read_file(self.transition_matrix)
             self.edited_df = self.default_df.copy()
 
             # Convert dataframe to format expected by Vue component
