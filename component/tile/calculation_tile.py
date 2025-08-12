@@ -239,16 +239,33 @@ class CalculationView(sw.Card):
         )
 
         if which == "sub_a" or which == "both":
-            if not self.model.matrix_sub_a:
-                raise Exception(
-                    "No remap matrix for subindicator A, please remap your data in the previous step."
-                )
+            # Only check matrix if reclassification is needed
+            # Custom LULC + No reclassify = matrix not needed
+            if self.model.answer_custom_lulc and not self.model.answer_need_reclassify:
+                pass  # Matrix not required
+            else:
+                # Either using default LULC or custom LULC that needs reclassification
+                if not self.model.matrix_sub_a or not any(
+                    self.model.matrix_sub_a.values()
+                ):
+                    raise Exception(
+                        "No remap matrix for subindicator A, please remap your data in the previous step."
+                    )
 
         if which == "sub_b" or which == "both":
-            if not self.model.matrix_sub_b:
-                raise Exception(
-                    "No remap matrix for subindicator B, please remap your data in the previous step."
-                )
+            # Only check matrix if reclassification is needed
+            # Custom LULC + No reclassify = matrix not needed
+            if self.model.answer_custom_lulc and not self.model.answer_need_reclassify:
+                pass  # Matrix not required
+            else:
+                # Either using default LULC or custom LULC that needs reclassification
+                if not self.model.matrix_sub_b or not any(
+                    self.model.matrix_sub_b.values()
+                ):
+                    raise Exception(
+                        "No remap matrix for subindicator B, please remap your data in the previous step."
+                    )
+
             if not self.model.transition_matrix:
                 raise Exception(
                     "No transition matrix for subindicator B, please upload one in the previous step."
@@ -277,15 +294,17 @@ class CalculationView(sw.Card):
         self.model.done = False
 
         # As pre step, make sure model.matrix_sub_a and model.matrix_sub_b are
-        # dictionaries of int keys and int values
+        # dictionaries of int keys and int values, but only if they're not empty
 
-        self.model.matrix_sub_a = {
-            int(k): int(v) for k, v in self.model.matrix_sub_a.items()
-        }
+        if self.model.matrix_sub_a:
+            self.model.matrix_sub_a = {
+                int(k): int(v) for k, v in self.model.matrix_sub_a.items()
+            }
 
-        self.model.matrix_sub_b = {
-            int(k): int(v) for k, v in self.model.matrix_sub_b.items()
-        }
+        if self.model.matrix_sub_b:
+            self.model.matrix_sub_b = {
+                int(k): int(v) for k, v in self.model.matrix_sub_b.items()
+            }
 
         aoi_name = self.model.aoi_model.name
         report_folder = cs.get_report_folder(aoi_name, sepal_client=self.sepal_client)
