@@ -132,7 +132,7 @@ class ExportMapDialog(v.Dialog):
             "description": layer_name,
             "scale": self.w_scale.v_model,
             "region": aoi.geometry(),
-            "maxPixels": 1e13,
+            "max_pixels": 1e13,
         }
 
         # launch the task
