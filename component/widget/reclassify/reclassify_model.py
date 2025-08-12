@@ -9,6 +9,10 @@ import rasterio as rio
 from matplotlib.colors import to_rgba
 from natsort import natsorted
 from rasterio.windows import from_bounds
+
+from sepal_ui.solara import get_current_gee_interface
+
+from component.scripts.file_handler import read_file
 from sepal_ui.model import Model
 from sepal_ui.scripts import gee
 from sepal_ui.scripts import utils as su
@@ -16,7 +20,9 @@ from traitlets import Any, Bool, Dict, Int, List, Unicode
 
 from component.message import cm
 from component.parameter.reclassify_parameters import NO_VALUE
+import logging
 
+log = logging.getLogger("MGCI.reclassify_model")
 __all__ = ["ReclassifyModel"]
 
 
@@ -126,13 +132,13 @@ class ReclassifyModel(Model):
         # save relation with gee
         self.gee = gee
 
+        self.gee_interface = get_current_gee_interface()
+
         if self.gee:
             su.init_ee()
 
         if self.gee:
-            self.folder = folder or Path(
-                f"projects/{ee.data._cloud_api_user_project}/assets/"
-            )
+            self.folder = folder or self.gee_interface.get_folder()
         else:
             self.folder = None
 
@@ -163,14 +169,7 @@ class ReclassifyModel(Model):
                 {code: (name, color)}
         """
 
-        if not self.dst_class_file:
-            raise AttributeError("missing file")
-
-        path = Path(self.dst_class_file)
-        if not path.is_file():
-            raise Exception(f"{self.dst_class_file} does not exist.")
-
-        df = pd.read_csv(self.dst_class_file)
+        df = read_file(str(self.dst_class_file))
 
         # save the df for reclassify usage
         class_list = {row.lc_class: (row.desc, row.color) for _, row in df.iterrows()}
@@ -190,7 +189,7 @@ class ReclassifyModel(Model):
             if not self.src_gee:
                 raise Exception("Missing gee input")
 
-            asset_info = ee.data.getAsset(self.src_gee)["type"]
+            asset_info = self.gee_interface.get_asset(self.src_gee)["type"]
 
             if asset_info == "TABLE":
                 self.input_type = False
@@ -223,11 +222,13 @@ class ReclassifyModel(Model):
 
         @su.need_ee
         def _ee_image():
-            return ee.Image(self.src_gee).bandNames().getInfo()
+            return self.gee_interface.get_info(ee.Image(self.src_gee).bandNames())
 
         @su.need_ee
         def _ee_vector():
-            columns = ee.FeatureCollection(self.src_gee).first().getInfo()["properties"]
+            columns = self.gee_interface.get_info(
+                ee.FeatureCollection(self.src_gee).first().get("properties")
+            )
 
             return (
                 str(c)
@@ -302,8 +303,8 @@ class ReclassifyModel(Model):
 
             # Remove all the unnecessary reducer output structure and make a
             # list of values.
-            values = (
-                ee.Dictionary(reduction.get(image.bandNames().get(0))).keys().getInfo()
+            values = self.gee_interface.get_info(
+                ee.Dictionary(reduction.get(image.bandNames().get(0))).keys()
             )
 
             return values
@@ -315,8 +316,8 @@ class ReclassifyModel(Model):
             geometry = aoi.geometry()
 
             # get the feature
-            values = (
-                collection.filterBounds(geometry).aggregate_array(self.band).getInfo()
+            values = self.gee_interface.get_info(
+                collection.filterBounds(geometry).aggregate_array(self.band)
             )
 
             return list(set(values))
@@ -414,20 +415,6 @@ class ReclassifyModel(Model):
 
             # save the file in a in_memeory variable
             self.dst_gee_memory = ee_image
-
-            if self.save:
-                # export
-                params = {
-                    "image": ee_image,
-                    "assetId": self.dst_gee,
-                    "description": Path(self.dst_gee).stem,
-                    "scale": ee_image.projection().nominalScale().getInfo(),
-                    "maxPixels": 1e13,
-                    "pyramidingPolicy": {".default": "mode"},
-                }
-
-                task = ee.batch.Export.image.toAsset(**params)
-                task.start()
 
             return self.dst_gee
 
@@ -588,7 +575,9 @@ class ReclassifyModel(Model):
         dst_gee = str(Path(self.folder, asset_name))
 
         # check if the name already exist
-        current_assets = [asset["name"] for asset in gee.get_assets(self.folder)]
+        current_assets = [
+            asset["name"] for asset in self.gee_interface.get_assets(self.folder)
+        ]
 
         # An user could reclassify twice an asset,
         # So let's create an unique name

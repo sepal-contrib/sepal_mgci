@@ -1,16 +1,19 @@
 from typing import Dict, Tuple
 import pandas as pd
+from component.model.model import MgciModel
+from component.parameter.module_parameter import LULC_DEFAULT
 from component.parameter.reclassify_parameters import NO_VALUE, MATRIX_NAMES
 from component.message import cm
+from component.scripts.file_handler import df_to_csv, read_file
 from .scripts import set_transition_code
 import ipyvuetify as v
 
 
-def read_file(file_, text_field_msg):
+def read_file_with_message(file_, text_field_msg):
     """Read csv file and return a dataframe"""
     try:
         # Read csv file
-        df = pd.read_csv(file_)
+        df = read_file(file_)
         # remove white spaces from column names
 
         # I cannot modify the dataframe
@@ -43,7 +46,7 @@ def validate_transition_matrix(
     lulc_classes_sub_b: dict in the form key: value, where key is the land cover class code and value is a tuple of description and color.
     """
 
-    df = read_file(file_, text_field_msg)
+    df = read_file_with_message(file_, text_field_msg)
 
     # Define column requirements for each type
     column_requirements = {
@@ -109,7 +112,7 @@ def validate_transition_matrix(
     df = set_transition_code(df)
 
     # Save and replace the file
-    df.to_csv(file_, index=False)
+    df_to_csv(df=df, file_path=file_, index=False)
 
     return file_
 
@@ -124,7 +127,7 @@ def validate_target_class_file(file_, text_field_msg):
     - color: The color to use for the land cover class
     """
 
-    df = read_file(file_, text_field_msg)
+    df = read_file_with_message(file_, text_field_msg)
 
     # Define column requirements
     req_cols = ["lc_class", "desc", "color"]
@@ -167,7 +170,7 @@ def validate_target_class_file(file_, text_field_msg):
 def validate_remapping_table(file_, text_field_msg):
     """Validate the remapping table file that is used to reclassify the input asset"""
 
-    df = read_file(file_, text_field_msg).fillna(NO_VALUE)
+    df = read_file_with_message(file_, text_field_msg).fillna(NO_VALUE)
 
     column_requirements = {
         "required_cols": MATRIX_NAMES,
@@ -201,37 +204,63 @@ def validate_remapping_table(file_, text_field_msg):
     return file_
 
 
-def validate_calc_params(calc_a: bool, calc_b: bool, sub_a_year, sub_b_year, sub_b_val):
+def validate_model(model: MgciModel):
+    """Validate the MgciModel instance to ensure all required properties are set correctly."""
+
+    if not model.aoi_model.feature_collection:
+        raise ValueError("You have to select an AOI first.")
+
+    if model.answer_custom_lulc and model.lc_asset_sub_a == LULC_DEFAULT:
+        raise ValueError(
+            "You cannot use the default land use/land cover asset if you have answered that you want to use a custom land use/land cover map in the questionnaire. \n Please go to the 2 step and use a custom land use/land cover map."
+        )
+
+
+def validate_calc_params(
+    calc_a: bool, calc_b: bool, sub_a_year, sub_b_year, sub_b_val_errors
+):
+    sub_a_errors = []
+    sub_b_errors = []
+    general_errors = []
+
     if calc_a:
-        if not any([calc_a, calc_b]):
-            raise Exception(cm.calculation.error.no_subind)
-
-        else:
-            if all([not sub_a_year, not sub_b_year]):
-                raise Exception(cm.calculation.error.no_years)
-
-        # Check that all subindicator A have
-
         if not sub_a_year:
-            raise Exception("Subindicator A has no years selected")
-
+            sub_a_errors.append("has no years selected")
         else:
             for idx, year in sub_a_year.items():
                 if not year.get("asset"):
-                    raise Exception(f"Item {idx} has no asset selected")
+                    sub_a_errors.append(f"Item {idx} has no asset selected")
                 if not year.get("year"):
-                    raise Exception(f"Item {idx} has no year selected")
+                    sub_a_errors.append(f"Item {idx} has no year selected")
 
     if calc_b:
         if not sub_b_year:
-            raise Exception("Subindicator B has no years selected")
+            sub_b_errors.append("has no years selected")
 
-        if sub_b_val:
-            if sub_b_val.errors:
-                raise Exception("Subindicator B has errors")
+        if sub_b_val_errors:
+            sub_b_errors.append(f"has errors: {sub_b_val_errors}")
 
     if not any([calc_a, calc_b]):
-        raise Exception("Please select at least one subindicator")
+        general_errors.append("Please select at least one subindicator")
+
+    if all([not sub_a_year, not sub_b_year]) and any([calc_a, calc_b]):
+        general_errors.append(str(cm.calculation.error.no_years))
+
+    # Combine all errors with proper labeling
+    all_errors = []
+
+    if sub_a_errors:
+        all_errors.append(f"Sub indicator A: {'; '.join(sub_a_errors)}")
+
+    if sub_b_errors:
+        all_errors.append(f"Sub indicator B: {'; '.join(sub_b_errors)}")
+
+    if general_errors:
+        all_errors.extend(general_errors)
+
+    # Raise all errors together if any exist
+    if all_errors:
+        raise Exception(". ".join(all_errors))
 
 
 def validate_sankey_classes(df_sankey: pd.DataFrame, color_dict: dict) -> None:

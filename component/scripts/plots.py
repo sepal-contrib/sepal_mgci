@@ -7,6 +7,8 @@ from ipecharts.option import Option, Legend, Tooltip, XAxis, YAxis
 from ipecharts.option.series import Sankey
 from ipecharts.echarts import EChartsWidget
 
+from component.scripts.file_handler import read_file
+
 
 def get_sankey_chart():
 
@@ -15,7 +17,7 @@ def get_sankey_chart():
     sankey_data.links = []
     option = Option(series=[sankey_data], tooltip=Tooltip(), legend=Legend())
 
-    chart = EChartsWidget(option=option, style={"height": "700px", "width": "80%"})
+    chart = EChartsWidget(option=option, style={"height": "700px", "width": "100%"})
 
     return sankey_data, chart
 

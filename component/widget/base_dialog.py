@@ -6,7 +6,7 @@ class BaseDialog(v.Dialog):
     def __init__(self, title: str, action_text: str, content: list, *args, **kwargs):
         kwargs["persistent"] = kwargs.get("persistent", False)
         kwargs["v_model"] = kwargs.get("v_model", False)
-        kwargs["max_width"] = 850
+        kwargs["max_width"] = 950
         kwargs["overlay_opacity"] = 0.7
 
         super().__init__(*args, **kwargs)

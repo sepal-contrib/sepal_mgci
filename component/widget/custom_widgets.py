@@ -55,13 +55,13 @@ class Tabs(v.Card):
             ),
         ]
 
-        self.children = self.tabs + self.content + [rt]
+        self.children = self.tabs + self.content  # + [rt]
 
         link((self.tabs[0], "v_model"), (self.content[0], "v_model"))
 
         super().__init__(**kwargs)
 
-        self.content[0].observe(lambda *_: rt.resize(), "v_model")
+        # self.content[0].observe(lambda *_: rt.resize(), "v_model")
 
 
 class Alert(sw.Alert):
@@ -135,10 +135,11 @@ class AlertDialog(sw.Dialog):
         )
         self.children = [
             sw.Card(
+                class_="pt-4",
                 children=[
                     self.w_alert,
                     sw.CardActions(children=[btn_close]),
-                ]
+                ],
             )
         ]
         btn_close.on_event("click", lambda *_: setattr(self, "v_model", False))

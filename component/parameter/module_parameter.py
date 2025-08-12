@@ -94,16 +94,6 @@ UNITS = {
 
 LC_COLOR = pd.read_csv(LC_CLASSES, index_col=0)
 
-TRANSITION_MATRIX = pd.read_csv(TRANSITION_MATRIX_FILE)
-
-# Get the unique values from the transition matrix table.
-impact_table = (
-    TRANSITION_MATRIX.groupby(["impact", "impact_code"])
-    .count()
-    .reset_index()[["impact", "impact_code"]]
-)
-
-
 transition_degradation_matrix = pd.read_csv(TRANSITION_DEGRADATION_MATRIX_FILE)
 
 

@@ -1,36 +1,31 @@
-from ipyleaflet import WidgetControl
+from eeclient.client import EESession
+
 import ipyvuetify as v
 
 import sepal_ui.sepalwidgets as sw
 from sepal_ui.mapping import SepalMap
-from sepal_ui.mapping.map_btn import MapBtn
-from sepal_ui.mapping import InspectorControl
-import sepal_ui.scripts.decorator as su
-
+from sepal_ui.sepalwidgets.btn import TaskButton
+from sepal_ui.solara import get_current_gee_interface
 
 from component.model.model import MgciModel
-import component.parameter.visualization as visuals
 from component.scripts.layers import get_layer_a, get_layer_b
-from component.widget.custom_widgets import AlertDialog
 from component.widget.export_dialog import ExportMapDialog
 from component.widget.legend_control import LegendDashboard
 from component.message import cm
 
 
-class LayerHandler(sw.Card):
-    def __init__(self, map_: "Map", model: MgciModel):
-        self.width = "450px"
+class LayerHandler(sw.Layout):
+    def __init__(self, map_: "Map", model: MgciModel, alert: sw.Alert = None):
         self.map_ = map_
 
-        self.alert = sw.Alert()
-        alert_dialog = AlertDialog(w_alert=self.alert)
+        self.alert = alert or sw.Alert()
 
-        self.map_.add_legend(
-            "lc_legend", "Land cover", visuals.LEGENDS["land_cover"], vertical=False
-        )
-        self.map_.add_legend(
-            "deg_legend", "Degradation", visuals.LEGENDS["degradation"]
-        )
+        # self.map_.add_legend(
+        #     "lc_legend", "Land cover", visuals.LEGENDS["land_cover"], vertical=False
+        # )
+        # self.map_.add_legend(
+        #     "deg_legend", "Degradation", visuals.LEGENDS["degradation"]
+        # )
 
         self.class_ = "d-block pa-2"
         self.model = model
@@ -46,17 +41,26 @@ class LayerHandler(sw.Card):
             items=[],
             v_model=[],
             label="Layers",
-            class_="mr-2",
         )
-        self.btn = sw.Btn("", gliph="mdi-plus")
-        self.btn.v_icon.left = False
+
+        self.btn = TaskButton("Add layer", small=True, block=True)
+
+        # Create export button and dialog
+        self.btn_export = sw.Btn("Export layer", small=True, block=True)
+        self.export_dialog = ExportMapDialog(
+            model=self.model,
+            w_layers=self.w_layers,
+            alert=self.alert,
+            gee_interface=get_current_gee_interface(),
+        )
 
         self.children = [
-            v.Row(no_gutters=True, align="center", children=[self.w_layers, self.btn]),
-            alert_dialog,
+            v.Col(children=[self.w_layers]),
+            v.Col(children=[self.btn], class_="pt-0"),
+            v.Col(children=[self.btn_export], class_="pt-2"),
+            self.export_dialog,
         ]
 
-        self.btn.on_event("click", self.add_layer)
         self.model.observe(self.update_layer_list, "sub_a_year")
         self.model.observe(self.update_layer_list, "sub_b_year")
 
@@ -64,12 +68,17 @@ class LayerHandler(sw.Card):
         self.update_layer_list({"name": "sub_a_year", "new": self.model.sub_a_year})
         self.update_layer_list({"name": "sub_b_year", "new": self.model.sub_b_year})
 
+        self._configure_task_button()
+
+        # Configure export button
+        self.btn_export.on_event("click", self.export_dialog.open_dialog)
+
     def update_layer_list(self, change):
         """Update w_layers with the layers selected by the user"""
 
         # I need two sublists, one for each subindicator
         # either case, remove all layers from map
-        self.map_.remove_all()
+        self.map_.remove_all(keep_names=["AOI", cm.aoi.legend.belts])
 
         # First check if both "year" and "asset" are not empty on all model.sub_a_year.values()
         subindicator = change["name"]
@@ -181,18 +190,36 @@ class LayerHandler(sw.Card):
         else:
             self.w_layers.items = []
 
-    @su.loading_button()
-    def add_layer(self, *_):
+    def _configure_task_button(self):
+        """Configure the task button to add the layer"""
+        gee_interface = get_current_gee_interface()
+
+        def add_layer():
+            def callback(*args):
+                pass
+
+            return gee_interface.create_task(
+                func=self.add_layer_async,
+                key="add_layer",
+                on_done=callback,
+                on_error=lambda e: self.alert.add_msg(str(e), type_="error"),
+            )
+
+        self.btn.configure(task_factory=add_layer)
+
+    async def add_layer_async(self, *_):
         """Get the layers from the model
 
         Args:
             selection: the selection from the w_layers widget
         """
+        if not self.model.aoi_model.feature_collection:
+            raise Exception(cm.error.no_aoi)
 
         selection = self.w_layers.v_model
 
-        if not self.model.aoi_model.feature_collection:
-            raise Exception(cm.error.no_aoi)
+        if not selection:
+            raise Exception("No layer selected")
 
         aoi = self.model.aoi_model.feature_collection.geometry()
 
@@ -212,20 +239,26 @@ class LayerHandler(sw.Card):
         else:
             raise Exception("No valid layer selected")
 
-        self.map_.addLayer(layer, vis_params, selection[2])
-        self.map_.centerObject(aoi)
+        coords = await self.map_.gee_interface.get_info_async(
+            aoi.bounds().coordinates().get(0)
+        )
+        self.map_.zoom_bounds((*coords[0], *coords[2]))
+
+        await self.map_.add_ee_layer_async(
+            layer, vis_params=vis_params, name=selection[2]
+        )
 
 
 class Map(SepalMap):
     """Custom Map"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, gee_interface: EESession, **kwargs):
         default_basemap = (
             "CartoDB.DarkMatter" if v.theme.dark is True else "CartoDB.Positron"
         )
         basemaps = [default_basemap] + ["SATELLITE"]
 
-        super().__init__(basemaps=basemaps, **kwargs)
+        super().__init__(basemaps=basemaps, gee_interface=gee_interface, **kwargs)
 
         self.add_class("results_map")
 
@@ -255,29 +288,3 @@ class Map(SepalMap):
         )
 
         return self.add(self.legend)
-
-
-class MapView(sw.Card):
-    def __init__(self, model: MgciModel):
-        super().__init__()
-        self.model = model
-
-        self.map_ = Map()
-        inspector_control = InspectorControl(self.map_)
-
-        btn = MapBtn(content="mdi-download")
-
-        download_control = WidgetControl(widget=btn, position="topleft")
-
-        layer_handler = LayerHandler(self.map_, self.model)
-        layer_control = WidgetControl(widget=layer_handler, position="topleft")
-
-        self.map_.add_control(layer_control)
-        self.map_.add_control(download_control)
-        self.map_.add_control(inspector_control)
-
-        self.export_dialog = ExportMapDialog(self.model, layer_handler.w_layers)
-
-        self.children = [self.export_dialog, self.map_]
-
-        btn.on_event("click", self.export_dialog.open_dialog)

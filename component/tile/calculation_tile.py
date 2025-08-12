@@ -2,47 +2,34 @@ from datetime import datetime
 
 import ee
 import ipyvuetify as v
+from traitlets import Bool, Int, directional_link, link
+
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
 import sepal_ui.scripts.decorator as sd
-from traitlets import Bool, Int, directional_link, link
-import component.parameter.directory as DIR
+from sepal_ui.scripts.gee_interface import GEEInterface
+from sepal_ui.sepalwidgets.btn import TaskButton
+
+
+from component.parameter.directory import dir_
 from component.scripts.deferred_calculation import perform_calculation, task_process
 import component.scripts as cs
-from component.scripts.validation import validate_calc_params
+from component.scripts.validation import validate_calc_params, validate_model
 import component.widget as cw
 from component.message import cm
 from component.model.model import MgciModel
 
 __all__ = ["CalculationTile"]
 
+import logging
 
-class CalculationTile(v.Layout, sw.SepalWidget):
-    def __init__(self, model, *args, **kwargs):
-        self.class_ = "d-block"
-        self._metadata = {"mount_id": "calculation_tile"}
-
-        super().__init__(*args, **kwargs)
-
-        self.model = model
-
-        self.calculation_view = CalculationView(self.model)
-
-        self.children = [
-            cw.Tabs(
-                titles=[
-                    "Calculation",
-                ],
-                content=[
-                    self.calculation_view,
-                ],
-                class_="mb-2",
-            ),
-        ]
+log = logging.getLogger("MGCI")
 
 
 class CalculationView(sw.Card):
-    def __init__(self, model: MgciModel, *args, **kwargs):
+    def __init__(
+        self, model: MgciModel, sepal_client=None, gee_interface=None, *args, **kwargs
+    ):
         """Dashboard tile to calculate and resume the zonal statistics for the
         vegetation layer by biobelt.
 
@@ -50,8 +37,11 @@ class CalculationView(sw.Card):
             model (MgciModel): Mgci Model
 
         """
-
+        self.sepal_client = sepal_client
+        self.gee_interface = gee_interface
         self.class_ = "pa-2"
+        self.elevation = 0
+
         self.attributes = {"id": "calculation_view"}
 
         super().__init__(*args, **kwargs)
@@ -59,7 +49,7 @@ class CalculationView(sw.Card):
         self.model = model
         self.calculation = cw.Calculation(self.model)
 
-        title = v.CardTitle(children=[cm.dashboard.title])
+        title = v.CardTitle(children=[cm.dashboard.title], class_="px-0 mx-0")
         description = v.CardText(children=[cm.dashboard.description])
 
         v.Icon(children=["mdi-help-circle"], small=True)
@@ -114,7 +104,7 @@ class CalculationView(sw.Card):
         )
 
         advanced_options = v.ExpansionPanels(
-            class_="mb-2",
+            class_="my-2",
             v_model=True,
             children=[
                 v.ExpansionPanel(
@@ -135,20 +125,27 @@ class CalculationView(sw.Card):
         )
 
         # buttons
-        self.btn = sw.Btn(cm.dashboard.label.calculate)
+        self.btn = TaskButton(cm.dashboard.label.calculate, small=True)
         self.btn_export = sw.Btn(
-            cm.dashboard.label.download, class_="ml-2", disabled=True
+            cm.dashboard.label.download, class_="ml-2", disabled=True, small=True
+        )
+
+        buttons = v.Flex(
+            class_="mt-4",
+            children=[
+                self.btn,
+                self.btn_export,
+            ],
         )
 
         self.alert = cw.Alert()
 
         self.children = [
-            title,
+            # title,
             # description,
             self.calculation,
             advanced_options,
-            self.btn,
-            self.btn_export,
+            buttons,
             self.alert,
         ]
 
@@ -159,11 +156,13 @@ class CalculationView(sw.Card):
         directional_link((self.w_use_rsa, "v_model"), (self.model, "rsa"))
 
         self.btn_export.on_event("click", self.export_results)
-        self.btn.on_event("click", self.run_statistics)
+        # self.btn.on_event("click", self.run_statistics)
         self.model.observe(self.activate_download, "done")
 
         self.model.observe(lambda *_: self.alert.reset(), "sub_a_year")
         self.model.observe(lambda *_: self.alert.reset(), "sub_b_year")
+
+        self._configure_statistics_button()
 
     def activate_download(self, change):
         """Verify if the process is done and activate button"""
@@ -173,7 +172,6 @@ class CalculationView(sw.Card):
 
         self.btn_export.disabled = True
 
-    @su.loading_button()
     def export_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 
@@ -193,13 +191,19 @@ class CalculationView(sw.Card):
         self.alert.add_msg("Exporting tables...")
 
         aoi_name = self.model.aoi_model.name
-        report_folder = cs.get_report_folder(aoi_name)
+        report_folder = cs.get_report_folder(aoi_name, sepal_client=self.sepal_client)
 
         if not self.model.aoi_model.feature_collection:
             raise Exception(cm.error.no_aoi)
 
         output_report_path = cs.export_reports(
-            results=self.model.results, **self.model.get_data(), which=which
+            results=self.model.results,
+            **self.model.get_data(),
+            which=which,
+            sepal_client=self.sepal_client,
+        )
+        log.debug(
+            f"Exported results to {output_report_path} for {which} in {report_folder}"
         )
         download_link = su.create_download_link(output_report_path)
         msg = sw.Markdown(
@@ -207,12 +211,7 @@ class CalculationView(sw.Card):
         )
         self.alert.add_msg(msg, type_="success")
 
-    @su.loading_button()
-    def run_statistics(self, *args):
-        """Start the calculation of the statistics. It will start the process on the fly
-        or making a task in the background depending if the rsa is selected or if the
-        computation is taking so long."""
-        # Clear previous loaded results
+    async def async_perform_calculation(self):
 
         area_type = (
             cm.dashboard.label.rsa_name
@@ -221,14 +220,16 @@ class CalculationView(sw.Card):
         )
 
         # Catch errors from the ui validation
-        sub_b_val = self.get_children(id_="custom_list_sub_b")[0]
+        sub_b_val_errors = self.calculation.w_content_b.errors
+
+        validate_model(self.model)
 
         validate_calc_params(
             self.model.calc_a,
             self.model.calc_b,
             self.model.sub_a_year,
             self.model.sub_b_year,
-            sub_b_val,
+            sub_b_val_errors,
         )
 
         which = (
@@ -238,16 +239,33 @@ class CalculationView(sw.Card):
         )
 
         if which == "sub_a" or which == "both":
-            if not self.model.matrix_sub_a:
-                raise Exception(
-                    "No remap matrix for subindicator A, please remap your data in the previous step."
-                )
+            # Only check matrix if reclassification is needed
+            # Custom LULC + No reclassify = matrix not needed
+            if self.model.answer_custom_lulc and not self.model.answer_need_reclassify:
+                pass  # Matrix not required
+            else:
+                # Either using default LULC or custom LULC that needs reclassification
+                if not self.model.matrix_sub_a or not any(
+                    self.model.matrix_sub_a.values()
+                ):
+                    raise Exception(
+                        "No remap matrix for subindicator A, please remap your data in the previous step."
+                    )
 
         if which == "sub_b" or which == "both":
-            if not self.model.matrix_sub_b:
-                raise Exception(
-                    "No remap matrix for subindicator B, please remap your data in the previous step."
-                )
+            # Only check matrix if reclassification is needed
+            # Custom LULC + No reclassify = matrix not needed
+            if self.model.answer_custom_lulc and not self.model.answer_need_reclassify:
+                pass  # Matrix not required
+            else:
+                # Either using default LULC or custom LULC that needs reclassification
+                if not self.model.matrix_sub_b or not any(
+                    self.model.matrix_sub_b.values()
+                ):
+                    raise Exception(
+                        "No remap matrix for subindicator B, please remap your data in the previous step."
+                    )
+
             if not self.model.transition_matrix:
                 raise Exception(
                     "No transition matrix for subindicator B, please upload one in the previous step."
@@ -276,22 +294,24 @@ class CalculationView(sw.Card):
         self.model.done = False
 
         # As pre step, make sure model.matrix_sub_a and model.matrix_sub_b are
-        # dictionaries of int keys and int values
+        # dictionaries of int keys and int values, but only if they're not empty
 
-        self.model.matrix_sub_a = {
-            int(k): int(v) for k, v in self.model.matrix_sub_a.items()
-        }
+        if self.model.matrix_sub_a:
+            self.model.matrix_sub_a = {
+                int(k): int(v) for k, v in self.model.matrix_sub_a.items()
+            }
 
-        self.model.matrix_sub_b = {
-            int(k): int(v) for k, v in self.model.matrix_sub_b.items()
-        }
+        if self.model.matrix_sub_b:
+            self.model.matrix_sub_b = {
+                int(k): int(v) for k, v in self.model.matrix_sub_b.items()
+            }
 
         aoi_name = self.model.aoi_model.name
-        report_folder = cs.get_report_folder(aoi_name)
+        report_folder = cs.get_report_folder(aoi_name, sepal_client=self.sepal_client)
 
         now = datetime.now()
         task_filepath = (
-            DIR.TASKS_DIR
+            dir_.tasks_dir
             / f"Task_{report_folder.stem}_{now.strftime('%Y-%m-%d-%H%M%S')}_{self.model.session_id}.json"
         )
 
@@ -304,8 +324,11 @@ class CalculationView(sw.Card):
             )
             scale = self.w_scale.v_model
 
+        log.debug(f"Performing calculation with parameters:\n {self.model}")
+
         # Create a fucntion in order to be able to test it easily
-        results = perform_calculation(
+        results = await perform_calculation(
+            gee_interface=self.gee_interface,
             aoi=self.model.aoi_model.feature_collection,
             rsa=self.model.rsa,
             dem=self.model.dem,
@@ -319,29 +342,57 @@ class CalculationView(sw.Card):
         )
 
         if isinstance(results, ee.FeatureCollection):
-
             model_state = self.model.get_data()
-            task_process(results, task_filepath, model_state)
-
-            msg = sw.Markdown(
-                "The computation could not be completed on the fly. The task <i>'{}'</i> has been tasked in your <a href='https://code.earthengine.google.com/tasks'>GEE account</a>.".format(
-                    task_filepath
-                )
+            await task_process(
+                results,
+                task_filepath,
+                model_state,
+                sepal_client=self.sepal_client,
+                gee_interface=self.gee_interface,
             )
 
-            self.alert.append_msg(msg, type_="warning")
+        return results, task_filepath
 
-        elif isinstance(results, dict):
-            self.model.results = results
-            self.model.done = True
-            self.alert.append_msg(
-                "The computation has been completed.", type_="success"
+    def _configure_statistics_button(self, *args):
+        """Start the calculation of the statistics. It will start the process on the fly
+        or making a task in the background depending if the rsa is selected or if the
+        computation is taking so long."""
+        # Clear previous loaded results
+
+        def run_statistics(*args):
+            def callback(results):
+                results, task_filepath = results
+                if isinstance(results, ee.FeatureCollection):
+                    msg = sw.Markdown(
+                        "The computation could not be completed on the fly. The task <i>'{}'</i> has been tasked in your <a href='https://code.earthengine.google.com/tasks'>GEE account</a>.".format(
+                            task_filepath
+                        )
+                    )
+
+                    self.alert.append_msg(msg, type_="warning")
+
+                elif isinstance(results, dict):
+                    self.model.results = results
+                    self.model.done = True
+                    self.alert.append_msg(
+                        "The computation has been completed.", type_="success"
+                    )
+
+                else:
+                    self.alert.append_msg(
+                        "There was an error in one of the steps", type_="error"
+                    )
+
+            return self.gee_interface.create_task(
+                func=self.async_perform_calculation,
+                key="calculate_statistics",
+                on_done=callback,
+                on_error=lambda e: self.alert.add_msg(str(e), type_="error"),
             )
 
-        else:
-            self.alert.append_msg(
-                "There was an error in one of the steps", type_="error"
-            )
+        self.btn.configure(
+            task_factory=run_statistics,
+        )
 
 
 class Slider(v.Row):

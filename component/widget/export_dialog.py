@@ -3,8 +3,11 @@ import ipyvuetify as v
 from pathlib import Path
 
 import ee
+from component.scripts.gee import get_gee_recipe_folder
 from sepal_ui import sepalwidgets as sw
 from sepal_ui.scripts import utils as su
+from sepal_ui.scripts.drive_interface import GDriveInterface
+from sepal_ui.scripts.gee_interface import GEEInterface
 
 import component.scripts as cs
 from component.message import cm
@@ -13,10 +16,19 @@ from component.scripts.layers import get_layer_a, get_layer_b
 
 
 class ExportMapDialog(v.Dialog):
-    def __init__(self, model: MgciModel, w_layers):
+    def __init__(
+        self,
+        model: MgciModel,
+        w_layers,
+        alert: sw.Alert,
+        gee_interface=None,
+    ):
         super().__init__()
 
         self.model = model
+        self.gee_interface = gee_interface
+        self.alert = alert
+
         self.items = []
         self.max_width = "700px"
         self.v_model = False
@@ -39,8 +51,7 @@ class ExportMapDialog(v.Dialog):
         )
         self.w_layers = w_layers
 
-        # add alert and btn component for the loading_button
-        self.alert = sw.Alert()
+        # add btn component for the loading_button
         self.btn = sw.Btn(cm.map.dialog.export.export, small=True)
         self.btn_cancel = sw.Btn(cm.map.dialog.export.cancel, small=True)
 
@@ -53,7 +64,6 @@ class ExportMapDialog(v.Dialog):
                 self.w_scale,
                 w_method_lbl,
                 self.w_method,
-                self.alert,
             ]
         )
         actions = sw.CardActions(
@@ -114,29 +124,32 @@ class ExportMapDialog(v.Dialog):
         # The value from the w_layers is a tuple with (theme, id_)
         ee_image, vis_params, layer_name = self.get_ee_image(*self.w_layers.v_model)
 
-        name = f"{self.model.aoi_model.name}_{self.model.session_id}_{layer_name}"
+        folder_name = f"{self.model.aoi_model.name}_{self.model.session_id}"
+        layer_name = f"{layer_name}"
 
         export_params = {
-            "image": ee_image,
-            "description": name,
+            # "image": ee_image,
+            "description": layer_name,
             "scale": self.w_scale.v_model,
             "region": aoi.geometry(),
-            "maxPixels": 1e13,
+            "max_pixels": 1e13,
         }
 
         # launch the task
         if self.w_method.v_model == "gee":
-            folder = Path(f"projects/{ee.data._cloud_api_user_project}/assets/")
-            export_params.update(assetId=str(folder / name))
-            task = ee.batch.Export.image.toAsset(**export_params)
-            task.start()
-            msg = sw.Markdown(cm.map.dialog.export.gee_task_success.format(name))
+
+            recipe_gee_folder = get_gee_recipe_folder(folder_name, self.gee_interface)
+            asset_id = str(recipe_gee_folder / layer_name)
+            export_params.update(asset_id=asset_id)
+            self.gee_interface.export_image_to_asset(ee_image, **export_params)
+
+            msg = sw.Markdown(cm.map.dialog.export.gee_task_success.format(asset_id))
             self.alert.add_msg(msg, "success")
 
         elif self.w_method.v_model == "gdrive":
-            task = ee.batch.Export.image.toDrive(**export_params)
-            task.start()
-            msg = sw.Markdown(cm.map.dialog.export.gee_task_success.format(name))
+
+            self.gee_interface.export_image_to_drive(ee_image, **export_params)
+            msg = sw.Markdown(cm.map.dialog.export.gee_task_success.format(layer_name))
             self.alert.add_msg(msg, "success")
 
         elif self.w_method.v_model == "sepal":
@@ -144,9 +157,25 @@ class ExportMapDialog(v.Dialog):
             pass
 
     def open_dialog(self, *_):
-        """Open dialog."""
+        """Open dialog and disable the layers widget for display only."""
+        # Disable the layers widget and make it full width when dialog opens
+
+        if not self.model.aoi_model.feature_collection:
+            self.alert.add_msg(cm.error.no_aoi, "error")
+            raise Exception(cm.error.no_aoi)
+
+        selection = self.w_layers.v_model
+        if not selection:
+            self.alert.add_msg(cm.error.no_aoi, "error")
+            raise Exception("No layer selected")
+
+        self.w_layers.disabled = True
+        self.w_layers.style_ = "width: 100%"
         self.v_model = True
 
     def close_dialog(self, *_):
-        """Close dialog."""
+        """Close dialog and restore the layers widget to active state."""
+        # Re-enable the layers widget when dialog closes
+        self.w_layers.disabled = False
+        self.w_layers.style_ = "max-width: 362px"
         self.v_model = False

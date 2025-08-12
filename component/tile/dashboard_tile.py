@@ -1,4 +1,5 @@
 import pandas as pd
+from component.widget.base_dialog import BaseDialog
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
 
@@ -11,34 +12,30 @@ from component.scripts.plots import (
     get_sankey_chart,
 )
 from component.scripts.report_scripts import get_belt_desc
-from component.widget.map import MapView
 from component.widget.statistics_card import StatisticCard
+import logging
+
+log = logging.getLogger("MGCI.dashboard_tile")
 
 
-class DashboardTile(sw.Card):
-    def __init__(self, model, rsa=False, *args, **kwargs):
-        self.class_ = "my-4"
-        self._metadata = {"mount_id": "dashboard_tile"}
-
+class ResultsDialog(BaseDialog):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.model = model
-        self.alert = sw.Alert()
-        self.df = None
-
-        map_view = MapView(self.model)
-        dash_view_a = DashViewA(self.model)
-        dash_view_b = DashViewB(self.model)
-        self.dash_view_b = dash_view_b
-
-        dash_tabs = cw.Tabs(
-            ["Visualization", "Sub indicator A", "Sub indicator B"],
-            [map_view, dash_view_a, dash_view_b],
+        self.card_content = sw.CardText(
+            children=[
+                "This is the results dialog. It will display the results of the calculations."
+            ]
         )
 
         self.children = [
-            sw.CardTitle(children=["Results dashboard"]),
-            sw.CardText(children=[self.alert, dash_tabs]),
+            sw.Card(
+                class_="pa-2",
+                children=[
+                    sw.CardTitle(children=["Results"]),
+                    self.card_content,
+                ],
+            ),
         ]
 
 
@@ -52,8 +49,8 @@ class DashView(sw.Layout):
         super().__init__(*args, **kwargs)
 
     def clear(self):
-        """Check if there is a previusly displayed dashboard and clear it, and
-        reset the modeul summary"""
+        """Check if there is a previously displayed dashboard and clear it, and
+        reset the module summary"""
 
         if self.get_children(id_=f"render_{self.indicator}"):
             self.children = [
@@ -65,9 +62,8 @@ class DashView(sw.Layout):
     def render_dashboard(self, *args):
         """create the corresponding parsed dataframe based on the selected year."""
 
-        self.show()
-        self.clear()
-        self.alert.add_msg(cm.dashboard.alert.rendering)
+        if not self.model.aoi_model.feature_collection:
+            raise Exception(cm.error.no_aoi)
 
         if not self.year_select.v_model:
             raise Exception("Select a year.")
@@ -79,24 +75,33 @@ class DashView(sw.Layout):
 
 
 class DashViewA(DashView):
-    def __init__(self, model, *args, **kwargs):
+    def __init__(self, model, alert: sw.Alert = None, *args, **kwargs):
         self.attributes = {"id": f"dashboard_view_sub_a"}
 
         super().__init__(indicator="sub_a", model=model, *args, **kwargs)
 
-        self.alert = sw.Alert()
+        self.alert = alert or sw.Alert()
+        self.results_dialog = ResultsDialog(
+            title="Results",
+            action_text="Close",
+            content=[self.alert],
+            v_model=False,
+        )
 
         self.year_select = sw.Select(
             class_="mr-2", label="Select a target year", v_model=None
         )
-        self.btn = sw.Btn("Calculate", class_="ml-2")
+        self.btn = sw.Btn("Calculate", class_="ml-2", block=True, small=True)
 
         self.children = [
             sw.Flex(
                 class_="d-flex align-center",
-                children=[self.year_select, self.btn],
+                children=[self.year_select],
             ),
-            self.alert,
+            sw.Flex(
+                class_="d-flex align-center mt-2",
+                children=[self.btn, self.results_dialog],
+            ),
         ]
 
         # Observe reporting_years_{indicator} from model to update the year_select
@@ -107,6 +112,8 @@ class DashViewA(DashView):
 
     def set_years(self, change):
         """Set the years in the year_select"""
+
+        log.debug("Setting years in year_select change[new]: %s", change["new"])
 
         if change["new"].keys():
             self.year_select.items = list(change["new"].keys())
@@ -119,6 +126,13 @@ class DashViewA(DashView):
         This dataframe will be used to calculate the MCGI"""
 
         super().render_dashboard()
+
+        # Create title at render time when AOI is available
+        title = sw.Html(
+            tag="h3",
+            class_="mb-3",
+            children=[f"Sub-indicator A Dashboard - {self.model.get_geo_area_name()}"],
+        )
 
         df = cs.parse_to_year_a(
             self.model.results,
@@ -138,44 +152,69 @@ class DashViewA(DashView):
         statistics = sw.Layout(
             attributes={"id": "render_sub_a"},
             class_="d-block",
-            children=[w_overall] + w_individual,
+            children=[title, w_overall] + w_individual,
         )
 
-        self.children = self.children + [statistics]
-        self.alert.hide()
+        self.results_dialog.set_content([statistics])
+        self.results_dialog.open_dialog()
 
 
 class DashViewB(DashView):
-    def __init__(self, model, *args, **kwargs):
+    def __init__(self, model, alert: sw.Alert = None, *args, **kwargs):
+        """Dashboard view for sub_b indicator"""
+
+        self.alert = alert or sw.Alert()
+
         self.attributes = {"id": "dashboard_view_sub_b"}
 
         super().__init__(indicator="sub_b", model=model, *args, **kwargs)
 
+        self.results_dialog = ResultsDialog(
+            title="Results",
+            action_text="Close",
+            content=[self.alert],
+            v_model=False,
+        )
+
         self.year_select = sw.Select(
-            style_="max-width: 300px",
-            class_="mr-2",
             label="Select a target year",
             v_model=None,
         )
-        self.belt_select = sw.Select(class_="mr-2", label="Select a belt", v_model=None)
+        self.belt_select = sw.Select(
+            label="Select a belt",
+            v_model=None,
+        )
+        self.btn = sw.Btn("Calculate", class_="ml-2", block=True, small=True)
 
         self.sankey_data, self.chart = get_sankey_chart()
 
         self.children = [
             sw.Flex(
-                class_="d-flex align-center",
+                class_="d-flex flex-column",
                 children=[self.year_select, self.belt_select],
             ),
-            self.chart,
+            sw.Flex(
+                class_="d-flex align-center mt-2",
+                children=[self.btn, self.results_dialog],
+            ),
         ]
 
         # Observe reporting_years_{indicator} from model to update the year_select
 
         self.model.observe(self.set_years, "reporting_years_sub_b")
+        self.model.observe(
+            self.on_results_updated, "results"
+        )  # Update belt items when results change
         self.year_select.observe(self.set_belt_items, "v_model")
         self.belt_select.observe(self.update_sankey_data, "v_model")
+        self.btn.on_event("click", self.render_dashboard)
 
         self.set_years({"new": self.model.reporting_years_sub_b})
+
+    def on_results_updated(self, change):
+        """Update belt items when results are updated"""
+        if change["new"] and self.year_select.v_model:
+            self.set_belt_items({"new": self.year_select.v_model})
 
     def set_belt_items(self, change):
         """Set the belt items in the belt_select widget based on the year selected
@@ -185,9 +224,11 @@ class DashViewB(DashView):
                 {"baseline": [year1, year2]} or,
                 {"report": [base_start, report_year]}
         """
-        print(change["new"])
 
         look_up_year = change["new"]
+
+        if not look_up_year or not self.model.results:
+            return
 
         df = cs.parse_sub_b_year(self.model.results, look_up_year)
         look_up_years = list(look_up_year.values())[0]
@@ -204,7 +245,8 @@ class DashViewB(DashView):
 
         self.belt_select.items = belt_items
         self.belt_select.v_model = None
-        self.belt_select.v_model = belt_items[0]["value"]
+        if belt_items:
+            self.belt_select.v_model = belt_items[0]["value"]
 
     def set_years(self, change):
         """Set the years in the year_select:
@@ -214,17 +256,50 @@ class DashViewB(DashView):
                 [[start_base_y, end_base_y], rep_y2, rep_y2, ...]
         """
 
+        log.debug("Setting years in year_select change[new]: %s", change["new"])
+
         if change["new"]:
             items = cs.get_sub_b_items(change["new"])
             self.year_select.items = items
         else:
             self.year_select.items = []
 
+    @su.loading_button()
+    def render_dashboard(self, *args):
+        """create the corresponding parsed dataframe based on the selected year.
+        This dataframe will be used to display the Sankey chart"""
+
+        super().render_dashboard()
+
+        if not self.belt_select.v_model:
+            raise Exception("Select a belt.")
+
+        # Create title at render time when AOI is available
+        title = sw.Html(
+            tag="h3",
+            class_="mb-3",
+            children=[f"Sub-indicator B Dashboard - {self.model.get_geo_area_name()}"],
+        )
+
+        # Create the sankey chart layout with proper width
+        sankey_layout = sw.Layout(
+            attributes={"id": "render_sub_b"},
+            class_="d-block",
+            style_="width: 100%; min-width: 800px;",  # Ensure proper width
+            children=[title, self.chart],
+        )
+
+        # Update the sankey data
+        self.update_sankey_data({"new": self.belt_select.v_model})
+
+        self.results_dialog.set_content([sankey_layout])
+        self.results_dialog.open_dialog()
+
     def update_sankey_data(self, change):
         """create the corresponding parsed dataframe based on the selected year.
         This dataframe will be used to calculate the MCGI"""
 
-        if not change["new"]:
+        if not change["new"] or not hasattr(self, "nodes_and_links"):
             return
 
         belt_data = self.nodes_and_links[change["new"]]

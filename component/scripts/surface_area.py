@@ -108,7 +108,7 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
     )
 
     # Define the output cell-size
-    cellsize = ee.Number(dem_clip.projection().nominalScale().getInfo())
+    cellsize = ee.Number(dem_clip.projection().nominalScale())
     diagonal_size = cellsize.pow(2).multiply(2).sqrt()
 
     # Calculate half-sides, based on steps 1-2

@@ -1,18 +1,22 @@
 from pathlib import Path
 
-import pandas as pd
-from sepal_ui import sepalwidgets as sw
 from traitlets import directional_link
-from component.model.model import MgciModel
 
+from sepal_ui import sepalwidgets as sw
+from sepal_ui.scripts.sepal_client import SepalClient
+
+from component.model.model import MgciModel
 import component.parameter.module_parameter as param
-import component.parameter.directory as dir_
+from component.parameter.directory import dir_
 from component.widget import reclassify as rec
 from component.message import cm
 from component.scripts.scripts import map_matrix_to_dict
 
 
 __all__ = ["ReclassifyTile"]
+import logging
+
+log = logging.getLogger("MGCI.reclassify_tile")
 
 
 class ReclassifyTile(sw.Layout):
@@ -33,6 +37,7 @@ class ReclassifyTile(sw.Layout):
         id_="",
         alert: sw.Alert = None,
         default_asset: list = [],
+        sepal_client: SepalClient = None,
         *args,
         **kwargs,
     ):
@@ -62,13 +67,13 @@ class ReclassifyTile(sw.Layout):
             folder=folder,
             save=save,
             enforce_aoi=True,
-            dst_class_file=dir_.LOCAL_LC_CLASSES,
+            dst_class_file=str(dir_.class_dir / "default_lc_classification.csv"),
         )
 
         # set the tabs elements
         self.w_reclass = rec.ReclassifyView(
             self.model,
-            out_path=dir_.MATRIX_DIR,
+            out_path=dir_.matrix_dir,
             gee=gee,
             default_class=default_class,
             aoi_model=aoi_model,
@@ -76,6 +81,7 @@ class ReclassifyTile(sw.Layout):
             enforce_aoi=True,
             id_=id_,
             alert=alert,
+            sepal_client=sepal_client,
             default_asset=default_asset,
         )
 
@@ -104,14 +110,27 @@ class ReclassifyTile(sw.Layout):
             (self.mgci_model, f"lulc_classes_{id_}"),
         )
 
-        self.use_default()
-
     def use_default(self):
         """Define a default asset to the w_image component from w_reclass"""
 
+        # self.w_reclass.w_ic_select.v_model = str(param.LULC_DEFAULT)
+        log.debug("Setting default asset in w_reclass")
+        self.w_reclass.w_ic_select.default_asset = [str(param.LULC_DEFAULT)]
         self.w_reclass.w_ic_select.v_model = str(param.LULC_DEFAULT)
+        log.debug(
+            "default asset set {}".format(self.w_reclass.w_ic_select.default_asset)
+        )
+
         self.use_default_matrix()
 
     def use_default_matrix(self):
         """Define a default matrix to the w_reclass component"""
+
+        log.debug("Setting default matrix in w_reclass")
         self.w_reclass.model.matrix = map_matrix_to_dict(param.LC_MAP_MATRIX)
+
+    def use_empty_matrix(self):
+        """Define an empty matrix to the w_reclass component"""
+
+        log.debug("Setting empty matrix in w_reclass")
+        self.w_reclass.model.matrix = {}

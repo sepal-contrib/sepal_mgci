@@ -4,10 +4,14 @@ from typing import List
 from sepal_ui.model import Model
 import sepal_ui.scripts.decorator as sd
 import component.scripts as cs
-from traitlets import Bool, CBool, Dict, List, Unicode
+from traitlets import Bool, CBool, Dict, List, Unicode, observe
 
 import component.parameter.module_parameter as param
 from component.scripts.sepal_ui_scripts import get_geoarea
+
+import logging
+
+log = logging.getLogger("MGCI.model")
 
 
 class MgciModel(Model):
@@ -76,9 +80,6 @@ class MgciModel(Model):
 
     # Results
 
-    biobelt_image = None
-    "ee.Image: clipped bioclimatic belt image with aoi_model.feature_collection"
-
     transition_matrix = Unicode().tag(sync=True)
     "str: transition matrix file used to calculate the sub_b indicator"
 
@@ -100,8 +101,46 @@ class MgciModel(Model):
     dem = Unicode().tag(sync=True)
     "str: DEM file used to calculate surface area"
 
+    # Results
+    results = Dict({}).tag(sync=True)
+    "dict: results of the MGCI calculation. It will be used to create the dashboard"
+
+    @observe(
+        "use_custom",
+        "year",
+        "source",
+        "impact_matrix",
+        "rsa",
+        "sub_a_year",
+        "sub_b_year",
+        "lc_asset_sub_a",
+        "lc_asset_sub_b",
+        "ic_items_sub_a",
+        "ic_items_sub_b",
+        "lulc_classes_sub_a",
+        "lulc_classes_sub_b",
+        "matrix_sub_a",
+        "matrix_sub_b",
+        "green_non_green",
+        "reporting_years_sub_a",
+        "reporting_years_sub_b",
+        "transition_matrix",
+        "green_non_green_file",
+        "dash_ready",
+        "calc_a",
+        "calc_b",
+        "done",
+        "dem",
+    )
+    def log_change(self, change):
+        prop_changed = change["name"]
+        new_value = change["new"]
+        old_value = change["old"]
+
+        log.debug(f"MgciModel: {prop_changed} changed from {old_value} to {new_value}")
+
     @sd.need_ee
-    def __init__(self, aoi_model=None):
+    def __init__(self, aoi_view=None, sepal_client=None, **kwargs):
         """
 
         Parameters:
@@ -111,12 +150,10 @@ class MgciModel(Model):
             results_file (str): file containing a task .csv file with name and task_id
 
         """
-        self.results: Dict = None
-        self.biobelt_imaga = None
-        self.vegetation_image = None
-        self.aoi_model = aoi_model
-
-        self.ic_items_label = None
+        self.sepal_client = sepal_client
+        self.results: Dict = {}
+        self.aoi_view = aoi_view
+        self.aoi_model = aoi_view.model
 
         # Styled results dataframe
         self.mgci_report = None
@@ -128,15 +165,52 @@ class MgciModel(Model):
         # currently, we are not allowing user to change the dem
         self.dem = param.DEM_DEFAULT
 
+        self.aoi_view.observe(self.on_aoi_change, "updated")
+
+    def on_aoi_change(self, *args):
+        """Callback to update the model when the AOI changes"""
+
+        log.debug("MgciModel: AOI changed, resetting results")
+
+        self.results = {}
+
+    def get_geo_area_name(self):
+        """Get the geographic area name from the AOI model
+
+        Returns:
+            str: The geographic area name
+
+        Raises:
+            Exception: If no AOI is selected
+        """
+        if not self.aoi_model:
+            raise Exception("You have to select an AOI first.")
+
+        return get_geoarea(self.aoi_model)[0]
+
+    def get_ref_area(self):
+        """Get the reference area from the AOI model
+
+        Returns:
+            float or str: The reference area value
+
+        Raises:
+            Exception: If no AOI is selected
+        """
+        if not self.aoi_model:
+            raise Exception("You have to select an AOI first.")
+
+        return get_geoarea(self.aoi_model)[1]
+
     def get_data(self):
         """Return the current state of the model"""
 
         if not self.aoi_model:
             raise Exception("You have to select an AOI first.")
 
-        geo_area_name = get_geoarea(self.aoi_model)[0]
-        ref_area = get_geoarea(self.aoi_model)[1]
-        report_folder = cs.get_report_folder(self.aoi_model.name)
+        geo_area_name = self.get_geo_area_name()
+        ref_area = self.get_ref_area()
+        report_folder = cs.get_report_folder(self.aoi_model.name, self.sepal_client)
 
         return {
             "reporting_years_sub_a": self.reporting_years_sub_a,

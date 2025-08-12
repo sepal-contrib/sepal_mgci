@@ -16,7 +16,7 @@ class Questionnaire(sw.Layout):
     "bool: answer Would you like to use a custom land use/land cover map?"
 
     ans_transition_matrix = CBool().tag(sync=True)
-    "bool: answer do you have a custom land cover transition matrix (.csv)?"
+    "bool: answer Would you like to change the default land cover transition matrix?"
 
     ans_reclassify_custom_lulc = CBool().tag(sync=True)
     "bool: answer do you need to reclassify the custom land use/land cover map?"
@@ -24,7 +24,7 @@ class Questionnaire(sw.Layout):
     indicator = Unicode().tag(sync=True)
 
     def __init__(self) -> sw.Layout:
-        self.class_ = "d-block"
+        self.class_ = "d-block pa-0 ma-0"
 
         super().__init__()
 
@@ -36,6 +36,7 @@ class Questionnaire(sw.Layout):
         ).hide()
 
         description = sw.Markdown(cm.veg_layer.description)
+        description.class_ = "pa-0 ma-0"
         self.no_reclassify_alert = sw.Alert(
             type_="warning",
             icon="mdi-information",
@@ -46,13 +47,14 @@ class Questionnaire(sw.Layout):
 
         self.children = [
             sw.CardText(
+                class_="pa-0 ma-0",
                 children=[
                     description,
                     self.wq_custom_lulc,
                     self.wq_reclassify_custom_lulc,
                     self.wq_transition_matrix,
                     self.no_reclassify_alert,
-                ]
+                ],
             )
         ]
 
@@ -81,3 +83,10 @@ class Questionnaire(sw.Layout):
         else:
             self.wq_transition_matrix.show()
             self.wq_reclassify_custom_lulc.hide()
+
+    def set_default(self):
+        """Reset the questionnaire to its initial state"""
+        self.wq_custom_lulc.v_model = False
+        self.wq_transition_matrix.v_model = False
+        self.wq_reclassify_custom_lulc.v_model = False
+        self.no_reclassify_alert.hide()

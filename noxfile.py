@@ -8,6 +8,7 @@ import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 from jupyter_client.kernelspec import KernelSpecManager
 import nox
+from component.scripts import logger
 
 
 @nox.session(reuse_venv=True)
@@ -22,6 +23,7 @@ def app(session):
     """Run the application."""
 
     entry_point = str(Path("ui.ipynb"))
+    logger.info(f"Running {entry_point}")
 
     # Duplicate the entry point file
     session.run("cp", entry_point, "nox_ui.ipynb")
@@ -35,7 +37,7 @@ def app(session):
     )
 
 
-@nox.session()
+@nox.session(reuse_venv=True)
 def test_ui(session):
     """Run the application."""
 

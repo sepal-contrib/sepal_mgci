@@ -1,7 +1,7 @@
-import component.parameter.directory as dir_
+from component.parameter.module_parameter import LC_CLASSES
 import pandas as pd
 
-df = pd.read_csv(dir_.LOCAL_LC_CLASSES, header=0)
+df = pd.read_csv(LC_CLASSES, header=0)
 
 
 degradation = {
