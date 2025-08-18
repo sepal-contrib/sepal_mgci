@@ -4,7 +4,7 @@ wheel
 voila
 earthengine-api
 
-git+https://github.com/openforis/sepal_ui@v3.0.0.beta-0
+git+https://github.com/openforis/c7a09214a1c13e780e19b8b766e36c1a35a81eb0
 solara
 ee-client>=2.1.0
 rasterio<1.3.11 # Leave it here even if it's already in the sepal_ui requirements. Check https://github.com/openforis/sepal/issues/328
