@@ -15,7 +15,6 @@ from sepal_ui.solara import (
     get_current_gee_interface,
     get_current_sepal_client,
     get_current_drive_interface,
-    get_current_session_info,
     setup_theme_colors,
     setup_solara_server,
 )
@@ -32,22 +31,18 @@ from component.widget.mgci_map import MgciMap
 from component.widget.map import LayerHandler
 from component.parameter.directory import initialize_remote
 
-logger.debug(">>>>>>>>>>> Starting MGCI application <<<<<<<<<<")
-
 init_ee()
 setup_solara_server()
 
 
 @solara.lab.on_kernel_start
-def init_gee():
+def on_kernel_start():
     return setup_sessions()
 
 
 @solara.component
 @with_sepal_sessions(module_name="sdg_indicators/15.4.2")
 def Page():
-
-    logger.debug("Starting MGCI Page")
 
     setup_theme_colors()
     theme_toggle = ThemeToggle()
@@ -60,25 +55,14 @@ def Page():
     gee_interface = get_current_gee_interface()
     drive_interface = get_current_drive_interface()
     sepal_client = get_current_sepal_client()
-    username = get_current_session_info()["username"]
-
-    logger.debug(
-        f"THIS IS THE GEE INTERFACE IM PASSING TO COMPONENTS {id(gee_interface)}..."
-    )
-
     initialize_remote(sepal_client)
 
     map_ = MgciMap(gee_interface=gee_interface, theme_toggle=theme_toggle)
-    logger.debug("Map initialized")
     aoi_view = AoiView(map_=map_)
-    logger.debug("AOI view initialized")
     model = MgciModel(aoi_view, sepal_client=sepal_client)
-    logger.debug("Model initialized")
     vegetation_tile = VegetationTile(
         model=model, aoi_model=model.aoi_model, sepal_client=sepal_client, alert=alert
     )
-    logger.debug(model)
-    logger.debug("Vegetation tile initialized")
     calculation_tile = CalculationView(
         model=model,
         units="sqkm",
@@ -86,21 +70,15 @@ def Page():
         sepal_client=sepal_client,
         gee_interface=gee_interface,
     )
-    logger.debug(model)
-    logger.debug("Calculation tile initialized")
-    logger.debug("Dashboard tile initialized")
     task_tile = DownloadTaskView(
         sepal_client=sepal_client,
         drive_interface=drive_interface,
         gee_interface=gee_interface,
     )
-    logger.debug("Task tile initialized")
 
     layer_handler = LayerHandler(map_, model, alert=alert)
     dash_view_a = DashViewA(model, alert=alert)
     dash_view_b = DashViewB(model, alert=alert)
-
-    solara_admin = AdminButton(username, model, logger_instance=logger)
 
     steps_data = [
         {
@@ -141,7 +119,7 @@ def Page():
         },
     ]
 
-    extra_content_config = {
+    right_panel_config = {
         "title": "Results",
         "icon": "mdi-image-filter-hdr",
         "width": 400,
@@ -149,7 +127,10 @@ def Page():
         "toggle_icon": "mdi-chart-line",
     }
 
-    extra_content_data = [
+    right_panel_content = [
+        {
+            "content": [AdminButton(model, logger_instance=logger)],
+        },
         {
             "title": "Visualize and export layers",
             "icon": "mdi-layers",
@@ -168,23 +149,13 @@ def Page():
         },
     ]
 
-    if username == "admin":
-        extra_content_data.append(
-            {
-                "title": "Admin",
-                "icon": "mdi-shield-account",
-                "content": [solara_admin],
-                "description": "Admin tools for development and troubleshooting.",
-            }
-        )
-
     MapApp.element(
         app_title="SDG 15.4.2",
         app_icon="mdi-image-filter-hdr",
         main_map=[map_],
         steps_data=steps_data,
-        extra_content_config=extra_content_config,
-        extra_content_data=extra_content_data,
+        right_panel_config=right_panel_config,
+        right_panel_content=right_panel_content,
         theme_toggle=[theme_toggle],
         dialog_width=750,
         repo_url="https://github.com/sepal-contrib/sepal_mgci",
