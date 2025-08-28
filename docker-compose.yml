@@ -24,6 +24,8 @@ services:
     networks:
       - sepal
     restart: always
+    labels:
+      org.opencontainers.image.source: https://github.com/sepal-contrib/sepal_mgci
 networks:
   sepal:
     external: true
