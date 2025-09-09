@@ -47,6 +47,7 @@ async def task_process(
         **{
             "collection": process,
             "description": str(task_name),
+            "filename_prefix": str(task_name),
             "file_format": "CSV",
             "selectors": [
                 "process_id",

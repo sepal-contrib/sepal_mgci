@@ -7,7 +7,6 @@ from traitlets import Bool, Int, directional_link, link
 import sepal_ui.scripts.utils as su
 import sepal_ui.sepalwidgets as sw
 import sepal_ui.scripts.decorator as sd
-from sepal_ui.scripts.gee_interface import GEEInterface
 from sepal_ui.sepalwidgets.btn import TaskButton
 
 

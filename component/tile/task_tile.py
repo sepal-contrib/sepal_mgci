@@ -7,6 +7,7 @@ from sepal_ui.scripts.sepal_client import SepalClient
 from sepal_ui.sepalwidgets.file_input import FileInput
 from sepal_ui.scripts.drive_interface import GDriveInterface
 from sepal_ui.scripts.gee_interface import GEEInterface
+from sepal_ui.sepalwidgets.btn import TaskButton
 
 from component.parameter.directory import dir_
 import component.scripts as cs
@@ -55,7 +56,7 @@ class DownloadTaskView(v.Card):
 
         self.alert = sw.Alert()
 
-        self.btn = sw.Btn(cm.dashboard.label.calculate_from_task, small=True)
+        self.btn = TaskButton(cm.dashboard.label.calculate_from_task, small=True)
 
         self.children = [
             title,
@@ -65,10 +66,25 @@ class DownloadTaskView(v.Card):
             self.alert,
         ]
 
-        self.btn.on_event("click", self.run_statistics)
+        # self.btn.on_event("click", self.run_statistics)
 
-    @su.loading_button()
-    def run_statistics(self, *_):
+        self.configure_task_button()
+
+    def configure_task_button(self):
+        """Configure the task button with the appropriate event and state."""
+
+        def run_statistics(*args):
+            return self.gee_interface.create_task(
+                func=self.run_statistics,
+                key="calculate_statistics",
+                on_error=lambda e: self.alert.add_msg(str(e), type_="error"),
+            )
+
+        self.btn.configure(
+            task_factory=run_statistics,
+        )
+
+    async def run_statistics(self, *_):
         """From the gee result dictionary, extract the values and give a proper
         format in a pd.DataFrame.
 
@@ -81,7 +97,6 @@ class DownloadTaskView(v.Card):
         tasks_file = self.w_file_input.v_model
 
         tasks_file = Path(tasks_file)
-
         data = read_file(tasks_file)
 
         # Task
@@ -114,7 +129,7 @@ class DownloadTaskView(v.Card):
         msg = cw.TaskMsg(f"Processing {task_filename}..", session_id)
         self.alert.append_msg(msg)
 
-        result_file = download_from_task_file(
+        result_file = await download_from_task_file(
             task_id,
             tasks_file,
             task_filename,

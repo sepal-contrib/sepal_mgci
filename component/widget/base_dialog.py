@@ -2,7 +2,7 @@ import sepal_ui.sepalwidgets as sw
 import ipyvuetify as v
 
 
-class BaseDialog(v.Dialog):
+class BaseDialog(sw.Dialog):
     def __init__(self, title: str, action_text: str, content: list, *args, **kwargs):
         kwargs["persistent"] = kwargs.get("persistent", False)
         kwargs["v_model"] = kwargs.get("v_model", False)
@@ -34,12 +34,3 @@ class BaseDialog(v.Dialog):
 
     def set_content(self, content: list):
         self.children[0].children[1].children = content
-
-    def open_dialog(self, *_):
-        """Call vegetation view build and open the dialog."""
-
-        self.v_model = True
-
-    def close_dialog(self, *_):
-        """Close dialog."""
-        self.v_model = False

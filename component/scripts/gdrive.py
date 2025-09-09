@@ -10,7 +10,7 @@ import logging
 log = logging.getLogger("MGCI.scripts.gdrive")
 
 
-def download_from_task_file(
+async def download_from_task_file(
     task_id,
     tasks_file,
     task_filename,
@@ -27,7 +27,7 @@ def download_from_task_file(
     """
 
     # Check if the task is completed
-    task = gee_interface.get_task(task_id.strip())
+    task = await gee_interface.get_task_async(task_id.strip())
 
     log.debug(f"Task {task_id} state: {task}")
 
