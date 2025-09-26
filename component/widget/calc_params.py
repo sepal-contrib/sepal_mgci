@@ -352,7 +352,7 @@ class EditionDialog(sw.Dialog):
         ]
 
         ok_btn.on_event("click", self.validate_and_close)
-        close_btn.on_event("click", lambda *x: super().close_dialog(*x))
+        close_btn.on_event("click", lambda *x: self.close_dialog())
         clean_btn.on_event("click", self.reset_event)
 
     def validate_and_close(self, *args):
@@ -361,7 +361,7 @@ class EditionDialog(sw.Dialog):
         if self.custom_list.errors:
             return
 
-        super().close_dialog(*args)
+        self.close_dialog()
 
     def reset_event(self, *args):
         """search within the content and trigger reset method"""

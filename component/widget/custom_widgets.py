@@ -141,7 +141,7 @@ class AlertDialog(sw.Dialog):
                 ],
             )
         ]
-        btn_close.on_event("click", lambda *_: super().close_dialog())
+        btn_close.on_event("click", lambda *_: self.close_dialog())
         self.w_alert.observe(self.open_dialog, "children")
 
     def open_dialog(self, change):
