@@ -115,11 +115,6 @@ class VegetationDialog(sw.Dialog):
         # Validate on close
         self.btn_close.on_event("click", self.close_dialog)
 
-    def open_dialog(self, *_):
-        """Call vegetation view build and open the dialog."""
-
-        self.v_model = True
-
     @sd.switch("loading", on_widgets=["btn_close"])
     def close_dialog(self, *_):
         """Close dialog."""
@@ -130,7 +125,7 @@ class VegetationDialog(sw.Dialog):
             self.alert.add_msg(str(e), type_="error")
             return
 
-        self.v_model = False
+        super().close_dialog()
 
 
 class VegetationView(sw.Layout):

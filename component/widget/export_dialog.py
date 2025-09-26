@@ -31,7 +31,6 @@ class ExportMapDialog(v.Dialog):
 
         self.items = []
         self.max_width = "700px"
-        self.v_model = False
 
         # create the useful widgets
         # align on the landsat images
@@ -171,11 +170,11 @@ class ExportMapDialog(v.Dialog):
 
         self.w_layers.disabled = True
         self.w_layers.style_ = "width: 100%"
-        self.v_model = True
+        super().open_dialog()
 
     def close_dialog(self, *_):
         """Close dialog and restore the layers widget to active state."""
         # Re-enable the layers widget when dialog closes
         self.w_layers.disabled = False
         self.w_layers.style_ = "max-width: 362px"
-        self.v_model = False
+        super().close_dialog()

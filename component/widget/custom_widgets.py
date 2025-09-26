@@ -126,7 +126,6 @@ class AlertDialog(sw.Dialog):
 
         super().__init__()
 
-        self.v_model = False
         self.w_alert = w_alert
 
         btn_close = Btn(
@@ -142,10 +141,10 @@ class AlertDialog(sw.Dialog):
                 ],
             )
         ]
-        btn_close.on_event("click", lambda *_: setattr(self, "v_model", False))
+        btn_close.on_event("click", lambda *_: super().close_dialog())
         self.w_alert.observe(self.open_dialog, "children")
 
     def open_dialog(self, change):
         """Opens the dialog when there's a change in the alert chilndren state."""
         if change["new"] != [""]:
-            self.v_model = True
+            super().open_dialog()
