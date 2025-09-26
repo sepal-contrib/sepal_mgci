@@ -15,7 +15,7 @@ from component.model.model import MgciModel
 from component.scripts.layers import get_layer_a, get_layer_b
 
 
-class ExportMapDialog(v.Dialog):
+class ExportMapDialog(sw.Dialog):
     def __init__(
         self,
         model: MgciModel,

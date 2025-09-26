@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 
 import ee
 import ipyvuetify as v
@@ -204,7 +205,12 @@ class CalculationView(sw.Card):
         log.debug(
             f"Exported results to {output_report_path} for {which} in {report_folder}"
         )
-        download_link = su.create_download_link(output_report_path)
+
+        sepal_host = os.getenv("SEPAL_HOST")
+        download_link = (
+            f"https://{sepal_host}/api/user-files/download?path={output_report_path}"
+        )
+
         msg = sw.Markdown(
             f"Reporting tables successfull exported {report_folder}, <u><i><a href = '{download_link}'>Click to download</a><i></u>"
         )

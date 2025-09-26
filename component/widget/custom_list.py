@@ -42,11 +42,7 @@ class CustomListA(v.VuetifyTemplate, sw.SepalWidget):
         super().__init__(**kwargs)
 
         # Set initial data with some default items for testing
-        self.items = items or [
-            "users/your-username/asset1",
-            "users/your-username/asset2",
-            "users/your-username/asset3",
-        ]
+        self.items = items or []
         self.asset_label = "Year"
         self.year_label = "Corresponding year"
         self.years = param.YEARS
