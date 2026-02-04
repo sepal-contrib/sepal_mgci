@@ -1,0 +1,43 @@
+from_code,from_desc,to_code,target_desc,green
+111,Artificial surfaces > Urban fabric > Continuous urban fabric,1,Artificial surfaces,0
+112,Artificial surfaces > Urban fabric > Discontinuous urban fabric,1,Artificial surfaces,0
+121,"Artificial surfaces > Industrial, commercial, and transport units > Industrial or commercial units",1,Artificial surfaces,0
+122,"Artificial surfaces > Industrial, commercial, and transport units > Road and rail networks and associated land",1,Artificial surfaces,0
+123,"Artificial surfaces > Industrial, commercial, and transport units > Port areas",1,Artificial surfaces,0
+124,"Artificial surfaces > Industrial, commercial, and transport units > Airports",1,Artificial surfaces,0
+131,"Artificial surfaces > Mine, dump, and construction sites > Mineral extraction sites",1,Artificial surfaces,0
+132,"Artificial surfaces > Mine, dump, and construction sites > Dump sites",1,Artificial surfaces,0
+133,"Artificial surfaces > Mine, dump, and construction sites > Construction sites",1,Artificial surfaces,0
+141,"Artificial surfaces > Artificial, non-agricultural vegetated areas > Green urban areas",1,Artificial surfaces,0
+142,"Artificial surfaces > Artificial, non-agricultural vegetated areas > Sport and leisure facilities",1,Artificial surfaces,0
+211,Agricultural areas > Arable land > Non-irrigated arable land,2,Croplands,1
+212,Agricultural areas > Arable land > Permanently irrigated land,2,Croplands,1
+213,Agricultural areas > Arable land > Rice fields,2,Croplands,1
+221,Agricultural areas > Permanent crops > Vineyards,2,Croplands,1
+222,Agricultural areas > Permanent crops > Fruit trees and berry plantations,2,Croplands,1
+223,Agricultural areas > Permanent crops > Olive groves,2,Croplands,1
+231,Agricultural areas > Pastures > Pastures,2,Croplands,1
+241,Agricultural areas > Heterogeneous agricultural areas > Annual crops associated with permanent crops,2,Croplands,1
+242,Agricultural areas > Heterogeneous agricultural areas > Complex cultivation patterns,2,Croplands,1
+243,"Agricultural areas > Heterogeneous agricultural areas > Land principally occupied by agriculture, with significant areas of natural vegetation",2,Croplands,1
+244,Agricultural areas > Heterogeneous agricultural areas > Agro-forestry areas,2,Croplands,1
+311,Forest and semi natural areas > Forests > Broad-leaved forest,4,Tree-covered areas,1
+312,Forest and semi natural areas > Forests > Coniferous forest,4,Tree-covered areas,1
+313,Forest and semi natural areas > Forests > Mixed forest,4,Tree-covered areas,1
+321,Forest and semi natural areas > Scrub and/or herbaceous vegetation associations > Natural grasslands,3,Grassland,1
+322,Forest and semi natural areas > Scrub and/or herbaceous vegetation associations > Moors and heathland,5,Shrub-covered areas,1
+323,Forest and semi natural areas > Scrub and/or herbaceous vegetation associations > Sclerophyllous vegetation,5,Shrub-covered areas,1
+331,"Forest and semi natural areas > Open spaces with little or no vegetation > Beaches, dunes, sands",8,Terrestrial barren land ,0
+332,Forest and semi natural areas > Open spaces with little or no vegetation > Bare rocks,8,Terrestrial barren land ,0
+333,Forest and semi natural areas > Open spaces with little or no vegetation > Sparsely vegetated areas,7,Sparsely natural vegetated areas,0
+335,Forest and semi natural areas > Open spaces with little or no vegetation > Glaciers and perpetual snow,9,Permanent snow and glaciers,0
+411,Wetlands > Inland wetlands > Inland marshes,6,"Shrubs and/or herbaceous vegetation, aquatic or regularly flooded",1
+412,Wetlands > Inland wetlands > Peat bogs,6,"Shrubs and/or herbaceous vegetation, aquatic or regularly flooded",1
+421,Wetlands > Maritime wetlands > Salt marshes,6,"Shrubs and/or herbaceous vegetation, aquatic or regularly flooded",1
+422,Wetlands > Maritime wetlands > Salines,6,"Shrubs and/or herbaceous vegetation, aquatic or regularly flooded",1
+423,Wetlands > Maritime wetlands > Intertidal flats,6,"Shrubs and/or herbaceous vegetation, aquatic or regularly flooded",1
+511,Water bodies > Inland waters > Water courses,10,Inland water bodies,0
+512,Water bodies > Inland waters > Water bodies,10,Inland water bodies,0
+521,Water bodies > Marine waters > Coastal lagoons,10,Inland water bodies,0
+522,Water bodies > Marine waters > Estuaries,10,Inland water bodies,0
+523,Water bodies > Marine waters > Sea and ocean,10,Inland water bodies,0
