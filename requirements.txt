@@ -19,9 +19,8 @@ pandas
 openpyxl>=3.0.3
 plotly
 pytest
-pygaul
+pygaul<0.4 # 0.4+ renamed parquet columns (ADM0_CODE -> gaul0_code); see component/tile/aoi_tile.py
 seaborn
 
 ipyvuetify
 ipecharts>=1.0.8
-
