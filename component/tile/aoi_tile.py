@@ -1,5 +1,5 @@
 import asyncio
-import pkg_resources
+import importlib.resources
 import traitlets as t
 from typing_extensions import Self
 from copy import deepcopy
@@ -63,7 +63,7 @@ class AoiView(AoiView, sw.Card):
 
         # Access to the parquet file in the package data (required with sepal_ui>2.16.4)
         resource_path = "data/gaul_database.parquet"
-        content = pkg_resources.resource_filename("pygaul", resource_path)
+        content = str(importlib.resources.files("pygaul").joinpath(resource_path))
 
         df = pd.read_parquet(content).astype(str)
 
