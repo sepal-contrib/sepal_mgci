@@ -2,8 +2,7 @@
 # If you are an advanced user and you are sure to not use them, you can comment the following lines
 wheel
 voila
-
-git+https://github.com/openforis/earthengine-api.git@v1.6.14#egg=earthengine-api&subdirectory=python
+earthengine-api
 
 git+https://github.com/openforis/sepal_ui@solara3
 
