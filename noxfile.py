@@ -3,12 +3,14 @@
 The nox run are build in isolated environment that will be stored in .nox. to force the venv update, remove the .nox/xxx folder.
 """
 
+import logging
 from pathlib import Path
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 from jupyter_client.kernelspec import KernelSpecManager
 import nox
-from component.scripts import logger
+
+logger = logging.getLogger(__name__)
 
 
 @nox.session(reuse_venv=True)
