@@ -1,3 +1,40 @@
+## 0.9.0 (2026-05-27)
+
+### Feat
+
+- refactor notebooks for script calculation
+- trigger rebuild
+- trigger rebuild
+- **sub_b_report**: revert filtering of reporting years for sub ind b.
+- **adminView**: use FAO gaul 2024.
+- typo
+- optional reclassify custom map
+- allow individual exportation (#75)
+- send to brackground when "User limit exceed" (#74)
+
+### Fix
+
+- use default earthengine-api package
+- **ci**: remove import of missing component.scripts.logger in noxfile
+- replace removed pkg_resources with importlib.resources and pin pygaul<0.4
+- use sepal user-files module to download files
+- super close dialog
+- use parent method to open dialog
+- pin uvicorn version. see: https://github.com/widgetti/solara/issues/110
+- set main process
+- use camel_case for max pixels param, as it is required by geeinterface
+- fix questionnaire logic - when user selects custom lulc, and no need to reclassify, we just reset and pass an empty reclassify table
+- fix methods to read remote and local files - some files need to be dinamically read from local and others from remote
+- **GaulDataset**: use correct dataset
+- reset default matrix when dont need to reclassify
+- convert string years to int when reading from task
+
+### Refactor
+
+- ingore result files
+- use solara setup from sepal_ui
+- use solara setup from sepal_ui
+
 ## 0.8.1 (2024-10-31)
 
 ### Fix
