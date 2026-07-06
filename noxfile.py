@@ -76,9 +76,9 @@ def test_ui(session):
 @nox.session()
 def test(session):
     test_files = session.posargs or ["tests"]
-    # instal test_requirements.txt
+    # test deps (pytest, pytest-cov) live in requirements.txt since the Solara
+    # migration consolidated the former test_requirements.txt.
     session.install("-r", "requirements.txt")
-    session.install("-r", "test_requirements.txt")
     session.run("pytest", "--color=yes", "--cov", "--cov-report=xml", *test_files)
 
 
