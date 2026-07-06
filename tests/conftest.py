@@ -50,7 +50,7 @@ def _bridge_eeclient_credentials() -> None:
         data = json.loads(raw) if raw else {}
         project = data.get("project") or data.get("project_id")
         if not project:
-            warnings.warn("EEBRIDGE skipped: no project id found")
+            warnings.warn("eeclient credential bridge skipped: no project id found")
             return
 
         # Mint a fresh access token. Service-account tokens have no OAuth refresh
@@ -81,9 +81,8 @@ def _bridge_eeclient_credentials() -> None:
                 }
             )
         )
-        warnings.warn(f"EEBRIDGE wrote {target.name} project={project}")
     except Exception as e:  # pragma: no cover - best effort, don't break collection
-        warnings.warn(f"EEBRIDGE failed: {type(e).__name__}: {e}")
+        warnings.warn(f"eeclient credential bridge failed: {type(e).__name__}: {e}")
 
 
 init_ee()
