@@ -26,6 +26,7 @@ def _bridge_eeclient_credentials() -> None:
     import json
     import os
     import time
+    import warnings
     from pathlib import Path
 
     from google.auth.transport.requests import Request
@@ -53,7 +54,7 @@ def _bridge_eeclient_credentials() -> None:
             if project:
                 break
         if not project:
-            print("[conftest] eeclient bridge skipped: no project id found")
+            warnings.warn("EEBRIDGE skipped: no project id found")
             return
 
         # Mint a fresh access token from the already-initialized EE session.
@@ -71,9 +72,9 @@ def _bridge_eeclient_credentials() -> None:
                 }
             )
         )
-        print(f"[conftest] eeclient bridge wrote {target.name} (project {project})")
+        warnings.warn(f"EEBRIDGE wrote {target.name} project={project}")
     except Exception as e:  # pragma: no cover - best effort, don't break collection
-        print(f"[conftest] could not bridge eeclient credentials: {e}")
+        warnings.warn(f"EEBRIDGE failed: {type(e).__name__}: {e}")
 
 
 init_ee()
