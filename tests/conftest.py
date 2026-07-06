@@ -162,8 +162,14 @@ def test_multipolygon_aoi() -> ee.FeatureCollection:
 
 @pytest.fixture
 def mgci_model() -> MgciModel:
-    aoi_model = AoiModel(admin="959")
-    return MgciModel(aoi_model)
+    # MgciModel takes an AoiView and reads aoi_view.model, matching solara_app.py.
+    # (AoiModel has no .model attribute.)
+    from sepal_ui import mapping as sm
+
+    from component.tile.aoi_tile import AoiView
+
+    aoi_view = AoiView(map_=sm.SepalMap())
+    return MgciModel(aoi_view)
 
 
 @pytest.fixture

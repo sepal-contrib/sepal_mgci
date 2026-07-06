@@ -23,8 +23,13 @@ def transition_matrix():
 
 
 def test_transition_matrix(transition_matrix):
-    # Assert that transition matrix, matrix is the default
-    assert transition_matrix.transition_matrix == str(TRANSITION_MATRIX_FILE)
+    # The widget defaults to the writable per-session copy of the transition
+    # matrix under transition_dir (initialize_local copies TRANSITION_MATRIX_FILE
+    # there), not the bundled parameter file. See transition_matrix.py.
+    from component.parameter.directory import dir_ as dirs
+
+    expected = str(dirs.transition_dir / "transition_matrix.csv")
+    assert transition_matrix.transition_matrix == expected
 
 
 def test_change_value(transition_matrix):
