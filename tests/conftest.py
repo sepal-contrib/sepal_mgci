@@ -12,7 +12,58 @@ import pandas as pd
 
 from component.scripts.scripts import map_matrix_to_dict
 
+
+def _bridge_eeclient_credentials() -> None:
+    """Derive eeclient's ``sepal_credentials`` from the active EE credentials.
+
+    Widgets authenticate GEE through eeclient (``get_current_gee_interface``),
+    whose file mode expects a SEPAL-format ``GoogleTokens`` file. That is a
+    different filename and schema from the legacy ``credentials`` file that
+    ``EARTHENGINE_TOKEN`` / ``init_ee()`` produces, so widget-constructing tests
+    fail to authenticate in CI. Mint an access token from the same credentials
+    and write it where eeclient looks, so one ``EARTHENGINE_TOKEN`` serves both.
+    """
+    import json
+    import time
+    from pathlib import Path
+
+    from google.auth.transport.requests import Request
+
+    ee_dir = Path.home() / ".config" / "earthengine"
+    legacy = ee_dir / "credentials"
+    # eeclient selects the filename by home dir name (SepalCredentialMixin).
+    target = ee_dir / (
+        "credentials" if "sepal-user" in Path.home().name else "sepal_credentials"
+    )
+    # Never clobber the legacy credentials file (sepal-user env manages its own).
+    if target == legacy or not legacy.exists():
+        return
+
+    try:
+        cf = json.loads(legacy.read_text())
+        project = cf.get("project") or cf.get("project_id")
+        if not project:
+            return
+
+        creds = ee.data.get_persistent_credentials()
+        creds.refresh(Request())
+
+        target.write_text(
+            json.dumps(
+                {
+                    "accessToken": creds.token,
+                    # ms; file mode can't self-refresh, so give the short-lived
+                    "accessTokenExpiryDate": int((time.time() + 3300) * 1000),
+                    "projectId": project,
+                }
+            )
+        )
+    except Exception as e:  # pragma: no cover - best effort, don't break collection
+        print(f"[conftest] could not bridge eeclient credentials: {e}")
+
+
 init_ee()
+_bridge_eeclient_credentials()
 
 
 @pytest.fixture()
@@ -174,7 +225,8 @@ def mgci_model() -> MgciModel:
 
 @pytest.fixture
 def default_target_classes() -> dict:
-    dst_class_file = dir_.LOCAL_LC_CLASSES
+    # Default LC classes; directory.py copies this to class_dir as the local default.
+    dst_class_file = param.LC_CLASSES
     return {
         row.lc_class: (row.desc, row.color)
         for _, row in pd.read_csv(dst_class_file).iterrows()

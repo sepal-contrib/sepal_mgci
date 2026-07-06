@@ -100,7 +100,7 @@ def test_target_classes(mgci_model, default_target_classes):
         2: ("Croplands", "#F18701"),
         3: ("Grassland", "#92B4A7"),
     }
-    path_to_file = dir_.CLASS_DIR / "test_custom_target.csv"
+    path_to_file = dir_.dir_.class_dir / "test_custom_target.csv"
     df = pd.DataFrame.from_dict(custom_target_classes).T
     df.reset_index(inplace=True)
     df.columns = ["lc_class", "desc", "color"]
