@@ -24,6 +24,7 @@ def _bridge_eeclient_credentials() -> None:
     and write it where eeclient looks, so one ``EARTHENGINE_TOKEN`` serves both.
     """
     import json
+    import os
     import time
     from pathlib import Path
 
@@ -36,28 +37,41 @@ def _bridge_eeclient_credentials() -> None:
         "credentials" if "sepal-user" in Path.home().name else "sepal_credentials"
     )
     # Never clobber the legacy credentials file (sepal-user env manages its own).
-    if target == legacy or not legacy.exists():
+    if target == legacy:
         return
 
     try:
-        cf = json.loads(legacy.read_text())
-        project = cf.get("project") or cf.get("project_id")
+        # Project id: from EARTHENGINE_TOKEN (CI may not leave a credentials file
+        # on disk if EE was initialized before init_ee ran) or the legacy file.
+        project = None
+        for source in (os.environ.get("EARTHENGINE_TOKEN"), None):
+            raw = source if source else (legacy.read_text() if legacy.exists() else "")
+            if not raw:
+                continue
+            data = json.loads(raw)
+            project = data.get("project") or data.get("project_id")
+            if project:
+                break
         if not project:
+            print("[conftest] eeclient bridge skipped: no project id found")
             return
 
+        # Mint a fresh access token from the already-initialized EE session.
         creds = ee.data.get_persistent_credentials()
         creds.refresh(Request())
 
+        target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(
             json.dumps(
                 {
                     "accessToken": creds.token,
-                    # ms; file mode can't self-refresh, so give the short-lived
+                    # ms; file mode can't self-refresh, so keep it comfortably ahead
                     "accessTokenExpiryDate": int((time.time() + 3300) * 1000),
                     "projectId": project,
                 }
             )
         )
+        print(f"[conftest] eeclient bridge wrote {target.name} (project {project})")
     except Exception as e:  # pragma: no cover - best effort, don't break collection
         print(f"[conftest] could not bridge eeclient credentials: {e}")
 
