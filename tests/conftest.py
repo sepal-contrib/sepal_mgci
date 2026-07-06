@@ -42,23 +42,32 @@ def _bridge_eeclient_credentials() -> None:
         return
 
     try:
-        # Project id: from EARTHENGINE_TOKEN (CI may not leave a credentials file
-        # on disk if EE was initialized before init_ee ran) or the legacy file.
-        project = None
-        for source in (os.environ.get("EARTHENGINE_TOKEN"), None):
-            raw = source if source else (legacy.read_text() if legacy.exists() else "")
-            if not raw:
-                continue
-            data = json.loads(raw)
-            project = data.get("project") or data.get("project_id")
-            if project:
-                break
+        # Raw EE credentials: EARTHENGINE_TOKEN (CI may not leave a file on disk if
+        # EE was initialized before init_ee ran) or the legacy credentials file.
+        raw = os.environ.get("EARTHENGINE_TOKEN") or (
+            legacy.read_text() if legacy.exists() else ""
+        )
+        data = json.loads(raw) if raw else {}
+        project = data.get("project") or data.get("project_id")
         if not project:
             warnings.warn("EEBRIDGE skipped: no project id found")
             return
 
-        # Mint a fresh access token from the already-initialized EE session.
-        creds = ee.data.get_persistent_credentials()
+        # Mint a fresh access token. Service-account tokens have no OAuth refresh
+        # token, so get_persistent_credentials() can't refresh them — build the
+        # credentials from the key directly. Personal OAuth uses the persistent file.
+        if data.get("type") == "service_account":
+            from google.oauth2 import service_account
+
+            creds = service_account.Credentials.from_service_account_info(
+                data,
+                scopes=[
+                    "https://www.googleapis.com/auth/earthengine",
+                    "https://www.googleapis.com/auth/cloud-platform",
+                ],
+            )
+        else:
+            creds = ee.data.get_persistent_credentials()
         creds.refresh(Request())
 
         target.parent.mkdir(parents=True, exist_ok=True)
