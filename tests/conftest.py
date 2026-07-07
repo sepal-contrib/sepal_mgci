@@ -124,7 +124,7 @@ def default_dem_asset(default_dem_asset_id) -> ee.Image:
 def test_aoi() -> ee.FeatureCollection:
     """returns aoi"""
 
-    return ee.FeatureCollection("projects/ee-cheprotich22/assets/Argentina_Bounds")
+    return ee.FeatureCollection("projects/ee-cheprotich22/assets/aoi_Argentina_Bounds")
 
 
 @pytest.fixture()
@@ -176,7 +176,7 @@ def test_biobelt() -> ee.Image:
 def test_land_cover() -> ee.ImageCollection:
     """returns land cover collection"""
 
-    return ee.ImageCollection("projects/ee-cheprotich22/assets/Argentina_Landcover")
+    return ee.ImageCollection("projects/ee-cheprotich22/assets/aoi_Argentina_Landcover")
 
 
 @pytest.fixture()
@@ -258,7 +258,7 @@ def default_target_classes() -> dict:
 
 def argentina_model() -> MgciModel:
 
-    aoi_model = AoiModel(asset="projects/ee-cheprotich22/assets/Argentina_Bounds")
+    aoi_model = AoiModel(asset="projects/ee-cheprotich22/assets/aoi_Argentina_Bounds")
 
     mgci_model = MgciModel(aoi_model)
 
