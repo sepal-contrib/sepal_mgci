@@ -176,7 +176,7 @@ def test_biobelt() -> ee.Image:
 def test_land_cover() -> ee.ImageCollection:
     """returns land cover collection"""
 
-    return ee.ImageCollection("projects/ee-cheprotich22/assets/aoi_Argentina_Landcover")
+    return ee.ImageCollection("projects/ee-cheprotich22/assets/Argentina_Landcover")
 
 
 @pytest.fixture()
