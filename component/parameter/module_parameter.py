@@ -54,10 +54,6 @@ M49 = Path(__file__).parent / "m49_iso31661.csv"
 M49_FILE = Path(__file__).parent / "m49_countries.csv"
 
 
-# "Vector file" (SHAPE) is deliberately absent: the module is served as a single
-# Solara instance shared by every user, so a local file browser lists the
-# container filesystem instead of the user's workspace and the file is parsed in
-# the process serving all sessions. Custom geometries go through GEE assets.
 CUSTOM_AOI_ITEMS = [
     {"header": "Administrative definitions"},
     {"text": "Country", "value": "ADMIN0"},
