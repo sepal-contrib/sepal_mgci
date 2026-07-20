@@ -46,6 +46,8 @@ class AoiView(AoiView, sw.Card):
         )
         log.debug("AoiView initialized")
 
+        self.drop_local_file_methods()
+
         self.btn.children = [cm.aoi.view.btn]
         self.btn.small = True
         self.w_method.items = param.CUSTOM_AOI_ITEMS
@@ -54,6 +56,22 @@ class AoiView(AoiView, sw.Card):
         self._tasks: dict[str, GEETask] = {}
 
         self.configure_tasks()
+
+    def drop_local_file_methods(self):
+        """Remove the AOI methods that read files from the local filesystem.
+
+        sepal_ui always builds ``w_vector`` (SHAPE) and ``w_points`` (POINTS)
+        with a file browser that has no ``root`` and no ``sepal_client``, so it
+        walks the container filesystem instead of the user's SEPAL workspace,
+        and the selected file would be parsed in the single process serving
+        every session. Popping them from ``components`` also takes them out of
+        ``children``, so the browser is never rendered.
+        """
+        for method in ("SHAPE", "POINTS"):
+            widget = self.components.pop(method, None)
+            self.children = [child for child in self.children if child is not widget]
+
+        self.w_vector = self.w_points = None
 
     def get_m49(self):
         """Display only the countries that matches with m49"""

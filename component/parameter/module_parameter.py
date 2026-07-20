@@ -60,7 +60,6 @@ CUSTOM_AOI_ITEMS = [
     {"text": "Sub-national level 1", "value": "ADMIN1"},
     {"text": "Sub-national level 2", "value": "ADMIN2"},
     {"header": "Custom geometries"},
-    {"text": "Vector file", "value": "SHAPE"},
     {"text": "GEE Asset name", "value": "ASSET"},
 ]
 
