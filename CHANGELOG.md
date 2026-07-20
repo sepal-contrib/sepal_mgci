@@ -1,3 +1,13 @@
+## 1.0.1 (2026-07-20)
+
+### Fix
+
+- **aoi**: drop local vector file method from the AOI selector (#85)
+
+### Perf
+
+- **memory**: run under jemalloc to bound RSS (#82)
+
 ## 1.0.0 (2026-05-27)
 
 ### Feat
