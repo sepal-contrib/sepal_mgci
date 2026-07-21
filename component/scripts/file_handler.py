@@ -4,7 +4,7 @@ import json
 import ast
 import io
 import pandas as pd
-from sepal_ui.solara import get_current_sepal_client
+from pysepal.solara import get_current_sepal_client
 from pathlib import Path
 from typing import Optional, Any
 import io

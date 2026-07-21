@@ -5,7 +5,7 @@ import asyncio
 import ee
 from pathlib import Path
 
-from sepal_ui.scripts.gee_interface import GEEInterface
+from pysepal.scripts.gee_interface import GEEInterface
 
 import component.scripts as cs
 from component.types import ResultsDict, SubAYearDict, SubBYearDict

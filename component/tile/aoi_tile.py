@@ -8,15 +8,15 @@ import ee
 import pygaul
 import pandas as pd
 
-from sepal_ui.aoi.aoi_model import AoiModel
-from sepal_ui.aoi.aoi_view import AoiView
-from sepal_ui.message import ms
-from sepal_ui.scripts import decorator as sd
-from sepal_ui.scripts import utils as su
-from sepal_ui.aoi.aoi_view import AdminField
-import sepal_ui.sepalwidgets as sw
-from sepal_ui import mapping as sm
-from sepal_ui.scripts.gee_task import GEETask
+from pysepal.aoi.aoi_model import AoiModel
+from pysepal.aoi.aoi_view import AoiView
+from pysepal.message import ms
+from pysepal.scripts import decorator as sd
+from pysepal.scripts import utils as su
+from pysepal.aoi.aoi_view import AdminField
+import pysepal.sepalwidgets as sw
+from pysepal import mapping as sm
+from pysepal.scripts.gee_task import GEETask
 
 
 from component.widget.legend_control import LegendControl
@@ -85,16 +85,16 @@ class AoiView(AoiView, sw.Card):
 
         df = pd.read_parquet(content).astype(str)
 
-        # Read AOI gaul dataframe
+        # Read AOI gaul dataframe (pygaul>=0.4 renamed the columns)
         gaul_dataset = (
-            df.drop_duplicates(subset="ADM{}_CODE".format(0))
-            .sort_values("ADM{}_NAME".format(0))
-            .rename(columns={"ISO 3166-1 alpha-3": "iso31661"})
+            df.drop_duplicates(subset="gaul0_code")
+            .sort_values("gaul0_name")
+            .rename(columns={"iso3_code": "iso31661"})
         )
 
         # Get only the gaul contries present in the m49
         m49_dataset = gaul_dataset[gaul_dataset.iso31661.isin(m49_countries.iso31661)]
-        gaul_codes = m49_dataset.ADM0_CODE.astype(str).to_list()
+        gaul_codes = m49_dataset.gaul0_code.astype(str).to_list()
 
         # Remove countries that are not present in gaul_dataset
         m49_items = [

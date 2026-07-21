@@ -1,5 +1,5 @@
 import ipyvuetify as v
-import sepal_ui.sepalwidgets as sw
+import pysepal.sepalwidgets as sw
 
 btn_color = "primary"
 

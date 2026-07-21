@@ -1,14 +1,14 @@
 import asyncio
 from time import sleep
 import ipyvuetify as v
-import sepal_ui.sepalwidgets as sw
+import pysepal.sepalwidgets as sw
 from traitlets import directional_link
 from component.model.model import MgciModel
 
-from sepal_ui.scripts.sepal_client import SepalClient
-import sepal_ui.scripts.decorator as sd
-from sepal_ui.aoi.aoi_model import AoiModel
-from sepal_ui.solara import get_current_gee_interface
+from pysepal.scripts.sepal_client import SepalClient
+import pysepal.scripts.decorator as sd
+from pysepal.aoi.aoi_model import AoiModel
+from pysepal.solara import get_current_gee_interface
 
 from component.parameter.directory import dir_
 from component.message import cm

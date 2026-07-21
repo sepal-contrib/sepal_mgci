@@ -1,13 +1,13 @@
 from pathlib import Path
 
 import ipyvuetify as v
-import sepal_ui.scripts.utils as su
-import sepal_ui.sepalwidgets as sw
-from sepal_ui.scripts.sepal_client import SepalClient
-from sepal_ui.sepalwidgets.file_input import FileInput
-from sepal_ui.scripts.drive_interface import GDriveInterface
-from sepal_ui.scripts.gee_interface import GEEInterface
-from sepal_ui.sepalwidgets.btn import TaskButton
+import pysepal.scripts.utils as su
+import pysepal.sepalwidgets as sw
+from pysepal.scripts.sepal_client import SepalClient
+from pysepal.sepalwidgets.file_input import FileInput
+from pysepal.scripts.drive_interface import GDriveInterface
+from pysepal.scripts.gee_interface import GEEInterface
+from pysepal.sepalwidgets.btn import TaskButton
 
 from component.parameter.directory import dir_
 import component.scripts as cs

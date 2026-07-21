@@ -1,7 +1,7 @@
 import pandas as pd
 from component.widget.base_dialog import BaseDialog
-import sepal_ui.scripts.utils as su
-import sepal_ui.sepalwidgets as sw
+import pysepal.scripts.utils as su
+import pysepal.sepalwidgets as sw
 
 import component.parameter.module_parameter as param
 import component.scripts as cs

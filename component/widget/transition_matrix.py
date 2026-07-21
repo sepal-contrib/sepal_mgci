@@ -6,10 +6,10 @@ import pandas as pd
 from traitlets import Bool, Dict, List, Unicode, directional_link, link, observe
 
 from component.scripts.file_handler import df_to_csv, read_file
-import sepal_ui.sepalwidgets as sw
+import pysepal.sepalwidgets as sw
 
-from sepal_ui.sepalwidgets.file_input import FileInput
-from sepal_ui.scripts.sepal_client import SepalClient
+from pysepal.sepalwidgets.file_input import FileInput
+from pysepal.scripts.sepal_client import SepalClient
 
 
 from component.model.model import MgciModel

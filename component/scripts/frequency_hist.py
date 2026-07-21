@@ -4,7 +4,7 @@ from natsort import natsorted
 import concurrent.futures
 
 from component.message import cm
-from sepal_ui.solara import get_current_gee_interface
+from pysepal.solara import get_current_gee_interface
 
 
 def subset_items(list_: list):

@@ -1,5 +1,5 @@
 from traitlets import CBool, Unicode, link, observe
-from sepal_ui import sepalwidgets as sw
+from pysepal import sepalwidgets as sw
 
 import component.widget.custom_widgets as cw
 from component.message import cm

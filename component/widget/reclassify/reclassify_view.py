@@ -9,17 +9,17 @@ log = logging.getLogger("MGCI.reclassify_view")
 import ipyvuetify as v
 import pandas as pd
 from component.scripts.file_handler import df_to_csv, read_file
-import sepal_ui.sepalwidgets as sw
-from sepal_ui import color
-from sepal_ui.scripts import utils as su
-from sepal_ui.scripts.sepal_client import SepalClient
-from sepal_ui.sepalwidgets.file_input import FileInput
-from sepal_ui.sepalwidgets.btn import TaskButton
-from sepal_ui.solara import get_current_gee_interface
-from sepal_ui.scripts.gee_task import GEETask
+import pysepal.sepalwidgets as sw
+from pysepal import color
+from pysepal.scripts import utils as su
+from pysepal.scripts.sepal_client import SepalClient
+from pysepal.sepalwidgets.file_input import FileInput
+from pysepal.sepalwidgets.btn import TaskButton
+from pysepal.solara import get_current_gee_interface
+from pysepal.scripts.gee_task import GEETask
 
-import sepal_ui.scripts.decorator as sd
-from sepal_ui.scripts.decorator import loading_button, switch
+import pysepal.scripts.decorator as sd
+from pysepal.scripts.decorator import loading_button, switch
 from traitlets import Unicode, directional_link
 
 from component.scripts.validation import (

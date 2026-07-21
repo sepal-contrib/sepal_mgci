@@ -16,8 +16,8 @@ LOCAL_FILE_METHODS = ("SHAPE", "POINTS")
 @pytest.fixture()
 def aoi_view() -> AoiView:
     """An AoiView built the way ``solara_app.Page`` builds it."""
-    from sepal_ui.mapping import SepalMap
-    from sepal_ui.scripts.gee_interface import GEEInterface
+    from pysepal.mapping import SepalMap
+    from pysepal.scripts.gee_interface import GEEInterface
 
     return AoiView(map_=SepalMap(gee_interface=GEEInterface()))
 
@@ -40,8 +40,8 @@ def test_local_file_widgets_are_not_reachable(aoi_view: AoiView) -> None:
 
 def test_no_file_browser_in_the_widget_tree(aoi_view: AoiView) -> None:
     """No widget in the AOI tile browses the filesystem of the container."""
-    from sepal_ui.sepalwidgets.file_input import FileInput
-    from sepal_ui.sepalwidgets.inputs import FileInput as LegacyFileInput
+    from pysepal.sepalwidgets.file_input import FileInput
+    from pysepal.sepalwidgets.inputs import FileInput as LegacyFileInput
 
     def walk(widget, seen):
         if id(widget) in seen:
@@ -61,7 +61,7 @@ def test_no_file_browser_in_the_widget_tree(aoi_view: AoiView) -> None:
 
 def test_asset_method_stays_available(aoi_view: AoiView) -> None:
     """Custom geometries are still reachable, through GEE assets."""
-    from sepal_ui.sepalwidgets.inputs import AssetSelect
+    from pysepal.sepalwidgets.inputs import AssetSelect
 
     aoi_view.w_method.v_model = "ASSET"
 

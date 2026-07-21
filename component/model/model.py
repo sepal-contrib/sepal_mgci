@@ -1,8 +1,8 @@
 import random
 from typing import List
 
-from sepal_ui.model import Model
-import sepal_ui.scripts.decorator as sd
+from pysepal.model import Model
+import pysepal.scripts.decorator as sd
 import component.scripts as cs
 from traitlets import Bool, CBool, Dict, List, Unicode, observe
 

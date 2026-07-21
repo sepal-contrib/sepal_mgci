@@ -1,7 +1,7 @@
 from pathlib import Path
-from sepal_ui.scripts.warning import SepalWarning
-from sepal_ui.scripts.drive_interface import GDriveInterface
-from sepal_ui.scripts.gee_interface import GEEInterface
+from pysepal.scripts.warning import SepalWarning
+from pysepal.scripts.drive_interface import GDriveInterface
+from pysepal.scripts.gee_interface import GEEInterface
 
 from component.parameter.directory import dir_
 

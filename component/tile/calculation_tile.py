@@ -5,10 +5,10 @@ import ee
 import ipyvuetify as v
 from traitlets import Bool, Int, directional_link, link
 
-import sepal_ui.scripts.utils as su
-import sepal_ui.sepalwidgets as sw
-import sepal_ui.scripts.decorator as sd
-from sepal_ui.sepalwidgets.btn import TaskButton
+import pysepal.scripts.utils as su
+import pysepal.sepalwidgets as sw
+import pysepal.scripts.decorator as sd
+from pysepal.sepalwidgets.btn import TaskButton
 
 
 from component.parameter.directory import dir_

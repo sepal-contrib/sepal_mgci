@@ -1,8 +1,8 @@
 import ipyvuetify as v
 from ipyleaflet import WidgetControl
 
-from sepal_ui import mapping as m
-from sepal_ui.mapping.map_btn import MapBtn
+from pysepal import mapping as m
+from pysepal.mapping.map_btn import MapBtn
 
 import component.widget as cw
 from component.message import cm

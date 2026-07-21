@@ -3,7 +3,7 @@ from typing import List as ListType, Dict as DictType, Any
 import ipyvuetify as v
 from traitlets import Dict, List, Unicode, observe
 import logging
-import sepal_ui.sepalwidgets as sw
+import pysepal.sepalwidgets as sw
 import component.parameter.module_parameter as param
 
 log = logging.getLogger("MGCI.widget.custom_list")

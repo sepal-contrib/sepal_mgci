@@ -1,18 +1,18 @@
 import component.parameter.module_parameter as param
 
 
-from sepal_ui.scripts.utils import init_ee
+from pysepal.scripts.utils import init_ee
 import ee
 import pytest
 
 from component.model.model import MgciModel
 from component.tile.aoi_tile import AoiView
-from sepal_ui.mapping import SepalMap
-from sepal_ui.scripts.gee_interface import GEEInterface
+from pysepal.mapping import SepalMap
+from pysepal.scripts.gee_interface import GEEInterface
 import pandas as pd
 
 from component.scripts.scripts import map_matrix_to_dict
-import sepal_ui.solara.utils as solara_utils
+import pysepal.solara.utils as solara_utils
 
 init_ee()
 

@@ -1,7 +1,7 @@
 import ipyvuetify as v
-from sepal_ui import color
-import sepal_ui.sepalwidgets as sw
-from sepal_ui.frontend.resize_trigger import rt
+from pysepal import color
+import pysepal.sepalwidgets as sw
+from pysepal.frontend.resize_trigger import rt
 from traitlets import CBool, Int, link
 from ipyvuetify import Btn
 
