@@ -13,6 +13,7 @@ from rasterio.windows import from_bounds
 from pysepal.solara import get_current_gee_interface
 
 from component.scripts.file_handler import read_file
+from component.scripts.aoi_geometry import aoi_bbox
 from pysepal.model import Model
 from pysepal.scripts import gee
 from pysepal.scripts import utils as su
@@ -294,12 +295,18 @@ class ReclassifyModel(Model):
         def _ee_image():
             # reduce the image
             image = ee.Image(self.src_gee).select(self.band)
-            aoi = self.get_aoi() or image
-            geometry = aoi.geometry()
+            aoi = self.get_aoi()
 
-            reduction = image.reduceRegion(
-                ee.Reducer.frequencyHistogram(), geometry, maxPixels=1e13
-            )
+            if aoi is not None:
+                # clip to the AOI (per-feature) and reduce over its bbox to avoid
+                # building the combined geometry (2M-edge limit for dense AOIs).
+                reduction = image.clip(aoi).reduceRegion(
+                    ee.Reducer.frequencyHistogram(), aoi_bbox(aoi), maxPixels=1e13
+                )
+            else:
+                reduction = image.reduceRegion(
+                    ee.Reducer.frequencyHistogram(), image.geometry(), maxPixels=1e13
+                )
 
             # Remove all the unnecessary reducer output structure and make a
             # list of values.
@@ -312,12 +319,16 @@ class ReclassifyModel(Model):
         @su.need_ee
         def _ee_vector():
             collection = ee.FeatureCollection(self.src_gee)
-            aoi = self.get_aoi() or collection
-            geometry = aoi.geometry()
+            aoi = self.get_aoi()
+
+            if aoi is not None:
+                # filter to the AOI bounding box (few edges, 2M-edge safe); good
+                # enough to enumerate the classes present in the AOI.
+                collection = collection.filterBounds(aoi_bbox(aoi))
 
             # get the feature
             values = self.gee_interface.get_info(
-                collection.filterBounds(geometry).aggregate_array(self.band)
+                collection.aggregate_array(self.band)
             )
 
             return list(set(values))
@@ -380,13 +391,15 @@ class ReclassifyModel(Model):
             from_, to_ = list(zip(*matrix.items()))
 
             image = ee.Image(self.src_gee)
-            aoi = self.get_aoi() or image
-            geometry = aoi.geometry()
+            aoi = self.get_aoi()
 
-            ee_image = (
-                image.clip(geometry)
-                .remap(from_, to_, 0, self.band)
-                .select(["remapped"], [self.band])
+            # clip to the AOI feature collection (per-feature; avoids the 2M-edge
+            # limit). No AOI -> leave the image unclipped.
+            if aoi is not None:
+                image = image.clip(aoi)
+
+            ee_image = image.remap(from_, to_, 0, self.band).select(
+                ["remapped"], [self.band]
             )
 
             # gather all the other band in the image
@@ -439,12 +452,13 @@ class ReclassifyModel(Model):
             ee_from, ee_to = ee.List(ee_matrix.get(0)), ee.List(ee_matrix.get(1))
 
             collection = ee.FeatureCollection(self.src_gee)
-            aoi = self.get_aoi() or collection
-            geometry = aoi.geometry()
+            aoi = self.get_aoi()
 
-            self.dst_gee_memory = (
-                ee.FeatureCollection(self.src_gee).filterBounds(geometry).map(add_prop)
-            )
+            if aoi is not None:
+                # filter to the AOI bounding box (few edges, 2M-edge safe)
+                collection = collection.filterBounds(aoi_bbox(aoi))
+
+            self.dst_gee_memory = collection.map(add_prop)
 
             # add colormapping parameters
 
