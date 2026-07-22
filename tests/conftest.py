@@ -58,7 +58,7 @@ def default_dem_asset(default_dem_asset_id) -> ee.Image:
 def test_aoi() -> ee.FeatureCollection:
     """returns aoi"""
 
-    return ee.FeatureCollection("projects/ee-cheprotich22/assets/Argentina_Bounds")
+    return ee.FeatureCollection("projects/ee-cheprotich22/assets/aoi_Argentina_Bounds")
 
 
 @pytest.fixture()
@@ -193,8 +193,7 @@ def default_target_classes() -> dict:
 
 
 def argentina_model() -> MgciModel:
-    # NOTE: unused helper. The former AOI asset
-    # (projects/ee-cheprotich22/assets/Argentina_Bounds) is no longer readable.
+    # NOTE: unused helper kept for parity with the other model fixtures.
     aoi_view = AoiView(map_=SepalMap(gee_interface=GEEInterface()))
 
     return MgciModel(aoi_view)

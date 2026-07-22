@@ -6,24 +6,15 @@ from pathlib import Path
 sys.path.append(str(Path(".").resolve()))
 
 
+import asyncio
+
 import pytest
 from component.scripts.frequency_hist import (
     get_unique_classes,
     get_unique_classes_by_year,
 )
 
-# The AOI fixture asset 'projects/ee-cheprotich22/assets/Argentina_Bounds' is no
-# longer readable (same blocker as test_reduce). On top of that, these functions
-# became async and get_unique_classes now takes a model (model.aoi_model.
-# feature_collection) instead of an aoi. Re-enable once a live AOI is available
-# and the golden class lists below are regenerated against it.
-_DEAD_AOI_ASSET = pytest.mark.skip(
-    reason="AOI fixture asset Argentina_Bounds no longer readable; goldens need "
-    "regenerating against a live AOI (same blocker as test_reduce)."
-)
 
-
-@_DEAD_AOI_ASSET
 def test_get_unique_classes_by_year(test_aoi, test_land_cover):
 
     expected_output = {
@@ -86,11 +77,17 @@ def test_get_unique_classes_by_year(test_aoi, test_land_cover):
             "9",
         ],
     }
-    assert get_unique_classes_by_year(test_aoi, test_land_cover) == expected_output
+    # get_unique_classes_by_year returns one class list per sampled image
+    # (first/middle/last), not a dict keyed by asset. Compare as sorted sets,
+    # independent of ordering and of the image asset keys.
+    result = asyncio.run(get_unique_classes_by_year(test_aoi, test_land_cover))
+
+    assert sorted(sorted(classes) for classes in result) == sorted(
+        sorted(classes) for classes in expected_output.values()
+    )
 
 
-@_DEAD_AOI_ASSET
-def test_frequency_hist(test_aoi, test_land_cover):
+def test_frequency_hist(mgci_model, test_aoi, test_land_cover):
     expected_output = {
         "0": ("no_name", "#000000"),
         "3": ("no_name", "#000000"),
@@ -114,7 +111,13 @@ def test_frequency_hist(test_aoi, test_land_cover):
         ),  # https://code.earthengine.google.com/4a6e102f1dac4b266b5ffc66f840c9d0
         "63": ("no_name", "#000000"),
     }
-    assert get_unique_classes(test_aoi, test_land_cover) == expected_output
+
+    # get_unique_classes reads the AOI from model.aoi_model.feature_collection.
+    mgci_model.aoi_model.feature_collection = test_aoi
+
+    result = asyncio.run(get_unique_classes(mgci_model, test_land_cover))
+
+    assert result == expected_output
 
 
 if __name__ == "__main__":
