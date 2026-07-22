@@ -6,13 +6,21 @@ import ee
 import pytest
 
 from component.model.model import MgciModel
-from sepal_ui.aoi.aoi_model import AoiModel
-import component.parameter.directory as dir_
+from component.tile.aoi_tile import AoiView
+from sepal_ui.mapping import SepalMap
+from sepal_ui.scripts.gee_interface import GEEInterface
 import pandas as pd
 
 from component.scripts.scripts import map_matrix_to_dict
+import sepal_ui.solara.utils as solara_utils
 
 init_ee()
+
+# Outside a SEPAL session, sepal_ui's get_current_gee_interface() falls back to a
+# GEEInterface backed by an eeclient EESession, which needs SEPAL credentials that
+# don't exist in a test/CI environment. Seed the fallback with a sessionless
+# GEEInterface so internal calls use the local Earth Engine credentials instead.
+solara_utils._fallback_gee_interface = GEEInterface()
 
 
 @pytest.fixture()
@@ -50,7 +58,7 @@ def default_dem_asset(default_dem_asset_id) -> ee.Image:
 def test_aoi() -> ee.FeatureCollection:
     """returns aoi"""
 
-    return ee.FeatureCollection("projects/ee-cheprotich22/assets/Argentina_Bounds")
+    return ee.FeatureCollection("projects/ee-cheprotich22/assets/aoi_Argentina_Bounds")
 
 
 @pytest.fixture()
@@ -161,24 +169,31 @@ def test_multipolygon_aoi() -> ee.FeatureCollection:
 
 
 @pytest.fixture
+def gee_interface() -> GEEInterface:
+    # Sessionless: uses the local Earth Engine credentials (asyncio.to_thread on
+    # ee.getInfo) rather than the SEPAL eeclient session path.
+    return GEEInterface()
+
+
+@pytest.fixture
 def mgci_model() -> MgciModel:
-    aoi_model = AoiModel(admin="959")
-    return MgciModel(aoi_model)
+    # MgciModel derives its AoiModel from an AoiView (aoi_view.model), the way
+    # solara_app.Page builds it. A sessionless GEEInterface uses the local Earth
+    # Engine credentials rather than the SEPAL eeclient path.
+    aoi_view = AoiView(map_=SepalMap(gee_interface=GEEInterface()))
+    return MgciModel(aoi_view)
 
 
 @pytest.fixture
 def default_target_classes() -> dict:
-    dst_class_file = dir_.LOCAL_LC_CLASSES
     return {
         row.lc_class: (row.desc, row.color)
-        for _, row in pd.read_csv(dst_class_file).iterrows()
+        for _, row in pd.read_csv(param.LC_CLASSES).iterrows()
     }
 
 
 def argentina_model() -> MgciModel:
+    # NOTE: unused helper kept for parity with the other model fixtures.
+    aoi_view = AoiView(map_=SepalMap(gee_interface=GEEInterface()))
 
-    aoi_model = AoiModel(asset="projects/ee-cheprotich22/assets/Argentina_Bounds")
-
-    mgci_model = MgciModel(aoi_model)
-
-    return mgci_model
+    return MgciModel(aoi_view)
