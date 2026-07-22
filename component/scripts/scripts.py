@@ -719,7 +719,8 @@ def export_reports(
         excel_bytes = buffer.getvalue()
         # make sure the folder exists
         sepal_client.get_remote_dir(output_folder, parents=True)
-        sepal_client.set_file(output_name, excel_bytes)
+        # overwrite=True to regenerate an existing report (pysepal-api 409s otherwise)
+        sepal_client.set_file(output_name, excel_bytes, overwrite=True)
 
         return output_name
 

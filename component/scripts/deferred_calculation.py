@@ -71,7 +71,8 @@ async def task_process(
     json_data = json.dumps(data, indent=4)
 
     if sepal_client:
-        return sepal_client.set_file(task_path, json_data)
+        # overwrite=True to match the local branch (open("w")); pysepal-api 409s otherwise
+        return sepal_client.set_file(task_path, json_data, overwrite=True)
     else:
         # Save the file to the local system
         with Path(task_path).open("w") as f:
