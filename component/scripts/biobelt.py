@@ -6,6 +6,7 @@ import pandas as pd
 
 from component.message import cm
 from component.parameter.module_parameter import BIOBELT_LEGEND
+from component.scripts.aoi_geometry import aoi_bbox
 from pysepal.solara import get_current_gee_interface
 
 
@@ -15,7 +16,9 @@ def unnest(group):
 
 
 async def get_belt_area(aoi, biobelt) -> tuple:
-    """returns legend-dict"""
+    """returns legend-dict. ``aoi`` is a feature collection; clipping to it (per
+    feature) and reducing over its bounding box avoids building the combined
+    geometry (2M-edge limit + slow for dense GAUL 2024 boundaries)."""
 
     gee_interface = get_current_gee_interface()
 
@@ -25,12 +28,14 @@ async def get_belt_area(aoi, biobelt) -> tuple:
                 ee.Image.pixelArea()
                 .divide(1e6)  # To display in square kilometers
                 .addBands(biobelt)
+                .clip(aoi)
                 .reduceRegion(
                     **{
                         "reducer": ee.Reducer.sum().group(1),
-                        "geometry": aoi,
+                        "geometry": aoi_bbox(aoi),
                         "scale": biobelt.projection().nominalScale(),
                         "maxPixels": 1e13,
+                        "bestEffort": True,
                     }
                 )
                 .get("groups")

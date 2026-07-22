@@ -21,6 +21,7 @@ from pysepal.scripts.gee_task import GEETask
 
 from component.widget.legend_control import LegendControl
 from component.scripts.biobelt import get_belt_area
+from component.scripts.aoi_geometry import aoi_bbox
 from component.parameter.module_parameter import BIOBELT, BIOBELT_LEGEND, BIOBELT_VIS
 from component.widget.legend_control import LegendControl
 from component.message import cm
@@ -108,7 +109,7 @@ class AoiView(AoiView, sw.Card):
 
         coros = [
             self.map_.gee_interface.get_info_async(
-                self.model.feature_collection.geometry().bounds().coordinates().get(0)
+                aoi_bbox(self.model.feature_collection).coordinates().get(0)
             ),
             self.map_.add_ee_layer_async(self.model.feature_collection, name="AOI"),
         ]
@@ -125,15 +126,13 @@ class AoiView(AoiView, sw.Card):
         self.map_.legend.loading = True
 
         biobelt_layer = self.map_.add_ee_layer_async(
-            ee.Image(BIOBELT).clip(
-                self.model.feature_collection.geometry().simplify(1000)
-            ),
+            ee.Image(BIOBELT).clip(self.model.feature_collection),
             name=cm.aoi.legend.belts,
             vis_params=BIOBELT_VIS,
         )
 
         belt_area = get_belt_area(
-            self.model.feature_collection.geometry(), ee.Image(BIOBELT)
+            self.model.feature_collection, ee.Image(BIOBELT)
         )
 
         coros = [biobelt_layer, belt_area]
@@ -260,7 +259,7 @@ class AoiModel(AoiModel):
 
         feature_collection = ee.FeatureCollection(
             {
-                "ADMIN0": "projects/ee-andyarnellgee/assets/crosscutting/GAUL_2024_L0_simplify_0_001deg_dice10k",
+                "ADMIN0": "projects/sat-io/open-datasets/FAO/GAUL/GAUL_2024_L0",
                 "ADMIN1": "projects/sat-io/open-datasets/FAO/GAUL/GAUL_2024_L1",
                 "ADMIN2": "projects/sat-io/open-datasets/FAO/GAUL/GAUL_2024_L2",
             }[self.method]
