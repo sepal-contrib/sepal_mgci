@@ -16,10 +16,17 @@ import pysepal.solara.utils as solara_utils
 
 init_ee()
 
-# Outside a SEPAL session, sepal_ui's get_current_gee_interface() falls back to a
-# GEEInterface backed by an eeclient EESession, which needs SEPAL credentials that
-# don't exist in a test/CI environment. Seed the fallback with a sessionless
-# GEEInterface so internal calls use the local Earth Engine credentials instead.
+# Seed pysepal's get_current_gee_interface() fallback with a *sessionless*
+# GEEInterface. pysepal 3.7's fallback (EESession.from_default) authenticates fine
+# and can get_info_async -- but its async HTTP client binds to the event loop it is
+# first used on, and get_current_gee_interface() caches ONE fallback per process.
+# The tests drive app internals (e.g. frequency_hist) under many separate
+# asyncio.run() loops, so the cached client ends up on a closed loop
+# ("Event loop is closed") and crashes at teardown. A sessionless GEEInterface has
+# no persistent client (get_info_async uses asyncio.to_thread(ee.getInfo)), so it is
+# loop-agnostic and safe to share across asyncio.run() calls.
+# TODO(openforis/pysepal#1010): a fallback whose async client is loop-safe (not a
+# process-wide singleton bound to one loop) would make this monkey-patch unnecessary.
 solara_utils._fallback_gee_interface = GEEInterface()
 
 
@@ -170,16 +177,13 @@ def test_multipolygon_aoi() -> ee.FeatureCollection:
 
 @pytest.fixture
 def gee_interface() -> GEEInterface:
-    # Sessionless: uses the local Earth Engine credentials (asyncio.to_thread on
-    # ee.getInfo) rather than the SEPAL eeclient session path.
     return GEEInterface()
 
 
 @pytest.fixture
 def mgci_model() -> MgciModel:
     # MgciModel derives its AoiModel from an AoiView (aoi_view.model), the way
-    # solara_app.Page builds it. A sessionless GEEInterface uses the local Earth
-    # Engine credentials rather than the SEPAL eeclient path.
+    # solara_app.Page builds it.
     aoi_view = AoiView(map_=SepalMap(gee_interface=GEEInterface()))
     return MgciModel(aoi_view)
 
