@@ -1,3 +1,4 @@
+import asyncio
 import json
 from pathlib import Path
 import ee
@@ -27,6 +28,7 @@ def years(test_sub_a_year, test_sub_b_year) -> list:
 
 
 def test_perform_calculation_on_the_fly(
+    gee_interface,
     test_antioquia_aoi,
     years,
     default_dem_asset_id,
@@ -40,6 +42,7 @@ def test_perform_calculation_on_the_fly(
     )
 
     calculation_parms = {
+        "gee_interface": gee_interface,
         "aoi": test_antioquia_aoi,
         "rsa": False,
         "dem": default_dem_asset_id,
@@ -52,13 +55,14 @@ def test_perform_calculation_on_the_fly(
         "scale": None,
     }
 
-    result = perform_calculation(**calculation_parms)
+    result = asyncio.run(perform_calculation(**calculation_parms))
 
     assert isinstance(result, dict)
     assert compare_nested_dicts(result, antioquia_default_result)
 
 
 def test_perform_calculation_on_the_background(
+    gee_interface,
     test_antioquia_aoi,
     years,
     default_dem_asset_id,
@@ -70,6 +74,7 @@ def test_perform_calculation_on_the_background(
         Path("tests/test_output_result/result_antioquia_on_background.json").read_text()
     )
     calculation_parms = {
+        "gee_interface": gee_interface,
         "aoi": test_antioquia_aoi,
         "rsa": False,
         "dem": default_dem_asset_id,
@@ -82,7 +87,7 @@ def test_perform_calculation_on_the_background(
         "scale": None,
     }
 
-    result = perform_calculation(**calculation_parms)
+    result = asyncio.run(perform_calculation(**calculation_parms))
     assert isinstance(result, ee.featurecollection.FeatureCollection)
 
     result = result.getInfo()
