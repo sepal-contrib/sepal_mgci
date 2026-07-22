@@ -221,7 +221,9 @@ class LayerHandler(sw.Layout):
         if not selection:
             raise Exception("No layer selected")
 
-        aoi = self.model.aoi_model.feature_collection.geometry()
+        # Pass the feature collection (not its combined geometry): get_layer_* clip
+        # to it per-feature, avoiding the 2M-edge limit for dense AOIs.
+        aoi = self.model.aoi_model.feature_collection
 
         if selection[0] == "a":
             remap_matrix = self.model.matrix_sub_a

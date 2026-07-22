@@ -4,6 +4,7 @@ from natsort import natsorted
 import concurrent.futures
 
 from component.message import cm
+from component.scripts.aoi_geometry import aoi_bbox
 from pysepal.solara import get_current_gee_interface
 
 
@@ -40,8 +41,6 @@ async def get_unique_classes_by_year(
         band = image.bandNames().get(0)
         image = image.select([band])
 
-        geometry = aoi.geometry()
-
         # Multiply the nominal scale by 2 in case the nominal scale is finer than 45
         scale = ee.Number(
             ee.Algorithms.If(
@@ -54,9 +53,11 @@ async def get_unique_classes_by_year(
         # If scale is less than 30, set it to 30
         scale = ee.Algorithms.If(scale.lt(30), 30, scale)
 
-        reduction = image.reduceRegion(
+        # clip to the AOI (per-feature) and reduce over its bbox to avoid building
+        # the combined geometry (2M-edge limit for dense AOIs).
+        reduction = image.clip(aoi).reduceRegion(
             ee.Reducer.frequencyHistogram(),
-            geometry,
+            aoi_bbox(aoi),
             maxPixels=1e13,
             scale=scale,
         )

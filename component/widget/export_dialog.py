@@ -13,6 +13,7 @@ import component.scripts as cs
 from component.message import cm
 from component.model.model import MgciModel
 from component.scripts.layers import get_layer_a, get_layer_b
+from component.scripts.aoi_geometry import aoi_bbox
 
 
 class ExportMapDialog(sw.Dialog):
@@ -89,7 +90,7 @@ class ExportMapDialog(sw.Dialog):
 
         if selection[0] == "a":
             remap_matrix = self.model.matrix_sub_a
-            layer, vis_params = get_layer_a(selection[1], remap_matrix, aoi.geometry())
+            layer, vis_params = get_layer_a(selection[1], remap_matrix, aoi)
 
         elif selection[0] == "b":
             remap_matrix = self.model.matrix_sub_b
@@ -99,7 +100,7 @@ class ExportMapDialog(sw.Dialog):
             layer, vis_params = get_layer_b(
                 selection[1],
                 remap_matrix,
-                aoi.geometry(),
+                aoi,
                 sub_b_year,
                 transition_matrix,
             )
@@ -130,7 +131,7 @@ class ExportMapDialog(sw.Dialog):
             # "image": ee_image,
             "description": layer_name,
             "scale": self.w_scale.v_model,
-            "region": aoi.geometry(),
+            "region": aoi_bbox(aoi),
             "max_pixels": 1e13,
         }
 
