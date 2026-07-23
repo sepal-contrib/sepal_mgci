@@ -67,3 +67,18 @@ def test_asset_method_stays_available(aoi_view: AoiView) -> None:
 
     assert isinstance(aoi_view.components["ASSET"].w_file, AssetSelect)
     assert "d-none" not in aoi_view.components["ASSET"].class_
+
+
+def test_admin0_country_list_is_populated(aoi_view: AoiView) -> None:
+    """get_m49() maps the module's M49 ISO codes onto pygaul's GAUL columns.
+
+    pygaul>=0.4 renamed those columns (gaul0_code, iso3_code); a further rename or a
+    change to the packaged parquet would silently empty the country dropdown -- the
+    breakage seen in se.plan#254. Guard that the mapping stays wired.
+    """
+    items = aoi_view.w_admin_0.items
+
+    assert items, "M49 country dropdown is empty; pygaul columns/parquet likely drifted"
+    assert all("value" in item and "text" in item for item in items)
+    # M49 covers essentially every country; a healthy mapping keeps most of them.
+    assert len(items) > 150
