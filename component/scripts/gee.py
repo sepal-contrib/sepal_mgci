@@ -49,11 +49,9 @@ def reduce_by_regions(
 ):
     """Area by land-cover class x bioclimatic belt over the AOI (primary path).
 
-    Clips the stack to the AOI (``clip`` rasterises each feature, so it never
-    builds the combined geometry) and reduces over the AOI bounding box with a
-    single grouped ``reduceRegion``. This avoids ``FeatureCollection.geometry()``
-    -- past the 2M-edge limit and slow -- and is numerically identical to
-    reducing over the combined geometry (verified to 0.0000% on a real AOI).
+    Clips the stack to the AOI and reduces over its bounding box (see
+    ``aoi_bbox``) with a single grouped ``reduceRegion`` -- numerically identical
+    to reducing over the full geometry (verified to 0.0000% on a real AOI).
     """
     reducer = ee.Reducer.sum().group(1, "lc").group(2, "biobelt")
 
@@ -92,9 +90,8 @@ def reduce_by_regions_grouped(
     """Fallback for :func:`reduce_by_regions`: reduce each AOI feature separately
     (``reduceRegions``) and recombine with ``reduceGroups``.
 
-    Also avoids the combined geometry, but reducing per-feature can finish for a
-    huge dispersed AOI where the single-region primary times out. Slightly less
-    accurate than the primary (see issue #88), so it is only a fallback.
+    Reducing per-feature can finish for a huge dispersed AOI where the
+    single-region primary times out, at slightly lower accuracy (issue #88).
     """
     reducer = ee.Reducer.sum().group(1, "lc").group(2, "biobelt")
     group_keys = ["lc", "biobelt"]
@@ -178,8 +175,6 @@ def reduce_regions(
         per land cover (when both dates are input) and biobelts
     """
 
-    # Never aggregate the AOI into a single geometry (2M-edge limit + slow); the
-    # reduce helpers clip to the feature collection and reduce over its bbox.
     reduce_fn = reduce_by_regions if method == "clip" else reduce_by_regions_grouped
 
     # extract years from lc_years

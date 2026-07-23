@@ -298,8 +298,6 @@ class ReclassifyModel(Model):
             aoi = self.get_aoi()
 
             if aoi is not None:
-                # clip to the AOI (per-feature) and reduce over its bbox to avoid
-                # building the combined geometry (2M-edge limit for dense AOIs).
                 reduction = image.clip(aoi).reduceRegion(
                     ee.Reducer.frequencyHistogram(), aoi_bbox(aoi), maxPixels=1e13
                 )
@@ -322,8 +320,7 @@ class ReclassifyModel(Model):
             aoi = self.get_aoi()
 
             if aoi is not None:
-                # filter to the AOI bounding box (few edges, 2M-edge safe); good
-                # enough to enumerate the classes present in the AOI.
+                # bbox filter: we only need the set of classes present, not exact extents.
                 collection = collection.filterBounds(aoi_bbox(aoi))
 
             # get the feature
@@ -393,8 +390,6 @@ class ReclassifyModel(Model):
             image = ee.Image(self.src_gee)
             aoi = self.get_aoi()
 
-            # clip to the AOI feature collection (per-feature; avoids the 2M-edge
-            # limit). No AOI -> leave the image unclipped.
             if aoi is not None:
                 image = image.clip(aoi)
 
@@ -455,7 +450,6 @@ class ReclassifyModel(Model):
             aoi = self.get_aoi()
 
             if aoi is not None:
-                # filter to the AOI bounding box (few edges, 2M-edge safe)
                 collection = collection.filterBounds(aoi_bbox(aoi))
 
             self.dst_gee_memory = collection.map(add_prop)

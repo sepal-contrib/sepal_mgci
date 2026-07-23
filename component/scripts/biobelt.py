@@ -16,9 +16,7 @@ def unnest(group):
 
 
 async def get_belt_area(aoi, biobelt) -> tuple:
-    """returns legend-dict. ``aoi`` is a feature collection; clipping to it (per
-    feature) and reducing over its bounding box avoids building the combined
-    geometry (2M-edge limit + slow for dense GAUL 2024 boundaries)."""
+    """returns legend-dict for the belt areas over the AOI feature collection."""
 
     gee_interface = get_current_gee_interface()
 

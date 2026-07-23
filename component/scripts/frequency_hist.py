@@ -53,8 +53,6 @@ async def get_unique_classes_by_year(
         # If scale is less than 30, set it to 30
         scale = ee.Algorithms.If(scale.lt(30), 30, scale)
 
-        # clip to the AOI (per-feature) and reduce over its bbox to avoid building
-        # the combined geometry (2M-edge limit for dense AOIs).
         reduction = image.clip(aoi).reduceRegion(
             ee.Reducer.frequencyHistogram(),
             aoi_bbox(aoi),
