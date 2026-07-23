@@ -6,7 +6,7 @@ import pandas as pd
 
 from component.message import cm
 from component.parameter.module_parameter import BIOBELT_LEGEND
-from sepal_ui.solara import get_current_gee_interface
+from pysepal.solara import get_current_gee_interface
 
 
 def unnest(group):

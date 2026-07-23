@@ -2,10 +2,10 @@ from eeclient.client import EESession
 
 import ipyvuetify as v
 
-import sepal_ui.sepalwidgets as sw
-from sepal_ui.mapping import SepalMap
-from sepal_ui.sepalwidgets.btn import TaskButton
-from sepal_ui.solara import get_current_gee_interface
+import pysepal.sepalwidgets as sw
+from pysepal.mapping import SepalMap
+from pysepal.sepalwidgets.btn import TaskButton
+from pysepal.solara import get_current_gee_interface
 
 from component.model.model import MgciModel
 from component.scripts.layers import get_layer_a, get_layer_b

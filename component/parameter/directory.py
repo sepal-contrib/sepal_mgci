@@ -77,20 +77,25 @@ def initialize_remote(client):
         log.debug(f"Creating remote directory: {rel}")
         client.get_remote_dir(rel, parents=True)
 
+    # Upload the default files. overwrite=True keeps this idempotent: pysepal-api
+    # raises Conflict on an existing file when overwrite is False, so re-running
+    # per session (as Page does) would otherwise 409. The defaults are static
+    # package files, so overwriting matches initialize_local's behaviour.
+
     # Upload default classification
     lc_path = dir_.class_dir / "default_lc_classification.csv"
     content = Path(param.LC_CLASSES).read_text()
-    client.set_file(str(lc_path), content)
+    client.set_file(str(lc_path), content, overwrite=True)
 
     # Upload default map matrix
     mm_path = dir_.matrix_dir / "default_lc_map_matrix.csv"
     content = Path(param.LC_MAP_MATRIX).read_text()
-    client.set_file(str(mm_path), content)
+    client.set_file(str(mm_path), content, overwrite=True)
 
     # Transition matrix
     tr_path = dir_.transition_dir / "transition_matrix.csv"
     content = Path(param.TRANSITION_MATRIX_FILE).read_text()
-    client.set_file(str(tr_path), content)
+    client.set_file(str(tr_path), content, overwrite=True)
 
 
 # Always construct dir_ for attribute access

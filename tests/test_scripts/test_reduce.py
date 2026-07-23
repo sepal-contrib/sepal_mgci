@@ -2,6 +2,7 @@
 
 import ee
 import sys
+from math import isclose
 from pathlib import Path
 
 sys.path.append(str(Path(".").resolve()))
@@ -12,6 +13,30 @@ from component.scripts.gee import no_remap, reduce_by_regions, reduce_by_region
 from component.scripts.gee_parse_reduce_regions import reduceGroups
 
 from tests.utils import compare_nested_dicts
+
+
+def flatten_groups(groups, group_keys):
+    """Flatten a nested grouped-reducer result to ``{(g0, g1, ...): sum}``.
+
+    Grouped ``reduceRegion(s)`` output is a list of nested dicts: each level carries
+    one group key plus either a further ``groups`` list or a leaf ``sum``. Collapsing
+    it to a flat dict keyed by the tuple of group values lets two structurally
+    equivalent results be compared regardless of ordering.
+    """
+    flat = {}
+
+    def walk(nodes, prefix):
+        for node in nodes:
+            key = next((k for k in group_keys if k in node), None)
+            value = node.get(key)
+            if "groups" in node:
+                walk(node["groups"], prefix + (value,))
+            else:
+                path = prefix + (value,)
+                flat[path] = flat.get(path, 0.0) + float(node["sum"])
+
+    walk(groups, ())
+    return flat
 
 
 def test_reduce_by_regions_equals_reduce_region(
@@ -113,53 +138,53 @@ def test_reduce_by_regions(test_land_cover, test_aoi, test_biobelt):
 
 
 def test_reduce_groups(test_multipolygon_aoi):
-    """Test reduce groups parsing method.
+    """reduceGroups must faithfully aggregate the reduceRegions groups it is given.
 
-    Reduce groups is a method that parses the result of a reduceRegions method to mimic the result of a reduceRegion method.
-
+    It parses a grouped ``reduceRegions`` FeatureCollection into one nested
+    structure. Its contract is to reproduce those per-feature ``reduceRegions``
+    leaves exactly (summing groups shared across features) -- NOT to match a direct
+    ``reduceRegion`` on the unioned geometry. Native ``reduceRegions`` and
+    ``reduceRegion`` weight boundary pixels differently and legitimately diverge
+    (up to ~10% on small groups here), so comparing against ``reduceRegion`` is the
+    wrong oracle. See https://github.com/sepal-contrib/sepal_mgci/issues/88.
     """
-
     group1 = ee.Image.random(1).multiply(2).round()
     group2 = ee.Image.random(2).multiply(2).round()
     group3 = ee.Image.random(3).multiply(2).round()
     image = ee.Image(group1.multiply(3).add(group2))
 
     reducer = ee.Reducer.sum().group(1, "group0").group(2, "group1").group(3, "group2")
+    stacked = image.addBands(group1).addBands(group2).addBands(group3)
 
-    reduceRegion = (
-        image.addBands(group1)
-        .addBands(group2)
-        .addBands(group3)
-        .reduceRegion(
-            **{
-                "reducer": reducer,
-                "geometry": test_multipolygon_aoi.geometry(),
-                "scale": None,
-            }
-        )
+    # scale=1000 (the module's working resolution); scale=None samples the random
+    # image at its ~1 deg native grid where boundary pixels dominate. aaf6ad0 flipped
+    # this to None, which is what surfaced #88.
+    reduceRegions = stacked.reduceRegions(
+        collection=test_multipolygon_aoi, reducer=reducer, scale=1000
     )
 
-    reduceRegions = (
-        image.addBands(group1)
-        .addBands(group2)
-        .addBands(group3)
-        .reduceRegions(
-            **{"collection": test_multipolygon_aoi, "reducer": reducer, "scale": None}
-        )
+    group_keys = ["group0", "group1", "group2"]
+
+    # Ground truth: the native reduceRegions leaves, summed per group across features.
+    expected = {}
+    for feature_groups in reduceRegions.aggregate_array("groups").getInfo():
+        for key, value in flatten_groups(feature_groups, group_keys).items():
+            expected[key] = expected.get(key, 0.0) + value
+
+    result = flatten_groups(
+        reduceGroups(
+            reducer=ee.Reducer.sum(),
+            featureCollection=reduceRegions,
+            groupKeys=group_keys,
+        ).getInfo(),
+        group_keys,
     )
 
-    result_region = reduceRegion.get("groups").getInfo()
-
-    # Act: ReduceGroups
-    result_regions = reduceGroups(
-        reducer=ee.Reducer.sum(),
-        featureCollection=reduceRegions,
-        groupKeys=["group0", "group1", "group2"],
-    ).getInfo()
-
-    # Sort the dictionaries for comparison
-    # Compare the results with a relative tolerance of 1e-9
-    assert compare_nested_dicts(result_regions, result_region)
+    assert set(result) == set(expected), "reduceGroups produced different groups"
+    for key in expected:
+        assert isclose(
+            result[key], expected[key], rel_tol=1e-7
+        ), f"group {key}: {result[key]} != {expected[key]}"
 
 
 if __name__ == "__main__":

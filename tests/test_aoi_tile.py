@@ -5,6 +5,7 @@ local-file AOI methods leak the server's own file tree and do their parsing in
 the process serving all sessions. See https://github.com/sepal-contrib/sepal_mgci/issues/84.
 """
 
+import pandas as pd
 import pytest
 
 import component.parameter.module_parameter as param
@@ -16,8 +17,8 @@ LOCAL_FILE_METHODS = ("SHAPE", "POINTS")
 @pytest.fixture()
 def aoi_view() -> AoiView:
     """An AoiView built the way ``solara_app.Page`` builds it."""
-    from sepal_ui.mapping import SepalMap
-    from sepal_ui.scripts.gee_interface import GEEInterface
+    from pysepal.mapping import SepalMap
+    from pysepal.scripts.gee_interface import GEEInterface
 
     return AoiView(map_=SepalMap(gee_interface=GEEInterface()))
 
@@ -40,8 +41,8 @@ def test_local_file_widgets_are_not_reachable(aoi_view: AoiView) -> None:
 
 def test_no_file_browser_in_the_widget_tree(aoi_view: AoiView) -> None:
     """No widget in the AOI tile browses the filesystem of the container."""
-    from sepal_ui.sepalwidgets.file_input import FileInput
-    from sepal_ui.sepalwidgets.inputs import FileInput as LegacyFileInput
+    from pysepal.sepalwidgets.file_input import FileInput
+    from pysepal.sepalwidgets.inputs import FileInput as LegacyFileInput
 
     def walk(widget, seen):
         if id(widget) in seen:
@@ -61,9 +62,30 @@ def test_no_file_browser_in_the_widget_tree(aoi_view: AoiView) -> None:
 
 def test_asset_method_stays_available(aoi_view: AoiView) -> None:
     """Custom geometries are still reachable, through GEE assets."""
-    from sepal_ui.sepalwidgets.inputs import AssetSelect
+    from pysepal.sepalwidgets.inputs import AssetSelect
 
     aoi_view.w_method.v_model = "ASSET"
 
     assert isinstance(aoi_view.components["ASSET"].w_file, AssetSelect)
     assert "d-none" not in aoi_view.components["ASSET"].class_
+
+
+def test_admin0_country_list_covers_m49(aoi_view: AoiView) -> None:
+    """get_m49() maps the module's M49 ISO codes onto pygaul's GAUL columns.
+
+    pygaul>=0.4 renamed those columns (gaul0_code, iso3_code); a further rename or a
+    change to the packaged parquet would break the mapping and gut the country
+    dropdown -- the breakage seen in se.plan#254. Assert the mapping actually
+    resolves the M49 list, not merely that it returns "something".
+    """
+    items = aoi_view.w_admin_0.items
+    assert all("value" in item and "text" in item for item in items)
+
+    # Well-known M49 countries must survive the ISO -> GAUL mapping.
+    names = {item["text"] for item in items}
+    assert {"Afghanistan", "Brazil", "China", "France", "Kenya"} <= names
+
+    # Essentially the whole M49 list should resolve (249 ISO codes today); a broken
+    # mapping empties or halves it.
+    m49_iso = pd.read_csv(param.M49_FILE, sep=";").iso31661.nunique()
+    assert len(items) >= m49_iso - 10

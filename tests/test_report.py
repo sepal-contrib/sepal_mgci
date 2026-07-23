@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 import pytest
-from sepal_ui.aoi.aoi_model import AoiModel
 
 import component.parameter.module_parameter as param
 import component.scripts as cs
@@ -15,7 +14,6 @@ from component.parameter.index_parameters import (
     sub_b_perc_cols,
 )
 
-aoi_model = AoiModel(admin="959")
 details = {"geo_area_name": "", "ref_area": "", "source_detail": ""}
 reporting_years_sub_a = cs.get_sub_a_break_points(test.sub_a_year)
 transition_matrix = str(param.TRANSITION_MATRIX_FILE)
@@ -26,18 +24,6 @@ def results() -> dict:
     return json.loads(
         Path("tests/test_output_result/result_antioquia.json").read_text()
     )
-
-
-@pytest.fixture()
-def model(antioquia_default_result):
-    class Model:
-        data = test.sub_a_year
-        reporting_years_sub_a = cs.get_sub_a_break_points(data)
-        aoi_model = aoi_model
-        transition_matrix = str(param.TRANSITION_MATRIX_FILE)
-        source = "Food and Agriculture Organisation of United Nations (FAO)"
-
-    return Model()
 
 
 def test_parse_to_year_a(results):

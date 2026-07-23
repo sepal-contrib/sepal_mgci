@@ -4,11 +4,11 @@ wheel
 voila
 earthengine-api
 
-git+https://github.com/openforis/sepal_ui@solara3
+pysepal>=3.7.0  # renamed from sepal_ui; see https://github.com/openforis/pysepal
 
 solara
-ee-client>=2.3.0
-rasterio<1.3.11 # Leave it here even if it's already in the sepal_ui requirements. Check https://github.com/openforis/sepal/issues/328
+ee-client>=3.0.0  # required by pysepal 3.7 (provider-agnostic auth)
+rasterio<1.3.11 # Leave it here even if it's already in the pysepal requirements. Check https://github.com/openforis/sepal/issues/328
 uvicorn<0.30
 
 scipy
@@ -19,7 +19,7 @@ pandas
 openpyxl>=3.0.3
 plotly
 pytest
-pygaul<0.4 # 0.4+ renamed parquet columns (ADM0_CODE -> gaul0_code); see component/tile/aoi_tile.py
+pygaul>=0.4.2 # GAUL 2024 columns (gaul0_code); required by pysepal 3.7
 seaborn
 
 ipyvuetify

@@ -3,7 +3,7 @@
 import pandas as pd
 import component.parameter.module_parameter as param
 
-from sepal_ui.aoi.aoi_model import AoiModel
+from pysepal.aoi.aoi_model import AoiModel
 from typing import Tuple
 
 

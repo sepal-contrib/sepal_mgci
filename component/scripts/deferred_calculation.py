@@ -5,7 +5,7 @@ import asyncio
 import ee
 from pathlib import Path
 
-from sepal_ui.scripts.gee_interface import GEEInterface
+from pysepal.scripts.gee_interface import GEEInterface
 
 import component.scripts as cs
 from component.types import ResultsDict, SubAYearDict, SubBYearDict
@@ -71,7 +71,8 @@ async def task_process(
     json_data = json.dumps(data, indent=4)
 
     if sepal_client:
-        return sepal_client.set_file(task_path, json_data)
+        # overwrite=True to match the local branch (open("w")); pysepal-api 409s otherwise
+        return sepal_client.set_file(task_path, json_data, overwrite=True)
     else:
         # Save the file to the local system
         with Path(task_path).open("w") as f:

@@ -4,7 +4,7 @@ import json
 import ast
 import io
 import pandas as pd
-from sepal_ui.solara import get_current_sepal_client
+from pysepal.solara import get_current_sepal_client
 from pathlib import Path
 from typing import Optional, Any
 import io
@@ -78,7 +78,8 @@ def df_to_csv(
     sepal_session = get_current_sepal_client()
     if sepal_session:
         # send the CSV _text_ as your `file` field
-        return sepal_session.set_file(file_path, csv_text)
+        # overwrite=True to match the local branch (write_text); pysepal-api 409s otherwise
+        return sepal_session.set_file(file_path, csv_text, overwrite=True)
     else:
         # write a real .csv on disk
         p = Path(file_path)

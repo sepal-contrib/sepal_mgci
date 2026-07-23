@@ -1,13 +1,17 @@
+from pathlib import Path
+
 import pandas as pd
 import pytest
 from traitlets import Dict, HasTraits, Unicode
 
-import component.parameter.directory as dir_
-from component.parameter.module_parameter import TRANSITION_MATRIX_FILE, DECODE
+from component.parameter.directory import dir_
+from component.parameter.module_parameter import TRANSITION_MATRIX_FILE
 from component.widget.transition_matrix import TransitionMatrix
 
-# TODO: At some point I will have to change the way as v_model is set in each
-# of the selectables.
+# The widget works off the transition matrix that initialize_local()/
+# initialize_remote() drop in the results dir (read and written from there at
+# runtime), not the read-only packaged file.
+DEFAULT_MATRIX = str(dir_.transition_dir / "transition_matrix.csv")
 
 
 @pytest.fixture
@@ -17,57 +21,48 @@ def transition_matrix():
         transition_matrix = Unicode()
         lulc_classes_sub_b = Dict()
 
-    model = Model()
+    return TransitionMatrix(Model())
 
-    return TransitionMatrix(model)
+
+def impact_at(view, from_code, to_code):
+    """Impact code the Vue widget currently shows for a (from, to) cell."""
+    return next(
+        cell["impact_code"]
+        for cell in view.matrix_data
+        if cell["from_code"] == from_code and cell["to_code"] == to_code
+    )
 
 
 def test_transition_matrix(transition_matrix):
-    # Assert that transition matrix, matrix is the default
-    assert transition_matrix.transition_matrix == str(TRANSITION_MATRIX_FILE)
+    # Starts on the default transition matrix.
+    assert transition_matrix.transition_matrix == DEFAULT_MATRIX
 
 
 def test_change_value(transition_matrix):
-    """Check that new transition matrix file is created once any value is changed"""
+    """Editing a cell writes a custom transition file; reset restores defaults."""
+    view = transition_matrix.transition_matrix_view
 
-    new_value = 0
+    # Default impact for a stable (1 -> 1) transition is "Stable" (code 2); set a
+    # different value so both the edit and the reset are observable.
+    new_value = 1
+    view.vue_cell_changed({"row": 1, "col": 1, "value": new_value})
 
-    # Change value of transition matrix
-    transition_matrix.get_children(id_="1_1")[0].v_model = {
-        "row": 1,
-        "col": 1,
-        "value": new_value,
-    }
+    # A custom transition file is written to the results dir with the new value.
+    custom_file = Path(view.custom_transition_file_path)
+    assert custom_file.exists()
 
-    suffix = transition_matrix.suffix
+    edited_df = pd.read_csv(custom_file)
+    changed = edited_df.loc[
+        (edited_df.from_code == 1) & (edited_df.to_code == 1), "impact_code"
+    ]
+    assert changed.iloc[0] == new_value
+    assert impact_at(view, 1, 1) == new_value
 
-    # Check that new transition matrix file is created
-    new_transition_file = dir_.TRANSITION_DIR / f"custom_transition_{suffix}.csv"
-
-    assert new_transition_file.exists()
-
-    # Read transition file and check that value row 1 and column 1 is 2
-
-    edited_df = pd.read_csv(new_transition_file)
-
-    assert (
-        edited_df.loc[
-            (edited_df.from_code == 1) & (edited_df.to_code == 1), "impact_code"
-        ][0]
-        == new_value
-    )
-
-    # Check that default values are loaded when transition matrix is reset
+    # Resetting restores the packaged default for that cell.
     transition_matrix.set_default_values()
 
-    # Read original transition matrix file and get value of row 1 and column 1
-
     default_df = pd.read_csv(TRANSITION_MATRIX_FILE)
-
-    expected_value = default_df.loc[
+    default_value = default_df.loc[
         (default_df.from_code == 1) & (default_df.to_code == 1), "impact_code"
-    ][0]
-
-    assert transition_matrix.get_children(id_="1_1")[0].val.v_model == DECODE[
-        expected_value
-    ].get("abrv")
+    ].iloc[0]
+    assert impact_at(view, 1, 1) == default_value

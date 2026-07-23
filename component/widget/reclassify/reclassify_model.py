@@ -10,12 +10,12 @@ from matplotlib.colors import to_rgba
 from natsort import natsorted
 from rasterio.windows import from_bounds
 
-from sepal_ui.solara import get_current_gee_interface
+from pysepal.solara import get_current_gee_interface
 
 from component.scripts.file_handler import read_file
-from sepal_ui.model import Model
-from sepal_ui.scripts import gee
-from sepal_ui.scripts import utils as su
+from pysepal.model import Model
+from pysepal.scripts import gee
+from pysepal.scripts import utils as su
 from traitlets import Any, Bool, Dict, Int, List, Unicode
 
 from component.message import cm

@@ -2,8 +2,8 @@ from pathlib import Path
 
 from traitlets import directional_link
 
-from sepal_ui import sepalwidgets as sw
-from sepal_ui.scripts.sepal_client import SepalClient
+from pysepal import sepalwidgets as sw
+from pysepal.scripts.sepal_client import SepalClient
 
 from component.model.model import MgciModel
 import component.parameter.module_parameter as param
@@ -21,7 +21,7 @@ log = logging.getLogger("MGCI.reclassify_tile")
 
 class ReclassifyTile(sw.Layout):
     """Custom reclassify tile to replace the default Reclassify Tile and View
-    from sepal_ui. This card will change depending on a input questionnaire which
+    from pysepal. This card will change depending on a input questionnaire which
     aims to create a custom view depending on their answers."""
 
     def __init__(

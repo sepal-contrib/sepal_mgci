@@ -1,15 +1,15 @@
-from sepal_ui.logger import setup_logging
+from pysepal.logger import setup_logging
 
 logger = setup_logging(logger_name="MGCI")
 
 import solara
 from solara.lab.components.theming import theme
 
-import sepal_ui.sepalwidgets as sw
-from sepal_ui.scripts.utils import init_ee
-from sepal_ui.sepalwidgets.vue_app import ThemeToggle, MapApp
-from sepal_ui.solara.components.admin import AdminButton
-from sepal_ui.solara import (
+import pysepal.sepalwidgets as sw
+from pysepal.scripts.utils import init_ee
+from pysepal.sepalwidgets.vue_app import ThemeToggle, MapApp
+from pysepal.solara.components.admin import AdminButton
+from pysepal.solara import (
     setup_sessions,
     with_sepal_sessions,
     get_current_gee_interface,

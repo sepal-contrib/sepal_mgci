@@ -1,13 +1,13 @@
 from typing import Union
 import ipyvuetify as v
-import sepal_ui.sepalwidgets as sw
+import pysepal.sepalwidgets as sw
 from ipyleaflet import WidgetControl
-from sepal_ui.message import ms
-from sepal_ui.scripts import utils as su
+from pysepal.message import ms
+from pysepal.scripts import utils as su
 from traitlets import Bool, Dict, Unicode, observe
 
 import component.parameter.module_parameter as param
-from sepal_ui.mapping.legend_control import LegendControl
+from pysepal.mapping.legend_control import LegendControl
 
 
 class LegendDashboard(LegendControl):

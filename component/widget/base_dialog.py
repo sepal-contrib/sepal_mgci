@@ -1,4 +1,4 @@
-import sepal_ui.sepalwidgets as sw
+import pysepal.sepalwidgets as sw
 import ipyvuetify as v
 
 

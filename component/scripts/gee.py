@@ -6,7 +6,7 @@ import pandas as pd
 from pathlib import Path
 
 from component.scripts.file_handler import read_file
-from sepal_ui.scripts.gee_interface import GEEInterface
+from pysepal.scripts.gee_interface import GEEInterface
 
 import component.parameter.module_parameter as param
 from component.scripts.surface_area import get_real_surface_area

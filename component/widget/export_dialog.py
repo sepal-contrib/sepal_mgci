@@ -4,10 +4,10 @@ from pathlib import Path
 
 import ee
 from component.scripts.gee import get_gee_recipe_folder
-from sepal_ui import sepalwidgets as sw
-from sepal_ui.scripts import utils as su
-from sepal_ui.scripts.drive_interface import GDriveInterface
-from sepal_ui.scripts.gee_interface import GEEInterface
+from pysepal import sepalwidgets as sw
+from pysepal.scripts import utils as su
+from pysepal.scripts.drive_interface import GDriveInterface
+from pysepal.scripts.gee_interface import GEEInterface
 
 import component.scripts as cs
 from component.message import cm
