@@ -5,6 +5,7 @@ local-file AOI methods leak the server's own file tree and do their parsing in
 the process serving all sessions. See https://github.com/sepal-contrib/sepal_mgci/issues/84.
 """
 
+import pandas as pd
 import pytest
 
 import component.parameter.module_parameter as param
@@ -69,16 +70,22 @@ def test_asset_method_stays_available(aoi_view: AoiView) -> None:
     assert "d-none" not in aoi_view.components["ASSET"].class_
 
 
-def test_admin0_country_list_is_populated(aoi_view: AoiView) -> None:
+def test_admin0_country_list_covers_m49(aoi_view: AoiView) -> None:
     """get_m49() maps the module's M49 ISO codes onto pygaul's GAUL columns.
 
     pygaul>=0.4 renamed those columns (gaul0_code, iso3_code); a further rename or a
-    change to the packaged parquet would silently empty the country dropdown -- the
-    breakage seen in se.plan#254. Guard that the mapping stays wired.
+    change to the packaged parquet would break the mapping and gut the country
+    dropdown -- the breakage seen in se.plan#254. Assert the mapping actually
+    resolves the M49 list, not merely that it returns "something".
     """
     items = aoi_view.w_admin_0.items
-
-    assert items, "M49 country dropdown is empty; pygaul columns/parquet likely drifted"
     assert all("value" in item and "text" in item for item in items)
-    # M49 covers essentially every country; a healthy mapping keeps most of them.
-    assert len(items) > 150
+
+    # Well-known M49 countries must survive the ISO -> GAUL mapping.
+    names = {item["text"] for item in items}
+    assert {"Afghanistan", "Brazil", "China", "France", "Kenya"} <= names
+
+    # Essentially the whole M49 list should resolve (249 ISO codes today); a broken
+    # mapping empties or halves it.
+    m49_iso = pd.read_csv(param.M49_FILE, sep=";").iso31661.nunique()
+    assert len(items) >= m49_iso - 10
