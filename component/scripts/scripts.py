@@ -543,12 +543,10 @@ def get_sub_a_data_reports(
     sub_a_years = list(reporting_years_sub_a.keys())
 
     for year in sub_a_years:
-        print(f"Reporting {year} for sub_a")
         parsed_df = cs.parse_to_year_a(results, reporting_years_sub_a, year)
         sub_a_reports.append(
             sub_a.get_reports(parsed_df, year, geo_area_name, ref_area, source_detail)
         )
-        print(f"Reporting {year} for mtn")
         mtn_reports.append(
             mntn.get_report(parsed_df, year, geo_area_name, ref_area, source_detail)
         )
@@ -603,7 +601,6 @@ def get_sub_b_data_reports(
     # Filterout reports which doesn't have to be reported
 
     for year in sub_b_years:
-        print(f"Reporting {year} for sub_b")
         # Get year label for the report
         parsed_df = cs.parse_sub_b_year(results, year)
         sub_b_reports.append(

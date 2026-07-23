@@ -1,7 +1,6 @@
 import pandas as pd
 
 import component.parameter.module_parameter as param
-from component.scripts.file_handler import read_file
 
 BELT_TABLE = pd.read_csv(param.BIOBELTS_DESC)
 "pd.Dataframe: bioclimatic belts classes and description"
@@ -73,18 +72,14 @@ def fill_parsed_df(parsed_df):
     return filled_df
 
 
-def get_impact(row, transition_matrix: str):
+def get_impact(row, transition_table: pd.DataFrame):
     """Return the type of the impact based on the initial and last class
 
     Args:
         row (pd.Series): row of the dataframe
-        transition_matrix: transition_matrix dataframe (custom or default)
+        transition_table: transition matrix dataframe (custom or default)
     """
 
-    # Read the transition matrix safely with pandas
-    transition_table = read_file(transition_matrix)
-
-    # Check that both
     if not all([row["from_lc"], row["to_lc"]]):
         return 0
 

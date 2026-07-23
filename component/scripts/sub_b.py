@@ -14,6 +14,7 @@ from component.scripts.report_scripts import (
     get_belt_desc,
     get_obs_status,
 )
+from component.scripts.file_handler import read_file
 
 if TYPE_CHECKING:
     from component.model.model import MgciModel
@@ -30,8 +31,9 @@ def get_degraded_area(parsed_df: pd.DataFrame, transition_matrix: str):
     df_type = df.reset_index().loc[0, "category"]
 
     if df_type == "baseline_transition":
+        transition_table = read_file(transition_matrix)
         df["impact"] = df.apply(
-            lambda x: get_impact(x, transition_matrix=transition_matrix), axis=1
+            lambda x: get_impact(x, transition_table), axis=1
         )
     elif df_type == "final_degradation":
         df["impact"] = df["transition"]
