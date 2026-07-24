@@ -30,6 +30,8 @@ from component.message import cm
 from component.widget.mgci_map import MgciMap
 from component.widget.map import LayerHandler
 from component.parameter.directory import initialize_remote
+from component.scripts.legend import LegendRegistry
+from component.widget.map_legend import MapLegend
 
 init_ee()
 setup_solara_server()
@@ -58,6 +60,7 @@ def Page():
     initialize_remote(sepal_client)
 
     map_ = MgciMap(gee_interface=gee_interface, theme_toggle=theme_toggle)
+    map_.legend_registry = LegendRegistry()
     aoi_view = AoiView(map_=map_)
     model = MgciModel(aoi_view, sepal_client=sepal_client)
     vegetation_tile = VegetationTile(
@@ -148,6 +151,8 @@ def Page():
             "icon": "mdi-chart-bar",
         },
     ]
+
+    MapLegend(map_.legend_registry)
 
     MapApp.element(
         app_title="SDG 15.4.2",
