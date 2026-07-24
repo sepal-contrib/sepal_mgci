@@ -59,3 +59,78 @@ def test_biobelt_legend_data_no_mountain_has_no_detail():
         }
     )
     assert biobelt_legend_data(df).items[0].detail == ""
+
+
+from component.scripts.legend import (
+    BIOBELT_KEY,
+    LegendEntry,
+    LegendRegistry,
+    resolve_legend_view,
+)
+
+
+def test_register_appends_and_auto_selects():
+    reg = LegendRegistry()
+    reg.register("land_cover_2020", "Land cover 2020", LegendData())
+    assert list(reg.entries.value) == ["land_cover_2020"]
+    assert reg.selected.value == "land_cover_2020"
+
+
+def test_register_same_key_dedupes_and_keeps_order():
+    reg = LegendRegistry()
+    reg.register("a", "A", LegendData())
+    reg.register("b", "B", LegendData())
+    reg.register("a", "A2", LegendData())
+    assert list(reg.entries.value) == ["a", "b"]
+    assert reg.entries.value["a"].title == "A2"
+    assert reg.selected.value == "a"
+
+
+def test_clear_empties_everything():
+    reg = LegendRegistry()
+    reg.register("a", "A", LegendData())
+    reg.clear()
+    assert reg.entries.value == {}
+    assert reg.selected.value is None
+
+
+def test_clear_thematic_keeps_biobelt():
+    reg = LegendRegistry()
+    reg.register(BIOBELT_KEY, "Bioclimatic belts", LegendData())
+    reg.register("land_cover_2020", "Land cover 2020", LegendData())
+    reg.clear_thematic()
+    assert list(reg.entries.value) == [BIOBELT_KEY]
+    assert reg.selected.value == BIOBELT_KEY
+
+
+def test_unregister_updates_selection():
+    reg = LegendRegistry()
+    reg.register("a", "A", LegendData())
+    reg.register("b", "B", LegendData())
+    reg.unregister("b")
+    assert list(reg.entries.value) == ["a"]
+    assert reg.selected.value == "a"
+
+
+def test_resolve_empty_returns_none():
+    assert resolve_legend_view({}, None) == (None, [], None)
+
+
+def test_resolve_builds_options_and_effective():
+    entries = {
+        "a": LegendEntry("A", LegendData()),
+        "b": LegendEntry("B", LegendData()),
+    }
+    data, options, effective = resolve_legend_view(entries, "b")
+    assert options == [
+        {"value": "a", "text": "A"},
+        {"value": "b", "text": "B"},
+    ]
+    assert effective == "b"
+    assert data is entries["b"].data
+
+
+def test_resolve_falls_back_when_selected_missing():
+    entries = {"a": LegendEntry("A", LegendData())}
+    _, _, effective = resolve_legend_view(entries, "gone")
+    assert effective == "a"
