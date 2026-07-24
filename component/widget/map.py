@@ -10,7 +10,10 @@ from pysepal.solara import get_current_gee_interface
 from component.model.model import MgciModel
 from component.scripts.layers import get_layer_a, get_layer_b
 from component.widget.export_dialog import ExportMapDialog
-from component.widget.legend_control import LegendDashboard
+from component.parameter.visualization import (
+    degradation_legend_data,
+    land_cover_legend_data,
+)
 from component.message import cm
 
 
@@ -19,13 +22,6 @@ class LayerHandler(sw.Layout):
         self.map_ = map_
 
         self.alert = alert or sw.Alert()
-
-        # self.map_.add_legend(
-        #     "lc_legend", "Land cover", visuals.LEGENDS["land_cover"], vertical=False
-        # )
-        # self.map_.add_legend(
-        #     "deg_legend", "Degradation", visuals.LEGENDS["degradation"]
-        # )
 
         self.class_ = "d-block pa-2"
         self.model = model
@@ -79,6 +75,7 @@ class LayerHandler(sw.Layout):
         # I need two sublists, one for each subindicator
         # either case, remove all layers from map
         self.map_.remove_all(keep_names=["AOI", cm.aoi.legend.belts])
+        self.map_.legend_registry.clear_thematic()
 
         # First check if both "year" and "asset" are not empty on all model.sub_a_year.values()
         subindicator = change["name"]
@@ -226,6 +223,7 @@ class LayerHandler(sw.Layout):
         if selection[0] == "a":
             remap_matrix = self.model.matrix_sub_a
             layer, vis_params = get_layer_a(selection[1], remap_matrix, aoi)
+            legend_data = land_cover_legend_data()
 
         elif selection[0] == "b":
             remap_matrix = self.model.matrix_sub_b
@@ -234,6 +232,11 @@ class LayerHandler(sw.Layout):
 
             layer, vis_params = get_layer_b(
                 selection[1], remap_matrix, aoi, sub_b_year, transition_matrix
+            )
+            legend_data = (
+                degradation_legend_data()
+                if "degradation" in selection[1]
+                else land_cover_legend_data()
             )
 
         else:
@@ -247,6 +250,7 @@ class LayerHandler(sw.Layout):
         await self.map_.add_ee_layer_async(
             layer, vis_params=vis_params, name=selection[2]
         )
+        self.map_.legend_registry.register(selection[2], selection[2], legend_data)
 
 
 class Map(SepalMap):
@@ -261,30 +265,3 @@ class Map(SepalMap):
         super().__init__(basemaps=basemaps, gee_interface=gee_interface, **kwargs)
 
         self.add_class("results_map")
-
-    def add_legend(
-        self,
-        id_,
-        title: str = "Legend",
-        legend_dict: dict = {},
-        position: str = "bottomright",
-        vertical: bool = True,
-    ) -> None:
-        """Creates and adds a custom legend as widget control to the map.
-
-        Args:
-            title: Title of the legend. Defaults to 'Legend'.
-            legend_dict: dictionary with key as label name and value as color
-            position: the position (corners) of the legend on the map
-            vertical: vertical or horizoal position of the legend
-        """
-        # Define as class member so it can be accessed from outside.
-        self.legend = LegendDashboard(
-            legend_dict=legend_dict,
-            title=title,
-            vertical=vertical,
-            position=position,
-            attributes={"id": id_},
-        )
-
-        return self.add(self.legend)
