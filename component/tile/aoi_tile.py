@@ -20,7 +20,7 @@ from pysepal.scripts.gee_task import GEETask
 
 from component.scripts.biobelt import get_belt_area
 from component.scripts.aoi_geometry import aoi_bbox
-from component.parameter.module_parameter import BIOBELT, BIOBELT_LEGEND, BIOBELT_VIS
+from component.parameter.module_parameter import BIOBELT, BIOBELT_VIS
 from component.scripts.legend import BIOBELT_KEY
 from component.parameter.visualization import biobelt_legend_data
 from component.message import cm

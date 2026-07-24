@@ -73,7 +73,9 @@ class LayerHandler(sw.Layout):
         """Update w_layers with the layers selected by the user"""
 
         # I need two sublists, one for each subindicator
-        # either case, remove all layers from map
+        # either case, remove all layers from map. The biobelt layer is kept by
+        # its display name here; its legend is kept by BIOBELT_KEY in the
+        # registry below — keep the two in sync if either is renamed.
         self.map_.remove_all(keep_names=["AOI", cm.aoi.legend.belts])
         self.map_.legend_registry.clear_thematic()
 
