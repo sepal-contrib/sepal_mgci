@@ -2,7 +2,6 @@ import asyncio
 import importlib.resources
 import traitlets as t
 from typing_extensions import Self
-from copy import deepcopy
 
 import ee
 import pygaul
@@ -19,11 +18,11 @@ from pysepal import mapping as sm
 from pysepal.scripts.gee_task import GEETask
 
 
-from component.widget.legend_control import LegendControl
 from component.scripts.biobelt import get_belt_area
 from component.scripts.aoi_geometry import aoi_bbox
 from component.parameter.module_parameter import BIOBELT, BIOBELT_LEGEND, BIOBELT_VIS
-from component.widget.legend_control import LegendControl
+from component.scripts.legend import BIOBELT_KEY
+from component.parameter.visualization import biobelt_legend_data
 from component.message import cm
 import component.parameter.module_parameter as param
 import logging
@@ -38,9 +37,6 @@ class AoiView(AoiView, sw.Card):
         self.map_ = map_
         self.class_ = "elevation-0"
 
-        if self.map_:  # for debugging
-            self.map_.legend = LegendControl({}, title="", position="bottomright")
-            self.map_.add_control(self.map_.legend)
         log.debug("About to initialize AoiView with map_")
         super().__init__(
             map_=self.map_, gee_interface=self.map_.gee_interface, **kwargs
@@ -123,33 +119,28 @@ class AoiView(AoiView, sw.Card):
 
     async def get_belt_map(self):
 
-        self.map_.legend.loading = True
-
         biobelt_layer = self.map_.add_ee_layer_async(
             ee.Image(BIOBELT).clip(self.model.feature_collection),
             name=cm.aoi.legend.belts,
             vis_params=BIOBELT_VIS,
         )
 
-        belt_area = get_belt_area(
-            self.model.feature_collection, ee.Image(BIOBELT)
-        )
+        belt_area = get_belt_area(self.model.feature_collection, ee.Image(BIOBELT))
 
         coros = [biobelt_layer, belt_area]
 
         try:
             biobelt_layer, belt_area = await asyncio.gather(*coros)
-            legend_dict, _ = belt_area
+            _, df = belt_area
 
-            self.map_.legend.legend_dict = {}
-            self.map_.legend.legend_dict = deepcopy(legend_dict)
+            self.map_.legend_registry.register(
+                BIOBELT_KEY, cm.aoi.legend.belts, biobelt_legend_data(df)
+            )
 
             self.alert.add_msg(ms.aoi_sel.complete, "success")
 
         except Exception as e:
-            self.map_.legend.set_error(f"Failed to get biobelt map: {e}")
-        finally:
-            self.map_.legend.loading = False
+            self.alert.add_msg(f"Failed to get biobelt map: {e}", "error")
 
     def configure_tasks(self):
         """Configure the tasks to be used in the AOI view."""
@@ -188,7 +179,7 @@ class AoiView(AoiView, sw.Card):
             # read the information from the geojson datas
             if self.map_:
                 self.map_.remove_all()
-                self.map_.legend.hide()
+                self.map_.legend_registry.clear()
                 self.model.geo_json = self.aoi_dc.to_json()
                 self.aoi_dc.hide()
 
