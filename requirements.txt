@@ -4,7 +4,7 @@ wheel
 voila
 earthengine-api
 
-pysepal>=3.7.0  # renamed from sepal_ui; see https://github.com/openforis/pysepal
+pysepal>=3.8.0  # renamed from sepal_ui; 3.8.0 adds LegendComponent detail text + layer selector
 
 solara
 ee-client>=3.0.0  # required by pysepal 3.7 (provider-agnostic auth)

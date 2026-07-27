@@ -32,5 +32,11 @@ class MgciMap(m.SepalMap):
             **kwargs
         )
 
+        # Created here so map_.legend exists before LayerHandler and the GEE
+        # tasks use it; MapLegend (map_legend.py) only mounts it.
+        from component.widget.map_legend import MapLegendWidget
+
+        self.legend = MapLegendWidget()
+
         # inspector_control = InspectorControl(self)
         # self.add_control(inspector_control)
