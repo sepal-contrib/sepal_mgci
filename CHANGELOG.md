@@ -1,3 +1,21 @@
+## 1.1.0 (2026-07-30)
+
+### Feat
+
+- **reclassify**: clip+bbox for custom-LC class extraction and remap
+- **gee**: clip+bbox for layer display, export, and frequency histogram
+- **gee**: clip+bbox reductions to support large/dense AOIs (drop simplified L0)
+- migrate from sepal_ui@solara3 to pysepal 3.7
+
+### Fix
+
+- overwrite=True on remote file writes (pysepal-api 409s on existing)
+- **ci**: stop installing the deleted test_requirements.txt (#86)
+
+### Perf
+
+- **report**: read transition matrix once instead of per row
+
 ## 1.0.1 (2026-07-20)
 
 ### Fix
