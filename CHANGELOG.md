@@ -1,3 +1,13 @@
+## 1.2.0 (2026-07-30)
+
+### Feat
+
+- unified map legend for thematic layers (#81)
+
+### Fix
+
+- **export**: pass recipe folder as str to pysepal create_folder
+
 ## 1.1.0 (2026-07-30)
 
 ### Feat
