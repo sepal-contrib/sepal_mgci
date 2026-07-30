@@ -30,6 +30,7 @@ from component.message import cm
 from component.widget.mgci_map import MgciMap
 from component.widget.map import LayerHandler
 from component.parameter.directory import initialize_remote
+from component.widget.map_legend import MapLegend
 
 init_ee()
 setup_solara_server()
@@ -148,6 +149,8 @@ def Page():
             "icon": "mdi-chart-bar",
         },
     ]
+
+    MapLegend(map_)
 
     MapApp.element(
         app_title="SDG 15.4.2",
