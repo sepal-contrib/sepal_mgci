@@ -343,7 +343,8 @@ def read_asset(asset_id: str) -> ee.Image:
 
 
 def get_gee_recipe_folder(recipe_name: str, gee_interface: GEEInterface) -> Path:
-    """Create a folder for the recipe in GEE"""
+    """Create the recipe's GEE asset folder and return its absolute path."""
 
     recipe_folder = Path("sepal_sdg15_4_2") / recipe_name
-    return Path(gee_interface.create_folder(recipe_folder))
+    gee_interface.create_folder(str(recipe_folder))
+    return Path(gee_interface.get_folder()) / recipe_folder
