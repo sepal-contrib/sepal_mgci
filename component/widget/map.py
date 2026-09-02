@@ -258,9 +258,7 @@ class Map(SepalMap):
     """Custom Map"""
 
     def __init__(self, gee_interface: EESession, **kwargs):
-        default_basemap = (
-            "CartoDB.DarkMatter" if v.theme.dark is True else "CartoDB.Positron"
-        )
+        default_basemap = "SEPAL_DARK" if v.theme.dark is True else "SEPAL_LIGHT"
         basemaps = [default_basemap] + ["SATELLITE"]
 
         super().__init__(basemaps=basemaps, gee_interface=gee_interface, **kwargs)

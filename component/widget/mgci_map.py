@@ -18,9 +18,7 @@ class MgciMap(m.SepalMap):
         kwargs["min_zoom"] = 3
         kwargs["gee"] = True
 
-        default_basemap = (
-            "CartoDB.DarkMatter" if v.theme.dark is True else "CartoDB.Positron"
-        )
+        default_basemap = "SEPAL_DARK" if v.theme.dark is True else "SEPAL_LIGHT"
 
         basemaps = [default_basemap] + ["SATELLITE"]
 
