@@ -1,3 +1,11 @@
+## 1.2.1 (2026-09-02)
+
+### Fix
+
+- require pysepal 3.8.3
+- **map**: use the SEPAL_* basemaps so the CARTO key fallback applies
+- cap pysepal below 4 and require 3.8.2
+
 ## 1.2.0 (2026-07-30)
 
 ### Feat
