@@ -10,6 +10,3 @@ services:
       # global switch, pysepal-api only a host-scoped allowlist.
       EECLIENT_INSECURE_TLS: "1"
       PYSEPAL_INSECURE_TLS_HOSTS: "${SEPAL_HOST}"
-    volumes:
-      # Mount local pysepal repository for development
-      - "${HOME}/1_modules/pysepal:/usr/local/lib/pysepal:rw"
