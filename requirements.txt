@@ -4,7 +4,7 @@ wheel
 voila
 earthengine-api
 
-pysepal>=3.8.0  # renamed from sepal_ui; 3.8.0 adds LegendComponent detail text + layer selector
+pysepal>=3.8.2,<4  # renamed from sepal_ui; 3.8.0 adds LegendComponent detail text + layer selector
 
 solara
 ee-client>=3.0.0  # required by pysepal 3.7 (provider-agnostic auth)
@@ -22,5 +22,5 @@ pytest
 pygaul>=0.4.2 # GAUL 2024 columns (gaul0_code); required by pysepal 3.7
 seaborn
 
-ipyvuetify
+ipyvuetify<3
 ipecharts>=1.0.8
