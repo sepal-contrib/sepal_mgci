@@ -119,7 +119,9 @@ def test_export_reports_uploads_the_workbook_to_sepal(results):
     )
 
     assert folder in server.folders
-    workbook = pd.ExcelFile(BytesIO(server.files[f"{folder}/SDG1542_tests1_sub_a.xlsx"]))
+    workbook = pd.ExcelFile(
+        BytesIO(server.files[f"{folder}/SDG1542_tests1_sub_a.xlsx"])
+    )
     assert workbook.sheet_names == [
         "Table1_ER_MTN_TOTL",
         "Table2_ER_MTN_GRNCOV",

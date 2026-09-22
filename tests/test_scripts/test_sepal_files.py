@@ -120,7 +120,9 @@ def test_initialize_remote_runs_again_for_the_next_session(sepal, remote_dirs):
 def test_create_folder_creates_it_on_sepal(sepal):
     client, server = sepal
 
-    folder = create_folder(PurePosixPath(f"{ROOT}/reports/SDG1542_x"), sepal_client=client)
+    folder = create_folder(
+        PurePosixPath(f"{ROOT}/reports/SDG1542_x"), sepal_client=client
+    )
 
     assert folder == PurePosixPath(f"{ROOT}/reports/SDG1542_x")
     assert f"{ROOT}/reports/SDG1542_x" in server.folders
@@ -128,7 +130,9 @@ def test_create_folder_creates_it_on_sepal(sepal):
 
 def test_read_file_reads_a_csv_from_sepal(sepal, current_client):
     _, server = sepal
-    server.files[f"{ROOT}/custom_classifications/mine.csv"] = b"code,desc\n1,forest\n2,grass\n"
+    server.files[
+        f"{ROOT}/custom_classifications/mine.csv"
+    ] = b"code,desc\n1,forest\n2,grass\n"
 
     df = file_handler.read_file(f"{ROOT}/custom_classifications/mine.csv")
 
