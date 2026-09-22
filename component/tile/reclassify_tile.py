@@ -3,7 +3,7 @@ from pathlib import Path
 from traitlets import directional_link
 
 from pysepal import sepalwidgets as sw
-from pysepal.scripts.sepal_client import SepalClient
+from pysepal_api import SepalClient
 
 from component.model.model import MgciModel
 import component.parameter.module_parameter as param

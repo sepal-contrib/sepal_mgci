@@ -28,7 +28,7 @@ def read_file(file_path: str, **pd_args) -> Any:
     # 1) FETCH RAW DATA (bytes or str)
     if sepal_session and not from_local:
         try:
-            raw = sepal_session.get_file(file_path)
+            raw = sepal_session.files.read_bytes(file_path)
         except Exception as e:
             raise Exception("File not found or inaccessible: " + str(e))
     else:
@@ -79,7 +79,7 @@ def df_to_csv(
     if sepal_session:
         # send the CSV _text_ as your `file` field
         # overwrite=True to match the local branch (write_text); pysepal-api 409s otherwise
-        return sepal_session.set_file(file_path, csv_text, overwrite=True)
+        return sepal_session.files.write(file_path, csv_text, overwrite=True)
     else:
         # write a real .csv on disk
         p = Path(file_path)

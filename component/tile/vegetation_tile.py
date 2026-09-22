@@ -5,7 +5,7 @@ import pysepal.sepalwidgets as sw
 from traitlets import directional_link
 from component.model.model import MgciModel
 
-from pysepal.scripts.sepal_client import SepalClient
+from pysepal_api import SepalClient
 import pysepal.scripts.decorator as sd
 from pysepal.aoi.aoi_model import AoiModel
 from pysepal.solara import get_current_gee_interface

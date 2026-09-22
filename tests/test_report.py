@@ -1,5 +1,8 @@
 import json
+from io import BytesIO
 from pathlib import Path
+
+import pandas as pd
 import pytest
 
 import component.parameter.module_parameter as param
@@ -7,6 +10,7 @@ import component.scripts as cs
 import component.scripts.sub_a as sub_a
 import component.scripts.sub_b as sub_b
 import tests.test_result as test
+from tests.fake_sepal import fake_sepal_client
 from component.parameter.index_parameters import (
     sub_a_landtype_cols,
     sub_a_cols,
@@ -94,3 +98,30 @@ def test_get_report_pdma_pt(results):
     )
     assert len(sub_b_perc_cols) == 17
     assert report.shape == (5, len(sub_b_perc_cols))
+
+
+def test_export_reports_uploads_the_workbook_to_sepal(results):
+    client, server = fake_sepal_client()
+    folder = "module_results/sdg_indicators/15.4.2/reports/SDG1542_test"
+    # the fixture only holds the 2000 sub A result
+    reporting_years = cs.get_sub_a_break_points({1: test.sub_a_year[1]})
+
+    cs.export_reports(
+        results,
+        reporting_years,
+        test.sub_b_year,
+        **details,
+        transition_matrix=transition_matrix,
+        report_folder=folder,
+        session_id="s1",
+        which="sub_a",
+        sepal_client=client,
+    )
+
+    assert folder in server.folders
+    workbook = pd.ExcelFile(BytesIO(server.files[f"{folder}/SDG1542_tests1_sub_a.xlsx"]))
+    assert workbook.sheet_names == [
+        "Table1_ER_MTN_TOTL",
+        "Table2_ER_MTN_GRNCOV",
+        "Table3_ER_MTN_GRNCVI",
+    ]

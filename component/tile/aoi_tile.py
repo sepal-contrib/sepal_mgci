@@ -9,7 +9,6 @@ import pandas as pd
 
 from pysepal.aoi.aoi_model import AoiModel
 from pysepal.aoi.aoi_view import AoiView
-from pysepal.message import ms
 from pysepal.scripts import decorator as sd
 from pysepal.scripts import utils as su
 from pysepal.aoi.aoi_view import AdminField
@@ -137,7 +136,7 @@ class AoiView(AoiView, sw.Card):
                 BIOBELT_KEY, cm.aoi.legend.belts, biobelt_legend_data(df)
             )
 
-            self.alert.add_msg(ms.aoi_sel.complete, "success")
+            self.alert.add_msg(cm.aoi_sel.complete, "success")
 
         except Exception as e:
             self.alert.add_msg(f"Failed to get biobelt map: {e}", "error")

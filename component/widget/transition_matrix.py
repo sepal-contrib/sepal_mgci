@@ -9,7 +9,7 @@ from component.scripts.file_handler import df_to_csv, read_file
 import pysepal.sepalwidgets as sw
 
 from pysepal.sepalwidgets.file_input import FileInput
-from pysepal.scripts.sepal_client import SepalClient
+from pysepal_api import SepalClient
 
 
 from component.model.model import MgciModel

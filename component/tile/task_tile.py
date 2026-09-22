@@ -3,7 +3,7 @@ from pathlib import Path
 import ipyvuetify as v
 import pysepal.scripts.utils as su
 import pysepal.sepalwidgets as sw
-from pysepal.scripts.sepal_client import SepalClient
+from pysepal_api import SepalClient
 from pysepal.sepalwidgets.file_input import FileInput
 from pysepal.scripts.drive_interface import GDriveInterface
 from pysepal.scripts.gee_interface import GEEInterface

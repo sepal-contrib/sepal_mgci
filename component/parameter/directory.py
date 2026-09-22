@@ -66,7 +66,7 @@ def initialize_remote(client):
     """
     Create remote directories and upload default files via API client.
     Args:
-        client: REST client with get_remote_dir and set_file
+        client: the SEPAL client (``pysepal_api.SepalClient``)
     """
 
     log.debug("Initializing remote directories and files")
@@ -75,7 +75,7 @@ def initialize_remote(client):
 
     for rel in RELATIVE_PATHS:
         log.debug(f"Creating remote directory: {rel}")
-        client.get_remote_dir(rel, parents=True)
+        client.files.mkdir(rel, parents=True)
 
     # Upload the default files. overwrite=True keeps this idempotent: pysepal-api
     # raises Conflict on an existing file when overwrite is False, so re-running
@@ -85,17 +85,17 @@ def initialize_remote(client):
     # Upload default classification
     lc_path = dir_.class_dir / "default_lc_classification.csv"
     content = Path(param.LC_CLASSES).read_text()
-    client.set_file(str(lc_path), content, overwrite=True)
+    client.files.write(str(lc_path), content, overwrite=True)
 
     # Upload default map matrix
     mm_path = dir_.matrix_dir / "default_lc_map_matrix.csv"
     content = Path(param.LC_MAP_MATRIX).read_text()
-    client.set_file(str(mm_path), content, overwrite=True)
+    client.files.write(str(mm_path), content, overwrite=True)
 
     # Transition matrix
     tr_path = dir_.transition_dir / "transition_matrix.csv"
     content = Path(param.TRANSITION_MATRIX_FILE).read_text()
-    client.set_file(str(tr_path), content, overwrite=True)
+    client.files.write(str(tr_path), content, overwrite=True)
 
 
 # Always construct dir_ for attribute access

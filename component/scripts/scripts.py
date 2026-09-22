@@ -85,7 +85,7 @@ def get_mgci_color(mgci: float) -> str:
 
 def create_folder(folder, sepal_client=None) -> PurePosixPath:
     if sepal_client:
-        return sepal_client.get_remote_dir(folder, parents=True)
+        return sepal_client.files.mkdir(str(folder), parents=True)
     folder.mkdir(parents=True, exist_ok=True)
     return folder
 
@@ -715,9 +715,9 @@ def export_reports(
         buffer.seek(0)
         excel_bytes = buffer.getvalue()
         # make sure the folder exists
-        sepal_client.get_remote_dir(output_folder, parents=True)
+        sepal_client.files.mkdir(str(output_folder), parents=True)
         # overwrite=True to regenerate an existing report (pysepal-api 409s otherwise)
-        sepal_client.set_file(output_name, excel_bytes, overwrite=True)
+        sepal_client.files.write(output_name, excel_bytes, overwrite=True)
 
         return output_name
 
