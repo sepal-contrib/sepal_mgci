@@ -193,11 +193,7 @@ def reduce_regions(
     else:
         # Otherwise, we will use the coarse scale to the output.
         image_area = ee.Image.pixelArea()
-        scale = scale or (
-            ee_lc_start.projection()
-            .nominalScale()
-            .max(ee_lc_start.projection().nominalScale())
-        )
+        scale = scale or ee_lc_start.projection().nominalScale()
 
     if len(lc_years) == 3:
         # We are in subindicator B, so we need to calculate the transition
