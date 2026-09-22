@@ -102,18 +102,20 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
         )
 
     dem = ee.Image(dem_asset)
-    dem_clip = dem.clip(clip_geometry)
 
-    # Create eight neighbors as bands and rename them.
-    neighbors = ee.Image(dem_clip.neighborhoodToBands(ee.Kernel.square(1))).rename(
-        NEIGHBORS_NAMES
+    # Neighbours are read before the clip so cells on the AOI edge keep all eight
+    # triangles instead of a partial sum.
+    neighbors = (
+        dem.neighborhoodToBands(ee.Kernel.square(1))
+        .clip(clip_geometry)
+        .rename(NEIGHBORS_NAMES)
     )
 
     # Cell sizes are pinned to the DEM grid because the image is only valid there.
     # On a geographic grid the N-S size is the nominal scale at every latitude,
     # while the E-W size shrinks with cos(lat); the true (ellipsoidal) pixel area
     # gives it without assuming a square cell, and keeps dx * dy == pixelArea.
-    proj = dem_clip.projection()
+    proj = dem.projection()
     dy = ee.Image.constant(proj.nominalScale())
     dx = ee.Image.pixelArea().reproject(proj).divide(dy)
     diagonal_size = dx.pow(2).add(dy.pow(2)).sqrt()

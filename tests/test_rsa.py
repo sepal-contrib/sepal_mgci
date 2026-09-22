@@ -83,3 +83,21 @@ def test_rsa_equals_planimetric_on_flat_terrain(box):
     planimetric = ee.Image.pixelArea().reduceRegion(**reduce).get("area")
 
     assert ee.Number(rsa).divide(planimetric).getInfo() == pytest.approx(1, abs=5e-3)
+
+
+def test_rsa_edge_cells_are_complete():
+    """Cells on the clip boundary must read their neighbours from outside the AOI,
+    otherwise every edge cell sums a partial set of triangles (-1.7% on a 0.1 deg box).
+    """
+
+    dem = ee.Image("CGIAR/SRTM90_V4")
+    flat_dem = dem.multiply(0)
+    scale = dem.projection().nominalScale()
+
+    box = ee.Geometry.Rectangle(FLAT_SITES["melipilla"])
+    reduce = dict(reducer=ee.Reducer.sum(), geometry=box, scale=scale, **REDUCE_ARGS)
+
+    rsa = get_real_surface_area(flat_dem, box).reduceRegion(**reduce).get("sum")
+    planimetric = ee.Image.pixelArea().reduceRegion(**reduce).get("area")
+
+    assert ee.Number(rsa).divide(planimetric).getInfo() == pytest.approx(1, abs=1e-3)
