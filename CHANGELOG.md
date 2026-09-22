@@ -1,3 +1,9 @@
+## 1.2.3 (2026-09-22)
+
+### Fix
+
+- use the pysepal 4.0 file, client and message APIs
+
 ## 1.2.2 (2026-09-03)
 
 ### Fix
