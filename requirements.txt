@@ -4,11 +4,11 @@ wheel
 voila
 earthengine-api
 
-pysepal>=3.8.3,<4  # renamed from sepal_ui; 3.8.0 adds LegendComponent detail text + layer selector
-pysepal-api>=0.2.0  # SepalClient: imported directly for the files API and type hints
+pysepal>=4.0.0,<5  # renamed from sepal_ui; 4.0 is the Solara/ee-client generation
+pysepal-api>=0.3.0  # SepalClient: imported directly for the files API and type hints
 
 solara
-ee-client>=3.0.0  # required by pysepal 3.7 (provider-agnostic auth)
+ee-client>=3.2.1  # required by pysepal 4 (provider-agnostic auth)
 rasterio<1.3.11 # Leave it here even if it's already in the pysepal requirements. Check https://github.com/openforis/sepal/issues/328
 uvicorn<0.30
 # anyio 4.15 made the top-level imports lazy (anyio#1169); solara reads
@@ -23,7 +23,7 @@ pandas
 openpyxl>=3.0.3
 plotly
 pytest
-pygaul>=0.4.2 # GAUL 2024 columns (gaul0_code); required by pysepal 3.7
+pygaul>=0.4.2 # GAUL 2024 columns (gaul0_code); required by pysepal 4
 seaborn
 
 ipyvuetify<3
