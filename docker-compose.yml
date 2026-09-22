@@ -13,9 +13,11 @@ services:
       FORWARDED_ALLOW_IPS: "*"
       SOLARA_THEME_SHOW_BANNER: "False"
       CARTODB_BASEMAP_KEY: "${CARTODB_BASEMAP_KEY:-}"
-      # dev login: pysepal 3.x reads SOLARA_TEST, pysepal 4.0 reads PYSEPAL_DEV_AUTH
-      SOLARA_TEST: "${SOLARA_TEST:-false}"
+      # dev login for running against a SEPAL instance from outside it; real
+      # SEPAL headers always win, so it is inert in a deployed container
       PYSEPAL_DEV_AUTH: "${PYSEPAL_DEV_AUTH:-false}"
+      # keeps result paths relative to the SEPAL home; this container runs as
+      # root, so the absolute form would be rejected on the first write
       DEPLOY_ENV: "${DEPLOY_ENV:-sepal_solara}"
       LOCAL_SEPAL_USER: "${LOCAL_SEPAL_USER:-}"
       LOCAL_SEPAL_PASSWORD: "${LOCAL_SEPAL_PASSWORD:-}"
