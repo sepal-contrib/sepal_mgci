@@ -15,12 +15,11 @@ LOCAL_FILE_METHODS = ("SHAPE", "POINTS")
 
 
 @pytest.fixture()
-def aoi_view() -> AoiView:
+def aoi_view(gee_interface) -> AoiView:
     """An AoiView built the way ``solara_app.Page`` builds it."""
     from pysepal.mapping import SepalMap
-    from pysepal.scripts.gee_interface import GEEInterface
 
-    return AoiView(map_=SepalMap(gee_interface=GEEInterface()))
+    return AoiView(map_=SepalMap(gee_interface=gee_interface))
 
 
 def test_local_file_methods_are_not_offered() -> None:

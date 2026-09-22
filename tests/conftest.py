@@ -27,7 +27,23 @@ init_ee()
 # loop-agnostic and safe to share across asyncio.run() calls.
 # TODO(openforis/pysepal#1010): a fallback whose async client is loop-safe (not a
 # process-wide singleton bound to one loop) would make this monkey-patch unnecessary.
+# pysepal 4.0 removed the fallback, so there this assignment is inert; drop it with
+# 3.x support.
 solara_utils._fallback_gee_interface = GEEInterface()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def close_process_gee_interfaces():
+    """Stop the process-wide interfaces' loop threads before the interpreter exits.
+
+    Each GEEInterface runs a daemon event-loop thread, and widgets the tests build
+    (asset selectors) leave it fetching assets. On pysepal 4.0 that work goes through
+    the session, so a thread still logging at shutdown can abort the interpreter
+    mid-finalization ("could not acquire lock for <stderr>").
+    """
+    yield
+    solara_utils._fallback_gee_interface.close()
+    solara_utils.get_current_gee_interface().close()
 
 
 @pytest.fixture()
@@ -177,14 +193,16 @@ def test_multipolygon_aoi() -> ee.FeatureCollection:
 
 @pytest.fixture
 def gee_interface() -> GEEInterface:
-    return GEEInterface()
+    interface = GEEInterface()
+    yield interface
+    interface.close()
 
 
 @pytest.fixture
-def mgci_model() -> MgciModel:
+def mgci_model(gee_interface) -> MgciModel:
     # MgciModel derives its AoiModel from an AoiView (aoi_view.model), the way
     # solara_app.Page builds it.
-    aoi_view = AoiView(map_=SepalMap(gee_interface=GEEInterface()))
+    aoi_view = AoiView(map_=SepalMap(gee_interface=gee_interface))
     return MgciModel(aoi_view)
 
 

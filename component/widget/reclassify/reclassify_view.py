@@ -12,7 +12,7 @@ from component.scripts.file_handler import df_to_csv, read_file
 import pysepal.sepalwidgets as sw
 from pysepal import color
 from pysepal.scripts import utils as su
-from pysepal.scripts.sepal_client import SepalClient
+from pysepal_api import SepalClient
 from pysepal.sepalwidgets.file_input import FileInput
 from pysepal.sepalwidgets.btn import TaskButton
 from pysepal.solara import get_current_gee_interface

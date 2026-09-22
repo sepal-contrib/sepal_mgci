@@ -31,10 +31,17 @@ async def download_from_task_file(
 
     log.debug(f"Task {task_id} state: {task}")
 
+    if task is None:
+        raise Exception(
+            f"The task {Path(task_filename).stem} was not found in Earth Engine."
+        )
+
     if task.metadata.state in ["COMPLETED", "SUCCEEDED"]:
         tmp_result_folder = Path(dir_.tasks_dir, Path(tasks_file.name).stem)
         if sepal_client:
-            tmp_result_folder = sepal_client.get_remote_dir(tmp_result_folder)
+            tmp_result_folder = sepal_client.files.mkdir(
+                str(tmp_result_folder), parents=False
+            )
         else:
             tmp_result_folder.mkdir(exist_ok=True)
 
