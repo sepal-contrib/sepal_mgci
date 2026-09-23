@@ -9,7 +9,13 @@ sys.path.append(str(Path(".").resolve()))
 
 import pytest
 from pathlib import Path
-from component.scripts.gee import no_remap, reduce_by_regions, reduce_by_region
+import component.parameter.module_parameter as param
+from component.scripts.gee import (
+    no_remap,
+    reduce_by_regions,
+    reduce_by_region,
+    reduce_regions,
+)
 from component.scripts.gee_parse_reduce_regions import reduceGroups
 
 from tests.utils import compare_nested_dicts
@@ -185,6 +191,49 @@ def test_reduce_groups(test_multipolygon_aoi):
         assert isclose(
             result[key], expected[key], rel_tol=1e-7
         ), f"group {key}: {result[key]} != {expected[key]}"
+
+
+def test_reduce_regions_rsa_is_scale_invariant(default_remap_matrix_a):
+    """With rsa=True the total area must not depend on the reduce scale.
+
+    The Jenness surface is only meaningful on the DEM grid, so before #93 reducing
+    the RSA image at any other scale (the land cover default, or the app's
+    30-10,000 m slider) changed the total by orders of magnitude. The image now
+    carries a terrain factor re-applied to the true pixel area at the reduce scale.
+    Only the grand total is compared: the split by class follows the land cover
+    grid at each scale, and the 0.1 deg box is a single pixel at 10 km.
+    """
+    # 0.1 deg box in the Andes (Cajon del Maipo, Chile): fully inside the
+    # bioclimatic belts, and small enough to reduce synchronously at 30 m.
+    aoi = ee.FeatureCollection(
+        [ee.Feature(ee.Geometry.Rectangle([-70.20, -33.75, -70.10, -33.65]))]
+    )
+    lc_years = [{"asset": f"{param.LULC_DEFAULT}/2015", "year": 2015}]
+    dem_scale = ee.Image(param.DEM_DEFAULT).projection().nominalScale().getInfo()
+
+    def total(rsa, scale):
+        result = reduce_regions(
+            aoi,
+            default_remap_matrix_a,
+            rsa=rsa,
+            dem=param.DEM_DEFAULT,
+            lc_years=lc_years,
+            transition_matrix=False,
+            scale=scale,
+        ).getInfo()
+        return sum(flatten_groups(result["sub_a"], ["biobelt", "lc"]).values())
+
+    scales = (dem_scale, None, 30, 1000, 10000)
+    rsa_totals = {scale: total(True, scale) for scale in scales}
+    plan_totals = {scale: total(False, scale) for scale in scales}
+    print(f"RSA totals (km2) by requested scale: {rsa_totals}")
+
+    reference = rsa_totals[dem_scale]
+    assert reference > 0, "the test box must intersect the bioclimatic belts"
+    for scale in scales:
+        assert isclose(rsa_totals[scale], reference, rel_tol=0.01), scale
+        # A real surface is never smaller than its planimetric footprint.
+        assert rsa_totals[scale] >= plan_totals[scale], scale
 
 
 if __name__ == "__main__":

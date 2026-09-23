@@ -49,7 +49,7 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
     """
     Calculates real surface area from a Digital Elevation Model. Based on
     https://www.fs.fed.us/rm/pubs_other/rmrs_2004_jenness_j001.pdf paper from
-    Jenness(2004).
+    Jenness(2004). The returned image can be reduced at any scale.
 
     Args:
         dem_asset (str, ee.Image): digital elevation model asset available in GEE
@@ -132,8 +132,17 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
 
     triangles_area = TRIANGLES_MATRIX.map(get_triangles_area)
 
-    return (
+    surface = (
         ee.ImageCollection.fromImages(triangles_area.values())
         .toBands()
         .reduce(ee.Reducer.sum())
+    )
+
+    # The summed surface is only valid on the DEM grid, so it is carried as a
+    # dimensionless terrain factor, aggregated to whatever scale the reduction
+    # runs at, and multiplied back by the true pixel area (#93).
+    factor = surface.divide(ee.Image.pixelArea()).reproject(dem.projection())
+
+    return factor.reduceResolution(ee.Reducer.mean(), True, 65536).multiply(
+        ee.Image.pixelArea()
     )

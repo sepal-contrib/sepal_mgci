@@ -186,18 +186,14 @@ def reduce_regions(
     clip_biobelt = ee.Image(param.BIOBELT)
 
     if rsa:
-        # When using rsa, we need to use the dem scale, otherwise
-        # we will end with wrong results.
+        # The RSA image is scale-invariant, so the land cover working
+        # resolution applies, as for the planimetric area.
         image_area = get_real_surface_area(dem, aoi)
         scale = scale or ee_lc_start.projection().nominalScale()
     else:
         # Otherwise, we will use the coarse scale to the output.
         image_area = ee.Image.pixelArea()
-        scale = scale or (
-            ee_lc_start.projection()
-            .nominalScale()
-            .max(ee_lc_start.projection().nominalScale())
-        )
+        scale = scale or ee_lc_start.projection().nominalScale()
 
     if len(lc_years) == 3:
         # We are in subindicator B, so we need to calculate the transition
