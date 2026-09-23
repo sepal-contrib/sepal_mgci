@@ -50,4 +50,6 @@ def test_rsa_values(test_realsurfacearea_aoi, default_dem_asset_id):
 
     # Assert
 
-    assert process_values == expected_values
+    # The terrain factor is divided and multiplied back by the pixel area,
+    # which only moves the values at floating-point precision.
+    assert process_values == pytest.approx(expected_values, rel=1e-9)
