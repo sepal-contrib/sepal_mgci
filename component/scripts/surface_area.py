@@ -25,7 +25,9 @@ SUBTRACTION_MATRIX = ee.Dictionary(
     }
 )
 
-# Define diagonals (from the center pixel)
+# Neighbour pairs on the same row span the cell's E-W size, pairs on the same
+# column its N-S size, and the four pairs through the centre span both.
+NS_PAIRS = ee.List(["AD", "BE", "CF", "DG", "EH", "FI"])
 DIAGONALS = ee.List(["AE", "CE", "GE", "IE"])
 
 # Define triangles segments that will be used in the 3-4 step
@@ -50,7 +52,7 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
     Jenness(2004).
 
     Args:
-        dem_asset (str): digital elevation model asset available in GEE
+        dem_asset (str, ee.Image): digital elevation model asset available in GEE
         clip_geometry (ee.Object): GEE geometry to clip the DEM
     """
 
@@ -58,9 +60,13 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
         def inner_subtract(sub_neig):
             band_name = ee.String(neighbor_name).cat(sub_neig)
 
-            # Find the cellsize, depending if it's a diagonal or not
-            size = ee.Number(
-                ee.Algorithms.If(DIAGONALS.contains(band_name), diagonal_size, cellsize)
+            # Horizontal distance between the two cells: diagonal, N-S or E-W
+            size = ee.Image(
+                ee.Algorithms.If(
+                    DIAGONALS.contains(band_name),
+                    diagonal_size,
+                    ee.Algorithms.If(NS_PAIRS.contains(band_name), dy, dx),
+                )
             )
 
             # Subtract corresponding neighbors (based on subtraction matrix dictionary)
@@ -70,11 +76,7 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
 
             # Return the half side
             return (
-                ee.Image(size.pow(2))
-                .add(subtraction.pow(2))
-                .sqrt()
-                .divide(2)
-                .rename([band_name])
+                size.pow(2).add(subtraction.pow(2)).sqrt().divide(2).rename([band_name])
             )
 
         # Return a list of half-sides
@@ -100,16 +102,23 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
         )
 
     dem = ee.Image(dem_asset)
-    dem_clip = dem.clip(clip_geometry)
 
-    # Create eight neighbors as bands and rename them.
-    neighbors = ee.Image(dem_clip.neighborhoodToBands(ee.Kernel.square(1))).rename(
-        NEIGHBORS_NAMES
+    # Neighbours are read before the clip so cells on the AOI edge keep all eight
+    # triangles instead of a partial sum.
+    neighbors = (
+        dem.neighborhoodToBands(ee.Kernel.square(1))
+        .clip(clip_geometry)
+        .rename(NEIGHBORS_NAMES)
     )
 
-    # Define the output cell-size
-    cellsize = ee.Number(dem_clip.projection().nominalScale())
-    diagonal_size = cellsize.pow(2).multiply(2).sqrt()
+    # Cell sizes are pinned to the DEM grid because the image is only valid there.
+    # On a geographic grid the N-S size is the nominal scale at every latitude,
+    # while the E-W size shrinks with cos(lat); the true (ellipsoidal) pixel area
+    # gives it without assuming a square cell, and keeps dx * dy == pixelArea.
+    proj = dem.projection()
+    dy = ee.Image.constant(proj.nominalScale())
+    dx = ee.Image.pixelArea().reproject(proj).divide(dy)
+    diagonal_size = dx.pow(2).add(dy.pow(2)).sqrt()
 
     # Calculate half-sides, based on steps 1-2
     half_sides = NEIGHBORS_NAMES.map(get_half_side)
