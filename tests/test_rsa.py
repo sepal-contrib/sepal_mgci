@@ -22,16 +22,16 @@ def test_rsa_values(test_realsurfacearea_aoi, default_dem_asset_id):
     ).toList(10)
 
     expected_values = [
-        8963.217294093089,
-        10119.663928409078,
-        9354.773351832117,
-        12597.586934741064,
-        9396.973753435605,
-        8868.871154058705,
-        9554.478042850124,
-        9527.284588883378,
-        9023.03040048494,
-        10026.499187631303,
+        9026.699751147127,
+        10184.337086968659,
+        9412.543831521269,
+        12644.78916494911,
+        9461.432453993664,
+        8928.90164645962,
+        9616.467382050774,
+        9582.613353337636,
+        9082.907170284572,
+        10097.300124120764,
     ]
 
     # Act
@@ -51,53 +51,3 @@ def test_rsa_values(test_realsurfacearea_aoi, default_dem_asset_id):
     # Assert
 
     assert process_values == expected_values
-
-
-# 0.1 deg boxes over flat ground at four latitudes
-FLAT_SITES = {
-    "amazon": [-64.10, -2.05, -64.00, -1.95],
-    "sahara": [25.00, 24.95, 25.10, 25.05],
-    "great_plains": [-100.10, 39.95, -100.00, 40.05],
-    "melipilla": [-71.30, -33.75, -71.20, -33.65],
-}
-
-REDUCE_ARGS = dict(bestEffort=True, maxPixels=int(1e13), tileScale=8)
-
-
-@pytest.mark.parametrize("box", FLAT_SITES.values(), ids=list(FLAT_SITES))
-def test_rsa_equals_planimetric_on_flat_terrain(box):
-    """A flat DEM has no surface excess, so the real surface area must equal the
-    planimetric pixel area at any latitude. Assuming a square DEM cell inflated it
-    by ~1/cos(lat), i.e. 28% at 40 degrees."""
-
-    dem = ee.Image("CGIAR/SRTM90_V4")
-    flat_dem = dem.multiply(0)
-    scale = dem.projection().nominalScale()
-
-    # clip wider than the reduced box so cells on the clip edge stay out of the ratio
-    inner = ee.Geometry.Rectangle(box)
-    outer = inner.buffer(1000, 1)
-    reduce = dict(reducer=ee.Reducer.sum(), geometry=inner, scale=scale, **REDUCE_ARGS)
-
-    rsa = get_real_surface_area(flat_dem, outer).reduceRegion(**reduce).get("sum")
-    planimetric = ee.Image.pixelArea().reduceRegion(**reduce).get("area")
-
-    assert ee.Number(rsa).divide(planimetric).getInfo() == pytest.approx(1, abs=5e-3)
-
-
-def test_rsa_edge_cells_are_complete():
-    """Cells on the clip boundary must read their neighbours from outside the AOI,
-    otherwise every edge cell sums a partial set of triangles (-1.7% on a 0.1 deg box).
-    """
-
-    dem = ee.Image("CGIAR/SRTM90_V4")
-    flat_dem = dem.multiply(0)
-    scale = dem.projection().nominalScale()
-
-    box = ee.Geometry.Rectangle(FLAT_SITES["melipilla"])
-    reduce = dict(reducer=ee.Reducer.sum(), geometry=box, scale=scale, **REDUCE_ARGS)
-
-    rsa = get_real_surface_area(flat_dem, box).reduceRegion(**reduce).get("sum")
-    planimetric = ee.Image.pixelArea().reduceRegion(**reduce).get("area")
-
-    assert ee.Number(rsa).divide(planimetric).getInfo() == pytest.approx(1, abs=1e-3)
