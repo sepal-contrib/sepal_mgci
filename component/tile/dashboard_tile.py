@@ -48,8 +48,9 @@ class ResultsDialog(BaseDialog):
             sw.Card(
                 class_="pa-2 d-flex flex-column",
                 style_=(
-                    "height: min(1180px, calc(100vh - 64px)); "
-                    "height: min(1180px, calc(100dvh - 64px));"
+                    "box-sizing: border-box; "
+                    "height: min(1180px, calc(90vh - 16px)); "
+                    "height: min(1180px, calc(90dvh - 16px));"
                 ),
                 children=[
                     sw.CardTitle(children=["Results"]),

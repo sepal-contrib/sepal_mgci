@@ -353,7 +353,7 @@ def test_dashboard_side_panels_have_compact_actions_and_no_year_select():
     assert view_a._default_year() == 2022
     assert view_b._default_selection() == {"report": [2015, 2021]}
     assert view_b.results_dialog.max_width == 1180
-    assert "min(1180px, calc(100dvh - 64px))" in view_b.results_dialog.children[0].style_
+    assert "min(1180px, calc(90dvh - 16px))" in view_b.results_dialog.children[0].style_
 
 
 def test_b_dashboard_period_button_requests_its_own_period(monkeypatch):
