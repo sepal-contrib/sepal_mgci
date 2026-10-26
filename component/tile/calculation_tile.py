@@ -13,6 +13,7 @@ from pysepal.sepalwidgets.btn import TaskButton
 
 from component.parameter.directory import dir_
 from component.scripts.deferred_calculation import perform_calculation, task_process
+from component.scripts.dashboard_data import results_context
 import component.scripts as cs
 from component.scripts.validation import validate_calc_params, validate_model
 import component.widget as cw
@@ -330,6 +331,12 @@ class CalculationView(sw.Card):
             scale = self.w_scale.v_model
 
         log.debug(f"Performing calculation with parameters:\n {self.model}")
+
+        # Lets the dashboards reuse these results while the inputs are unchanged.
+        self.model.results_context = {
+            indicator: results_context(self.model, scale, indicator)
+            for indicator in ("sub_a", "sub_b")
+        }
 
         # Create a fucntion in order to be able to test it easily
         results = await perform_calculation(

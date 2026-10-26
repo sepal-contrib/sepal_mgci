@@ -208,6 +208,7 @@
         }
     },
     "error" : {
-        "no_aoi" : "Please select an area of interest first."
+        "no_aoi" : "Please select an area of interest first.",
+        "chart_too_large" : "This area is too large to chart on the fly ({}). Select a coarser {} in \"{}\" and try again. For full-resolution statistics, run the calculation in \"{}\": it continues as a background task, and you can create the report in \"{}\"."
     }
 }

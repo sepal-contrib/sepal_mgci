@@ -105,3 +105,19 @@ def test_successful_aoi_selection_closes_only_its_step(aoi_view: AoiView) -> Non
     app.step_open = True
     aoi_view._complete_aoi_selection(True)
     assert (app.current_step, app.step_open) == (3, True)
+
+
+def test_cancelled_aoi_load_stops_the_button_spinner(aoi_view: AoiView) -> None:
+    import asyncio
+
+    async def cancelled():
+        raise asyncio.CancelledError()
+
+    task = aoi_view._tasks["add_aoi"]
+    task.function = cancelled
+    aoi_view.btn.loading = True
+
+    task.start().result(timeout=10)
+
+    assert task.is_cancelled
+    assert aoi_view.btn.loading is False

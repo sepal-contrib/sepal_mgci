@@ -8,7 +8,6 @@ from ipecharts.echarts import EChartsRawWidget, EChartsWidget
 from ipecharts.option import Grid, Legend, Option, Tooltip, XAxis, YAxis
 from ipecharts.option.series import Bar, Sankey
 from pysepal.solara import get_current_theme_state
-from solara.lab.components.theming import theme
 
 import component.parameter.module_parameter as param
 from component.scripts.file_handler import read_file
@@ -254,7 +253,7 @@ def get_transition_matrix_chart(
     return chart
 
 
-def get_land_cover_bar_chart(values, classes):
+def get_land_cover_bar_chart(values, classes, theme_state=None):
     """Compact, directly labeled land-cover shares."""
     values = values.groupby("lc_class", as_index=False)["sum"].sum()
     values = values[values["sum"] > 0].sort_values("sum", ascending=False)
@@ -283,7 +282,17 @@ def get_land_cover_bar_chart(values, classes):
             }
         )
 
-    dark = bool(theme.dark)
+    def background(is_dark):
+        return {"color": "#353b40" if is_dark else "#edf0f2", "borderRadius": 5}
+
+    state = theme_state or get_current_theme_state()
+    bar = Bar(
+        data=data,
+        barWidth=14,
+        showBackground=True,
+        backgroundStyle=background(state.dark),
+        label={"show": True, "position": "right", "formatter": "{c}%"},
+    )
     option = Option(
         backgroundColor="transparent",
         grid=Grid(left=205, right=62, top=8, bottom=8),
@@ -296,23 +305,15 @@ def get_land_cover_bar_chart(values, classes):
             axisTick={"show": False},
             axisLabel={"fontSize": 12, "width": 185, "overflow": "truncate"},
         ),
-        series=[
-            Bar(
-                data=data,
-                barWidth=14,
-                showBackground=True,
-                backgroundStyle={
-                    "color": "#353b40" if dark else "#edf0f2",
-                    "borderRadius": 5,
-                },
-                label={"show": True, "position": "right", "formatter": "{c}%"},
-            )
-        ],
+        series=[bar],
         tooltip=Tooltip(trigger="item"),
     )
-    return EChartsWidget(
+    return ThemedEChartsWidget(
         option=option,
-        theme="dark" if dark else "light",
+        theme_state=state,
+        theme_updater=lambda is_dark: setattr(
+            bar, "backgroundStyle", background(is_dark)
+        ),
         renderer="svg",
         style={"height": f"{max(150, len(labels) * 29 + 24)}px", "width": "100%"},
     )

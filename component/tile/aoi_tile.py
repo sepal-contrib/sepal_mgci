@@ -164,15 +164,18 @@ class AoiView(AoiView, sw.Card):
             """Callback to get the biobelt map after the AOI is added."""
             self._tasks["get_belt_map"].start()
 
-        def add_aoi_error(error):
-            self.alert.add_msg(str(error), "error")
-            self.btn.loading = False
+        def after_add_aoi():
+            # On success the belt-map task owns the spinner; on error or
+            # cancellation it never starts, so stop the spinner here.
+            if not self._tasks["get_belt_map"].is_running:
+                self.btn.loading = False
 
         self._tasks["add_aoi"] = self.map_.gee_interface.create_task(
             func=self.add_aoi,
             key="add_aoi",
-            on_error=add_aoi_error,
+            on_error=lambda error: self.alert.add_msg(str(error), "error"),
             on_done=get_belt_map,
+            on_finally=after_add_aoi,
         )
 
         self._tasks["get_belt_map"] = self.map_.gee_interface.create_task(

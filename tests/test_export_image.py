@@ -19,6 +19,9 @@ class FakeImage:
         assert mask == "source mask"
         return self
 
+    def toInt16(self):
+        return self
+
     def addBands(self, other):
         return FakeImage(self.bands + other.bands)
 
@@ -39,3 +42,18 @@ def test_export_image_includes_belt_band_and_class_metadata(monkeypatch):
         "1=Nival; 2=Alpine; 3=Montane; 4=Remaining mountain area"
     )
     assert "0=Unclassified" in image.properties["mgci_pixel_classes"]
+
+
+def test_export_bands_share_one_pixel_type():
+    import ee
+
+    aoi = ee.Geometry.Rectangle([-70.5, -33.5, -70, -33])
+    layer = ee.Image.constant(3).toUint8().rename("final_degradation")
+
+    image = export_dialog.prepare_export_image(
+        layer, aoi, export_dialog.DEGRADATION_CLASSES
+    )
+
+    # GeoTIFF exports reject bands with different pixel types.
+    types = image.bandTypes().getInfo()
+    assert types["final_degradation"] == types["bioclimatic_belt"]

@@ -4,7 +4,11 @@ import pysepal.sepalwidgets as sw
 import component.parameter.module_parameter as param
 import component.scripts as cs
 from component.message import cm
-from component.scripts.dashboard_data import calculate_a_dashboard, calculate_b_dashboard
+from component.scripts.dashboard_data import (
+    calculate_a_dashboard,
+    calculate_b_dashboard,
+    freeze_input as _freeze_input,
+)
 from component.scripts.plots import (
     get_lc_class_map,
     get_nodes_and_links,
@@ -19,16 +23,22 @@ from component.widget.mgci_dashboard import (
 )
 
 
-def _freeze_input(value):
-    if isinstance(value, dict):
-        return tuple(
-            sorted((str(key), _freeze_input(item)) for key, item in value.items())
-        )
-    if isinstance(value, (list, tuple)):
-        return tuple(_freeze_input(item) for item in value)
-    if isinstance(value, (str, int, float, bool, type(None))):
-        return value
-    return repr(value)
+GEE_LIMIT_ERRORS = ("Computation timed out", "User memory limit exceeded")
+
+
+def dashboard_error_message(error):
+    """Explain Earth Engine limits in user terms; pass other errors through."""
+    text = str(error)
+    if not any(limit in text for limit in GEE_LIMIT_ERRORS):
+        return text
+    settings = cm.app.drawer_item.calculation
+    return cm.error.chart_too_large.format(
+        text.rstrip("."),
+        cm.dashboard.label.scale.lower(),
+        settings,
+        settings,
+        cm.app.drawer_item.task,
+    )
 
 
 class ResultsDialog(BaseDialog):
@@ -205,22 +215,31 @@ class DashViewA(DashView):
             func=lambda: self._calculate_chart(year),
             key=f"dashboard_a_{id(self)}",
             on_done=lambda result: self._receive_chart(year, signature, request, result),
-            on_error=lambda error: self.alert.add_msg(str(error), type_="error"),
+            on_error=lambda error: self.alert.add_msg(
+                dashboard_error_message(error), type_="error"
+            ),
             on_finally=lambda: self._finish_chart(year, request),
         )
         self._active_chart_task = task
         return task
 
     def _receive_chart(self, year, signature, request, result):
-        if request == self._latest_chart_request and signature == self._chart_signature():
-            self._chart_cache[year] = (signature, result)
-            self.render_dashboard(result)
+        if request != self._latest_chart_request:
+            return
+        if signature != self._chart_signature():
+            # Inputs changed while loading; fetch again with the current ones.
+            self._start_year_task(year)
+            return
+        self._chart_cache[year] = (signature, result)
+        self.render_dashboard(result)
 
     def _finish_chart(self, year, request):
+        # A newer request owns the loading state.
+        if request != self._latest_chart_request:
+            return
         self.year_selector.set_loading(year, False)
-        if request == self._latest_chart_request:
-            self.btn.loading = False
-            self.btn.disabled = not bool(self.available_years)
+        self.btn.loading = False
+        self.btn.disabled = not bool(self.available_years)
 
     async def _calculate_chart(self, year):
         DashView.render_dashboard(self)
@@ -452,24 +471,33 @@ class DashViewB(DashView):
             func=lambda: self._calculate_chart(selection),
             key=f"dashboard_b_{id(self)}",
             on_done=lambda result: self._receive_chart(period, signature, request, result),
-            on_error=lambda error: self.alert.add_msg(str(error), type_="error"),
+            on_error=lambda error: self.alert.add_msg(
+                dashboard_error_message(error), type_="error"
+            ),
             on_finally=lambda: self._finish_chart(period, request),
         )
         self._active_chart_task = task
         return task
 
     def _receive_chart(self, period, signature, request, result):
-        if request == self._latest_chart_request and signature == self._chart_signature():
-            selection = result[0] if isinstance(result, tuple) else None
-            if selection:
-                self._chart_cache[(next(iter(selection)), period)] = (signature, result)
-            self.render_dashboard(result)
+        if request != self._latest_chart_request:
+            return
+        selection = result[0] if isinstance(result, tuple) else None
+        if signature != self._chart_signature():
+            # Inputs changed while loading; fetch again with the current ones.
+            self._start_period_task(selection)
+            return
+        if selection:
+            self._chart_cache[(next(iter(selection)), period)] = (signature, result)
+        self.render_dashboard(result)
 
     def _finish_chart(self, period, request):
+        # A newer request owns the loading state.
+        if request != self._latest_chart_request:
+            return
         self.period_selector.set_loading(period, False)
-        if request == self._latest_chart_request:
-            self.btn.loading = False
-            self.btn.disabled = not bool(self.available_periods)
+        self.btn.loading = False
+        self.btn.disabled = not bool(self.available_periods)
 
     async def _calculate_chart(self, selection):
         if not self.model.aoi_model.feature_collection:

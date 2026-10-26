@@ -526,3 +526,94 @@ def test_b_dashboard_reuses_period_until_aoi_changes(monkeypatch):
     model.aoi_model.feature_collection = object()
     view._start_period_task(selection)
     assert calls == [selection, selection]
+
+
+def test_land_cover_chart_follows_dark_theme_changes():
+    state = ThemeState(mode="light")
+    values = pd.DataFrame({"lc_class": [1], "sum": [25.0]})
+
+    chart = get_land_cover_bar_chart(
+        values, {1: ["Forest", "#123456"]}, theme_state=state
+    )
+
+    assert chart.theme == "light"
+    state.set_mode("dark")
+    assert chart.theme == "dark"
+    assert chart.option.series[0].backgroundStyle["color"] == "#353b40"
+    chart.close()
+
+
+def test_a_dashboard_refetches_when_inputs_change_during_request(monkeypatch):
+    calls = []
+    shown = []
+
+    class FakeGee:
+        def create_task(self, **kwargs):
+            class FakeTask:
+                is_running = False
+
+                def start(self):
+                    result = asyncio.run(kwargs["func"]())
+                    kwargs["on_done"](result)
+                    kwargs["on_finally"]()
+
+            return FakeTask()
+
+    model = SimpleNamespace(
+        reporting_years_sub_a={2020: [{"year": 2020}]},
+        matrix_sub_a={1: 1},
+        aoi_model=SimpleNamespace(feature_collection=object()),
+        observe=lambda *args: None,
+    )
+
+    async def fake_calculate(model, year, gee_interface, scale=None):
+        calls.append(dict(model.matrix_sub_a))
+        if len(calls) == 1:
+            model.matrix_sub_a = {1: 2}
+        return pd.DataFrame({"year": [year]})
+
+    monkeypatch.setattr(
+        "component.tile.dashboard_tile.calculate_a_dashboard", fake_calculate
+    )
+    view = DashViewA(model, gee_interface=FakeGee())
+    view.render_dashboard = shown.append
+
+    view._start_year_task(2020)
+
+    assert calls == [{1: 1}, {1: 2}]
+    assert len(shown) == 1
+    assert view.btn.loading is False
+    assert view.year_selector.loading_key is None
+
+
+def test_dashboards_explain_when_an_area_is_too_large_to_chart():
+    errors = []
+
+    class FakeGee:
+        def create_task(self, **kwargs):
+            errors.append(kwargs["on_error"])
+            return SimpleNamespace(is_running=False)
+
+    messages = []
+    import pysepal.sepalwidgets as sw
+
+    alert = sw.Alert()
+    alert.add_msg = lambda msg, type_: messages.append((msg, type_))
+    model_a = SimpleNamespace(reporting_years_sub_a={2020: []}, observe=lambda *a: None)
+    model_b = SimpleNamespace(
+        reporting_years_sub_b=[(2000, 2015), 2021], observe=lambda *a: None
+    )
+    DashViewA(model_a, alert=alert, gee_interface=FakeGee())._create_chart_task(2020)
+    DashViewB(model_b, alert=alert, gee_interface=FakeGee())._create_chart_task(
+        {"report": [2015, 2021]}
+    )
+
+    errors[0](Exception("Computation timed out."))
+    errors[1](Exception("User memory limit exceeded."))
+    errors[0](Exception("Asset not found."))
+
+    for msg, type_ in messages[:2]:
+        assert "too large" in msg
+        assert "process scale" in msg
+        assert type_ == "error"
+    assert messages[2] == ("Asset not found.", "error")

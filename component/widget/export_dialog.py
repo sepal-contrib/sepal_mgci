@@ -43,13 +43,16 @@ def get_export_class_key(selection, model):
 
 
 def prepare_export_image(layer, aoi, class_key):
+    # The belt asset is float and the layers are integer; GeoTIFF exports
+    # reject bands with different pixel types.
     belt = (
         ee.Image(param.BIOBELT)
         .rename("bioclimatic_belt")
         .clip(aoi)
         .updateMask(layer.mask())
+        .toInt16()
     )
-    return layer.addBands(belt).set(
+    return layer.toInt16().addBands(belt).set(
         {
             "mgci_pixel_classes": class_key,
             "mgci_bioclimatic_belt_classes": BELT_CLASSES,
