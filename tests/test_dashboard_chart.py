@@ -113,6 +113,13 @@ def test_sankey_follows_dark_theme_changes():
     chart.close()
 
 
+def test_sankey_shows_completed_layout_without_animation():
+    _, chart = get_sankey_chart()
+
+    assert chart.option.animation is False
+    chart.close()
+
+
 def test_themed_charts_can_be_closed_twice():
     state = ThemeState(mode="dark")
     _, flow = get_sankey_chart(theme_state=state)

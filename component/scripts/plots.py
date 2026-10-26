@@ -76,6 +76,7 @@ def get_sankey_chart(theme_state=None):
     sankey_data.nodes = []
     sankey_data.links = []
     option = Option(
+        animation=False,
         backgroundColor="transparent",
         series=[sankey_data],
         tooltip=Tooltip(trigger="item"),
