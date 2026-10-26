@@ -34,6 +34,7 @@ def _freeze_input(value):
 class ResultsDialog(BaseDialog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.max_width = 1180
 
         self.card_content = sw.CardText(
             class_="flex-grow-1",
@@ -46,7 +47,10 @@ class ResultsDialog(BaseDialog):
         self.children = [
             sw.Card(
                 class_="pa-2 d-flex flex-column",
-                style_="height: min(900px, 92vh); height: min(900px, 92dvh);",
+                style_=(
+                    "height: min(1180px, calc(100vh - 64px)); "
+                    "height: min(1180px, calc(100dvh - 64px));"
+                ),
                 children=[
                     sw.CardTitle(children=["Results"]),
                     self.card_content,
