@@ -1,3 +1,20 @@
+## 1.3.0 (2026-10-26)
+
+### Feat
+
+- add selectable Sub-indicator A and B dashboards with mountain-belt and period controls
+- show land-cover transitions as a Sankey chart or impact-colored matrix
+- include bioclimatic belt codes in exported raster layers and document their meaning
+
+### Fix
+
+- reuse calculated dashboard results until inputs change
+- improve dashboard sizing, chart loading, and AOI selection behavior
+
+### Build
+
+- require pysepal 4.1.0 or newer within the 4.x series
+
 ## 1.2.4 (2026-09-23)
 
 ### Fix
