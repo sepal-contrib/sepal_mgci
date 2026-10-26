@@ -152,7 +152,7 @@ def Page():
             "content": [dash_view_a],
             "title": "Sub indicator A",
             "icon": "mdi-chart-bar",
-            "description": "Explore MGCI and land-cover composition by year and mountain belt.",
+            "description": "Explore land-cover composition for Sub-indicator A by year and mountain belt.",
         },
         {
             "content": [dash_view_b],
