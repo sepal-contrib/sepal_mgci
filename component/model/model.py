@@ -152,6 +152,7 @@ class MgciModel(Model):
         """
         self.sepal_client = sepal_client
         self.results: Dict = {}
+        self.results_context: Dict = {}
         self.aoi_view = aoi_view
         self.aoi_model = aoi_view.model
 

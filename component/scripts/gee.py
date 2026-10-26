@@ -17,6 +17,14 @@ from component.scripts.gee_parse_reduce_regions import filter_groups, reduceGrou
 NO_DATA_VALUE = 0
 """Union[int, None]: No data value for the remap process"""
 
+SUB_B_BANDS = (
+    "baseline_degradation",
+    "final_degradation",
+    "baseline_transition",
+    "report_transition",
+)
+"""Bands reduced for sub-indicator B by default."""
+
 
 def no_remap(image: ee.Image, remap_matrix: Optional[dict] = None):
     """return remapped or raw image if there's a matrix"""
@@ -156,6 +164,7 @@ def reduce_regions(
     transition_matrix: str,
     scale: Optional[int] = None,
     method: str = "clip",
+    bands: Optional[List[str]] = None,
 ) -> ee.Dictionary:
     """Reduce land use/land cover image to bioclimatic belts regions using planimetric
     or real surface area
@@ -169,6 +178,8 @@ def reduce_regions(
         scale (int): scale of the reduce process
         method (str): "clip" (default, clip + bbox reduceRegion) or "grouped"
             (per-feature reduceRegions + reduceGroups) as a fallback for huge AOIs
+        bands (list of str): sub-indicator B bands to reduce; defaults to
+            SUB_B_BANDS. Each band is a full reduction, so request only those used.
 
     Return:
         GEE Dicionary process (is not yet executed), with land cover class area
@@ -204,51 +215,17 @@ def reduce_regions(
             ee_lc_start, ee_end_base, ee_report, aoi, transition_matrix, remap_matrix
         )
 
-        return (
-            ee.Dictionary(
-                {
-                    "baseline_degradation": reduce_fn(
-                        image_area,
-                        clip_biobelt,
-                        final_degradation.select("baseline_degradation"),
-                        aoi,
-                        scale,
-                    )
-                }
-            )
-            .combine(
-                {
-                    "final_degradation": reduce_fn(
-                        image_area,
-                        clip_biobelt,
-                        final_degradation.select("final_degradation"),
-                        aoi,
-                        scale,
-                    )
-                }
-            )
-            .combine(
-                {
-                    "baseline_transition": reduce_fn(
-                        image_area,
-                        clip_biobelt,
-                        final_degradation.select("baseline_transition"),
-                        aoi,
-                        scale,
-                    )
-                }
-            )
-            .combine(
-                {
-                    "report_transition": reduce_fn(
-                        image_area,
-                        clip_biobelt,
-                        final_degradation.select("report_transition"),
-                        aoi,
-                        scale,
-                    )
-                }
-            )
+        return ee.Dictionary(
+            {
+                band: reduce_fn(
+                    image_area,
+                    clip_biobelt,
+                    final_degradation.select(band),
+                    aoi,
+                    scale,
+                )
+                for band in bands or SUB_B_BANDS
+            }
         )
 
     reduced_collection = reduce_fn(

@@ -52,8 +52,16 @@ class LayerHandler(sw.Layout):
 
         self.children = [
             v.Col(children=[self.w_layers]),
-            v.Col(children=[self.btn], class_="pt-0"),
-            v.Col(children=[self.btn_export], class_="pt-2"),
+            sw.Flex(
+                class_="d-block mt-2",
+                style_="width: 100%;",
+                children=[self.btn],
+            ),
+            sw.Flex(
+                class_="d-block mt-2",
+                style_="width: 100%;",
+                children=[self.btn_export],
+            ),
             self.export_dialog,
         ]
 
