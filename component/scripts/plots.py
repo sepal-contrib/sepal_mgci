@@ -11,6 +11,7 @@ from pysepal.solara import get_current_theme_state
 from solara.lab.components.theming import theme
 
 import component.parameter.module_parameter as param
+from component.scripts.file_handler import read_file
 
 
 def get_lc_class_map(classes=None):
@@ -166,9 +167,21 @@ def get_nodes_and_links(
     return biobelt_dict
 
 
-def get_transition_matrix_chart(values, classes=None, theme_state=None):
-    """Show area for each from/to land-cover class pair."""
+def get_transition_matrix_chart(
+    values, classes=None, theme_state=None, transition_matrix=None
+):
+    """Show observed area and selected impact for each land-cover transition."""
     labels = get_lc_class_map(classes)
+    if isinstance(transition_matrix, pd.DataFrame):
+        matrix = transition_matrix
+    elif transition_matrix:
+        matrix = read_file(transition_matrix)
+    else:
+        matrix = pd.read_csv(param.TRANSITION_MATRIX_FILE)
+    impacts = {
+        (int(row.from_code), int(row.to_code)): int(row.impact_code)
+        for row in matrix.itertuples(index=False)
+    }
     codes = sorted(set(labels) | set(values.from_lc) | set(values.to_lc))
     indices = {code: index for index, code in enumerate(codes)}
     transitions = values.groupby(["from_lc", "to_lc"])["sum"].sum()
@@ -176,13 +189,21 @@ def get_transition_matrix_chart(values, classes=None, theme_state=None):
     for source in codes:
         for target in codes:
             area = float(transitions.get((source, target), 0.0))
+            impact = param.DECODE.get(impacts.get((source, target)))
+            color = (
+                impact["color"]
+                if area > 0 and impact
+                else "rgba(128, 138, 142, 0.18)"
+            )
             cells.append(
                 {
                     "value": [indices[target], indices[source], round(area, 2)],
+                    "itemStyle": {"color": color},
                     "tooltip": {
                         "formatter": (
                             f"{escape(labels.get(source, {}).get('desc', f'Class {source}'))}"
                             f" → {escape(labels.get(target, {}).get('desc', f'Class {target}'))}"
+                            f"<br>{impact['label'] if impact else 'Unclassified'}"
                             f"<br><b>{area:,.1f} km²</b>"
                         )
                     },
@@ -195,15 +216,6 @@ def get_transition_matrix_chart(values, classes=None, theme_state=None):
     def border_style(is_dark):
         return {"borderWidth": 2, "borderColor": "#252a2d" if is_dark else "#fff"}
 
-    def palette(is_dark):
-        return (
-            ["#30383a", "#438e86", "#81d0ae"]
-            if is_dark
-            else ["#eff3f0", "#8bbfae", "#176f59"]
-        )
-
-    # Raw options keep visualMap as a plain object. The typed ipecharts
-    # visualMap list reaches ECharts as an unresolved IPY_MODEL string.
     option = {
         "backgroundColor": "transparent",
         "grid": {"left": 48, "right": 24, "top": 42, "bottom": 45},
@@ -222,16 +234,6 @@ def get_transition_matrix_chart(values, classes=None, theme_state=None):
             "axisLine": {"show": False},
         },
         "series": [{"type": "heatmap", "data": cells, "itemStyle": border_style(dark)}],
-        "visualMap": [
-            {
-                "type": "continuous",
-                "dimension": 2,
-                "min": 0,
-                "max": max((cell["value"][2] for cell in cells), default=1) or 1,
-                "show": False,
-                "inRange": {"color": palette(dark)},
-            }
-        ],
         "tooltip": {"trigger": "item"},
     }
 
@@ -239,9 +241,6 @@ def get_transition_matrix_chart(values, classes=None, theme_state=None):
         updated = dict(chart.option)
         updated["series"] = [
             {**updated["series"][0], "itemStyle": border_style(is_dark)}
-        ]
-        updated["visualMap"] = [
-            {**updated["visualMap"][0], "inRange": {"color": palette(is_dark)}}
         ]
         chart.option = updated
 

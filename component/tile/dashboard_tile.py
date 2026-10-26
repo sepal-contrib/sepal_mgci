@@ -333,6 +333,33 @@ class DashViewB(DashView):
             class_="text-caption text-center",
             children=["From class ↓  ·  To class →  ·  Area (km²) on hover"],
         )
+        impact_items = [
+            (param.DECODE[code]["label"], param.DECODE[code]["color"])
+            for code in (1, 2, 3)
+        ]
+        impact_items.append(("No observed area", "rgba(128, 138, 142, 0.18)"))
+        self.impact_legend = sw.Flex(
+            class_="d-flex flex-wrap justify-center text-caption mt-1 mb-2",
+            children=[
+                v.Html(
+                    tag="span",
+                    class_="d-inline-flex align-center mx-1 my-1",
+                    style_="width:145px; height:30px;",
+                    children=[
+                        v.Html(
+                            tag="span",
+                            style_=(
+                                "display:inline-block; width:12px; height:12px; "
+                                "border-radius:2px; border:1px solid var(--v-primary-base); "
+                                f"background:{color};"
+                            ),
+                        ),
+                        v.Html(tag="span", class_="ml-1", children=[label]),
+                    ],
+                )
+                for label, color in impact_items
+            ],
+        )
 
         self.children = [
             sw.Flex(
@@ -542,8 +569,17 @@ class DashViewB(DashView):
             else self.chart_data[self.chart_data.belt_class == self.selected_belt]
         )
         if self.selected_view == "matrix":
-            chart = get_transition_matrix_chart(values, self.lc_classes)
-            self.chart_host.children = [self.matrix_hint, chart, self.class_key]
+            chart = get_transition_matrix_chart(
+                values,
+                self.lc_classes,
+                transition_matrix=getattr(self.model, "transition_matrix", None),
+            )
+            self.chart_host.children = [
+                self.matrix_hint,
+                chart,
+                self.impact_legend,
+                self.class_key,
+            ]
             self.sankey_data = None
         else:
             series, chart = get_sankey_chart()

@@ -155,8 +155,45 @@ def test_transition_matrix_aggregates_pairs_for_selected_belt():
     assert "15.0 km²" in cell["tooltip"]["formatter"]
     assert "Artificial surfaces" in cell["tooltip"]["formatter"]
     assert len(chart.option["xAxis"]["data"]) == 10
-    assert isinstance(chart.get_state()["option"]["visualMap"][0], dict)
+    assert "visualMap" not in chart.get_state()["option"]
     assert "IPY_MODEL_" not in json.dumps(chart.get_state()["option"])
+    chart.close()
+
+
+def test_transition_matrix_colors_observed_pairs_by_selected_impact():
+    values = pd.DataFrame(
+        {
+            "from_lc": [1, 2, 3],
+            "to_lc": [2, 1, 3],
+            "sum": [10.0, 5.0, 2.0],
+        }
+    )
+    classes = {
+        1: ["Forest", "#123456"],
+        2: ["Cropland", "#abcdef"],
+        3: ["Grassland", "#fedcba"],
+    }
+    matrix = pd.DataFrame(
+        {
+            "from_code": [1, 2, 3],
+            "to_code": [2, 1, 3],
+            "impact_code": [1, 3, 2],
+        }
+    )
+
+    chart = get_transition_matrix_chart(values, classes, transition_matrix=matrix)
+    cells = {
+        tuple(cell["value"][:2]): cell for cell in chart.option["series"][0]["data"]
+    }
+
+    assert cells[(1, 0)]["itemStyle"]["color"] == param.DECODE[1]["color"]
+    assert cells[(0, 1)]["itemStyle"]["color"] == param.DECODE[3]["color"]
+    assert cells[(2, 2)]["itemStyle"]["color"] == param.DECODE[2]["color"]
+    assert cells[(0, 0)]["itemStyle"]["color"] not in {
+        item["color"] for item in param.DECODE.values()
+    }
+    assert "Degradation" in cells[(1, 0)]["tooltip"]["formatter"]
+    assert "10.0 km²" in cells[(1, 0)]["tooltip"]["formatter"]
     chart.close()
 
 
@@ -222,12 +259,47 @@ def test_b_dashboard_buttons_select_overall_and_belts():
     assert view.period_buttons[(2000, 2015)].outlined is True
     view.select_view("matrix")
     assert view.selected_view == "matrix"
+    assert view.chart_host.children[2] is view.impact_legend
+    assert {
+        item.children[1].children[0] for item in view.impact_legend.children
+    } == {"Degradation", "Stable", "Improvement", "No observed area"}
     cell = next(
         cell for cell in view.chart.option["series"][0]["data"]
         if cell["value"][:2] == [1, 0]
     )
     assert cell["value"] == [1, 0, 20.0]
     assert view.matrix_button.outlined is False
+    view.chart.close()
+
+
+def test_b_dashboard_matrix_uses_active_transition_file(monkeypatch):
+    requested = []
+
+    def fake_read_file(path):
+        requested.append(path)
+        return pd.DataFrame({"from_code": [1], "to_code": [2], "impact_code": [1]})
+
+    monkeypatch.setattr("component.scripts.plots.read_file", fake_read_file)
+    model = SimpleNamespace(
+        reporting_years_sub_b=[(2000, 2015), 2021],
+        transition_matrix="custom_transition.csv",
+        observe=lambda *args: None,
+        get_geo_area_name=lambda: "Test area",
+    )
+    view = DashViewB(model)
+    values = pd.DataFrame(
+        {"belt_class": [1], "from_lc": [1], "to_lc": [2], "sum": [10.0]}
+    )
+
+    view.render_dashboard(({"report": [2015, 2021]}, values))
+    view.select_view("matrix")
+
+    assert requested == ["custom_transition.csv"]
+    cell = next(
+        cell for cell in view.chart.option["series"][0]["data"]
+        if cell["value"][:2] == [1, 0]
+    )
+    assert cell["itemStyle"]["color"] == param.DECODE[1]["color"]
     view.chart.close()
 
 
