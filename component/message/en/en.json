@@ -195,7 +195,7 @@
         },
         "global_" : {
             "title" : "Overall Mountain Green Cover Index",
-            "desc" : "The last four SEEA land cover classes in the bar chart plot are considered as green cover in accordance to SDG Indicator 15.4.2 Metadata. All units are shown in {}."
+            "desc" : "Share of mountain area with green land cover. Select a bioclimatic belt to inspect its composition; hover over a bar to see its area in {}."
         },
         "individual" : {
             "title" : "Bioclimatic belt {}",

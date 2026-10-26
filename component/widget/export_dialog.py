@@ -10,10 +10,51 @@ from pysepal.scripts.drive_interface import GDriveInterface
 from pysepal.scripts.gee_interface import GEEInterface
 
 import component.scripts as cs
+import component.parameter.module_parameter as param
 from component.message import cm
 from component.model.model import MgciModel
 from component.scripts.layers import get_layer_a, get_layer_b
 from component.scripts.aoi_geometry import aoi_bbox
+
+
+BELT_CLASSES = "; ".join(
+    f"{code}={name}"
+    for code, (name, _) in param.BIOBELT_LEGEND.items()
+    if isinstance(code, int)
+)
+DEGRADATION_CLASSES = "0=Unclassified; 1=Degraded; 2=Stable; 3=Improved"
+
+
+def get_export_class_key(selection, model):
+    if selection[0] == "b" and "degradation" in selection[1]:
+        return DEGRADATION_CLASSES
+
+    classes = (
+        model.lulc_classes_sub_a
+        if selection[0] == "a"
+        else model.lulc_classes_sub_b
+    ) or {
+        int(code): [row["desc"], row["color"]]
+        for code, row in param.LC_COLOR.iterrows()
+    }
+    return "; ".join(
+        f"{code}={classes[code][0]}" for code in sorted(classes, key=int)
+    )
+
+
+def prepare_export_image(layer, aoi, class_key):
+    belt = (
+        ee.Image(param.BIOBELT)
+        .rename("bioclimatic_belt")
+        .clip(aoi)
+        .updateMask(layer.mask())
+    )
+    return layer.addBands(belt).set(
+        {
+            "mgci_pixel_classes": class_key,
+            "mgci_bioclimatic_belt_classes": BELT_CLASSES,
+        }
+    )
 
 
 class ExportMapDialog(sw.Dialog):
@@ -50,6 +91,7 @@ class ExportMapDialog(sw.Dialog):
             v_model="gee", row=True, children=[sepal, gee, gdrive]
         )
         self.w_layers = w_layers
+        self.class_key = sw.Layout(class_="d-block")
 
         # add btn component for the loading_button
         self.btn = sw.Btn(cm.map.dialog.export.export, small=True)
@@ -60,6 +102,7 @@ class ExportMapDialog(sw.Dialog):
         text = sw.CardText(
             children=[
                 self.w_layers,
+                self.class_key,
                 w_scale_lbl,
                 self.w_scale,
                 w_method_lbl,
@@ -111,7 +154,12 @@ class ExportMapDialog(sw.Dialog):
         layer_name = selection[2].replace(" ", "").lower()
         prefix = "SubA" if selection[0] == "a" else "SubB"
 
-        return layer, vis_params, f"{prefix}_{layer_name}"
+        class_key = get_export_class_key(selection, self.model)
+        return (
+            prepare_export_image(layer, aoi, class_key),
+            vis_params,
+            f"{prefix}_{layer_name}",
+        )
 
     @su.loading_button()
     def on_download(self, *_):
@@ -171,6 +219,15 @@ class ExportMapDialog(sw.Dialog):
 
         self.w_layers.disabled = True
         self.w_layers.style_ = "width: 100%"
+        class_key = get_export_class_key(selection, self.model)
+        key_text = (
+            "**Exported raster bands**: band 1 = selected layer; "
+            "band 2 = `bioclimatic_belt`.  "
+            f"\n\n**Band 1 values:** {class_key}.  "
+            f"\n\n**Bioclimatic belt values:** {BELT_CLASSES}. "
+            "Pixels outside mountain areas are masked."
+        )
+        self.class_key.children = [sw.Markdown(key_text, class_="pa-0")]
         super().open_dialog()
 
     def close_dialog(self, *_):

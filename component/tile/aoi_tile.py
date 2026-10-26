@@ -29,6 +29,12 @@ import logging
 log = logging.getLogger("MGCI.aoi_tile")
 
 
+def close_aoi_step(app):
+    if app.current_step == 2:
+        app.current_step = None
+        app.step_open = False
+
+
 class AoiView(AoiView, sw.Card):
     """Custom AOI view to add the biobelt map after the AOI selection."""
 
@@ -50,6 +56,7 @@ class AoiView(AoiView, sw.Card):
         self.w_admin_0.items = self.get_m49()
 
         self._tasks: dict[str, GEETask] = {}
+        self.on_selection_success = None
 
         self.configure_tasks()
 
@@ -137,34 +144,42 @@ class AoiView(AoiView, sw.Card):
             )
 
             self.alert.add_msg(cm.aoi_sel.complete, "success")
+            return True
 
         except Exception as e:
             self.alert.add_msg(f"Failed to get biobelt map: {e}", "error")
+            return False
+
+    def _complete_aoi_selection(self, success):
+        if success and self.on_selection_success:
+            self.on_selection_success()
 
     def configure_tasks(self):
         """Configure the tasks to be used in the AOI view."""
 
         def after_select_aoi(*_):
-            """Callback to add the AOI to the map after the selection."""
             self.btn.loading = False
-
-            # TODO: here I can close the dialog and move to next step
 
         def get_belt_map(*_):
             """Callback to get the biobelt map after the AOI is added."""
             self._tasks["get_belt_map"].start()
 
+        def add_aoi_error(error):
+            self.alert.add_msg(str(error), "error")
+            self.btn.loading = False
+
         self._tasks["add_aoi"] = self.map_.gee_interface.create_task(
             func=self.add_aoi,
             key="add_aoi",
-            on_error=lambda x: None,
+            on_error=add_aoi_error,
             on_done=get_belt_map,
         )
 
         self._tasks["get_belt_map"] = self.map_.gee_interface.create_task(
             func=self.get_belt_map,
             key="get_belt_map",
-            on_error=lambda x: None,
+            on_error=lambda error: self.alert.add_msg(str(error), "error"),
+            on_done=self._complete_aoi_selection,
             on_finally=after_select_aoi,
         )
 
@@ -189,7 +204,6 @@ class AoiView(AoiView, sw.Card):
         except Exception as e:
             log.error(f"Failed to update AOI: {e}", exc_info=True)
             self.alert.add_msg(f"Failed to update AOI: {e}", "error")
-        finally:
             self.btn.loading = False
 
 

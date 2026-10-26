@@ -1,23 +1,92 @@
+from html import escape
+from pathlib import Path
 from typing import Tuple
 
-import numpy as np
 import pandas as pd
 
-from ipecharts.option import Option, Legend, Tooltip, XAxis, YAxis
-from ipecharts.option.series import Sankey
-from ipecharts.echarts import EChartsWidget
+from ipecharts.echarts import EChartsRawWidget, EChartsWidget
+from ipecharts.option import Grid, Legend, Option, Tooltip, XAxis, YAxis
+from ipecharts.option.series import Bar, Sankey
+from pysepal.solara import get_current_theme_state
+from solara.lab.components.theming import theme
 
-from component.scripts.file_handler import read_file
+import component.parameter.module_parameter as param
 
 
-def get_sankey_chart():
+def get_lc_class_map(classes=None):
+    """Resolve the active land-cover class labels and colors."""
+    classes = classes or param.LC_CLASSES
+    if isinstance(classes, (str, Path)):
+        return (
+            pd.read_csv(classes)
+            .set_index("lc_class")[["desc", "color"]]
+            .to_dict("index")
+        )
+    return {
+        int(code): {"desc": value[0], "color": value[1]}
+        for code, value in classes.items()
+    }
 
-    sankey_data = Sankey(smooth=True, areaStyle={})
+
+class _ThemeBinding:
+    """Keep an ipecharts widget aligned with the session's resolved theme."""
+
+    def __init__(self, *args, theme_state=None, theme_updater=None, **kwargs):
+        self._theme_observer_registered = False
+        self.theme_state = theme_state or get_current_theme_state()
+        self.theme_updater = theme_updater
+        kwargs.setdefault("theme", "dark" if self.theme_state.dark else "light")
+        super().__init__(*args, **kwargs)
+        self.theme_state.observe(self._on_theme_change, "dark")
+        self._theme_observer_registered = True
+
+    def _on_theme_change(self, change):
+        self.theme = "dark" if change["new"] else "light"
+        if self.theme_updater:
+            self.theme_updater(change["new"])
+
+    def close(self):
+        if getattr(self, "_theme_observer_registered", False):
+            self._theme_observer_registered = False
+            self.theme_state.unobserve(self._on_theme_change, "dark")
+        super().close()
+
+
+class ThemedEChartsWidget(_ThemeBinding, EChartsWidget):
+    pass
+
+
+class ThemedEChartsRawWidget(_ThemeBinding, EChartsRawWidget):
+    pass
+
+
+def get_sankey_chart(theme_state=None):
+
+    sankey_data = Sankey(
+        left=20,
+        right=20,
+        top=8,
+        bottom=8,
+        nodeWidth=14,
+        nodeGap=9,
+        label={"show": False},
+        lineStyle={"color": "gradient", "curveness": 0.55, "opacity": 0.45},
+        emphasis={"focus": "adjacency"},
+    )
     sankey_data.nodes = []
     sankey_data.links = []
-    option = Option(series=[sankey_data], tooltip=Tooltip(), legend=Legend())
+    option = Option(
+        backgroundColor="transparent",
+        series=[sankey_data],
+        tooltip=Tooltip(trigger="item"),
+    )
 
-    chart = EChartsWidget(option=option, style={"height": "700px", "width": "100%"})
+    chart = ThemedEChartsWidget(
+        option=option,
+        theme_state=theme_state,
+        renderer="svg",
+        style={"height": "390px", "width": "100%"},
+    )
 
     return sankey_data, chart
 
@@ -31,50 +100,62 @@ def get_nodes_and_links(
 
     from_lc, to_lc = [str(y) for y in years]
 
-    # Load labels dictionary
-    labels_df = pd.read_csv(lc_classes_path)
+    desc_color_map = get_lc_class_map(lc_classes_path)
 
-    # Generate a dictionary to map land cover classes to descriptions and colors
-    desc_color_map = labels_df.set_index("lc_class")[["desc", "color"]].to_dict("index")
-
-    # Dictionary to store nodes and links by biobelt
     biobelt_dict = {}
 
     # Group the dataframe by 'biobelt'
-    grouped = df.groupby("belt_class")
+    belt_totals = df.groupby(
+        ["belt_class", "from_lc", "to_lc"], as_index=False
+    )["sum"].sum()
+    totals = belt_totals.groupby(["from_lc", "to_lc"], as_index=False)["sum"].sum()
+    totals["belt_class"] = "Total"
+    grouped = pd.concat([belt_totals, totals], ignore_index=True).groupby(
+        "belt_class", sort=False
+    )
 
-    # Process each biobelt group separately
+    def class_info(code):
+        return desc_color_map.get(
+            code, {"desc": f"Class {code}", "color": "#888888"}
+        )
+
+    def node_name(code, year):
+        return f"{code} · {class_info(code)['desc']} · {year}"
+
     for biobelt, group in grouped:
-        # Identify unique land cover classes within the biobelt group
-        unique_classes = np.unique(group[["from_lc", "to_lc"]].values)
-
-        # Generate nodes with unique land cover classes and their corresponding colors
         nodes = []
-        for lc_class in unique_classes:
-            lc_info = desc_color_map.get(
-                lc_class, {"desc": "Unknown", "color": "#000000"}
-            )
-            lc_label = lc_info["desc"]
-            color = lc_info["color"]
-            nodes.extend(
-                {"name": f"{lc_label}_{year}", "itemStyle": {"color": color}}
-                for year in [from_lc, to_lc]
-            )
+        for year, column in [(from_lc, "from_lc"), (to_lc, "to_lc")]:
+            for lc_class in sorted(group[column].unique()):
+                info = class_info(lc_class)
+                nodes.append(
+                    {
+                        "name": node_name(lc_class, year),
+                        "itemStyle": {"color": info["color"]},
+                        "tooltip": {
+                            "formatter": f"{escape(str(info['desc']))}<br>{year}"
+                        },
+                    }
+                )
 
-        # Generate links based on the biobelt group
         links = []
         for _, row in group.iterrows():
-            source_info = desc_color_map.get(
-                row["from_lc"], {"desc": "Unknown", "color": "#000000"}
-            )
-            target_info = desc_color_map.get(
-                row["to_lc"], {"desc": "Unknown", "color": "#000000"}
-            )
+            source_code = int(row["from_lc"])
+            target_code = int(row["to_lc"])
+            source_info = class_info(source_code)
+            target_info = class_info(target_code)
+            area = float(row["sum"])
             links.append(
                 {
-                    "source": f"{source_info['desc']}_{from_lc}",
-                    "target": f"{target_info['desc']}_{to_lc}",
-                    "value": round(row["sum"], 2),  # Rounded to 2 decimal places
+                    "source": node_name(source_code, from_lc),
+                    "target": node_name(target_code, to_lc),
+                    "value": round(area, 2),
+                    "tooltip": {
+                        "formatter": (
+                            f"{escape(str(source_info['desc']))} ({from_lc}) → "
+                            f"{escape(str(target_info['desc']))} ({to_lc})"
+                            f"<br><b>{area:,.1f} km²</b>"
+                        )
+                    },
                 }
             )
 
@@ -84,7 +165,157 @@ def get_nodes_and_links(
     return biobelt_dict
 
 
-from ipecharts.option.series import Bar
+def get_transition_matrix_chart(values, classes=None, theme_state=None):
+    """Show area for each from/to land-cover class pair."""
+    labels = get_lc_class_map(classes)
+    codes = sorted(set(labels) | set(values.from_lc) | set(values.to_lc))
+    indices = {code: index for index, code in enumerate(codes)}
+    transitions = values.groupby(["from_lc", "to_lc"])["sum"].sum()
+    cells = []
+    for source in codes:
+        for target in codes:
+            area = float(transitions.get((source, target), 0.0))
+            cells.append(
+                {
+                    "value": [indices[target], indices[source], round(area, 2)],
+                    "tooltip": {
+                        "formatter": (
+                            f"{escape(labels.get(source, {}).get('desc', f'Class {source}'))}"
+                            f" → {escape(labels.get(target, {}).get('desc', f'Class {target}'))}"
+                            f"<br><b>{area:,.1f} km²</b>"
+                        )
+                    },
+                }
+            )
+
+    state = theme_state or get_current_theme_state()
+    dark = state.dark
+
+    def border_style(is_dark):
+        return {"borderWidth": 2, "borderColor": "#252a2d" if is_dark else "#fff"}
+
+    def palette(is_dark):
+        return (
+            ["#30383a", "#438e86", "#81d0ae"]
+            if is_dark
+            else ["#eff3f0", "#8bbfae", "#176f59"]
+        )
+
+    # Raw options keep visualMap as a plain object. The typed ipecharts
+    # visualMap list reaches ECharts as an unresolved IPY_MODEL string.
+    option = {
+        "backgroundColor": "transparent",
+        "grid": {"left": 48, "right": 24, "top": 42, "bottom": 45},
+        "xAxis": {
+            "type": "category",
+            "data": [str(code) for code in codes],
+            "position": "top",
+            "axisTick": {"show": False},
+            "axisLine": {"show": False},
+        },
+        "yAxis": {
+            "type": "category",
+            "data": [str(code) for code in codes],
+            "inverse": True,
+            "axisTick": {"show": False},
+            "axisLine": {"show": False},
+        },
+        "series": [{"type": "heatmap", "data": cells, "itemStyle": border_style(dark)}],
+        "visualMap": [
+            {
+                "type": "continuous",
+                "dimension": 2,
+                "min": 0,
+                "max": max((cell["value"][2] for cell in cells), default=1) or 1,
+                "show": False,
+                "inRange": {"color": palette(dark)},
+            }
+        ],
+        "tooltip": {"trigger": "item"},
+    }
+
+    def update_theme(is_dark):
+        updated = dict(chart.option)
+        updated["series"] = [
+            {**updated["series"][0], "itemStyle": border_style(is_dark)}
+        ]
+        updated["visualMap"] = [
+            {**updated["visualMap"][0], "inRange": {"color": palette(is_dark)}}
+        ]
+        chart.option = updated
+
+    chart = ThemedEChartsRawWidget(
+        option=option,
+        theme_state=state,
+        theme_updater=update_theme,
+        renderer="svg",
+        style={"height": "440px", "width": "100%"},
+    )
+    return chart
+
+
+def get_land_cover_bar_chart(values, classes):
+    """Compact, directly labeled land-cover shares."""
+    values = values.groupby("lc_class", as_index=False)["sum"].sum()
+    values = values[values["sum"] > 0].sort_values("sum", ascending=False)
+    total_area = values["sum"].sum()
+    labels = []
+    data = []
+    for _, row in values.iterrows():
+        code = row["lc_class"]
+        class_info = classes.get(code, classes.get(str(code)))
+        if class_info is None:
+            class_info = [f"Class {code}", "#888888"]
+        name, color = class_info[:2]
+        labels.append(name)
+        percentage = round(row["sum"] / total_area * 100, 1) if total_area else 0
+        data.append(
+            {
+                "name": name,
+                "value": percentage,
+                "itemStyle": {"color": color, "borderRadius": [0, 5, 5, 0]},
+                "tooltip": {
+                    "formatter": (
+                        f"{escape(str(name))}<br><b>{percentage:.1f}%</b> "
+                        f"· {row['sum']:,.1f} km²"
+                    )
+                },
+            }
+        )
+
+    dark = bool(theme.dark)
+    option = Option(
+        backgroundColor="transparent",
+        grid=Grid(left=205, right=62, top=8, bottom=8),
+        xAxis=XAxis(type="value", min=0, max=100, show=False),
+        yAxis=YAxis(
+            type="category",
+            data=labels,
+            inverse=True,
+            axisLine={"show": False},
+            axisTick={"show": False},
+            axisLabel={"fontSize": 12, "width": 185, "overflow": "truncate"},
+        ),
+        series=[
+            Bar(
+                data=data,
+                barWidth=14,
+                showBackground=True,
+                backgroundStyle={
+                    "color": "#353b40" if dark else "#edf0f2",
+                    "borderRadius": 5,
+                },
+                label={"show": True, "position": "right", "formatter": "{c}%"},
+            )
+        ],
+        tooltip=Tooltip(trigger="item"),
+    )
+    return EChartsWidget(
+        option=option,
+        theme="dark" if dark else "light",
+        renderer="svg",
+        style={"height": f"{max(150, len(labels) * 29 + 24)}px", "width": "100%"},
+    )
 
 
 def get_series_data(df):

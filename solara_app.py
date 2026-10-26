@@ -23,7 +23,7 @@ from component.widget.custom_widgets import AlertDialog
 from component.tile.calculation_tile import CalculationView
 from component.tile.dashboard_tile import DashViewA, DashViewB
 from component.tile.vegetation_tile import VegetationTile
-from component.tile.aoi_tile import AoiView
+from component.tile.aoi_tile import AoiView, close_aoi_step
 from component.tile.task_tile import DownloadTaskView
 from component.model import MgciModel
 from component.message import cm
@@ -78,8 +78,18 @@ def Page():
     )
 
     layer_handler = LayerHandler(map_, model, alert=alert)
-    dash_view_a = DashViewA(model, alert=alert)
-    dash_view_b = DashViewB(model, alert=alert)
+    dash_view_a = DashViewA(
+        model,
+        alert=alert,
+        gee_interface=gee_interface,
+        scale_selector=calculation_tile.w_scale,
+    )
+    dash_view_b = DashViewB(
+        model,
+        alert=alert,
+        gee_interface=gee_interface,
+        scale_selector=calculation_tile.w_scale,
+    )
 
     steps_data = [
         {
@@ -142,17 +152,19 @@ def Page():
             "content": [dash_view_a],
             "title": "Sub indicator A",
             "icon": "mdi-chart-bar",
+            "description": "Explore MGCI and land-cover composition by year and mountain belt.",
         },
         {
             "content": [dash_view_b],
             "title": "Sub indicator B",
             "icon": "mdi-chart-bar",
+            "description": "Explore land-cover transitions by period and mountain belt.",
         },
     ]
 
     MapLegend(map_)
 
-    MapApp.element(
+    app_element = MapApp.element(
         app_title="SDG 15.4.2",
         app_icon="mdi-image-filter-hdr",
         main_map=[map_],
@@ -163,3 +175,10 @@ def Page():
         dialog_width=750,
         repo_url="https://github.com/sepal-contrib/sepal_mgci",
     )
+
+    def bind_aoi_dialog():
+        app = solara.get_widget(app_element)
+        aoi_view.on_selection_success = lambda: close_aoi_step(app)
+        return lambda: setattr(aoi_view, "on_selection_success", None)
+
+    solara.use_effect(bind_aoi_dialog, [app_element, aoi_view])

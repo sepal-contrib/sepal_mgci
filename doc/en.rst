@@ -542,6 +542,37 @@ To do so, you only have to search this file in your SEPAL environment using the 
 Visualizing the results
 -----------------------
 
+Interpreting exported map layers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+An exported map has two bands. The first band contains the selected land-cover
+or degradation layer; the second band, ``bioclimatic_belt``, identifies the
+bioclimatic belt at each exported pixel. Both bands cover the selected area of
+interest and are masked to mountain areas. The belt codes are:
+
+.. list-table:: Bioclimatic belt codes
+   :header-rows: 1
+
+   * - Code
+     - Belt
+   * - 1
+     - Nival
+   * - 2
+     - Alpine
+   * - 3
+     - Montane
+   * - 4
+     - Remaining mountain area
+
+For a degradation layer, values in the first band mean ``0`` unclassified
+transition, ``1`` degraded, ``2`` stable and ``3`` improved. For a land-cover
+layer, the first-band values use the land-cover classification selected in the
+app; the export dialog shows its current code-to-name mapping. If the layer
+was reclassified, zero is a no-data value from reclassification, not a belt
+code.
+Google Drive raster exports may not retain image properties, so use the
+``bioclimatic_belt`` band and this code key to interpret downloaded files.
+
 We can visualize the results in the following two ways: 
 
 • The exported tables: These provide the full results of the computation in a tabular format.
@@ -581,32 +612,19 @@ The tables follow the standard format for SDG reporting and therefore can be use
 Visualizing the results through the MGCI Results Drawer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-SEPAL-SDG 15.4.2 :sub:`beta` also allows to explore the results of the computation visually. The module generates dashboards that show the changes that have occurred in the area of interest. To generate these dashboards do the following;
+SEPAL-SDG 15.4.2 :sub:`beta` also lets you explore the indicators visually. The dashboards calculate the selected chart from the current indicator settings, so you can view a newly added year without running the full indicator calculation first.
 
-**1.	Click on the **MGCI results drawer** in the left panel. To see the results from the computation for Sub-Indicator A, choose which year you want to visualize and click on the Calculate button. 
+**1.** Open the MGCI results drawer and click **Show dashboard** for Sub-Indicator A. The latest available year opens first; use the year buttons inside the dialog to request another year.
 
-.. image:: https://raw.githubusercontent.com/xavidelamo/sepal_images/main/computation/MGCI_Results_SUbA.PNG
-   :align: center
-   :width: 700
-   :alt: Reclassify table
+The chart opens with the overall MGCI and land-cover composition. Use the compact selectors to switch between Overall and the bioclimatic belts without closing the dashboard.
 
-This generates dashboards to visualize the results of the computation. As seen below, the tool will generate an Overall MGCI for your study area. Additionally, a dashboard will be generated for each of the bioclimatic classes.
+**2.** Click **Show dashboard** for Sub-Indicator B. The latest available transition period opens first. Inside the dialog, use the period buttons to request another period and the Overall and bioclimatic belt buttons to inspect that area. Switch between **Flow** and **Matrix** to see the same land-cover transitions as a Sankey plot or a from-class (rows) to to-class (columns) area grid. Hover over a matrix cell to see its area in km²; the class code key appears below the grid. The matrix shows transition areas, not the improvement/degradation scores configured in the transition settings.
 
-.. image:: https://raw.githubusercontent.com/xavidelamo/sepal_images/main/computation/Visualizing%20SUbA.PNG
-   :align: center
-   :width: 700
-   :alt: Reclassify table
-
-**2. To see the results for Sub-Indicator B, choose a target year (baseline or one of the reporting years) using the drop-down arrow and a bioclimatic belt. Then click on Calculate:**
-
-.. image:: https://raw.githubusercontent.com/xavidelamo/sepal_images/main/computation/results_sub_indicator_b.PNG
-   :align: center
-   :width: 700
-   :alt: Reclassify table
+In **Flow**, the years appear once above the chart, and the colors are explained in a single key below it. Hover over a node or band to see its land-cover class and transition area.
 
 The results, shown as transitions in land cover types for a given belt will be displayed using a Sankey Plot, as shown below:
 
 .. image:: https://raw.githubusercontent.com/xavidelamo/sepal_images/main/computation/nival_results.PNG
    :align: center
    :width: 700
-   :alt: Reclassify table
+   :alt: Sankey plot of land-cover transitions for a bioclimatic belt

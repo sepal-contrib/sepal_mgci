@@ -176,7 +176,7 @@ def test_get_degraded_area(default_transition_matrix):
         },
     }
 
-    assert degraded.equals(pd.DataFrame(expected_result))
+    pd.testing.assert_frame_equal(degraded, pd.DataFrame(expected_result), rtol=1e-10)
 
     # Test with the baseline year
     years = baseline_years
@@ -203,7 +203,7 @@ def test_get_degraded_area(default_transition_matrix):
         },
     }
 
-    assert degraded.equals(pd.DataFrame(expected_result))
+    pd.testing.assert_frame_equal(degraded, pd.DataFrame(expected_result), rtol=1e-10)
 
 
 def get_pdma_area(default_transition_matrix):

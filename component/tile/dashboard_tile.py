@@ -1,21 +1,34 @@
-import pandas as pd
-from component.widget.base_dialog import BaseDialog
-import pysepal.scripts.utils as su
+import ipyvuetify as v
 import pysepal.sepalwidgets as sw
 
 import component.parameter.module_parameter as param
 import component.scripts as cs
-import component.widget as cw
 from component.message import cm
+from component.scripts.dashboard_data import calculate_a_dashboard, calculate_b_dashboard
 from component.scripts.plots import (
+    get_lc_class_map,
     get_nodes_and_links,
     get_sankey_chart,
+    get_transition_matrix_chart,
 )
-from component.scripts.report_scripts import get_belt_desc
-from component.widget.statistics_card import StatisticCard
-import logging
+from component.widget.base_dialog import BaseDialog
+from component.widget.mgci_dashboard import (
+    BeltSelector,
+    DashboardRequestSelector,
+    MgciDashboard,
+)
 
-log = logging.getLogger("MGCI.dashboard_tile")
+
+def _freeze_input(value):
+    if isinstance(value, dict):
+        return tuple(
+            sorted((str(key), _freeze_input(item)) for key, item in value.items())
+        )
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze_input(item) for item in value)
+    if isinstance(value, (str, int, float, bool, type(None))):
+        return value
+    return repr(value)
 
 
 class ResultsDialog(BaseDialog):
@@ -23,14 +36,17 @@ class ResultsDialog(BaseDialog):
         super().__init__(*args, **kwargs)
 
         self.card_content = sw.CardText(
+            class_="flex-grow-1",
+            style_="min-height: 0; overflow-y: auto;",
             children=[
                 "This is the results dialog. It will display the results of the calculations."
-            ]
+            ],
         )
 
         self.children = [
             sw.Card(
-                class_="pa-2",
+                class_="pa-2 d-flex flex-column",
+                style_="height: min(900px, 92vh); height: min(900px, 92dvh);",
                 children=[
                     sw.CardTitle(children=["Results"]),
                     self.card_content,
@@ -40,11 +56,15 @@ class ResultsDialog(BaseDialog):
 
 
 class DashView(sw.Layout):
-    def __init__(self, indicator, model, *args, **kwargs):
+    def __init__(
+        self, indicator, model, gee_interface=None, scale_selector=None, *args, **kwargs
+    ):
         self.indicator = indicator
         self.class_ = "d-block pa-2"
 
         self.model = model
+        self.gee_interface = gee_interface
+        self.scale_selector = scale_selector
 
         super().__init__(*args, **kwargs)
 
@@ -60,25 +80,48 @@ class DashView(sw.Layout):
             ]
 
     def render_dashboard(self, *args):
-        """create the corresponding parsed dataframe based on the selected year."""
-
+        """Validate shared dashboard prerequisites."""
         if not self.model.aoi_model.feature_collection:
             raise Exception(cm.error.no_aoi)
 
-        if not self.year_select.v_model:
-            raise Exception("Select a year.")
+    def chart_scale(self):
+        if self.scale_selector is None or self.scale_selector.disabled:
+            return None
+        return self.scale_selector.v_model
 
-        if not self.model.results:
-            raise Exception(
-                "No results to display, go to the calculation step and perform the calculation first."
-            )
+    def cache_context(self, *inputs):
+        aoi = getattr(getattr(self.model, "aoi_model", None), "feature_collection", None)
+        return (
+            id(aoi),
+            getattr(getattr(self.model, "aoi_model", None), "name", None),
+            self.chart_scale(),
+            _freeze_input(getattr(self.model, "rsa", None)),
+            _freeze_input(getattr(self.model, "dem", None)),
+            _freeze_input(getattr(self.model, "transition_matrix", None)),
+            *(_freeze_input(value) for value in inputs),
+        )
 
 
 class DashViewA(DashView):
-    def __init__(self, model, alert: sw.Alert = None, *args, **kwargs):
+    def __init__(
+        self,
+        model,
+        alert: sw.Alert = None,
+        gee_interface=None,
+        scale_selector=None,
+        *args,
+        **kwargs,
+    ):
         self.attributes = {"id": f"dashboard_view_sub_a"}
 
-        super().__init__(indicator="sub_a", model=model, *args, **kwargs)
+        super().__init__(
+            indicator="sub_a",
+            model=model,
+            gee_interface=gee_interface,
+            scale_selector=scale_selector,
+            *args,
+            **kwargs,
+        )
 
         self.alert = alert or sw.Alert()
         self.results_dialog = ResultsDialog(
@@ -88,86 +131,163 @@ class DashViewA(DashView):
             v_model=False,
         )
 
-        self.year_select = sw.Select(
-            class_="mr-2", label="Select a target year", v_model=None
-        )
-        self.btn = sw.Btn("Calculate", class_="ml-2", block=True, small=True)
+        self.btn = sw.Btn("Show dashboard", small=True, block=True)
+        self.year_selector = DashboardRequestSelector(on_request=self._start_year_task)
+        self.available_years = []
+        self.current_year = None
+        self._latest_chart_request = 0
+        self._active_chart_task = None
+        self._chart_cache = {}
 
         self.children = [
             sw.Flex(
-                class_="d-flex align-center",
-                children=[self.year_select],
-            ),
-            sw.Flex(
-                class_="d-flex align-center mt-2",
+                class_="d-block mt-2",
+                style_="width: 100%;",
                 children=[self.btn, self.results_dialog],
             ),
         ]
 
-        # Observe reporting_years_{indicator} from model to update the year_select
-
         self.model.observe(self.set_years, f"reporting_years_sub_a")
-        self.btn.on_event("click", self.render_dashboard)
+        self.btn.on_event("click", lambda *_: self._start_year_task(self._default_year()))
         self.set_years({"new": self.model.reporting_years_sub_a})
 
     def set_years(self, change):
-        """Set the years in the year_select"""
+        self.available_years = sorted(change["new"], key=int)
+        self.year_selector.set_choices(
+            [(year, str(year), year) for year in self.available_years]
+        )
+        self.year_selector.mark_selected(self.current_year)
+        self.btn.disabled = not bool(self.available_years)
 
-        log.debug("Setting years in year_select change[new]: %s", change["new"])
+    def _default_year(self):
+        return (
+            self.current_year
+            if self.current_year in self.available_years
+            else self.available_years[-1] if self.available_years else None
+        )
 
-        if change["new"].keys():
-            self.year_select.items = list(change["new"].keys())
-        else:
-            self.year_select.items = []
+    def _start_year_task(self, year):
+        if year is None:
+            return
+        signature = self._chart_signature()
+        cached = self._chart_cache.get(year)
+        if cached and cached[0] == signature:
+            if self.current_year != year or not self.results_dialog.v_model:
+                self.render_dashboard(cached[1])
+            return
+        self.year_selector.set_loading(year, True)
+        self.btn.loading = True
+        self.btn.disabled = True
+        self._create_chart_task(year, signature).start()
 
-    @su.loading_button()
-    def render_dashboard(self, *args):
-        """create the corresponding parsed dataframe based on the selected year.
-        This dataframe will be used to calculate the MCGI"""
+    def _chart_signature(self):
+        return self.cache_context(
+            getattr(self.model, "reporting_years_sub_a", None),
+            getattr(self.model, "matrix_sub_a", None),
+            getattr(self.model, "lulc_classes_sub_a", None),
+        )
 
-        super().render_dashboard()
+    def _create_chart_task(self, year=None, signature=None):
+        year = year if year is not None else self._default_year()
+        signature = signature if signature is not None else self._chart_signature()
+        self._latest_chart_request += 1
+        request = self._latest_chart_request
+        if self._active_chart_task and getattr(
+            self._active_chart_task, "is_running", False
+        ):
+            self._active_chart_task.cancel()
+        task = self.gee_interface.create_task(
+            func=lambda: self._calculate_chart(year),
+            key=f"dashboard_a_{id(self)}",
+            on_done=lambda result: self._receive_chart(year, signature, request, result),
+            on_error=lambda error: self.alert.add_msg(str(error), type_="error"),
+            on_finally=lambda: self._finish_chart(year, request),
+        )
+        self._active_chart_task = task
+        return task
+
+    def _receive_chart(self, year, signature, request, result):
+        if request == self._latest_chart_request and signature == self._chart_signature():
+            self._chart_cache[year] = (signature, result)
+            self.render_dashboard(result)
+
+    def _finish_chart(self, year, request):
+        self.year_selector.set_loading(year, False)
+        if request == self._latest_chart_request:
+            self.btn.loading = False
+            self.btn.disabled = not bool(self.available_years)
+
+    async def _calculate_chart(self, year):
+        DashView.render_dashboard(self)
+        if year is None:
+            raise ValueError("Add a target year in Indicator Settings.")
+        return year, await calculate_a_dashboard(
+            self.model, year, self.gee_interface, scale=self.chart_scale()
+        )
+
+    def render_dashboard(self, result):
+        """Display the requested year's freshly calculated data."""
+
+        year, df = result
+        self.current_year = year
+        self.year_selector.mark_selected(year)
 
         # Create title at render time when AOI is available
         title = sw.Html(
             tag="h3",
             class_="mb-3",
-            children=[f"Sub-indicator A Dashboard - {self.model.get_geo_area_name()}"],
+            children=[f"Sub-indicator A Dashboard · {self.model.get_geo_area_name()}"],
         )
 
-        df = cs.parse_to_year_a(
-            self.model.results,
-            self.model.reporting_years_sub_a,
-            self.year_select.v_model,
-        )
-
-        # Get overall MGCI widget
-        w_overall = StatisticCard(df, "Total", self.model)
-
-        # Get individual stats widgets per Kapos classes
-        w_individual = [
-            StatisticCard(df, belt_class, self.model)
-            for belt_class in list(df["belt_class"].unique())
-        ]
+        previous = getattr(self, "mgci_dashboard", None)
+        previous_belt = previous.selected_belt if previous else "Total"
+        self.mgci_dashboard = MgciDashboard(df, self.model)
+        if previous_belt in self.mgci_dashboard.selector.buttons:
+            self.mgci_dashboard.select_belt(previous_belt)
 
         statistics = sw.Layout(
             attributes={"id": "render_sub_a"},
             class_="d-block",
-            children=[title, w_overall] + w_individual,
+            children=[
+                title,
+                sw.Html(
+                    tag="div", class_="text-caption text-center", children=["Year"]
+                ),
+                self.year_selector,
+                self.mgci_dashboard,
+            ],
         )
 
         self.results_dialog.set_content([statistics])
+        if previous and previous.chart:
+            previous.chart.close()
         self.results_dialog.open_dialog()
 
 
 class DashViewB(DashView):
-    def __init__(self, model, alert: sw.Alert = None, *args, **kwargs):
+    def __init__(
+        self,
+        model,
+        alert: sw.Alert = None,
+        gee_interface=None,
+        scale_selector=None,
+        *args,
+        **kwargs,
+    ):
         """Dashboard view for sub_b indicator"""
 
         self.alert = alert or sw.Alert()
 
         self.attributes = {"id": "dashboard_view_sub_b"}
 
-        super().__init__(indicator="sub_b", model=model, *args, **kwargs)
+        super().__init__(
+            indicator="sub_b",
+            model=model,
+            gee_interface=gee_interface,
+            scale_selector=scale_selector,
+            *args,
+            **kwargs,
+        )
 
         self.results_dialog = ResultsDialog(
             title="Results",
@@ -176,103 +296,202 @@ class DashViewB(DashView):
             v_model=False,
         )
 
-        self.year_select = sw.Select(
-            label="Select a target year",
-            v_model=None,
-        )
-        self.belt_select = sw.Select(
-            label="Select a belt",
-            v_model=None,
-        )
-        self.btn = sw.Btn("Calculate", class_="ml-2", block=True, small=True)
+        self.btn = sw.Btn("Show dashboard", small=True, block=True)
 
-        self.sankey_data, self.chart = get_sankey_chart()
+        self.sankey_data = None
+        self.chart = None
+        self.chart_host = sw.Layout(class_="d-block", style_="width: 100%;")
+        self.selected_view = "flow"
+        self.period_selector = DashboardRequestSelector(
+            on_request=self._start_period_task
+        )
+        self.period_buttons = {}
+        self.available_periods = []
+        self.current_selection = None
+        self._latest_chart_request = 0
+        self._active_chart_task = None
+        self._chart_cache = {}
+        self.flow_button = v.Btn(
+            small=True, color="primary", class_="text-none mx-1", children=["Flow"]
+        )
+        self.matrix_button = v.Btn(
+            small=True,
+            color="primary",
+            outlined=True,
+            class_="text-none mx-1",
+            children=["Matrix"],
+        )
+        self.flow_button.on_event("click", lambda *_: self.select_view("flow"))
+        self.matrix_button.on_event("click", lambda *_: self.select_view("matrix"))
+        self.view_selector = sw.Flex(
+            class_="d-flex justify-center mt-2 mb-2",
+            children=[self.flow_button, self.matrix_button],
+        )
+        self.class_key = None
+        self.matrix_hint = v.Html(
+            tag="div",
+            class_="text-caption text-center",
+            children=["From class ↓  ·  To class →  ·  Area (km²) on hover"],
+        )
 
         self.children = [
             sw.Flex(
-                class_="d-flex flex-column",
-                children=[self.year_select, self.belt_select],
-            ),
-            sw.Flex(
-                class_="d-flex align-center mt-2",
+                class_="d-block mt-2",
+                style_="width: 100%;",
                 children=[self.btn, self.results_dialog],
             ),
         ]
 
-        # Observe reporting_years_{indicator} from model to update the year_select
-
         self.model.observe(self.set_years, "reporting_years_sub_b")
-        self.model.observe(
-            self.on_results_updated, "results"
-        )  # Update belt items when results change
-        self.year_select.observe(self.set_belt_items, "v_model")
-        self.belt_select.observe(self.update_sankey_data, "v_model")
-        self.btn.on_event("click", self.render_dashboard)
+        self.btn.on_event("click", lambda *_: self._start_period_task(self._default_selection()))
 
         self.set_years({"new": self.model.reporting_years_sub_b})
 
-    def on_results_updated(self, change):
-        """Update belt items when results are updated"""
-        if change["new"] and self.year_select.v_model:
-            self.set_belt_items({"new": self.year_select.v_model})
-
-    def set_belt_items(self, change):
-        """Set the belt items in the belt_select widget based on the year selected
-
-        Args:
-            change["new"]: year selected in the form:
-                {"baseline": [year1, year2]} or,
-                {"report": [base_start, report_year]}
-        """
-
-        look_up_year = change["new"]
-
-        if not look_up_year or not self.model.results:
-            return
-
-        df = cs.parse_sub_b_year(self.model.results, look_up_year)
-        look_up_years = list(look_up_year.values())[0]
-        self.nodes_and_links = get_nodes_and_links(df, param.LC_CLASSES, look_up_years)
-
-        # Get all belts that are available for the selected year
-
-        belt_items = [
-            {"text": get_belt_desc(row), "value": row.belt_class}
-            for _, row in pd.DataFrame(
-                df.belt_class.unique(), columns=["belt_class"]
-            ).iterrows()
-        ]
-
-        self.belt_select.items = belt_items
-        self.belt_select.v_model = None
-        if belt_items:
-            self.belt_select.v_model = belt_items[0]["value"]
-
     def set_years(self, change):
-        """Set the years in the year_select:
+        """Set the available transition periods:
 
         Args:
             change["new]: List of years in the form:
                 [[start_base_y, end_base_y], rep_y2, rep_y2, ...]
         """
 
-        log.debug("Setting years in year_select change[new]: %s", change["new"])
+        items = cs.get_sub_b_items(change["new"]) if change["new"] else []
+        items.sort(key=lambda item: int(next(iter(item["value"].values()))[1]))
+        self.available_periods = [item["value"] for item in items]
+        self.period_selector.set_choices(
+            [
+                (
+                    tuple(next(iter(item["value"].values()))),
+                    item["text"].replace(" -> ", " → "),
+                    item["value"],
+                )
+                for item in items
+            ]
+        )
+        self.period_buttons = self.period_selector.buttons
+        if self.current_selection in self.available_periods:
+            self.period_selector.mark_selected(
+                tuple(next(iter(self.current_selection.values())))
+            )
+        self.btn.disabled = not bool(self.available_periods)
 
-        if change["new"]:
-            items = cs.get_sub_b_items(change["new"])
-            self.year_select.items = items
-        else:
-            self.year_select.items = []
+    def _default_selection(self):
+        return (
+            self.current_selection
+            if self.current_selection in self.available_periods
+            else self.available_periods[-1] if self.available_periods else None
+        )
 
-    @su.loading_button()
-    def render_dashboard(self, *args):
-        """create the corresponding parsed dataframe based on the selected year.
-        This dataframe will be used to display the Sankey chart"""
+    def _start_period_task(self, selection):
+        if not selection:
+            return
+        period = tuple(next(iter(selection.values())))
+        cache_key = (next(iter(selection)), period)
+        signature = self._chart_signature()
+        cached = self._chart_cache.get(cache_key)
+        if cached and cached[0] == signature:
+            if self.current_selection != selection or not self.results_dialog.v_model:
+                self.render_dashboard(cached[1])
+            return
+        self.period_selector.set_loading(period, True)
+        self.btn.loading = True
+        self.btn.disabled = True
+        self._create_chart_task(selection, signature).start()
 
-        super().render_dashboard()
+    def _chart_signature(self):
+        return self.cache_context(
+            getattr(self.model, "sub_b_year", None),
+            getattr(self.model, "reporting_years_sub_b", None),
+            getattr(self.model, "matrix_sub_b", None),
+            getattr(self.model, "lulc_classes_sub_b", None),
+        )
 
-        if not self.belt_select.v_model:
-            raise Exception("Select a belt.")
+    def _create_chart_task(self, selection=None, signature=None):
+        selection = selection or self._default_selection()
+        signature = signature if signature is not None else self._chart_signature()
+        period = tuple(next(iter(selection.values()))) if selection else None
+        self._latest_chart_request += 1
+        request = self._latest_chart_request
+        if self._active_chart_task and getattr(
+            self._active_chart_task, "is_running", False
+        ):
+            self._active_chart_task.cancel()
+        task = self.gee_interface.create_task(
+            func=lambda: self._calculate_chart(selection),
+            key=f"dashboard_b_{id(self)}",
+            on_done=lambda result: self._receive_chart(period, signature, request, result),
+            on_error=lambda error: self.alert.add_msg(str(error), type_="error"),
+            on_finally=lambda: self._finish_chart(period, request),
+        )
+        self._active_chart_task = task
+        return task
+
+    def _receive_chart(self, period, signature, request, result):
+        if request == self._latest_chart_request and signature == self._chart_signature():
+            selection = result[0] if isinstance(result, tuple) else None
+            if selection:
+                self._chart_cache[(next(iter(selection)), period)] = (signature, result)
+            self.render_dashboard(result)
+
+    def _finish_chart(self, period, request):
+        self.period_selector.set_loading(period, False)
+        if request == self._latest_chart_request:
+            self.btn.loading = False
+            self.btn.disabled = not bool(self.available_periods)
+
+    async def _calculate_chart(self, selection):
+        if not self.model.aoi_model.feature_collection:
+            raise ValueError(cm.error.no_aoi)
+        if not selection:
+            raise ValueError("Select a transition period.")
+        df = await calculate_b_dashboard(
+            self.model, selection, self.gee_interface, scale=self.chart_scale()
+        )
+        return selection, df
+
+    def render_dashboard(self, result):
+        """Display the requested period's freshly calculated data."""
+
+        selection, chart_data = result
+        self.current_selection = selection
+        selected_period = tuple(next(iter(selection.values())))
+        self.period_selector.mark_selected(selected_period)
+        self.chart_data = chart_data
+        look_up_years = selected_period
+        self.look_up_years = look_up_years
+        self.lc_classes = (
+            getattr(self.model, "lulc_classes_sub_b", None) or param.LC_CLASSES
+        )
+        class_labels = get_lc_class_map(self.lc_classes)
+        class_codes = sorted(
+            set(class_labels) | set(chart_data.from_lc) | set(chart_data.to_lc)
+        )
+        self.class_key = sw.Flex(
+            class_="d-flex flex-wrap justify-center text-caption mb-2",
+            children=[
+                v.Html(
+                    tag="span",
+                    class_="mx-2 my-1",
+                    children=[
+                        f"{code} · {class_labels.get(code, {}).get('desc', 'Class ' + str(code))}"
+                    ],
+                )
+                for code in class_codes
+            ],
+        )
+        self.nodes_and_links = get_nodes_and_links(
+            chart_data, self.lc_classes, look_up_years
+        )
+        belts = sorted(
+            (belt for belt in self.nodes_and_links if belt != "Total"), key=int
+        )
+        self.belt_selector = BeltSelector(["Total", *belts], on_select=self.select_belt)
+        self.belt_title = sw.Html(tag="h4", class_="mb-2")
+        self.belt_selector.select(
+            getattr(self, "selected_belt", "Total")
+            if getattr(self, "selected_belt", "Total") in self.nodes_and_links
+            else "Total"
+        )
 
         # Create title at render time when AOI is available
         title = sw.Html(
@@ -285,24 +504,106 @@ class DashViewB(DashView):
         sankey_layout = sw.Layout(
             attributes={"id": "render_sub_b"},
             class_="d-block",
-            style_="width: 100%; min-width: 800px;",  # Ensure proper width
-            children=[title, self.chart],
+            style_="width: 100%;",
+            children=[
+                title,
+                sw.Html(
+                    tag="div", class_="text-caption text-center", children=["Period"]
+                ),
+                self.period_selector,
+                self.belt_selector,
+                self.view_selector,
+                self.belt_title,
+                self.chart_host,
+            ],
         )
-
-        # Update the sankey data
-        self.update_sankey_data({"new": self.belt_select.v_model})
 
         self.results_dialog.set_content([sankey_layout])
         self.results_dialog.open_dialog()
 
-    def update_sankey_data(self, change):
-        """create the corresponding parsed dataframe based on the selected year.
-        This dataframe will be used to calculate the MCGI"""
+    def select_belt(self, belt):
+        self.selected_belt = belt
+        name = "Overall" if belt == "Total" else param.BIOBELT_LEGEND[belt][0]
+        self.belt_title.children = [f"Land-cover transitions · {name}"]
+        self._update_chart()
 
-        if not change["new"] or not hasattr(self, "nodes_and_links"):
-            return
+    def select_view(self, view):
+        self.selected_view = view
+        self.flow_button.outlined = view != "flow"
+        self.matrix_button.outlined = view != "matrix"
+        if hasattr(self, "chart_data"):
+            self._update_chart()
 
-        belt_data = self.nodes_and_links[change["new"]]
-
-        self.sankey_data.nodes = belt_data["nodes"]
-        self.sankey_data.links = belt_data["links"]
+    def _update_chart(self):
+        belt_data = self.nodes_and_links[self.selected_belt]
+        values = (
+            self.chart_data
+            if self.selected_belt == "Total"
+            else self.chart_data[self.chart_data.belt_class == self.selected_belt]
+        )
+        if self.selected_view == "matrix":
+            chart = get_transition_matrix_chart(values, self.lc_classes)
+            self.chart_host.children = [self.matrix_hint, chart, self.class_key]
+            self.sankey_data = None
+        else:
+            series, chart = get_sankey_chart()
+            series.nodes = belt_data["nodes"]
+            series.links = belt_data["links"]
+            self.sankey_data = series
+            self.flow_years = sw.Flex(
+                class_="d-flex justify-space-between text-overline px-4 mt-2",
+                children=[
+                    v.Html(tag="span", children=[f"From · {self.look_up_years[0]}"]),
+                    v.Html(tag="span", children=[f"To · {self.look_up_years[1]}"]),
+                ],
+            )
+            labels = get_lc_class_map(self.lc_classes)
+            codes = sorted(set(values.from_lc) | set(values.to_lc))
+            self.flow_legend = sw.Flex(
+                class_="mt-1 mb-2 px-3",
+                style_=(
+                    "display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); "
+                    "gap:4px 10px; width:100%;"
+                ),
+                children=[
+                    v.Html(
+                        tag="span",
+                        class_="d-inline-flex align-center text-caption",
+                        style_="height:32px; min-width:0;",
+                        attributes={
+                            "title": labels.get(code, {}).get("desc", f"Class {code}")
+                        },
+                        children=[
+                            v.Html(
+                                tag="span",
+                                style_=(
+                                    "display:inline-block; flex:0 0 11px; height:11px; "
+                                    "border-radius:2px; border:1px solid var(--v-primary-base); "
+                                    f"background:{labels.get(code, {}).get('color', '#888888')};"
+                                ),
+                            ),
+                            v.Html(
+                                tag="span",
+                                class_="ml-2",
+                                style_="min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;",
+                                children=[
+                                    f"{code} · "
+                                    + (
+                                        "Aquatic/flooded vegetation"
+                                        if code == 6
+                                        and labels.get(code, {}).get("desc")
+                                        == "Shrubs and/or herbaceous vegetation, aquatic or regularly flooded"
+                                        else labels.get(code, {}).get("desc", f"Class {code}")
+                                    )
+                                ],
+                            ),
+                        ],
+                    )
+                    for code in codes
+                ],
+            )
+            self.chart_host.children = [self.flow_years, chart, self.flow_legend]
+        previous_chart = self.chart
+        self.chart = chart
+        if previous_chart is not None:
+            previous_chart.close()

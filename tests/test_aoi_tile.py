@@ -7,9 +7,10 @@ the process serving all sessions. See https://github.com/sepal-contrib/sepal_mgc
 
 import pandas as pd
 import pytest
+from types import SimpleNamespace
 
 import component.parameter.module_parameter as param
-from component.tile.aoi_tile import AoiView
+from component.tile.aoi_tile import AoiView, close_aoi_step
 
 LOCAL_FILE_METHODS = ("SHAPE", "POINTS")
 
@@ -88,3 +89,19 @@ def test_admin0_country_list_covers_m49(aoi_view: AoiView) -> None:
     # mapping empties or halves it.
     m49_iso = pd.read_csv(param.M49_FILE, sep=";").iso31661.nunique()
     assert len(items) >= m49_iso - 10
+
+
+def test_successful_aoi_selection_closes_only_its_step(aoi_view: AoiView) -> None:
+    app = SimpleNamespace(current_step=2, step_open=True)
+    aoi_view.on_selection_success = lambda: close_aoi_step(app)
+
+    aoi_view._complete_aoi_selection(False)
+    assert app.step_open is True
+
+    aoi_view._complete_aoi_selection(True)
+    assert (app.current_step, app.step_open) == (None, False)
+
+    app.current_step = 3
+    app.step_open = True
+    aoi_view._complete_aoi_selection(True)
+    assert (app.current_step, app.step_open) == (3, True)
