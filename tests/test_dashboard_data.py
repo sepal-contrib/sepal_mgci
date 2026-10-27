@@ -125,7 +125,7 @@ def test_dashboard_allows_chart_request_before_full_statistics_run():
     view.model = SimpleNamespace(
         aoi_model=SimpleNamespace(feature_collection="aoi"), results={}
     )
-    view.render_dashboard()
+    view.validate()
 
 
 def test_a_dashboard_fetches_interpolation_sources_concurrently(monkeypatch):

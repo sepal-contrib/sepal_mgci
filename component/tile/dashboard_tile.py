@@ -20,6 +20,7 @@ from component.widget.mgci_dashboard import (
     BeltSelector,
     DashboardRequestSelector,
     MgciDashboard,
+    close_tree,
 )
 
 
@@ -71,8 +72,24 @@ class ResultsDialog(BaseDialog):
 
 
 class DashView(sw.Layout):
+    """Request, cache and show one sub-indicator's dashboard.
+
+    Subclasses provide the request selector, the available choices, how a
+    selection maps to a selector key and a cache key, the chart signature, the
+    calculation, the rendering and the task key prefix.
+    """
+
+    task_prefix = None
+
     def __init__(
-        self, indicator, model, gee_interface=None, scale_selector=None, *args, **kwargs
+        self,
+        indicator,
+        model,
+        gee_interface=None,
+        scale_selector=None,
+        alert=None,
+        *args,
+        **kwargs,
     ):
         self.indicator = indicator
         self.class_ = "d-block pa-2"
@@ -82,6 +99,59 @@ class DashView(sw.Layout):
         self.scale_selector = scale_selector
 
         super().__init__(*args, **kwargs)
+
+        self.alert = alert or sw.Alert()
+        self.results_dialog = ResultsDialog(
+            title="Results",
+            action_text="Close",
+            content=[self.alert],
+            v_model=False,
+        )
+        self.btn = sw.Btn("Show dashboard", small=True, block=True)
+        self.current_selection = None
+        self._latest_chart_request = 0
+        self._active_chart_task = None
+        self._chart_cache = {}
+
+        self.children = [
+            sw.Flex(
+                class_="d-block mt-2",
+                style_="width: 100%;",
+                children=[self.btn, self.results_dialog],
+            ),
+        ]
+        self.btn.on_event(
+            "click", lambda *_: self._start_task(self._default_selection())
+        )
+
+    @property
+    def request_selector(self):
+        """The DashboardRequestSelector whose buttons request a selection."""
+        raise NotImplementedError
+
+    def _choices(self):
+        """The selections that can be requested, latest last."""
+        raise NotImplementedError
+
+    def _selector_key(self, selection):
+        """The request selector key of ``selection``."""
+        raise NotImplementedError
+
+    def _cache_key(self, selection):
+        """The chart cache key of ``selection``."""
+        raise NotImplementedError
+
+    def _chart_signature(self):
+        """The inputs a cached chart depends on."""
+        raise NotImplementedError
+
+    async def _calculate_chart(self, selection):
+        """Return ``(selection, data)`` for ``render_dashboard``."""
+        raise NotImplementedError
+
+    def render_dashboard(self, result):
+        """Show the ``(selection, data)`` result."""
+        raise NotImplementedError
 
     def clear(self):
         """Check if there is a previously displayed dashboard and clear it, and
@@ -94,10 +164,10 @@ class DashView(sw.Layout):
                 if chld.attributes.get("id") != f"render_{self.indicator}"
             ]
 
-    def render_dashboard(self, *args):
-        """Validate shared dashboard prerequisites."""
+    def validate(self):
+        """Raise if the dashboard cannot be calculated yet."""
         if not self.model.aoi_model.feature_collection:
-            raise Exception(cm.error.no_aoi)
+            raise ValueError(cm.error.no_aoi)
 
     def chart_scale(self):
         if self.scale_selector is None or self.scale_selector.disabled:
@@ -116,8 +186,72 @@ class DashView(sw.Layout):
             *(_freeze_input(value) for value in inputs),
         )
 
+    def _default_selection(self):
+        choices = self._choices()
+        if self.current_selection in choices:
+            return self.current_selection
+        return choices[-1] if choices else None
+
+    def _start_task(self, selection):
+        if not selection:
+            return
+        signature = self._chart_signature()
+        cached = self._chart_cache.get(self._cache_key(selection))
+        if cached and cached[0] == signature:
+            if self.current_selection != selection or not self.results_dialog.v_model:
+                self.render_dashboard(cached[1])
+            return
+        self.request_selector.set_loading(self._selector_key(selection), True)
+        self.btn.loading = True
+        self.btn.disabled = True
+        self._create_chart_task(selection, signature).start()
+
+    def _create_chart_task(self, selection=None, signature=None):
+        selection = selection or self._default_selection()
+        signature = signature if signature is not None else self._chart_signature()
+        selector_key = self._selector_key(selection) if selection else None
+        self._latest_chart_request += 1
+        request = self._latest_chart_request
+        if self._active_chart_task and getattr(
+            self._active_chart_task, "is_running", False
+        ):
+            self._active_chart_task.cancel()
+        task = self.gee_interface.create_task(
+            func=lambda: self._calculate_chart(selection),
+            key=f"{self.task_prefix}_{id(self)}",
+            on_done=lambda result: self._receive_chart(
+                selection, signature, request, result
+            ),
+            on_error=lambda error: self.alert.add_msg(
+                dashboard_error_message(error), type_="error"
+            ),
+            on_finally=lambda: self._finish_chart(selector_key, request),
+        )
+        self._active_chart_task = task
+        return task
+
+    def _receive_chart(self, selection, signature, request, result):
+        if request != self._latest_chart_request:
+            return
+        if signature != self._chart_signature():
+            # Inputs changed while loading; fetch again with the current ones.
+            self._start_task(selection)
+            return
+        self._chart_cache[self._cache_key(selection)] = (signature, result)
+        self.render_dashboard(result)
+
+    def _finish_chart(self, selector_key, request):
+        # A newer request owns the loading state.
+        if request != self._latest_chart_request:
+            return
+        self.request_selector.set_loading(selector_key, False)
+        self.btn.loading = False
+        self.btn.disabled = not bool(self._choices())
+
 
 class DashViewA(DashView):
+    task_prefix = "dashboard_a"
+
     def __init__(
         self,
         model,
@@ -134,66 +268,43 @@ class DashViewA(DashView):
             model=model,
             gee_interface=gee_interface,
             scale_selector=scale_selector,
+            alert=alert,
             *args,
             **kwargs,
         )
 
-        self.alert = alert or sw.Alert()
-        self.results_dialog = ResultsDialog(
-            title="Results",
-            action_text="Close",
-            content=[self.alert],
-            v_model=False,
-        )
-
-        self.btn = sw.Btn("Show dashboard", small=True, block=True)
-        self.year_selector = DashboardRequestSelector(on_request=self._start_year_task)
+        self.year_selector = DashboardRequestSelector(on_request=self._start_task)
         self.available_years = []
-        self.current_year = None
-        self._latest_chart_request = 0
-        self._active_chart_task = None
-        self._chart_cache = {}
-
-        self.children = [
-            sw.Flex(
-                class_="d-block mt-2",
-                style_="width: 100%;",
-                children=[self.btn, self.results_dialog],
-            ),
-        ]
+        self.mgci_dashboard = None
+        self.title = sw.Html(tag="h3", class_="mb-3")
+        self.year_label = sw.Html(
+            tag="div", class_="text-caption text-center", children=["Year"]
+        )
+        self.statistics = sw.Layout(attributes={"id": "render_sub_a"}, class_="d-block")
 
         self.model.observe(self.set_years, f"reporting_years_sub_a")
-        self.btn.on_event("click", lambda *_: self._start_year_task(self._default_year()))
         self.set_years({"new": self.model.reporting_years_sub_a})
+
+    @property
+    def request_selector(self):
+        return self.year_selector
 
     def set_years(self, change):
         self.available_years = sorted(change["new"], key=int)
         self.year_selector.set_choices(
             [(year, str(year), year) for year in self.available_years]
         )
-        self.year_selector.mark_selected(self.current_year)
+        self.year_selector.mark_selected(self.current_selection)
         self.btn.disabled = not bool(self.available_years)
 
-    def _default_year(self):
-        return (
-            self.current_year
-            if self.current_year in self.available_years
-            else self.available_years[-1] if self.available_years else None
-        )
+    def _choices(self):
+        return self.available_years
 
-    def _start_year_task(self, year):
-        if year is None:
-            return
-        signature = self._chart_signature()
-        cached = self._chart_cache.get(year)
-        if cached and cached[0] == signature:
-            if self.current_year != year or not self.results_dialog.v_model:
-                self.render_dashboard(cached[1])
-            return
-        self.year_selector.set_loading(year, True)
-        self.btn.loading = True
-        self.btn.disabled = True
-        self._create_chart_task(year, signature).start()
+    def _selector_key(self, year):
+        return year
+
+    def _cache_key(self, year):
+        return year
 
     def _chart_signature(self):
         return self.cache_context(
@@ -202,47 +313,8 @@ class DashViewA(DashView):
             getattr(self.model, "lulc_classes_sub_a", None),
         )
 
-    def _create_chart_task(self, year=None, signature=None):
-        year = year if year is not None else self._default_year()
-        signature = signature if signature is not None else self._chart_signature()
-        self._latest_chart_request += 1
-        request = self._latest_chart_request
-        if self._active_chart_task and getattr(
-            self._active_chart_task, "is_running", False
-        ):
-            self._active_chart_task.cancel()
-        task = self.gee_interface.create_task(
-            func=lambda: self._calculate_chart(year),
-            key=f"dashboard_a_{id(self)}",
-            on_done=lambda result: self._receive_chart(year, signature, request, result),
-            on_error=lambda error: self.alert.add_msg(
-                dashboard_error_message(error), type_="error"
-            ),
-            on_finally=lambda: self._finish_chart(year, request),
-        )
-        self._active_chart_task = task
-        return task
-
-    def _receive_chart(self, year, signature, request, result):
-        if request != self._latest_chart_request:
-            return
-        if signature != self._chart_signature():
-            # Inputs changed while loading; fetch again with the current ones.
-            self._start_year_task(year)
-            return
-        self._chart_cache[year] = (signature, result)
-        self.render_dashboard(result)
-
-    def _finish_chart(self, year, request):
-        # A newer request owns the loading state.
-        if request != self._latest_chart_request:
-            return
-        self.year_selector.set_loading(year, False)
-        self.btn.loading = False
-        self.btn.disabled = not bool(self.available_years)
-
     async def _calculate_chart(self, year):
-        DashView.render_dashboard(self)
+        self.validate()
         if year is None:
             raise ValueError("Add a target year in Indicator Settings.")
         return year, await calculate_a_dashboard(
@@ -253,42 +325,34 @@ class DashViewA(DashView):
         """Display the requested year's freshly calculated data."""
 
         year, df = result
-        self.current_year = year
+        self.current_selection = year
         self.year_selector.mark_selected(year)
 
-        # Create title at render time when AOI is available
-        title = sw.Html(
-            tag="h3",
-            class_="mb-3",
-            children=[f"Sub-indicator A Dashboard · {self.model.get_geo_area_name()}"],
-        )
+        title = f"Sub-indicator A Dashboard · {self.model.get_geo_area_name()}"
 
-        previous = getattr(self, "mgci_dashboard", None)
+        previous = self.mgci_dashboard
         previous_belt = previous.selected_belt if previous else "Total"
         self.mgci_dashboard = MgciDashboard(df, self.model)
         if previous_belt in self.mgci_dashboard.selector.buttons:
             self.mgci_dashboard.select_belt(previous_belt)
 
-        statistics = sw.Layout(
-            attributes={"id": "render_sub_a"},
-            class_="d-block",
-            children=[
-                title,
-                sw.Html(
-                    tag="div", class_="text-caption text-center", children=["Year"]
-                ),
-                self.year_selector,
-                self.mgci_dashboard,
-            ],
-        )
+        self.title.children = [title]
+        self.statistics.children = [
+            self.title,
+            self.year_label,
+            self.year_selector,
+            self.mgci_dashboard,
+        ]
 
-        self.results_dialog.set_content([statistics])
-        if previous and previous.chart:
-            previous.chart.close()
+        self.results_dialog.set_content([self.statistics])
+        if previous is not None:
+            close_tree(previous)
         self.results_dialog.open_dialog()
 
 
 class DashViewB(DashView):
+    task_prefix = "dashboard_b"
+
     def __init__(
         self,
         model,
@@ -300,8 +364,6 @@ class DashViewB(DashView):
     ):
         """Dashboard view for sub_b indicator"""
 
-        self.alert = alert or sw.Alert()
-
         self.attributes = {"id": "dashboard_view_sub_b"}
 
         super().__init__(
@@ -309,32 +371,17 @@ class DashViewB(DashView):
             model=model,
             gee_interface=gee_interface,
             scale_selector=scale_selector,
+            alert=alert,
             *args,
             **kwargs,
         )
-
-        self.results_dialog = ResultsDialog(
-            title="Results",
-            action_text="Close",
-            content=[self.alert],
-            v_model=False,
-        )
-
-        self.btn = sw.Btn("Show dashboard", small=True, block=True)
 
         self.sankey_data = None
         self.chart = None
         self.chart_host = sw.Layout(class_="d-block", style_="width: 100%;")
         self.selected_view = "flow"
-        self.period_selector = DashboardRequestSelector(
-            on_request=self._start_period_task
-        )
-        self.period_buttons = {}
+        self.period_selector = DashboardRequestSelector(on_request=self._start_task)
         self.available_periods = []
-        self.current_selection = None
-        self._latest_chart_request = 0
-        self._active_chart_task = None
-        self._chart_cache = {}
         self.flow_button = v.Btn(
             small=True, color="primary", class_="text-none mx-1", children=["Flow"]
         )
@@ -384,19 +431,24 @@ class DashViewB(DashView):
                 for label, color in impact_items
             ],
         )
-
-        self.children = [
-            sw.Flex(
-                class_="d-block mt-2",
-                style_="width: 100%;",
-                children=[self.btn, self.results_dialog],
-            ),
-        ]
+        self.belt_selector = None
+        self.belt_title = sw.Html(tag="h4", class_="mb-2")
+        self.title = sw.Html(tag="h3", class_="mb-3")
+        self.period_label = sw.Html(
+            tag="div", class_="text-caption text-center", children=["Period"]
+        )
+        self.sankey_layout = sw.Layout(
+            attributes={"id": "render_sub_b"},
+            class_="d-block",
+            style_="width: 100%;",
+        )
 
         self.model.observe(self.set_years, "reporting_years_sub_b")
-        self.btn.on_event("click", lambda *_: self._start_period_task(self._default_selection()))
-
         self.set_years({"new": self.model.reporting_years_sub_b})
+
+    @property
+    def request_selector(self):
+        return self.period_selector
 
     def set_years(self, change):
         """Set the available transition periods:
@@ -412,42 +464,27 @@ class DashViewB(DashView):
         self.period_selector.set_choices(
             [
                 (
-                    tuple(next(iter(item["value"].values()))),
+                    self._selector_key(item["value"]),
                     item["text"].replace(" -> ", " → "),
                     item["value"],
                 )
                 for item in items
             ]
         )
-        self.period_buttons = self.period_selector.buttons
         if self.current_selection in self.available_periods:
             self.period_selector.mark_selected(
-                tuple(next(iter(self.current_selection.values())))
+                self._selector_key(self.current_selection)
             )
         self.btn.disabled = not bool(self.available_periods)
 
-    def _default_selection(self):
-        return (
-            self.current_selection
-            if self.current_selection in self.available_periods
-            else self.available_periods[-1] if self.available_periods else None
-        )
+    def _choices(self):
+        return self.available_periods
 
-    def _start_period_task(self, selection):
-        if not selection:
-            return
-        period = tuple(next(iter(selection.values())))
-        cache_key = (next(iter(selection)), period)
-        signature = self._chart_signature()
-        cached = self._chart_cache.get(cache_key)
-        if cached and cached[0] == signature:
-            if self.current_selection != selection or not self.results_dialog.v_model:
-                self.render_dashboard(cached[1])
-            return
-        self.period_selector.set_loading(period, True)
-        self.btn.loading = True
-        self.btn.disabled = True
-        self._create_chart_task(selection, signature).start()
+    def _selector_key(self, selection):
+        return tuple(next(iter(selection.values())))
+
+    def _cache_key(self, selection):
+        return next(iter(selection)), self._selector_key(selection)
 
     def _chart_signature(self):
         return self.cache_context(
@@ -457,51 +494,8 @@ class DashViewB(DashView):
             getattr(self.model, "lulc_classes_sub_b", None),
         )
 
-    def _create_chart_task(self, selection=None, signature=None):
-        selection = selection or self._default_selection()
-        signature = signature if signature is not None else self._chart_signature()
-        period = tuple(next(iter(selection.values()))) if selection else None
-        self._latest_chart_request += 1
-        request = self._latest_chart_request
-        if self._active_chart_task and getattr(
-            self._active_chart_task, "is_running", False
-        ):
-            self._active_chart_task.cancel()
-        task = self.gee_interface.create_task(
-            func=lambda: self._calculate_chart(selection),
-            key=f"dashboard_b_{id(self)}",
-            on_done=lambda result: self._receive_chart(period, signature, request, result),
-            on_error=lambda error: self.alert.add_msg(
-                dashboard_error_message(error), type_="error"
-            ),
-            on_finally=lambda: self._finish_chart(period, request),
-        )
-        self._active_chart_task = task
-        return task
-
-    def _receive_chart(self, period, signature, request, result):
-        if request != self._latest_chart_request:
-            return
-        selection = result[0] if isinstance(result, tuple) else None
-        if signature != self._chart_signature():
-            # Inputs changed while loading; fetch again with the current ones.
-            self._start_period_task(selection)
-            return
-        if selection:
-            self._chart_cache[(next(iter(selection)), period)] = (signature, result)
-        self.render_dashboard(result)
-
-    def _finish_chart(self, period, request):
-        # A newer request owns the loading state.
-        if request != self._latest_chart_request:
-            return
-        self.period_selector.set_loading(period, False)
-        self.btn.loading = False
-        self.btn.disabled = not bool(self.available_periods)
-
     async def _calculate_chart(self, selection):
-        if not self.model.aoi_model.feature_collection:
-            raise ValueError(cm.error.no_aoi)
+        self.validate()
         if not selection:
             raise ValueError("Select a transition period.")
         df = await calculate_b_dashboard(
@@ -514,7 +508,7 @@ class DashViewB(DashView):
 
         selection, chart_data = result
         self.current_selection = selection
-        selected_period = tuple(next(iter(selection.values())))
+        selected_period = self._selector_key(selection)
         self.period_selector.mark_selected(selected_period)
         self.chart_data = chart_data
         look_up_years = selected_period
@@ -526,6 +520,7 @@ class DashViewB(DashView):
         class_codes = sorted(
             set(class_labels) | set(chart_data.from_lc) | set(chart_data.to_lc)
         )
+        replaced = [self.belt_selector, self.class_key]
         self.class_key = sw.Flex(
             class_="d-flex flex-wrap justify-center text-caption mb-2",
             children=[
@@ -546,39 +541,28 @@ class DashViewB(DashView):
             (belt for belt in self.nodes_and_links if belt != "Total"), key=int
         )
         self.belt_selector = BeltSelector(["Total", *belts], on_select=self.select_belt)
-        self.belt_title = sw.Html(tag="h4", class_="mb-2")
         self.belt_selector.select(
             getattr(self, "selected_belt", "Total")
             if getattr(self, "selected_belt", "Total") in self.nodes_and_links
             else "Total"
         )
 
-        # Create title at render time when AOI is available
-        title = sw.Html(
-            tag="h3",
-            class_="mb-3",
-            children=[f"Sub-indicator B Dashboard - {self.model.get_geo_area_name()}"],
-        )
+        title = f"Sub-indicator B Dashboard - {self.model.get_geo_area_name()}"
+        self.title.children = [title]
+        self.sankey_layout.children = [
+            self.title,
+            self.period_label,
+            self.period_selector,
+            self.belt_selector,
+            self.view_selector,
+            self.belt_title,
+            self.chart_host,
+        ]
 
-        # Create the sankey chart layout with proper width
-        sankey_layout = sw.Layout(
-            attributes={"id": "render_sub_b"},
-            class_="d-block",
-            style_="width: 100%;",
-            children=[
-                title,
-                sw.Html(
-                    tag="div", class_="text-caption text-center", children=["Period"]
-                ),
-                self.period_selector,
-                self.belt_selector,
-                self.view_selector,
-                self.belt_title,
-                self.chart_host,
-            ],
-        )
-
-        self.results_dialog.set_content([sankey_layout])
+        self.results_dialog.set_content([self.sankey_layout])
+        for widget in replaced:
+            if widget is not None:
+                close_tree(widget)
         self.results_dialog.open_dialog()
 
     def select_belt(self, belt):
@@ -595,6 +579,7 @@ class DashViewB(DashView):
             self._update_chart()
 
     def _update_chart(self):
+        previous = list(self.chart_host.children)
         belt_data = self.nodes_and_links[self.selected_belt]
         values = (
             self.chart_data
@@ -672,7 +657,9 @@ class DashViewB(DashView):
                 ],
             )
             self.chart_host.children = [self.flow_years, chart, self.flow_legend]
-        previous_chart = self.chart
         self.chart = chart
-        if previous_chart is not None:
-            previous_chart.close()
+        # The class key is shown again when the view returns to the matrix;
+        # render_dashboard closes it when it replaces it.
+        keep = (self.matrix_hint, self.impact_legend, self.class_key)
+        for widget in previous:
+            close_tree(widget, keep=keep)

@@ -1,11 +1,31 @@
 import pandas as pd
 import ipyvuetify as v
 import pysepal.sepalwidgets as sw
+from ipywidgets import Widget
 
 import component.parameter.module_parameter as param
 from component.message import cm
 from component.scripts.plots import get_land_cover_bar_chart
 from component.scripts.sub_a import get_mgci
+
+
+def close_tree(widget, keep=()):
+    """Close ``widget`` and every widget under its ``children``.
+
+    Widgets in ``keep`` are reused, so they and their children stay open. Only
+    ``children`` is followed: other traits of ipyvue widgets hold shared models
+    (``_jupyter_vue``) that must stay open.
+    """
+    kept = {id(item) for item in keep}
+
+    def close(item):
+        if not isinstance(item, Widget) or id(item) in kept:
+            return
+        for child in getattr(item, "children", None) or []:
+            close(child)
+        item.close()
+
+    close(widget)
 
 
 class DashboardRequestSelector(sw.Flex):
@@ -19,6 +39,7 @@ class DashboardRequestSelector(sw.Flex):
         self.loading_key = None
 
     def set_choices(self, choices):
+        previous = list(self.buttons.values())
         self.buttons = {}
         for key, label, value in choices:
             button = v.Btn(
@@ -31,6 +52,8 @@ class DashboardRequestSelector(sw.Flex):
             button.on_event("click", lambda *_, selected=value: self.on_request(selected))
             self.buttons[key] = button
         self.children = list(self.buttons.values())
+        for button in previous:
+            button.close()
 
     def mark_selected(self, selected):
         for key, button in self.buttons.items():
