@@ -392,6 +392,11 @@ class VegetationView(sw.Layout):
         if not self.model.lc_asset_sub_a:
             raise ValueError("The land use/land cover map cannot be empty.")
 
+        if custom_lulc and any(
+            reclass.w_ic_select.error for reclass in (self.w_reclass_a, self.w_reclass_b)
+        ):
+            raise ValueError(cm.error.lc_asset_unreadable)
+
         return True
 
 

@@ -28,3 +28,20 @@ def test_default_years_are_set_whenever_the_image_lists_arrive(mgci_model, lists
         mgci_model.ic_items_sub_b = IMAGES
 
     assert_default_years(calculation)
+
+
+def test_years_are_cleared_when_the_image_lists_are_emptied(mgci_model):
+    """An asset whose images cannot be read must not keep the previous asset's years."""
+    calculation = Calculation(mgci_model)
+    mgci_model.ic_items_sub_a = IMAGES
+    mgci_model.ic_items_sub_b = IMAGES
+
+    mgci_model.ic_items_sub_a = []
+    mgci_model.ic_items_sub_b = []
+
+    assert calculation.w_content_a.items == []
+    assert calculation.w_content_b.items == []
+    assert [year["asset"] for year in mgci_model.sub_a_year.values()] == [None]
+    baseline = mgci_model.sub_b_year["baseline"]
+    assert baseline["base"]["asset"] is None
+    assert baseline["report"]["asset"] is None

@@ -104,6 +104,13 @@ class Calculation(sw.List):
 
         widgets = {"sub_a": self.w_content_a, "sub_b": self.w_content_b}
 
+        if self.ready and not change["new"] and change.get("old"):
+            # The images of the new asset could not be read: drop the old years.
+            w_content = widgets[indicator]
+            w_content.populate([])
+            w_content.reset()
+            return
+
         if self.ready and change["new"]:
             log.debug(f">>>>>>>>>>>>>> populate_years Setting items")
             w_content = widgets[indicator]

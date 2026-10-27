@@ -212,6 +212,7 @@
     "error" : {
         "no_aoi" : "Please select an area of interest first.",
         "scale_range" : "Use a value from {} to {} m.",
+        "lc_asset_unreadable" : "The land cover asset does not exist or you do not have access to it. Select another image collection.",
         "chart_too_large" : "This area is too large to chart on the fly ({}). Select a coarser {} in \"{}\" and try again. For full-resolution statistics, run the calculation in \"{}\": it continues as a background task, and you can create the report in \"{}\"."
     }
 }

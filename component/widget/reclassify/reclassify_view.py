@@ -279,8 +279,15 @@ class ReclassifyView(sw.Card):
             self.model.ic_items = result
             # self.reclassify_table.set_table({}, {})
 
+        def clear_ids(_error):
+            # Drop the images of the previous asset; the asset field shows the error.
+            self.model.ic_items = []
+
         self._tasks["set_ic_items"] = gee_interface.create_task(
-            func=gee_interface.get_info_async, key="set_ic_items", on_done=set_ids
+            func=gee_interface.get_info_async,
+            key="set_ic_items",
+            on_done=set_ids,
+            on_error=clear_ids,
         )
 
     def set_ids(self, change):
