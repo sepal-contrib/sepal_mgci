@@ -172,6 +172,7 @@
             "calculate" : "Calculate indicator",
             "calculate_from_task" : "Download & Export tables",
             "scale" : "Process scale",
+            "native_scale" : "Native",
             "year": "Year",
             "rsa": "Use real surface area",
             "rsa_name"  :"real surface area",
@@ -191,7 +192,7 @@
             "year": "Select a year for the dashboard outputs. It will be used to label the outputs. If not provided, the reclassified band name will be used.",
             "source": "Please insert the name of the institution you belong to.",
             "background" : "Run the process in the background. Use this option when there are computation time errors or when the tool doesn't show promptly results.",
-            "scale" : "If activated, the process will be executed at the selected scale. It will affect the speed and the accuracy of the results. Otherwise, the process will be executed at the original scale of the input data."
+            "scale" : "\"Native\" uses the resolution of the land cover data. A coarser scale makes the process faster, but less accurate."
         },
         "global_" : {
             "title" : "Overall Mountain Green Cover Index",

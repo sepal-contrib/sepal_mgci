@@ -3,7 +3,7 @@ import os
 
 import ee
 import ipyvuetify as v
-from traitlets import Bool, Int, directional_link, link
+from traitlets import directional_link
 
 import pysepal.scripts.utils as su
 import pysepal.sepalwidgets as sw
@@ -18,6 +18,7 @@ import component.scripts as cs
 from component.scripts.validation import validate_calc_params, validate_model
 import component.widget as cw
 from component.message import cm
+from component.widget.scale_selector import ScaleSelector
 from component.model.model import MgciModel
 
 __all__ = ["CalculationTile"]
@@ -68,7 +69,7 @@ class CalculationView(sw.Card):
             value=False,
         )
 
-        self.w_scale = Slider()
+        self.w_scale = ScaleSelector()
 
         t_rsa = v.Flex(
             class_="d-flex",
@@ -321,14 +322,13 @@ class CalculationView(sw.Card):
             / f"Task_{report_folder.stem}_{now.strftime('%Y-%m-%d-%H%M%S')}_{self.model.session_id}.json"
         )
 
-        scale = None  # Default value
+        scale = self.w_scale.scale
 
-        if not self.w_scale.disabled:
+        if scale:
             # Add the output scale to the name
             task_filepath = task_filepath.with_name(
-                task_filepath.stem + f"_scale_{self.w_scale.v_model}"
+                task_filepath.stem + f"_scale_{scale}"
             )
-            scale = self.w_scale.v_model
 
         log.debug(f"Performing calculation with parameters:\n {self.model}")
 
@@ -405,45 +405,3 @@ class CalculationView(sw.Card):
         self.btn.configure(
             task_factory=run_statistics,
         )
-
-
-class Slider(v.Row):
-
-    v_model = Int().tag(sync=True)
-    disabled = Bool().tag(sync=True)
-
-    def __init__(self, *args, **kwargs):
-
-        # self.class_ = "d-flex pa-4"
-        self.no_gutters = True
-        self.align = "center"
-
-        self.slider = v.Slider(
-            label=cm.dashboard.label.scale,
-            class_="mt-5",
-            v_model=90,
-            min=30,
-            max=10000,
-            thumb_label="always",
-            step=10,
-            disabled=True,
-        )
-
-        switch = v.Switch(
-            class_="mt-5",
-            v_model=False,
-            value=True,
-        )
-
-        self.children = [switch, self.slider]
-
-        super().__init__(*args, **kwargs)
-
-        switch.observe(self.toggle_slider, "v_model")
-        link((self.slider, "v_model"), (self, "v_model"))
-        link((self.slider, "disabled"), (self, "disabled"))
-
-    def toggle_slider(self, change):
-        """de/activate slider according with the user's input in switch"""
-
-        self.slider.disabled = not change["new"]

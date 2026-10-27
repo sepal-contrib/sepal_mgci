@@ -170,9 +170,7 @@ class DashView(sw.Layout):
             raise ValueError(cm.error.no_aoi)
 
     def chart_scale(self):
-        if self.scale_selector is None or self.scale_selector.disabled:
-            return None
-        return self.scale_selector.v_model
+        return self.scale_selector.scale if self.scale_selector is not None else None
 
     def cache_context(self, *inputs):
         aoi = getattr(getattr(self.model, "aoi_model", None), "feature_collection", None)
