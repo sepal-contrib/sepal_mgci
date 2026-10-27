@@ -6,6 +6,7 @@ import pandas as pd
 
 from ipecharts.echarts import EChartsRawWidget, EChartsWidget
 from ipecharts.option import Grid, Legend, Option, Tooltip, XAxis, YAxis
+from ipecharts.option.basewidget import BaseWidget as EChartsOptionWidget
 from ipecharts.option.series import Bar, Sankey
 from pysepal.solara import get_current_theme_state
 
@@ -49,7 +50,26 @@ class _ThemeBinding:
         if getattr(self, "_theme_observer_registered", False):
             self._theme_observer_registered = False
             self.theme_state.unobserve(self._on_theme_change, "dark")
+        was_open = self.comm is not None
         super().close()
+        if was_open:
+            # Widget.close() leaves the option, series, axes and layout models open.
+            _close_option_models(self.option)
+            self.layout.close()
+
+
+def _close_option_models(value):
+    """Close the ipecharts option models under ``value``, children first."""
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            _close_option_models(item)
+    elif isinstance(value, dict):
+        for item in value.values():
+            _close_option_models(item)
+    elif isinstance(value, EChartsOptionWidget):
+        for name in value.keys:
+            _close_option_models(getattr(value, name))
+        value.close()
 
 
 class ThemedEChartsWidget(_ThemeBinding, EChartsWidget):

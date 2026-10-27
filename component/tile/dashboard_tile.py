@@ -20,6 +20,7 @@ from component.widget.mgci_dashboard import (
     BeltSelector,
     DashboardRequestSelector,
     MgciDashboard,
+    close_tree,
 )
 
 
@@ -274,6 +275,12 @@ class DashViewA(DashView):
 
         self.year_selector = DashboardRequestSelector(on_request=self._start_task)
         self.available_years = []
+        self.mgci_dashboard = None
+        self.title = sw.Html(tag="h3", class_="mb-3")
+        self.year_label = sw.Html(
+            tag="div", class_="text-caption text-center", children=["Year"]
+        )
+        self.statistics = sw.Layout(attributes={"id": "render_sub_a"}, class_="d-block")
 
         self.model.observe(self.set_years, f"reporting_years_sub_a")
         self.set_years({"new": self.model.reporting_years_sub_a})
@@ -321,35 +328,25 @@ class DashViewA(DashView):
         self.current_selection = year
         self.year_selector.mark_selected(year)
 
-        # Create title at render time when AOI is available
-        title = sw.Html(
-            tag="h3",
-            class_="mb-3",
-            children=[f"Sub-indicator A Dashboard · {self.model.get_geo_area_name()}"],
-        )
+        title = f"Sub-indicator A Dashboard · {self.model.get_geo_area_name()}"
 
-        previous = getattr(self, "mgci_dashboard", None)
+        previous = self.mgci_dashboard
         previous_belt = previous.selected_belt if previous else "Total"
         self.mgci_dashboard = MgciDashboard(df, self.model)
         if previous_belt in self.mgci_dashboard.selector.buttons:
             self.mgci_dashboard.select_belt(previous_belt)
 
-        statistics = sw.Layout(
-            attributes={"id": "render_sub_a"},
-            class_="d-block",
-            children=[
-                title,
-                sw.Html(
-                    tag="div", class_="text-caption text-center", children=["Year"]
-                ),
-                self.year_selector,
-                self.mgci_dashboard,
-            ],
-        )
+        self.title.children = [title]
+        self.statistics.children = [
+            self.title,
+            self.year_label,
+            self.year_selector,
+            self.mgci_dashboard,
+        ]
 
-        self.results_dialog.set_content([statistics])
-        if previous and previous.chart:
-            previous.chart.close()
+        self.results_dialog.set_content([self.statistics])
+        if previous is not None:
+            close_tree(previous)
         self.results_dialog.open_dialog()
 
 
@@ -434,6 +431,17 @@ class DashViewB(DashView):
                 for label, color in impact_items
             ],
         )
+        self.belt_selector = None
+        self.belt_title = sw.Html(tag="h4", class_="mb-2")
+        self.title = sw.Html(tag="h3", class_="mb-3")
+        self.period_label = sw.Html(
+            tag="div", class_="text-caption text-center", children=["Period"]
+        )
+        self.sankey_layout = sw.Layout(
+            attributes={"id": "render_sub_b"},
+            class_="d-block",
+            style_="width: 100%;",
+        )
 
         self.model.observe(self.set_years, "reporting_years_sub_b")
         self.set_years({"new": self.model.reporting_years_sub_b})
@@ -512,6 +520,7 @@ class DashViewB(DashView):
         class_codes = sorted(
             set(class_labels) | set(chart_data.from_lc) | set(chart_data.to_lc)
         )
+        replaced = [self.belt_selector, self.class_key]
         self.class_key = sw.Flex(
             class_="d-flex flex-wrap justify-center text-caption mb-2",
             children=[
@@ -532,39 +541,28 @@ class DashViewB(DashView):
             (belt for belt in self.nodes_and_links if belt != "Total"), key=int
         )
         self.belt_selector = BeltSelector(["Total", *belts], on_select=self.select_belt)
-        self.belt_title = sw.Html(tag="h4", class_="mb-2")
         self.belt_selector.select(
             getattr(self, "selected_belt", "Total")
             if getattr(self, "selected_belt", "Total") in self.nodes_and_links
             else "Total"
         )
 
-        # Create title at render time when AOI is available
-        title = sw.Html(
-            tag="h3",
-            class_="mb-3",
-            children=[f"Sub-indicator B Dashboard - {self.model.get_geo_area_name()}"],
-        )
+        title = f"Sub-indicator B Dashboard - {self.model.get_geo_area_name()}"
+        self.title.children = [title]
+        self.sankey_layout.children = [
+            self.title,
+            self.period_label,
+            self.period_selector,
+            self.belt_selector,
+            self.view_selector,
+            self.belt_title,
+            self.chart_host,
+        ]
 
-        # Create the sankey chart layout with proper width
-        sankey_layout = sw.Layout(
-            attributes={"id": "render_sub_b"},
-            class_="d-block",
-            style_="width: 100%;",
-            children=[
-                title,
-                sw.Html(
-                    tag="div", class_="text-caption text-center", children=["Period"]
-                ),
-                self.period_selector,
-                self.belt_selector,
-                self.view_selector,
-                self.belt_title,
-                self.chart_host,
-            ],
-        )
-
-        self.results_dialog.set_content([sankey_layout])
+        self.results_dialog.set_content([self.sankey_layout])
+        for widget in replaced:
+            if widget is not None:
+                close_tree(widget)
         self.results_dialog.open_dialog()
 
     def select_belt(self, belt):
@@ -581,6 +579,7 @@ class DashViewB(DashView):
             self._update_chart()
 
     def _update_chart(self):
+        previous = list(self.chart_host.children)
         belt_data = self.nodes_and_links[self.selected_belt]
         values = (
             self.chart_data
@@ -658,7 +657,9 @@ class DashViewB(DashView):
                 ],
             )
             self.chart_host.children = [self.flow_years, chart, self.flow_legend]
-        previous_chart = self.chart
         self.chart = chart
-        if previous_chart is not None:
-            previous_chart.close()
+        # The class key is shown again when the view returns to the matrix;
+        # render_dashboard closes it when it replaces it.
+        keep = (self.matrix_hint, self.impact_legend, self.class_key)
+        for widget in previous:
+            close_tree(widget, keep=keep)
