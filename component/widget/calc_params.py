@@ -73,6 +73,13 @@ class Calculation(sw.List):
 
         self.ready = True
 
+        # The land cover step can list the images before this widget exists, and
+        # the observers above only see later changes.
+        for indicator in self.indicators:
+            self.populate_years(
+                {"new": getattr(self.model, f"ic_items_{indicator}")}, indicator
+            )
+
     def reset_event(self, change, indicator):
         """search within the content and trigger reset method"""
 
