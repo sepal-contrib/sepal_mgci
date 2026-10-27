@@ -279,8 +279,19 @@ class ReclassifyView(sw.Card):
             self.model.ic_items = result
             # self.reclassify_table.set_table({}, {})
 
+        def on_error(error):
+            self.alert.add_msg(
+                cm.error.image_list_failed.format(
+                    self.w_ic_select.v_model, str(error).rstrip(".")
+                ),
+                type_="error",
+            )
+
         self._tasks["set_ic_items"] = gee_interface.create_task(
-            func=gee_interface.get_info_async, key="set_ic_items", on_done=set_ids
+            func=gee_interface.get_info_async,
+            key="set_ic_items",
+            on_done=set_ids,
+            on_error=on_error,
         )
 
     def set_ids(self, change):
