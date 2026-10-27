@@ -253,10 +253,10 @@ def test_b_dashboard_buttons_select_overall_and_belts():
     assert view.sankey_data.links[0]["value"] == 20.0
     assert view.chart is not overall_chart
     assert view.belt_selector.buttons[2].outlined is False
-    assert set(view.period_buttons) == {(2000, 2015), (2015, 2021)}
-    assert view.period_buttons[(2015, 2021)].color == "primary"
-    assert view.period_buttons[(2015, 2021)].outlined is False
-    assert view.period_buttons[(2000, 2015)].outlined is True
+    assert set(view.period_selector.buttons) == {(2000, 2015), (2015, 2021)}
+    assert view.period_selector.buttons[(2015, 2021)].color == "primary"
+    assert view.period_selector.buttons[(2015, 2021)].outlined is False
+    assert view.period_selector.buttons[(2000, 2015)].outlined is True
     view.select_view("matrix")
     assert view.selected_view == "matrix"
     assert view.chart_host.children[2] is view.impact_legend
@@ -350,7 +350,7 @@ def test_dashboard_side_panels_have_compact_actions_and_no_year_select():
     assert view_b.children[0].children[0] is view_b.btn
     assert view_a.available_years[-1] == 2022
     assert view_b.available_periods[-1] == {"report": [2015, 2021]}
-    assert view_a._default_year() == 2022
+    assert view_a._default_selection() == 2022
     assert view_b._default_selection() == {"report": [2015, 2021]}
     assert view_b.results_dialog.max_width == 1180
     assert "min(1180px, calc(90dvh - 16px))" in view_b.results_dialog.children[0].style_
@@ -384,7 +384,7 @@ def test_b_dashboard_period_button_requests_its_own_period(monkeypatch):
     )
     view = DashViewB(model, gee_interface=FakeGee())
 
-    view.period_buttons[(2015, 2021)].click()
+    view.period_selector.buttons[(2015, 2021)].click()
 
     assert requested == [{"report": [2015, 2021]}]
 
@@ -475,15 +475,15 @@ def test_a_dashboard_reuses_year_until_inputs_change(monkeypatch):
         observe=lambda *args: None,
     )
     view = DashViewA(model, gee_interface=FakeGee())
-    view.render_dashboard = lambda result: setattr(view, "current_year", result[0])
+    view.render_dashboard = lambda result: setattr(view, "current_selection", result[0])
 
-    view._start_year_task(2020)
-    view._start_year_task(2022)
-    view._start_year_task(2020)
+    view._start_task(2020)
+    view._start_task(2022)
+    view._start_task(2020)
     assert calls == [2020, 2022]
 
     model.matrix_sub_a = {1: 2}
-    view._start_year_task(2020)
+    view._start_task(2020)
     assert calls == [2020, 2022, 2020]
 
 
@@ -519,12 +519,12 @@ def test_b_dashboard_reuses_period_until_aoi_changes(monkeypatch):
     view.render_dashboard = lambda result: setattr(view, "current_selection", result[0])
     selection = {"report": [2015, 2021]}
 
-    view._start_period_task(selection)
-    view._start_period_task(selection)
+    view._start_task(selection)
+    view._start_task(selection)
     assert calls == [selection]
 
     model.aoi_model.feature_collection = object()
-    view._start_period_task(selection)
+    view._start_task(selection)
     assert calls == [selection, selection]
 
 
@@ -578,7 +578,7 @@ def test_a_dashboard_refetches_when_inputs_change_during_request(monkeypatch):
     view = DashViewA(model, gee_interface=FakeGee())
     view.render_dashboard = shown.append
 
-    view._start_year_task(2020)
+    view._start_task(2020)
 
     assert calls == [{1: 1}, {1: 2}]
     assert len(shown) == 1
