@@ -173,6 +173,7 @@
             "calculate_from_task" : "Download & Export tables",
             "scale" : "Process scale",
             "native_scale" : "Native",
+            "custom_scale" : "Custom",
             "year": "Year",
             "rsa": "Use real surface area",
             "rsa_name"  :"real surface area",
@@ -192,7 +193,7 @@
             "year": "Select a year for the dashboard outputs. It will be used to label the outputs. If not provided, the reclassified band name will be used.",
             "source": "Please insert the name of the institution you belong to.",
             "background" : "Run the process in the background. Use this option when there are computation time errors or when the tool doesn't show promptly results.",
-            "scale" : "\"Native\" uses the resolution of the land cover data. A coarser scale makes the process faster, but less accurate."
+            "scale" : "\"Native\" uses the resolution of the land cover data. A coarser scale makes the process faster, but less accurate. The maximum is 1500 m, because the mountain belts are not accurate at coarser scales."
         },
         "global_" : {
             "title" : "Overall Mountain Green Cover Index",
@@ -210,6 +211,7 @@
     },
     "error" : {
         "no_aoi" : "Please select an area of interest first.",
+        "scale_range" : "Use a value from {} to {} m.",
         "image_list_failed" : "Could not read the images of \"{}\" ({}). Make sure that the image collection exists and that you can access it, then reload the app.",
         "chart_too_large" : "This area is too large to chart on the fly ({}). Select a coarser {} in \"{}\" and try again. For full-resolution statistics, run the calculation in \"{}\": it continues as a background task, and you can create the report in \"{}\"."
     }
