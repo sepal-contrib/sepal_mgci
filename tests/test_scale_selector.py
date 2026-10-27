@@ -1,10 +1,15 @@
+import re
+
 import ee
 import pytest
 
 import component.parameter.module_parameter as param
+from component.message import cm
+from component.scripts.setup_check import SetupError
 from component.tile.dashboard_tile import DashView
 from component.widget.scale_selector import (
     MAX_SCALE,
+    MIN_SCALE,
     NATIVE,
     SCALE_PRESETS,
     ScaleSelector,
@@ -49,14 +54,32 @@ def test_a_custom_value_that_matches_a_preset_selects_it():
     assert _selected(selector) == [300]
 
 
+def scale_range_message():
+    return cm.setup.scale_range.format(
+        min=MIN_SCALE, max=MAX_SCALE, step=cm.app.drawer_item.calculation
+    )
+
+
 @pytest.mark.parametrize("text", ["5", str(MAX_SCALE + 1), "abc"])
-def test_an_invalid_custom_value_is_shown_and_not_used(text):
+def test_an_invalid_custom_value_is_shown_and_refused(text):
     selector = ScaleSelector()
     selector.toggle.v_model = 300
     selector.custom.v_model = text
 
-    assert selector.scale == 300
     assert selector.custom.error_messages
+    assert _selected(selector) == []
+    with pytest.raises(SetupError, match=re.escape(scale_range_message())):
+        selector.checked_scale()
+
+
+def test_a_value_typed_past_the_maximum_does_not_keep_a_partial_value():
+    # Each keystroke is a new value: "2000" passes through "200", which is valid.
+    selector = ScaleSelector()
+    for text in ("2", "20", "200", "2000"):
+        selector.custom.v_model = text
+
+    with pytest.raises(SetupError):
+        selector.checked_scale()
 
 
 def test_a_valid_custom_value_clears_the_error():
@@ -64,8 +87,18 @@ def test_a_valid_custom_value_clears_the_error():
     selector.custom.v_model = str(MAX_SCALE + 1)
     selector.custom.v_model = "800"
 
-    assert selector.scale == 800
+    assert selector.checked_scale() == 800
     assert not selector.custom.error_messages
+
+
+def test_a_preset_clears_an_invalid_custom_value():
+    selector = ScaleSelector()
+    selector.custom.v_model = str(MAX_SCALE + 1)
+    selector.toggle.v_model = 100
+
+    assert selector.checked_scale() == 100
+    assert not selector.custom.error_messages
+    assert _selected(selector) == [100]
 
 
 def test_clicking_the_selected_preset_again_keeps_it():

@@ -1,7 +1,8 @@
 import ipyvuetify as v
-from traitlets import Int
+from traitlets import Bool, Int
 
 from component.message import cm
+from component.scripts.setup_check import SetupError
 
 NATIVE = 0
 """Toggle value of the land cover's own resolution."""
@@ -23,6 +24,9 @@ class ScaleSelector(v.Html):
 
     scale = Int(None, allow_none=True)
     "The selected scale in meters, or None for the land cover's own resolution."
+
+    valid = Bool(True)
+    "False while the custom field holds a value that cannot be used."
 
     def __init__(self, **kwargs):
         super().__init__(tag="div", **kwargs)
@@ -65,8 +69,20 @@ class ScaleSelector(v.Html):
     def _button(value, label):
         return v.Btn(value=value, small=True, depressed=True, class_="text-none", children=[label])
 
+    def checked_scale(self):
+        """The selected scale; raise SetupError while the custom value is not valid."""
+        if not self.valid:
+            raise SetupError(
+                cm.setup.scale_range.format(
+                    min=MIN_SCALE, max=MAX_SCALE, step=cm.app.drawer_item.calculation
+                )
+            )
+        return self.scale
+
     def _button_key(self):
-        """The button of the current scale, or None for a custom scale."""
+        """The button of the current scale, or None for a custom or invalid scale."""
+        if not self.valid:
+            return None
         if self.scale is None:
             return NATIVE
         return self.scale if self.scale in SCALE_PRESETS else None
@@ -77,6 +93,7 @@ class ScaleSelector(v.Html):
             self.toggle.v_model = self._button_key()
             return
         self.scale = None if change["new"] == NATIVE else change["new"]
+        self.valid = True
         self.custom.error_messages = []
         self.custom.v_model = "" if self.scale is None else str(self.scale)
         self._paint()
@@ -91,11 +108,17 @@ class ScaleSelector(v.Html):
             except ValueError:
                 value = None
             if value is None or not MIN_SCALE <= value <= MAX_SCALE:
+                # Keep no scale: a partial value such as "200" on the way to
+                # "2000" must not be used.
+                self.valid = False
                 self.custom.error_messages = [
                     cm.error.scale_range.format(MIN_SCALE, MAX_SCALE)
                 ]
+                self.toggle.v_model = None
+                self._paint()
                 return
             self.scale = value
+        self.valid = True
         self.custom.error_messages = []
         self.toggle.v_model = self._button_key()
         self._paint()

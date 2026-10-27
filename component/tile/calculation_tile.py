@@ -226,6 +226,7 @@ class CalculationView(sw.Card):
         )
 
         check_calculation(self.model)
+        scale = self.w_scale.checked_scale()
 
         which = (
             "both"
@@ -276,8 +277,6 @@ class CalculationView(sw.Card):
             dir_.tasks_dir
             / f"Task_{report_folder.stem}_{now.strftime('%Y-%m-%d-%H%M%S')}_{self.model.session_id}.json"
         )
-
-        scale = self.w_scale.scale
 
         if scale:
             # Add the output scale to the name

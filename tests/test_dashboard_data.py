@@ -124,6 +124,7 @@ def test_b_dashboard_uses_baseline_transitions(monkeypatch):
 def test_dashboard_allows_chart_request_before_full_statistics_run():
     view = DashView.__new__(DashView)
     view.indicator = "sub_a"
+    view.scale_selector = None
     view.model = complete_model(results={})
     view.validate()
 

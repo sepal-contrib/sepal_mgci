@@ -166,8 +166,10 @@ class DashView(sw.Layout):
             ]
 
     def validate(self):
-        """Raise if the setup of this sub-indicator is not complete."""
+        """Raise if the setup of this sub-indicator or the process scale is not valid."""
         check_setup(self.model, self.indicator)
+        if self.scale_selector is not None:
+            self.scale_selector.checked_scale()
 
     def chart_scale(self):
         return self.scale_selector.scale if self.scale_selector is not None else None
