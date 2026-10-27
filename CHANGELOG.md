@@ -1,3 +1,10 @@
+## 1.3.1 (2026-10-27)
+
+### Fix
+
+- use each sub-indicator's own remap matrix in the calculation
+- set the default reporting years when the land cover images load before Indicator settings
+
 ## 1.3.0 (2026-10-26)
 
 ### Feat
