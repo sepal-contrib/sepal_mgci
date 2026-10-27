@@ -125,6 +125,65 @@ def test_perform_calculation_timed_out(
         assert result is None
 
 
+SUB_A_2015 = [{"asset": "lc/2015", "year": 2015}]
+SUB_A_2020 = [{"asset": "lc/2020", "year": 2020}]
+SUB_B_2000_2021 = [
+    {"asset": "lc/2000", "year": 2000},
+    {"asset": "lc/2015", "year": 2015},
+    {"asset": "lc/2021", "year": 2021},
+]
+
+
+@pytest.mark.parametrize("mode", ["on_the_fly", "background", "timeout_fallback"])
+@pytest.mark.parametrize(
+    "years",
+    [
+        [SUB_A_2015, SUB_A_2020, SUB_B_2000_2021],
+        [SUB_A_2015, SUB_A_2020],
+        [SUB_B_2000_2021],
+    ],
+    ids=["both", "sub_a_only", "single_sub_b_period"],
+)
+def test_each_sub_indicator_uses_its_own_remap_matrix(monkeypatch, mode, years):
+    """Sub-indicator A years use matrix A and B periods use matrix B."""
+    import component.scripts.deferred_calculation as deferred_calculation
+
+    used = {}
+
+    def fake_reduce(aoi, matrix, rsa, dem, year, transition_matrix, scale):
+        used[cs.years_from_dict(year)] = matrix
+        return ee.Dictionary({})
+
+    class FakeGee:
+        async def get_info_async(self, process, tag=None):
+            if mode == "timeout_fallback":
+                raise Exception("Computation timed out.")
+            return {}
+
+    monkeypatch.setattr(deferred_calculation, "reduce_regions", fake_reduce)
+    matrix_a, matrix_b = {1: 1}, {1: 2}
+
+    asyncio.run(
+        perform_calculation(
+            gee_interface=FakeGee(),
+            aoi="aoi",
+            rsa=False,
+            dem="dem",
+            remap_matrix_a=matrix_a,
+            remap_matrix_b=matrix_b,
+            transition_matrix="matrix",
+            years=years,
+            background=mode == "background",
+        )
+    )
+
+    expected = {
+        cs.years_from_dict(year): matrix_a if len(year) == 1 else matrix_b
+        for year in years
+    }
+    assert used == expected
+
+
 if __name__ == "__main__":
     # Run pytest with the current file
     pytest.main([__file__, "-s", "-vv"])

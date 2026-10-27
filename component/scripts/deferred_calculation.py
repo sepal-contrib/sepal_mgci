@@ -17,6 +17,15 @@ from component.message import cm
 log = logging.getLogger("MGCI.scripts.deferred_calculation")
 
 
+def _remap_matrix(year: list, remap_matrix_a: dict, remap_matrix_b: dict) -> dict:
+    """Return the remap matrix for one entry of ``years``.
+
+    A sub-indicator A entry holds one image; a sub-indicator B entry holds three
+    (baseline start, baseline end, report).
+    """
+    return remap_matrix_a if len(year) == 1 else remap_matrix_b
+
+
 class Logger:
     state = "info"
 
@@ -115,7 +124,7 @@ async def perform_calculation(
             )
             logger.set_state("info", id_=process_id)
 
-            matrix = remap_matrix_a if len(years) == 1 else remap_matrix_b
+            matrix = _remap_matrix(year, remap_matrix_a, remap_matrix_b)
             process = reduce_regions(
                 aoi, matrix, rsa, dem, year, transition_matrix, scale
             )
@@ -130,7 +139,7 @@ async def perform_calculation(
         process_id = cs.years_from_dict(year)
         logger.set_msg(f"Calculating {process_id}...", id_=process_id)
 
-        matrix = remap_matrix_a if len(years) == 1 else remap_matrix_b
+        matrix = _remap_matrix(year, remap_matrix_a, remap_matrix_b)
 
         # Call reduce_regions which is now synchronous
         process = reduce_regions(aoi, matrix, rsa, dem, year, transition_matrix, scale)
@@ -188,7 +197,7 @@ async def perform_calculation(
         tasks = {}
         for year in years:
             process_id = cs.years_from_dict(year)
-            matrix = remap_matrix_a if len(years) == 1 else remap_matrix_b
+            matrix = _remap_matrix(year, remap_matrix_a, remap_matrix_b)
             process = reduce_regions(
                 aoi, matrix, rsa, dem, year, transition_matrix, scale
             )
@@ -209,7 +218,7 @@ async def perform_calculation(
         tasks = {}
         for year in years:
             process_id = cs.years_from_dict(year)
-            matrix = remap_matrix_a if len(years) == 1 else remap_matrix_b
+            matrix = _remap_matrix(year, remap_matrix_a, remap_matrix_b)
             process = reduce_regions(
                 aoi, matrix, rsa, dem, year, transition_matrix, scale
             )
