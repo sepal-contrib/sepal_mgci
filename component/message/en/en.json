@@ -209,10 +209,22 @@
             }
         }
     },
+    "setup" : {
+        "no_aoi" : "Select an area of interest in \"{step}\".",
+        "no_asset" : "Select a land cover asset in \"{step}\".",
+        "default_asset" : "You answered that you use a custom land cover map, but the default map is selected. Select your map in \"{step}\".",
+        "no_images" : "The images of the land cover asset could not be read. In \"{step}\", select an image collection that exists and that you can access.",
+        "no_matrix" : "Sub-indicator {indicator}: Reclassify the land cover classes in \"{step}\".",
+        "no_transition" : "Sub-indicator B: Load a transition matrix in \"{step}\".",
+        "no_indicator" : "Select at least one sub-indicator in \"{step}\".",
+        "no_years" : "Sub-indicator {indicator}: Select an image and a year for each reporting period in \"{step}\".",
+        "baseline_order" : "Sub-indicator B: The baseline start year must be before its end year. Change it in \"{step}\".",
+        "other_asset" : "Sub-indicator {indicator}: The selected years use images from another land cover asset. Select the years again in \"{step}\".",
+        "unknown_classes" : "The land cover data has classes that are not target classes ({classes}). Reclassify the land cover classes in \"{step}\"."
+    },
     "error" : {
         "no_aoi" : "Please select an area of interest first.",
         "scale_range" : "Use a value from {} to {} m.",
-        "lc_asset_unreadable" : "The land cover asset does not exist or you do not have access to it. Select another image collection.",
         "chart_too_large" : "This area is too large to chart on the fly ({}). Select a coarser {} in \"{}\" and try again. For full-resolution statistics, run the calculation in \"{}\": it continues as a background task, and you can create the report in \"{}\"."
     }
 }

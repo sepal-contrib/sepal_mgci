@@ -127,26 +127,3 @@ def test_target_classes(mgci_model, default_target_classes):
 
     assert mgci_model.lulc_classes_sub_b == custom_target_classes
 
-
-def _vegetation_view(asset_error):
-    from types import SimpleNamespace
-
-    from component.tile.vegetation_tile import VegetationView
-
-    view = VegetationView.__new__(VegetationView)
-    view.w_questionnaire = SimpleNamespace(
-        ans_custom_lulc=True, ans_reclassify_custom_lulc=True, ans_transition_matrix=False
-    )
-    view.model = SimpleNamespace(lc_asset_sub_a="users/someone/land_cover")
-    select = SimpleNamespace(w_ic_select=SimpleNamespace(error=asset_error))
-    view.w_reclass_a = view.w_reclass_b = select
-    return view
-
-
-def test_validate_refuses_a_custom_asset_that_cannot_be_read():
-    with pytest.raises(ValueError):
-        _vegetation_view(asset_error=True).validate()
-
-
-def test_validate_accepts_a_readable_custom_asset():
-    assert _vegetation_view(asset_error=False).validate() is True

@@ -15,7 +15,11 @@ from component.parameter.directory import dir_
 from component.scripts.deferred_calculation import perform_calculation, task_process
 from component.scripts.dashboard_data import results_context
 import component.scripts as cs
-from component.scripts.validation import validate_calc_params, validate_model
+from component.scripts.setup_check import (
+    check_calculation,
+    check_years,
+    selected_indicators,
+)
 import component.widget as cw
 from component.message import cm
 from component.widget.scale_selector import ScaleSelector
@@ -177,13 +181,8 @@ class CalculationView(sw.Card):
     def export_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 
-        validate_calc_params(
-            self.model.calc_a,
-            self.model.calc_b,
-            self.model.sub_a_year,
-            self.model.sub_b_year,
-            None,
-        )
+        for indicator in selected_indicators(self.model):
+            check_years(self.model, indicator)
         which = (
             "both"
             if self.model.calc_a and self.model.calc_b
@@ -226,57 +225,13 @@ class CalculationView(sw.Card):
             else cm.dashboard.label.plan
         )
 
-        # Catch errors from the ui validation
-        sub_b_val_errors = self.calculation.w_content_b.errors
-
-        validate_model(self.model)
-
-        validate_calc_params(
-            self.model.calc_a,
-            self.model.calc_b,
-            self.model.sub_a_year,
-            self.model.sub_b_year,
-            sub_b_val_errors,
-        )
+        check_calculation(self.model)
 
         which = (
             "both"
             if self.model.calc_a and self.model.calc_b
             else "sub_a" if self.model.calc_a else "sub_b"
         )
-
-        if which == "sub_a" or which == "both":
-            # Only check matrix if reclassification is needed
-            # Custom LULC + No reclassify = matrix not needed
-            if self.model.answer_custom_lulc and not self.model.answer_need_reclassify:
-                pass  # Matrix not required
-            else:
-                # Either using default LULC or custom LULC that needs reclassification
-                if not self.model.matrix_sub_a or not any(
-                    self.model.matrix_sub_a.values()
-                ):
-                    raise Exception(
-                        "No remap matrix for subindicator A, please remap your data in the previous step."
-                    )
-
-        if which == "sub_b" or which == "both":
-            # Only check matrix if reclassification is needed
-            # Custom LULC + No reclassify = matrix not needed
-            if self.model.answer_custom_lulc and not self.model.answer_need_reclassify:
-                pass  # Matrix not required
-            else:
-                # Either using default LULC or custom LULC that needs reclassification
-                if not self.model.matrix_sub_b or not any(
-                    self.model.matrix_sub_b.values()
-                ):
-                    raise Exception(
-                        "No remap matrix for subindicator B, please remap your data in the previous step."
-                    )
-
-            if not self.model.transition_matrix:
-                raise Exception(
-                    "No transition matrix for subindicator B, please upload one in the previous step."
-                )
 
         # Calculate regions
         head_msg = sw.Flex(children=[cm.dashboard.alert.computing.format(area_type)])

@@ -9,6 +9,7 @@ from component.scripts.dashboard_data import (
     calculate_b_dashboard,
     freeze_input as _freeze_input,
 )
+from component.scripts.setup_check import SetupError, check_setup
 from component.scripts.plots import (
     get_lc_class_map,
     get_nodes_and_links,
@@ -165,9 +166,8 @@ class DashView(sw.Layout):
             ]
 
     def validate(self):
-        """Raise if the dashboard cannot be calculated yet."""
-        if not self.model.aoi_model.feature_collection:
-            raise ValueError(cm.error.no_aoi)
+        """Raise if the setup of this sub-indicator is not complete."""
+        check_setup(self.model, self.indicator)
 
     def chart_scale(self):
         return self.scale_selector.scale if self.scale_selector is not None else None
@@ -192,6 +192,12 @@ class DashView(sw.Layout):
 
     def _start_task(self, selection):
         if not selection:
+            return
+        # Also before a cached chart: the setup can change after it was made.
+        try:
+            self.validate()
+        except SetupError as error:
+            self.alert.add_msg(str(error), type_="error")
             return
         signature = self._chart_signature()
         cached = self._chart_cache.get(self._cache_key(selection))

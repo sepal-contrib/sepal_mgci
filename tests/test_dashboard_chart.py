@@ -13,6 +13,7 @@ from component.scripts.plots import (
 from component.widget.mgci_dashboard import BeltSelector, MgciDashboard
 from component.tile.dashboard_tile import DashViewA, DashViewB
 from pysepal.solara.theme import ThemeState
+from tests.setup_model import complete_model
 
 
 def test_land_cover_chart_ranks_classes_and_labels_values_directly():
@@ -377,7 +378,7 @@ def test_b_dashboard_period_button_requests_its_own_period(monkeypatch):
     monkeypatch.setattr(
         "component.tile.dashboard_tile.calculate_b_dashboard", fake_calculate
     )
-    model = SimpleNamespace(
+    model = complete_model(
         reporting_years_sub_b=[(2000, 2015), 2021],
         aoi_model=SimpleNamespace(feature_collection="aoi"),
         observe=lambda *args: None,
@@ -410,7 +411,7 @@ def test_a_dashboard_year_button_requests_its_own_year(monkeypatch):
     monkeypatch.setattr(
         "component.tile.dashboard_tile.calculate_a_dashboard", fake_calculate
     )
-    model = SimpleNamespace(
+    model = complete_model(
         reporting_years_sub_a={2020: [], 2022: []},
         aoi_model=SimpleNamespace(feature_collection="aoi"),
         observe=lambda *args: None,
@@ -468,7 +469,7 @@ def test_a_dashboard_reuses_year_until_inputs_change(monkeypatch):
     monkeypatch.setattr(
         "component.tile.dashboard_tile.calculate_a_dashboard", fake_calculate
     )
-    model = SimpleNamespace(
+    model = complete_model(
         reporting_years_sub_a={2020: [{"year": 2020}], 2022: [{"year": 2022}]},
         matrix_sub_a={1: 1},
         aoi_model=SimpleNamespace(feature_collection=object()),
@@ -509,9 +510,8 @@ def test_b_dashboard_reuses_period_until_aoi_changes(monkeypatch):
     monkeypatch.setattr(
         "component.tile.dashboard_tile.calculate_b_dashboard", fake_calculate
     )
-    model = SimpleNamespace(
+    model = complete_model(
         reporting_years_sub_b=[(2000, 2015), 2021],
-        sub_b_year={"baseline": {"base": "old", "report": "reference"}},
         aoi_model=SimpleNamespace(feature_collection=object()),
         observe=lambda *args: None,
     )
@@ -559,7 +559,7 @@ def test_a_dashboard_refetches_when_inputs_change_during_request(monkeypatch):
 
             return FakeTask()
 
-    model = SimpleNamespace(
+    model = complete_model(
         reporting_years_sub_a={2020: [{"year": 2020}]},
         matrix_sub_a={1: 1},
         aoi_model=SimpleNamespace(feature_collection=object()),

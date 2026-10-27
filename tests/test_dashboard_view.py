@@ -9,6 +9,7 @@ import pytest
 
 from component.message import cm
 from component.tile.dashboard_tile import DashViewA, DashViewB
+from tests.setup_model import complete_model
 
 
 class FakeTask:
@@ -73,8 +74,7 @@ def make_case(kind, monkeypatch):
             raise case.error
         return case.data.copy()
 
-    model = SimpleNamespace(
-        aoi_model=SimpleNamespace(feature_collection=object()),
+    model = complete_model(
         observe=lambda *args: None,
         get_geo_area_name=lambda: "Test area",
     )
@@ -97,7 +97,6 @@ def make_case(kind, monkeypatch):
             "component.tile.dashboard_tile.calculate_b_dashboard", fake_calculate
         )
         model.reporting_years_sub_b = [(2000, 2015), 2021]
-        model.sub_b_year = {"baseline": {"base": "a", "report": "b"}, 2: "c"}
         model.matrix_sub_b = {1: 1}
         view_class, case.data, case.prefix = DashViewB, B_DATA, "dashboard_b"
         case.selections = [{"baseline": (2000, 2015)}, {"report": [2015, 2021]}]
@@ -294,11 +293,12 @@ def test_missing_aoi_is_reported_without_calculating(case):
     case.model.aoi_model.feature_collection = None
     request_choice(case, 0)
 
-    case.gee.tasks[0].complete()
-
-    assert case.messages == [(cm.error.no_aoi, "error")]
+    no_aoi = cm.setup.no_aoi.format(step=cm.app.drawer_item.aoi)
+    assert case.messages == [(no_aoi, "error")]
+    assert case.gee.tasks == []
     assert case.calls == []
-    assert_idle(case)
+    assert not case.view.btn.loading
+    assert case.selector.loading_key is None
 
 
 # --- rendering ---------------------------------------------------------------

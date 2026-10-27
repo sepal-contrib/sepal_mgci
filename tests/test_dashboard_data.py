@@ -9,6 +9,7 @@ from component.scripts.dashboard_data import (
     results_context,
 )
 from component.tile.dashboard_tile import DashView
+from tests.setup_model import complete_model
 
 
 def test_a_dashboard_fetches_new_source_years_without_stored_results(monkeypatch):
@@ -122,9 +123,8 @@ def test_b_dashboard_uses_baseline_transitions(monkeypatch):
 
 def test_dashboard_allows_chart_request_before_full_statistics_run():
     view = DashView.__new__(DashView)
-    view.model = SimpleNamespace(
-        aoi_model=SimpleNamespace(feature_collection="aoi"), results={}
-    )
+    view.indicator = "sub_a"
+    view.model = complete_model(results={})
     view.validate()
 
 

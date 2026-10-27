@@ -12,6 +12,7 @@ from pysepal.solara import get_current_gee_interface
 
 from component.parameter.directory import dir_
 from component.message import cm
+from component.scripts.setup_check import check_land_cover
 from component.widget.questionnaire import Questionnaire
 from component.widget.transition_matrix import TransitionMatrix
 import component.parameter.module_parameter as param
@@ -389,13 +390,7 @@ class VegetationView(sw.Layout):
             self.reclassify_tile_a.use_default()
             self.reclassify_tile_b.use_default()
 
-        if not self.model.lc_asset_sub_a:
-            raise ValueError("The land use/land cover map cannot be empty.")
-
-        if custom_lulc and any(
-            reclass.w_ic_select.error for reclass in (self.w_reclass_a, self.w_reclass_b)
-        ):
-            raise ValueError(cm.error.lc_asset_unreadable)
+        check_land_cover(self.model)
 
         return True
 
