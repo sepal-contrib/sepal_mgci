@@ -12,7 +12,7 @@ from pysepal.solara import get_current_gee_interface
 
 from component.parameter.directory import dir_
 from component.message import cm
-from component.scripts.setup_check import check_land_cover
+from component.scripts.setup_check import check_land_cover_step
 from component.widget.questionnaire import Questionnaire
 from component.widget.transition_matrix import TransitionMatrix
 import component.parameter.module_parameter as param
@@ -121,10 +121,13 @@ class VegetationDialog(sw.Dialog):
         """Close dialog."""
 
         try:
-            self.vegetation_view.validate()
+            warnings = self.vegetation_view.validate()
         except Exception as e:
             self.alert.add_msg(str(e), type_="error")
             return
+
+        if warnings:
+            self.alert.add_msg(" ".join(warnings), type_="warning")
 
         super().close_dialog()
 
@@ -374,7 +377,10 @@ class VegetationView(sw.Layout):
                 self.transition_view.show_matrix = True
 
     def validate(self):
-        """Validate the questionnaire"""
+        """Raise if no sub-indicator can use the land cover setup.
+
+        Return a warning for each sub-indicator that cannot use it.
+        """
 
         custom_lulc = self.w_questionnaire.ans_custom_lulc
         need_reclassify = self.w_questionnaire.ans_reclassify_custom_lulc
@@ -390,9 +396,7 @@ class VegetationView(sw.Layout):
             self.reclassify_tile_a.use_default()
             self.reclassify_tile_b.use_default()
 
-        check_land_cover(self.model)
-
-        return True
+        return check_land_cover_step(self.model)
 
 
 class Stepper(sw.Stepper):

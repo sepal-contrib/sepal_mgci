@@ -6,11 +6,13 @@ from component.scripts.setup_check import (
     SetupError,
     check_calculation,
     check_land_cover,
+    check_land_cover_step,
     check_setup,
     check_years,
 )
 from component.scripts.sub_a import get_mgci
-from tests.setup_model import complete_model, image
+from component.message import cm
+from tests.setup_model import complete_model, custom_model, image
 
 CUSTOM = "users/someone/land_cover"
 CUSTOM_IMAGES = [f"{CUSTOM}/2000", f"{CUSTOM}/2015", f"{CUSTOM}/2018"]
@@ -134,3 +136,49 @@ def test_classes_outside_the_target_classes_get_a_clear_error():
     parsed = pd.DataFrame({"belt_class": [1, 1], "lc_class": [1, 210], "sum": [5.0, 3.0]})
     with pytest.raises(ValueError, match="210"):
         get_mgci(parsed)
+
+
+def test_the_land_cover_step_passes_without_warnings_when_both_sub_indicators_can_use_it():
+    assert check_land_cover_step(custom_model()) == []
+
+
+@pytest.mark.parametrize("missing, ready", [("sub_a", "B"), ("sub_b", "A")])
+def test_the_land_cover_step_closes_with_one_reclassified_sub_indicator(missing, ready):
+    model = custom_model(**{f"matrix_{missing}": {}})
+    reason = cm.setup.no_matrix.format(
+        indicator=missing[-1].upper(), step=cm.app.drawer_item.vegetation
+    )
+
+    warnings = check_land_cover_step(model)
+
+    assert warnings == [cm.setup.partial.format(reason=reason, ready=ready)]
+
+
+def test_the_land_cover_step_needs_at_least_one_reclassification():
+    model = custom_model(matrix_sub_a={}, matrix_sub_b={})
+
+    with pytest.raises(SetupError) as error:
+        check_land_cover_step(model)
+
+    assert str(error.value) == cm.setup.no_matrix_any.format(
+        step=cm.app.drawer_item.vegetation
+    )
+
+
+def test_the_land_cover_step_gives_a_shared_problem_once():
+    with pytest.raises(SetupError) as error:
+        check_land_cover_step(custom_model(lc_asset_sub_a=""))
+
+    assert str(error.value) == cm.setup.no_asset.format(
+        step=cm.app.drawer_item.vegetation
+    )
+
+
+def test_the_land_cover_step_gives_each_problem_when_no_sub_indicator_can_use_it():
+    model = custom_model(matrix_sub_a={}, transition_matrix="")
+
+    with pytest.raises(SetupError) as error:
+        check_land_cover_step(model)
+
+    assert "Sub-indicator A" in str(error.value)
+    assert "transition matrix" in str(error.value)

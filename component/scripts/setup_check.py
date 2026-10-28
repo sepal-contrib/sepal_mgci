@@ -14,10 +14,16 @@ INDICATORS = ("sub_a", "sub_b")
 class SetupError(ValueError):
     """The setup is not complete; the message tells the user what to fix."""
 
+    def __init__(self, message, key=None):
+        super().__init__(message)
+        self.key = key
+
 
 def _fail(key, step, **values):
     message = getattr(cm.setup, key)
-    raise SetupError(message.format(step=getattr(cm.app.drawer_item, step), **values))
+    raise SetupError(
+        message.format(step=getattr(cm.app.drawer_item, step), **values), key=key
+    )
 
 
 def _letter(indicator):
@@ -43,6 +49,32 @@ def check_land_cover(model, indicators=INDICATORS):
             _fail("no_matrix", "vegetation", indicator=_letter(indicator))
         if indicator == "sub_b" and not model.transition_matrix:
             _fail("no_transition", "vegetation")
+
+
+def check_land_cover_step(model):
+    """Check "Validate & close" of the land cover step.
+
+    The step is complete when at least one sub-indicator can use it, so that a
+    user can report only one. Return a warning for each sub-indicator that cannot.
+    """
+    errors = {}
+    for indicator in INDICATORS:
+        try:
+            check_land_cover(model, (indicator,))
+        except SetupError as error:
+            errors[indicator] = error
+
+    ready = [_letter(indicator) for indicator in INDICATORS if indicator not in errors]
+    if ready:
+        return [
+            cm.setup.partial.format(reason=str(error), ready=", ".join(ready))
+            for error in errors.values()
+        ]
+
+    if all(error.key == "no_matrix" for error in errors.values()):
+        _fail("no_matrix_any", "vegetation")
+    # A problem that both sub-indicators share is given once.
+    raise SetupError(" ".join(dict.fromkeys(str(error) for error in errors.values())))
 
 
 def _selected_images(indicator, years):

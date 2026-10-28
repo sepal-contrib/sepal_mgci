@@ -215,12 +215,14 @@
         "default_asset" : "You answered that you use a custom land cover map, but the default map is selected. Select your map in \"{step}\".",
         "no_images" : "The images of the land cover asset could not be read. In \"{step}\", select an image collection that exists and that you can access.",
         "no_matrix" : "Sub-indicator {indicator}: Reclassify the land cover classes in \"{step}\".",
+        "no_matrix_any" : "Reclassify the land cover classes for sub-indicator A, B or both in \"{step}\".",
         "no_transition" : "Sub-indicator B: Load a transition matrix in \"{step}\".",
         "no_indicator" : "Select at least one sub-indicator in \"{step}\".",
         "no_years" : "Sub-indicator {indicator}: Select an image and a year for each reporting period in \"{step}\".",
         "baseline_order" : "Sub-indicator B: The baseline start year must be before its end year. Change it in \"{step}\".",
         "other_asset" : "Sub-indicator {indicator}: The selected years use images from another land cover asset. Select the years again in \"{step}\".",
         "unknown_classes" : "The land cover data has classes that are not target classes ({classes}). Reclassify the land cover classes in \"{step}\".",
+        "partial" : "{reason} Until you do this, you can use only sub-indicator {ready}.",
         "scale_range" : "The process scale must be from {min} to {max} m. Change it in \"{step}\"."
     },
     "error" : {
