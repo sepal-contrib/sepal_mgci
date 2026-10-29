@@ -101,24 +101,33 @@ class VegetationDialog(sw.Dialog):
 
         super().__init__(*args, **kwargs)
 
-        self.btn_close = TextBtn("Validate & close", class_="ma-2")
+        # The dialog is persistent, so "Close" must leave it even when the setup is
+        # incomplete. The calculation and the dashboards refuse that setup later.
+        self.btn_close = TextBtn(cm.veg_layer.dialog.close, class_="ma-2")
+        self.btn_validate = TextBtn(cm.veg_layer.dialog.validate, class_="ma-2")
 
         self.vegetation_view = vegetation_view
         self.children = [
             sw.Card(
                 children=[
                     self.vegetation_view,
-                    sw.CardActions(children=[v.Spacer(), self.btn_close]),
+                    sw.CardActions(
+                        children=[v.Spacer(), self.btn_close, self.btn_validate]
+                    ),
                 ]
             )
         ]
 
-        # Validate on close
-        self.btn_close.on_event("click", self.close_dialog)
+        self.btn_close.on_event("click", self.dismiss)
+        self.btn_validate.on_event("click", self.close_dialog)
 
-    @sd.switch("loading", on_widgets=["btn_close"])
+    def dismiss(self, *_):
+        """Close the dialog without a check."""
+        super().close_dialog()
+
+    @sd.switch("loading", on_widgets=["btn_validate"])
     def close_dialog(self, *_):
-        """Close dialog."""
+        """Validate the setup, then close the dialog."""
 
         try:
             warnings = self.vegetation_view.validate()
