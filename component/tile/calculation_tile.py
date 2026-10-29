@@ -3,7 +3,7 @@ import os
 
 import ee
 import ipyvuetify as v
-from traitlets import Bool, Int, directional_link, link
+from traitlets import directional_link
 
 import pysepal.scripts.utils as su
 import pysepal.sepalwidgets as sw
@@ -15,9 +15,14 @@ from component.parameter.directory import dir_
 from component.scripts.deferred_calculation import perform_calculation, task_process
 from component.scripts.dashboard_data import results_context
 import component.scripts as cs
-from component.scripts.validation import validate_calc_params, validate_model
+from component.scripts.setup_check import (
+    check_calculation,
+    check_years,
+    selected_indicators,
+)
 import component.widget as cw
 from component.message import cm
+from component.widget.scale_selector import ScaleSelector
 from component.model.model import MgciModel
 
 __all__ = ["CalculationTile"]
@@ -68,7 +73,7 @@ class CalculationView(sw.Card):
             value=False,
         )
 
-        self.w_scale = Slider()
+        self.w_scale = ScaleSelector()
 
         t_rsa = v.Flex(
             class_="d-flex",
@@ -146,8 +151,9 @@ class CalculationView(sw.Card):
             # description,
             self.calculation,
             advanced_options,
-            buttons,
+            # Above the buttons: a message below them can be out of view.
             self.alert,
+            buttons,
         ]
 
         self.export_results = sd.loading_button(
@@ -176,13 +182,8 @@ class CalculationView(sw.Card):
     def export_results(self, *args):
         """Write the results on a comma separated values file, or an excel file"""
 
-        validate_calc_params(
-            self.model.calc_a,
-            self.model.calc_b,
-            self.model.sub_a_year,
-            self.model.sub_b_year,
-            None,
-        )
+        for indicator in selected_indicators(self.model):
+            check_years(self.model, indicator)
         which = (
             "both"
             if self.model.calc_a and self.model.calc_b
@@ -225,57 +226,14 @@ class CalculationView(sw.Card):
             else cm.dashboard.label.plan
         )
 
-        # Catch errors from the ui validation
-        sub_b_val_errors = self.calculation.w_content_b.errors
-
-        validate_model(self.model)
-
-        validate_calc_params(
-            self.model.calc_a,
-            self.model.calc_b,
-            self.model.sub_a_year,
-            self.model.sub_b_year,
-            sub_b_val_errors,
-        )
+        check_calculation(self.model)
+        scale = self.w_scale.checked_scale()
 
         which = (
             "both"
             if self.model.calc_a and self.model.calc_b
             else "sub_a" if self.model.calc_a else "sub_b"
         )
-
-        if which == "sub_a" or which == "both":
-            # Only check matrix if reclassification is needed
-            # Custom LULC + No reclassify = matrix not needed
-            if self.model.answer_custom_lulc and not self.model.answer_need_reclassify:
-                pass  # Matrix not required
-            else:
-                # Either using default LULC or custom LULC that needs reclassification
-                if not self.model.matrix_sub_a or not any(
-                    self.model.matrix_sub_a.values()
-                ):
-                    raise Exception(
-                        "No remap matrix for subindicator A, please remap your data in the previous step."
-                    )
-
-        if which == "sub_b" or which == "both":
-            # Only check matrix if reclassification is needed
-            # Custom LULC + No reclassify = matrix not needed
-            if self.model.answer_custom_lulc and not self.model.answer_need_reclassify:
-                pass  # Matrix not required
-            else:
-                # Either using default LULC or custom LULC that needs reclassification
-                if not self.model.matrix_sub_b or not any(
-                    self.model.matrix_sub_b.values()
-                ):
-                    raise Exception(
-                        "No remap matrix for subindicator B, please remap your data in the previous step."
-                    )
-
-            if not self.model.transition_matrix:
-                raise Exception(
-                    "No transition matrix for subindicator B, please upload one in the previous step."
-                )
 
         # Calculate regions
         head_msg = sw.Flex(children=[cm.dashboard.alert.computing.format(area_type)])
@@ -321,14 +279,11 @@ class CalculationView(sw.Card):
             / f"Task_{report_folder.stem}_{now.strftime('%Y-%m-%d-%H%M%S')}_{self.model.session_id}.json"
         )
 
-        scale = None  # Default value
-
-        if not self.w_scale.disabled:
+        if scale:
             # Add the output scale to the name
             task_filepath = task_filepath.with_name(
-                task_filepath.stem + f"_scale_{self.w_scale.v_model}"
+                task_filepath.stem + f"_scale_{scale}"
             )
-            scale = self.w_scale.v_model
 
         log.debug(f"Performing calculation with parameters:\n {self.model}")
 
@@ -405,45 +360,3 @@ class CalculationView(sw.Card):
         self.btn.configure(
             task_factory=run_statistics,
         )
-
-
-class Slider(v.Row):
-
-    v_model = Int().tag(sync=True)
-    disabled = Bool().tag(sync=True)
-
-    def __init__(self, *args, **kwargs):
-
-        # self.class_ = "d-flex pa-4"
-        self.no_gutters = True
-        self.align = "center"
-
-        self.slider = v.Slider(
-            label=cm.dashboard.label.scale,
-            class_="mt-5",
-            v_model=90,
-            min=30,
-            max=10000,
-            thumb_label="always",
-            step=10,
-            disabled=True,
-        )
-
-        switch = v.Switch(
-            class_="mt-5",
-            v_model=False,
-            value=True,
-        )
-
-        self.children = [switch, self.slider]
-
-        super().__init__(*args, **kwargs)
-
-        switch.observe(self.toggle_slider, "v_model")
-        link((self.slider, "v_model"), (self, "v_model"))
-        link((self.slider, "disabled"), (self, "disabled"))
-
-    def toggle_slider(self, change):
-        """de/activate slider according with the user's input in switch"""
-
-        self.slider.disabled = not change["new"]

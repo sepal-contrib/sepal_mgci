@@ -1,6 +1,8 @@
 import ipyvuetify as v
 import pysepal.sepalwidgets as sw
 
+from component.message import cm
+
 btn_color = "primary"
 
 
@@ -28,6 +30,16 @@ class TextBtn(sw.Btn):
 
         # to overwrite the default color
         self.color = btn_color
+
+
+class CloseBtn(TextBtn):
+    """Close a window. Drawn like the "Close" of the step windows (MapApp)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(cm.app.step_action.close, *args, **kwargs)
+        # TextBtn takes its label as "text", so the Vuetify "text" style is set here.
+        self.text = True
+        self.outlined = True
 
 
 class DrawMenuBtn(v.Btn):

@@ -9,6 +9,10 @@
             "about" : "About",
             "task" : "Export from task",
             "disclaimer" : "Disclaimer"
+        },
+        "step_action" : {
+            "close" : "Close",
+            "next" : "Next"
         }
     },
     "reclass_view" : {
@@ -45,6 +49,9 @@
     },
     "veg_layer" : {
         "title" : "Selection of land cover dataset",
+        "dialog" : {
+            "validate" : "Validate & close"
+        },
         "description" : "SDG indicator 15.4.2 makes use land cover data to evaluate and monitor land cover change and its estimated impact in terms of ecosystem degradation and recovery.</br>Please indicate below if you wish to use a set of custom land cover maps of your country to compute both indicators. If not, the tool will use the land cover time series produced by the European Space Agency (ESA) under the Climate Change Initiative (CCI) as a default global solution (For further information on this dataset, please check <a href='http://maps.elie.ucl.ac.be/CCI/viewer/index.php' target='_blank'>http://maps.elie.ucl.ac.be/CCI/viewer/index.php</a>)",
         "veg_asst":{
             "label": "Select a Land Cover Map",
@@ -59,9 +66,9 @@
                 "q3":"Do you need to reclassify your custom land use/cover map to UN-SEEA classification?",
                 "sub_a" : "<p><span class='title'>Sub-indicator 15.4.2a</span></p><p>Mountain Green Cover Index (MGCI), measures the extent and changes of green cover in mountain areas. In this sub-indicator, land cover is used to categorize land into green and non-green cover areas. Green cover includes areas covered by both natural vegetation and vegetation resulting from anthropic activity, whereas non-green areas include non-vegetated areas such as bare land, water, permanent ice/snow, urban areas and sparsely vegetated areas.</p>",
                 "sub_b" : "<p><span class='title'>Sub-indicator 15.4.2b</span></p><p>Proportion of degraded mountain land, monitors the extent of degraded mountain land as a result of land cover change. In this sub-indicator, land cover is used to identify areas where changes in the type of land cover (land cover transitions) may indicate a decline or loss of biodiversity, mountain ecosystem functions or services that are considered desirable in a local or national context.</p>",
-                "alert_not_classify" : "You have chose not to reclassify a custom land cover map. The module will assume that the selected land cover map is already classified according to the UN-SEEA classification and it will use the default transition matrix.",
+                "alert_not_classify" : "You have chosen not to reclassify a custom land cover map. The module will assume that the selected land cover map is already classified according to the UN-SEEA classification and it will use the default transition matrix.",
                 "btn" : {
-                    "label" : "Validate settings"
+                    "label" : "Set up land cover"
                 }
         },
         "stepper" : {
@@ -156,6 +163,7 @@
         "match_year" : "Corresponding year"
     },
     "dashboard":{
+        "window_title" : "Sub-indicator {indicator} Dashboard · {area}",
         "title" : "SDG Indicator 15.4.2 Calculation",
         "description" : "To calculate the SDG Indicator 15.4.2 you will have to provide the inputs for each of the subindicators.",
         "report" : {
@@ -172,6 +180,8 @@
             "calculate" : "Calculate indicator",
             "calculate_from_task" : "Download & Export tables",
             "scale" : "Process scale",
+            "native_scale" : "Native",
+            "custom_scale" : "Custom",
             "year": "Year",
             "rsa": "Use real surface area",
             "rsa_name"  :"real surface area",
@@ -191,7 +201,7 @@
             "year": "Select a year for the dashboard outputs. It will be used to label the outputs. If not provided, the reclassified band name will be used.",
             "source": "Please insert the name of the institution you belong to.",
             "background" : "Run the process in the background. Use this option when there are computation time errors or when the tool doesn't show promptly results.",
-            "scale" : "If activated, the process will be executed at the selected scale. It will affect the speed and the accuracy of the results. Otherwise, the process will be executed at the original scale of the input data."
+            "scale" : "\"Native\" uses the resolution of the land cover data. A coarser scale makes the process faster, but less accurate. The maximum is 1500 m, because the mountain belts are not accurate at coarser scales."
         },
         "global_" : {
             "title" : "Overall Mountain Green Cover Index",
@@ -207,9 +217,26 @@
             }
         }
     },
+    "setup" : {
+        "no_aoi" : "Select an area of interest in \"{step}\".",
+        "no_asset" : "Select a land cover asset in \"{step}\".",
+        "default_asset" : "You answered that you use a custom land cover map, but the default map is selected. Select your map in \"{step}\".",
+        "no_images" : "The images of the land cover asset could not be read. In \"{step}\", select an image collection that exists and that you can access.",
+        "no_matrix" : "Sub-indicator {indicator}: Reclassify the land cover classes in \"{step}\".",
+        "no_matrix_any" : "Reclassify the land cover classes for sub-indicator A, B or both in \"{step}\".",
+        "no_transition" : "Sub-indicator B: Load a transition matrix in \"{step}\".",
+        "no_indicator" : "Select at least one sub-indicator in \"{step}\".",
+        "no_years" : "Sub-indicator {indicator}: Select an image and a year for each reporting period in \"{step}\".",
+        "years_incomplete" : "Select an image and a year for each reporting period.",
+        "baseline_order" : "Sub-indicator B: The baseline start year must be before its end year. Change it in \"{step}\".",
+        "other_asset" : "Sub-indicator {indicator}: The selected years use images from another land cover asset. Select the years again in \"{step}\".",
+        "unknown_classes" : "The land cover data has classes that are not target classes ({classes}). Reclassify the land cover classes in \"{step}\".",
+        "partial" : "{reason} Until you do this, you can use only sub-indicator {ready}.",
+        "scale_range" : "The process scale must be from {min} to {max} m. Change it in \"{step}\"."
+    },
     "error" : {
         "no_aoi" : "Please select an area of interest first.",
-        "image_list_failed" : "Could not read the images of \"{}\" ({}). Make sure that the image collection exists and that you can access it, then reload the app.",
+        "scale_range" : "Use {} to {} m.",
         "chart_too_large" : "This area is too large to chart on the fly ({}). Select a coarser {} in \"{}\" and try again. For full-resolution statistics, run the calculation in \"{}\": it continues as a background task, and you can create the report in \"{}\"."
     }
 }

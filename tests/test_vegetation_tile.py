@@ -1,7 +1,12 @@
 import pytest
 import pandas as pd
 
-from component.tile.vegetation_tile import VegetationTile
+import ipyvuetify as v
+import pysepal.sepalwidgets as sw
+
+from component.message import cm
+from component.scripts.setup_check import SetupError
+from component.tile.vegetation_tile import VegetationDialog, VegetationTile
 from component.parameter.directory import dir_
 import component.parameter.module_parameter as param
 from component.scripts.scripts import map_matrix_to_dict
@@ -126,3 +131,35 @@ def test_target_classes(mgci_model, default_target_classes):
     target_dialog.action_btn.fire_event("click", {})
 
     assert mgci_model.lulc_classes_sub_b == custom_target_classes
+
+
+class IncompleteView(v.Html):
+    """A land cover step whose setup no sub-indicator can use."""
+
+    def __init__(self):
+        super().__init__(tag="div")
+
+    def validate(self):
+        raise SetupError(
+            cm.setup.no_matrix_any.format(step=cm.app.drawer_item.vegetation)
+        )
+
+
+def test_the_land_cover_dialog_can_be_closed_with_an_incomplete_setup():
+    dialog = VegetationDialog(IncompleteView(), sw.Alert())
+    dialog.open_dialog()
+
+    dialog.btn_validate.fire_event("click", None)
+    assert dialog.show is True
+
+    dialog.btn_close.fire_event("click", None)
+    assert dialog.show is False
+
+
+def test_the_land_cover_dialog_close_button_looks_like_the_step_window_close():
+    # MapApp draws the "Close" of a step window as an outlined text button.
+    dialog = VegetationDialog(IncompleteView(), sw.Alert())
+
+    assert dialog.btn_close.text is True
+    assert dialog.btn_close.outlined is True
+    assert not dialog.btn_validate.outlined

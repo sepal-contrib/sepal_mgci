@@ -9,6 +9,8 @@ from component.scripts.dashboard_data import (
     calculate_b_dashboard,
     freeze_input as _freeze_input,
 )
+from component.scripts.setup_check import SetupError, check_setup
+from component.widget.buttons import CloseBtn
 from component.scripts.plots import (
     get_lc_class_map,
     get_nodes_and_links,
@@ -46,6 +48,7 @@ class ResultsDialog(BaseDialog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.max_width = 1180
+        self.btn_close = CloseBtn()
 
         self.card_content = sw.CardText(
             class_="flex-grow-1",
@@ -66,9 +69,11 @@ class ResultsDialog(BaseDialog):
                 children=[
                     sw.CardTitle(children=["Results"]),
                     self.card_content,
+                    sw.CardActions(children=[v.Spacer(), self.btn_close]),
                 ],
             ),
         ]
+        self.btn_close.on_event("click", self.close_dialog)
 
 
 class DashView(sw.Layout):
@@ -165,14 +170,13 @@ class DashView(sw.Layout):
             ]
 
     def validate(self):
-        """Raise if the dashboard cannot be calculated yet."""
-        if not self.model.aoi_model.feature_collection:
-            raise ValueError(cm.error.no_aoi)
+        """Raise if the setup of this sub-indicator or the process scale is not valid."""
+        check_setup(self.model, self.indicator)
+        if self.scale_selector is not None:
+            self.scale_selector.checked_scale()
 
     def chart_scale(self):
-        if self.scale_selector is None or self.scale_selector.disabled:
-            return None
-        return self.scale_selector.v_model
+        return self.scale_selector.scale if self.scale_selector is not None else None
 
     def cache_context(self, *inputs):
         aoi = getattr(getattr(self.model, "aoi_model", None), "feature_collection", None)
@@ -194,6 +198,12 @@ class DashView(sw.Layout):
 
     def _start_task(self, selection):
         if not selection:
+            return
+        # Also before a cached chart: the setup can change after it was made.
+        try:
+            self.validate()
+        except SetupError as error:
+            self.alert.add_msg(str(error), type_="error")
             return
         signature = self._chart_signature()
         cached = self._chart_cache.get(self._cache_key(selection))
@@ -328,7 +338,9 @@ class DashViewA(DashView):
         self.current_selection = year
         self.year_selector.mark_selected(year)
 
-        title = f"Sub-indicator A Dashboard · {self.model.get_geo_area_name()}"
+        title = cm.dashboard.window_title.format(
+            indicator="A", area=self.model.get_geo_area_name()
+        )
 
         previous = self.mgci_dashboard
         previous_belt = previous.selected_belt if previous else "Total"
@@ -547,7 +559,9 @@ class DashViewB(DashView):
             else "Total"
         )
 
-        title = f"Sub-indicator B Dashboard - {self.model.get_geo_area_name()}"
+        title = cm.dashboard.window_title.format(
+            indicator="B", area=self.model.get_geo_area_name()
+        )
         self.title.children = [title]
         self.sankey_layout.children = [
             self.title,

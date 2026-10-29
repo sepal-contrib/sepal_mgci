@@ -12,10 +12,11 @@ from pysepal.solara import get_current_gee_interface
 
 from component.parameter.directory import dir_
 from component.message import cm
+from component.scripts.setup_check import check_land_cover_step
 from component.widget.questionnaire import Questionnaire
 from component.widget.transition_matrix import TransitionMatrix
 import component.parameter.module_parameter as param
-from component.widget.buttons import TextBtn
+from component.widget.buttons import CloseBtn, TextBtn
 import logging
 
 log = logging.getLogger("MGCI.vegetation_tile")
@@ -100,30 +101,42 @@ class VegetationDialog(sw.Dialog):
 
         super().__init__(*args, **kwargs)
 
-        self.btn_close = TextBtn("Validate & close", class_="ma-2")
+        # The dialog is persistent, so "Close" must leave it even when the setup is
+        # incomplete. The calculation and the dashboards refuse that setup later.
+        self.btn_close = CloseBtn(class_="ma-2")
+        self.btn_validate = TextBtn(cm.veg_layer.dialog.validate, class_="ma-2")
 
         self.vegetation_view = vegetation_view
         self.children = [
             sw.Card(
                 children=[
                     self.vegetation_view,
-                    sw.CardActions(children=[v.Spacer(), self.btn_close]),
+                    sw.CardActions(
+                        children=[v.Spacer(), self.btn_close, self.btn_validate]
+                    ),
                 ]
             )
         ]
 
-        # Validate on close
-        self.btn_close.on_event("click", self.close_dialog)
+        self.btn_close.on_event("click", self.dismiss)
+        self.btn_validate.on_event("click", self.close_dialog)
 
-    @sd.switch("loading", on_widgets=["btn_close"])
+    def dismiss(self, *_):
+        """Close the dialog without a check."""
+        super().close_dialog()
+
+    @sd.switch("loading", on_widgets=["btn_validate"])
     def close_dialog(self, *_):
-        """Close dialog."""
+        """Validate the setup, then close the dialog."""
 
         try:
-            self.vegetation_view.validate()
+            warnings = self.vegetation_view.validate()
         except Exception as e:
             self.alert.add_msg(str(e), type_="error")
             return
+
+        if warnings:
+            self.alert.add_msg(" ".join(warnings), type_="warning")
 
         super().close_dialog()
 
@@ -373,7 +386,10 @@ class VegetationView(sw.Layout):
                 self.transition_view.show_matrix = True
 
     def validate(self):
-        """Validate the questionnaire"""
+        """Raise if no sub-indicator can use the land cover setup.
+
+        Return a warning for each sub-indicator that cannot use it.
+        """
 
         custom_lulc = self.w_questionnaire.ans_custom_lulc
         need_reclassify = self.w_questionnaire.ans_reclassify_custom_lulc
@@ -389,10 +405,7 @@ class VegetationView(sw.Layout):
             self.reclassify_tile_a.use_default()
             self.reclassify_tile_b.use_default()
 
-        if not self.model.lc_asset_sub_a:
-            raise ValueError("The land use/land cover map cannot be empty.")
-
-        return True
+        return check_land_cover_step(self.model)
 
 
 class Stepper(sw.Stepper):
