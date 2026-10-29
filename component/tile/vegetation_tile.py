@@ -103,7 +103,11 @@ class VegetationDialog(sw.Dialog):
 
         # The dialog is persistent, so "Close" must leave it even when the setup is
         # incomplete. The calculation and the dashboards refuse that setup later.
+        # Same style as the "Close" of the step windows (MapApp). TextBtn takes
+        # its label as "text", so the Vuetify "text" style is set afterwards.
         self.btn_close = TextBtn(cm.veg_layer.dialog.close, class_="ma-2")
+        self.btn_close.text = True
+        self.btn_close.outlined = True
         self.btn_validate = TextBtn(cm.veg_layer.dialog.validate, class_="ma-2")
 
         self.vegetation_view = vegetation_view
