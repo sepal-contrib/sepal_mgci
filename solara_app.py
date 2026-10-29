@@ -7,7 +7,7 @@ from solara.lab.components.theming import theme
 
 import pysepal.sepalwidgets as sw
 from pysepal.scripts.utils import init_ee
-from pysepal.sepalwidgets.vue_app import ThemeToggle, MapApp
+from pysepal.sepalwidgets.vue_app import ThemeToggle
 from pysepal.solara.components.admin import AdminButton
 from pysepal.solara import (
     setup_sessions,
@@ -28,6 +28,7 @@ from component.tile.task_tile import DownloadTaskView
 from component.model import MgciModel
 from component.message import cm
 from component.scripts.steps import add_step_actions
+from component.widget.app_shell import MgciMapApp
 from component.widget.mgci_map import MgciMap
 from component.widget.map import LayerHandler
 from component.parameter.directory import initialize_remote
@@ -166,7 +167,7 @@ def Page():
 
     MapLegend(map_)
 
-    app_element = MapApp.element(
+    app_element = MgciMapApp.element(
         app_title="SDG 15.4.2",
         app_icon="mdi-image-filter-hdr",
         main_map=[map_],

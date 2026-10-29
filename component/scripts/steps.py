@@ -12,11 +12,16 @@ def _opens_window(step):
     return step.get("display") == "dialog" and has_content
 
 
+def opens_panel_only(step):
+    """True when ``step`` has no window and opens a panel, as "4. Results" does."""
+    return not _opens_window(step) and bool(step.get("right_panel_action"))
+
+
 def add_step_actions(steps):
     """Give each step window a "Close" button, and a "Next" button to the next step.
 
-    "Next" is added only when the next step opens a window too: a step that only
-    opens the results panel would show an empty window.
+    "Next" to a step that opens only a panel closes this window first, and
+    ``MgciMapApp`` then opens the panel instead of an empty window.
     """
     close = {"label": cm.app.step_action.close, "close": True, "cancel": True}
     result = []
@@ -25,9 +30,12 @@ def add_step_actions(steps):
         if _opens_window(step):
             actions = [close]
             following = steps[index + 1] if index + 1 < len(steps) else None
-            if following is not None and _opens_window(following):
+            if following is not None:
                 next_step = {"label": cm.app.step_action.next, "next": following["id"]}
-                actions.append(next_step)
+                if _opens_window(following):
+                    actions.append(next_step)
+                elif opens_panel_only(following):
+                    actions.append({**next_step, "close": True})
             step["actions"] = actions
         result.append(step)
     return result
