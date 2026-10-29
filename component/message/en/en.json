@@ -9,6 +9,10 @@
             "about" : "About",
             "task" : "Export from task",
             "disclaimer" : "Disclaimer"
+        },
+        "step_action" : {
+            "close" : "Close",
+            "next" : "Next"
         }
     },
     "reclass_view" : {

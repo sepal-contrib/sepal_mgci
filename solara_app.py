@@ -27,6 +27,7 @@ from component.tile.aoi_tile import AoiView, close_aoi_step
 from component.tile.task_tile import DownloadTaskView
 from component.model import MgciModel
 from component.message import cm
+from component.scripts.steps import add_step_actions
 from component.widget.mgci_map import MgciMap
 from component.widget.map import LayerHandler
 from component.parameter.directory import initialize_remote
@@ -129,6 +130,7 @@ def Page():
             "content": task_tile,
         },
     ]
+    steps_data = add_step_actions(steps_data)
 
     right_panel_config = {
         "title": "Results",

@@ -133,7 +133,6 @@ def test_target_classes(mgci_model, default_target_classes):
     assert mgci_model.lulc_classes_sub_b == custom_target_classes
 
 
-
 class IncompleteView(v.Html):
     """A land cover step whose setup no sub-indicator can use."""
 
@@ -141,7 +140,9 @@ class IncompleteView(v.Html):
         super().__init__(tag="div")
 
     def validate(self):
-        raise SetupError(cm.setup.no_matrix_any.format(step=cm.app.drawer_item.vegetation))
+        raise SetupError(
+            cm.setup.no_matrix_any.format(step=cm.app.drawer_item.vegetation)
+        )
 
 
 def test_the_land_cover_dialog_can_be_closed_with_an_incomplete_setup():
