@@ -338,7 +338,7 @@ def test_b_rerender_updates_the_title_and_keeps_belt_and_view(monkeypatch):
     (layout,) = view.results_dialog.card_content.children
     assert layout.attributes["id"] == "render_sub_b"
     title, caption, periods, belts, views, belt_title, host = layout.children
-    assert title.children == ["Sub-indicator B Dashboard - Other area"]
+    assert title.children == ["Sub-indicator B Dashboard · Other area"]
     assert caption.children == ["Period"]
     assert periods is view.period_selector
     assert belts is view.belt_selector

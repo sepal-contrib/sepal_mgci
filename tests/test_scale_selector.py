@@ -17,7 +17,9 @@ from component.widget.scale_selector import (
 
 
 def _selected(selector):
-    return [key for key, button in selector.buttons.items() if button.color == "secondary"]
+    return [
+        key for key, button in selector.buttons.items() if button.color == "secondary"
+    ]
 
 
 def test_native_scale_is_the_default():
@@ -144,3 +146,8 @@ def test_the_maximum_scale_keeps_belt_classes_whole():
     )
 
     assert {float(value) for value in histogram} <= {1.0, 2.0, 3.0, 4.0}
+
+
+def test_the_custom_field_keeps_room_for_its_error():
+    # An error that appears below the field must not push the buttons under it.
+    assert ScaleSelector().custom.hide_details is False

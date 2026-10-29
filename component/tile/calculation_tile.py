@@ -151,8 +151,9 @@ class CalculationView(sw.Card):
             # description,
             self.calculation,
             advanced_options,
-            buttons,
+            # Above the buttons: a message below them can be out of view.
             self.alert,
+            buttons,
         ]
 
         self.export_results = sd.loading_button(

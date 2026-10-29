@@ -338,7 +338,9 @@ class DashViewA(DashView):
         self.current_selection = year
         self.year_selector.mark_selected(year)
 
-        title = f"Sub-indicator A Dashboard · {self.model.get_geo_area_name()}"
+        title = cm.dashboard.window_title.format(
+            indicator="A", area=self.model.get_geo_area_name()
+        )
 
         previous = self.mgci_dashboard
         previous_belt = previous.selected_belt if previous else "Total"
@@ -557,7 +559,9 @@ class DashViewB(DashView):
             else "Total"
         )
 
-        title = f"Sub-indicator B Dashboard - {self.model.get_geo_area_name()}"
+        title = cm.dashboard.window_title.format(
+            indicator="B", area=self.model.get_geo_area_name()
+        )
         self.title.children = [title]
         self.sankey_layout.children = [
             self.title,

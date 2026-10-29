@@ -230,7 +230,7 @@ class Calculation(sw.List):
         if change.get("new", None) == empty_sub_a_year:
             span.children = [""]
             alert.add_msg(
-                (f"Please provide valid asset and year information for all inputs."),
+                cm.setup.years_incomplete,
                 type_="warning",
             )
             self.model.reporting_years_sub_a = {}
@@ -252,9 +252,7 @@ class Calculation(sw.List):
                 self.model.reporting_years_sub_b = []
                 span.children = [""]
                 alert.add_msg(
-                    (
-                        f"Please provide valid asset and year information for all selected reporting years."
-                    ),
+                    cm.setup.years_incomplete,
                     type_="warning",
                 )
                 return

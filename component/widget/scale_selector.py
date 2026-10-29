@@ -47,12 +47,17 @@ class ScaleSelector(v.Html):
             type="number",
             suffix="m",
             dense=True,
-            hide_details="auto",
+            # Keep room for the error, so that it does not push the content down.
+            hide_details=False,
             placeholder=cm.dashboard.label.custom_scale,
             style_="max-width: 128px;",
         )
         self.children = [
-            v.Html(tag="div", class_="text-subtitle-2 mb-1", children=[cm.dashboard.label.scale]),
+            v.Html(
+                tag="div",
+                class_="text-subtitle-2 mb-1",
+                children=[cm.dashboard.label.scale],
+            ),
             v.Html(
                 tag="div",
                 class_="d-flex align-center",
@@ -67,7 +72,13 @@ class ScaleSelector(v.Html):
 
     @staticmethod
     def _button(value, label):
-        return v.Btn(value=value, small=True, depressed=True, class_="text-none", children=[label])
+        return v.Btn(
+            value=value,
+            small=True,
+            depressed=True,
+            class_="text-none",
+            children=[label],
+        )
 
     def checked_scale(self):
         """The selected scale; raise SetupError while the custom value is not valid."""
