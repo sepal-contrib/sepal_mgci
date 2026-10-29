@@ -4,6 +4,7 @@ from traitlets import Bool, directional_link
 
 import component.scripts.scripts as cs
 from component.message import cm
+from component.widget.buttons import CloseBtn
 from component.widget.custom_list import CustomListA, CustomListB
 import logging
 
@@ -339,7 +340,8 @@ class EditionDialog(sw.Dialog):
         self.custom_list = custom_list
 
         ok_btn = sw.Btn("OK", small=True)
-        close_btn = sw.Btn("CANCEL", small=True)
+        # It closes without undoing: the years are saved while the user edits them.
+        self.btn_close = CloseBtn()
 
         clean_btn = sw.Btn(gliph="mdi-broom", icon=True).set_tooltip(
             "Reset all values", bottom=True
@@ -360,13 +362,13 @@ class EditionDialog(sw.Dialog):
                         ]
                     ),
                     self.custom_list,
-                    v.CardActions(children=[v.Spacer(), close_btn, ok_btn]),
+                    v.CardActions(children=[v.Spacer(), self.btn_close, ok_btn]),
                 ],
             ),
         ]
 
         ok_btn.on_event("click", self.validate_and_close)
-        close_btn.on_event("click", lambda *x: self.close_dialog())
+        self.btn_close.on_event("click", lambda *x: self.close_dialog())
         clean_btn.on_event("click", self.reset_event)
 
     def validate_and_close(self, *args):

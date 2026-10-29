@@ -10,6 +10,7 @@ from component.scripts.dashboard_data import (
     freeze_input as _freeze_input,
 )
 from component.scripts.setup_check import SetupError, check_setup
+from component.widget.buttons import CloseBtn
 from component.scripts.plots import (
     get_lc_class_map,
     get_nodes_and_links,
@@ -47,6 +48,7 @@ class ResultsDialog(BaseDialog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.max_width = 1180
+        self.btn_close = CloseBtn()
 
         self.card_content = sw.CardText(
             class_="flex-grow-1",
@@ -67,9 +69,11 @@ class ResultsDialog(BaseDialog):
                 children=[
                     sw.CardTitle(children=["Results"]),
                     self.card_content,
+                    sw.CardActions(children=[v.Spacer(), self.btn_close]),
                 ],
             ),
         ]
+        self.btn_close.on_event("click", self.close_dialog)
 
 
 class DashView(sw.Layout):
