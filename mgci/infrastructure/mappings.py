@@ -11,14 +11,17 @@ def parse_mapping(content, selected):
     fields = reader.fieldnames or []
     if not {'from_code', 'to_code'} <= set(fields) or len(fields) != len(set(fields)):
         raise ValueError('Mapping needs from_code and to_code columns')
-    mapping = normalize_mapping((row['from_code'], row['to_code']) for row in reader)
+    loaded = dict(normalize_mapping((row['from_code'], row['to_code']) for row in reader))
     if not selected.evidence:
         raise ValueError('Get the source classes before loading a mapping')
-    if set(dict(mapping)) != set(selected.evidence.classes):
-        raise ValueError('Mapping must contain every source class exactly once')
-    if not set(dict(mapping).values()) <= set(selected.targets):
-        raise ValueError('Mapping contains unassigned or unknown target classes')
-    return mapping
+    # As the legacy import: target 0 leaves a class unassigned, rows for classes not
+    # in the table are ignored, and classes not in the file keep their current target.
+    missing = sorted(set(loaded.values()) - set(selected.targets) - {0})
+    if missing:
+        raise ValueError(f"Some of the target land cover classes ({','.join(map(str, missing))}) "
+                         'are not present in the destination land cover classes.')
+    current = dict(selected.mapping)
+    return tuple((code, loaded.get(code, current.get(code, 0))) for code in selected.evidence.classes)
 
 
 def mapping_csv(mapping):

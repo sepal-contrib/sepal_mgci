@@ -1,4 +1,4 @@
-"""Land-cover asset combobox: browse once, validate on the explicit action."""
+"""Land-cover asset combobox: browse once per session, as the legacy AssetSelect."""
 
 import logging
 import reacton.ipyvue as ipyvue
@@ -11,12 +11,10 @@ log = logging.getLogger('MGCI.solara.asset_field')
 
 
 @solara.component
-def LandCoverAssetField(value, on_value, gee_interface, *, disabled=False, error=None):
+def LandCoverAssetField(value, on_value, gee_interface, *, disabled=False, error=None, busy=False, hint=''):
     reload = solara.use_reactive(0)
 
     async def browse():
-        if disabled:
-            return (), None
         try:
             folder = await gee_interface.get_folder_async()
             entries = await gee_interface.get_assets_async(folder)
@@ -25,7 +23,9 @@ def LandCoverAssetField(value, on_value, gee_interface, *, disabled=False, error
             log.warning('Could not list assets', exc_info=True)
             return (), str(exception)
 
-    task = solara.lab.use_task(browse, dependencies=[reload.value, disabled],
+    # Listing walks every folder of the user's assets, so it runs on mount and on the
+    # sync icon only, not on each yes/no answer.
+    task = solara.lab.use_task(browse, dependencies=[reload.value],
                                prefer_threaded=False, raise_error=False)
     items, browse_error = task.value if task.finished and task.value is not None else ((), None)
     message = error or browse_error
@@ -34,6 +34,8 @@ def LandCoverAssetField(value, on_value, gee_interface, *, disabled=False, error
                         on_v_model=lambda selected: on_value(str(selected or '').strip()),
                         items=list(dict.fromkeys((*items, *((value,) if value else ())))),
                         disabled=disabled, clearable=True,
-                        prepend_inner_icon='mdi-sync', loading=task.pending,
+                        # pysepal AssetSelect defaults, kept by the legacy field.
+                        dense=True, class_='my-5 mx-1', hint=hint, persistent_hint=bool(hint),
+                        prepend_inner_icon='mdi-sync', loading=task.pending or busy,
                         error_messages=[message] if message else [])
     ipyvue.use_event(field, 'click:prepend-inner', lambda *_: reload.set(reload.value + 1))

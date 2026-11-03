@@ -18,11 +18,8 @@ def _year(metadata):
     return int(found.group(1)) if found else 0
 
 
-def _sample(images):
-    """Legacy get_unique_classes_by_year: the first, middle and last image hold the classes."""
-    if len(images) < 3:
-        return tuple(dict.fromkeys((images[0], images[-1])))
-    return tuple(dict.fromkeys((images[0], images[len(images) // 2], images[-1])))
+# Histogram requests sent to Earth Engine at the same time.
+PARALLEL_HISTOGRAMS = 8
 
 
 async def _classes(image, aoi, region, gee_interface):
@@ -69,8 +66,14 @@ async def discover(config, indicator, gee_interface) -> DatasetDiscovery:
         classes = {source for source, _ in selected.mapping}
     else:
         classes = set()
-        for values in await asyncio.gather(*(_classes(ee.Image(image.asset), aoi, aoi_bbox(aoi), gee_interface)
-                                             for image in _sample(images))):
+        region, limit = aoi_bbox(aoi), asyncio.Semaphore(PARALLEL_HISTOGRAMS)
+
+        async def bounded(image):
+            async with limit:
+                return await _classes(ee.Image(image.asset), aoi, region, gee_interface)
+
+        # Every image, so a class used only in some years is not missed.
+        for values in await asyncio.gather(*(bounded(image) for image in images)):
             classes.update(class_code(value) for value in values)
     version = sha256(json.dumps(records, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     evidence = DatasetEvidence(selected.asset, tuple(image.asset for image in images),

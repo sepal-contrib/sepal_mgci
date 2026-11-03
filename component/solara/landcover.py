@@ -246,15 +246,12 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
                             with rv.Html(tag='div', class_='d-flex align-center mx-2'):
                                 with rv.Html(tag='div', style_='flex:1;min-width:0;'):
                                     LandCoverAssetField(config.a.asset, select, gee_interface, disabled=not custom,
-                                                        error=resources['a'].error)
+                                                        error=resources['a'].error, busy=inspect.pending,
+                                                        hint='' if config.aoi_identity else msg('validation.aoi_required'))
                                 if reclassify:
                                     TaskButtonComponent(label=cm.reclass.get_classes, on_start=inspect, on_cancel=cancel,
                                                         running=inspect.pending, small=True,
                                                         external_busy=not config.aoi_identity or not config.a.asset)
-                            if inspect.pending and not reclassify:
-                                rv.ProgressLinear(indeterminate=True, height=5)
-                            if not config.aoi_identity:
-                                rv.Html(tag='p', class_='mx-2', children=[msg('validation.aoi_required')])
                     if reclassify:
                         rv.StepperStep(step=2, editable=discovered, children=[cm.veg_layer.stepper.header.reclassify_a])
                         with rv.StepperContent(step=2):

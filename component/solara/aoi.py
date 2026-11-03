@@ -121,7 +121,8 @@ def ReportingAreaPicker(on_value, map_, gee_interface):
                   on_v_model=set_method, dense=True, clearable=True)
         if level >= 0:
             for depth in range(level + 1):
-                rv.Select(label=pmsg(f'aoi_sel.adm.{depth}'), items=available[depth] if len(available) > depth else [],
+                # Autocomplete filters the long country and admin lists while typing.
+                rv.Autocomplete(label=pmsg(f'aoi_sel.adm.{depth}'), items=available[depth] if len(available) > depth else [],
                           v_model=codes.value[depth] if len(codes.value) > depth else None,
                           on_v_model=lambda value, depth=depth: set_code(depth, value),
                           disabled=depth > len(codes.value), loading=options.pending, clearable=True, dense=True)

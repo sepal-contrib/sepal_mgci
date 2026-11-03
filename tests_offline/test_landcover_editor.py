@@ -10,13 +10,19 @@ from test_domain import configuration
 
 
 class MappingFilesTests(unittest.TestCase):
-    def test_roundtrip_and_reject_omitted_unknown_or_duplicate_codes(self):
+    def test_roundtrip_and_reject_unknown_targets_or_duplicate_codes(self):
         selected = configuration().a
         self.assertEqual(parse_mapping(mapping_csv(selected.mapping), selected), selected.mapping)
-        for body in (b'from_code,to_code\n10,1\n', b'from_code,to_code\n10,1\n20,9\n',
-                     b'from_code,to_code\n10,1\n10.0,2\n20,2\n'):
+        for body in (b'from_code,to_code\n10,1\n20,9\n', b'from_code,to_code\n10,1\n10.0,2\n20,2\n'):
             with self.subTest(body=body), self.assertRaises(ValueError):
                 parse_mapping(body, selected)
+
+    def test_import_applies_known_rows_like_the_legacy_loader(self):
+        selected = replace(configuration().a, mapping=((10, 1), (20, 2)))
+        # Extra source classes are ignored, omitted ones keep their target, 0 unassigns.
+        body = b'from_code,to_code\n10,2\n30,1\n'
+        self.assertEqual(parse_mapping(body, selected), ((10, 2), (20, 2)))
+        self.assertEqual(parse_mapping(b'from_code,to_code\n20,0\n', selected), ((10, 1), (20, 0)))
 
 
 class WorkflowTests(unittest.TestCase):

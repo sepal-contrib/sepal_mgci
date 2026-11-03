@@ -42,7 +42,8 @@ class LandCoverAfterAreaTests(unittest.IsolatedAsyncioTestCase):
             button.fire_event('click', None)
             await until(lambda: bool(calls))
             self.assertEqual(calls[0][0].aoi_identity, 'new-aoi')
-            self.assertTrue(any(isinstance(widget, v.ProgressLinear) and widget.indeterminate for widget in widgets(root)))
+            # The class check shows on the asset field's own loading line.
+            self.assertTrue(any(isinstance(widget, v.Combobox) and widget.loading for widget in widgets(root)))
             images = tuple(ImageSelection(f'{state.configuration.a.asset}/{year}', year) for year in (2000, 2015, 2018))
             evidence = DatasetEvidence(state.configuration.a.asset, tuple(image.asset for image in images),
                                        (10, 190), 'new-aoi', 'ready')

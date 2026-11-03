@@ -51,14 +51,14 @@ class DatasetAdapterTests(ApiTestCase):
         self.assertEqual(result.images[0].asset, f'{config.a.asset}/2000')
         self.assertEqual(len(result.evidence.images), 4)
 
-    def test_custom_dataset_samples_first_middle_last_and_normalizes_codes(self):
+    def test_custom_dataset_reads_every_image_and_normalizes_codes(self):
         from mgci.domain.configuration import Workflow
         config = self.config(workflow=Workflow.CUSTOM_RECLASSIFY)
-        interface = self.interface([['10', '190'], ['10'], ['20']])
+        interface = self.interface([['10', '190'], ['10'], ['10'], ['20']])
         result = asyncio.run(discover(config, 'a', interface))
         self.assertEqual(result.evidence.classes, (10, 20, 190))
         self.assertEqual(result.images[-1].year, 2021)
-        self.assertEqual(len(interface.calls), 4)
+        self.assertEqual(len(interface.calls), 5)
         self.assertIn('Image.select', interface.calls[-1])
         self.assertIn('Image.clipToCollection', interface.calls[-1])
         self.assertIn('Collection.map', interface.calls[-1])

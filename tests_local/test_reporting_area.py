@@ -44,7 +44,7 @@ class ReportingAreaTests(unittest.IsolatedAsyncioTestCase):
             method = next(w for w in walk(root) if isinstance(w, v.Select))
             method.v_model = 'ADMIN0'
             await asyncio.sleep(.05)
-            country = [w for w in walk(root) if isinstance(w, v.Select)][1]
+            country = next(w for w in walk(root) if isinstance(w, v.Autocomplete))
             country.v_model = '285'
             await asyncio.sleep(.05)
             button = next(w for w in walk(root) if isinstance(w, v.Btn) and 'Select Area of Interest (AOI)' in w.children)
