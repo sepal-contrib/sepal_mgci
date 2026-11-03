@@ -206,7 +206,7 @@ def test_get_degraded_area(default_transition_matrix):
     pd.testing.assert_frame_equal(degraded, pd.DataFrame(expected_result), rtol=1e-10)
 
 
-def get_pdma_area(default_transition_matrix):
+def test_get_pdma_area(default_transition_matrix):
 
     years = report_years
     parsed_df = cs.parse_sub_b_year(antioquia_default_result, years)
@@ -241,7 +241,10 @@ def get_pdma_area(default_transition_matrix):
         },
     }
 
-    pdma_area[pdma_area.belt_class == "Total"].equals(pd.DataFrame(expected_result))
+    expected = pd.DataFrame(expected_result).set_index("belt_class")
+    pd.testing.assert_frame_equal(
+        pdma_area.set_index("belt_class").loc[expected.index], expected, rtol=1e-10
+    )
 
     # Test with the baseline
     years = baseline_years
@@ -279,7 +282,10 @@ def get_pdma_area(default_transition_matrix):
         },
     }
 
-    pdma_area[pdma_area.belt_class == "Total"].equals(pd.DataFrame(expected_result))
+    expected = pd.DataFrame(expected_result).set_index("belt_class")
+    pd.testing.assert_frame_equal(
+        pdma_area.set_index("belt_class").loc[expected.index], expected, rtol=1e-10
+    )
 
 
 def test_get_pdma_percentage(default_transition_matrix):
@@ -343,7 +349,7 @@ def test_get_pdma_percentage(default_transition_matrix):
         },
     }
 
-    pdma_pt.equals(pd.DataFrame(expected_result))
+    pd.testing.assert_frame_equal(pdma_pt, pd.DataFrame(expected_result), rtol=1e-10)
 
     # And with the baseline
     years = baseline_years
@@ -406,7 +412,7 @@ def test_get_pdma_percentage(default_transition_matrix):
 
     pdma_pt = sub_b.get_pdma_pt(parsed_df, default_transition_matrix)
 
-    pdma_pt.equals(pd.DataFrame(expected_result))
+    pd.testing.assert_frame_equal(pdma_pt, pd.DataFrame(expected_result), rtol=1e-10)
 
 
 if __name__ == "__main__":

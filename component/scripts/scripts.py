@@ -15,7 +15,6 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment
 
 
-from component.parameter.directory import dir_
 import component.parameter.module_parameter as param
 import component.scripts as cs
 from component.scripts import mountain_area as mntn
@@ -97,6 +96,8 @@ def get_report_folder(aoi_name: str, sepal_client=None) -> Path:
     """
 
     # Create a folder to store multiple year reports from the same area
+    from component.parameter.directory import dir_
+
     report_folder = dir_.reports_dir / f"SDG1542_{aoi_name}"
 
     return create_folder(report_folder, sepal_client=sepal_client)

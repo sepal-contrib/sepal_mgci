@@ -1,3 +1,1 @@
-from pysepal.scripts.utils import init_ee
-
-init_ee()
+"""Application components; authentication belongs to the runtime entrypoint."""

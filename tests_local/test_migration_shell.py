@@ -1,0 +1,59 @@
+import asyncio
+from unittest.mock import patch
+import unittest
+
+import ipyvuetify as v
+import solara
+from pysepal.mapping import SepalMap
+
+from component.solara.app import MgciApp
+from component.solara.landcover import LandCoverPanel
+from component.solara.session import use_session_state
+from mgci.application.state import ResourceState
+from mgci.infrastructure.defaults import initial_configuration
+from pysepal.solara.notifications import NotificationProvider
+from test_solara_components import walk
+
+
+class MigrationShellTests(unittest.IsolatedAsyncioTestCase):
+    async def test_shell_renders_without_authentication_and_keeps_session_on_rerender(self):
+        class Interface:
+            async def get_folder_async(self):
+                return 'projects/test/assets'
+        map_ = SepalMap(gee=False, dc=False)
+        @solara.component
+        def AreaBoundary(*args):
+            solara.Text('AOI boundary')
+        trigger = solara.reactive(0)
+        @solara.component
+        def Harness():
+            trigger.value
+            MgciApp(Interface(), None, object())
+        with patch('component.solara.app.SepalMap', return_value=map_), patch('component.solara.app.AreaPanel', AreaBoundary):
+            _, context = solara.render(Harness(), handle_error=False)
+            try:
+                trigger.set(1)
+                await asyncio.sleep(.05)
+            finally:
+                context.close()
+
+    async def test_incomplete_landcover_dialog_can_close_without_becoming_ready(self):
+        seen = []
+        resources = {key: ResourceState() for key in ('a', 'b', 'transition')}
+        @solara.component
+        def Harness():
+            state, publish = use_session_state(initial_configuration(2026))
+            seen.append(state)
+            NotificationProvider()
+            LandCoverPanel(state, publish, resources, object(), None, None)
+        root, context = solara.render(Harness(), handle_error=False)
+        self.addCleanup(context.close)
+        button = next(w for w in walk(root) if isinstance(w, v.Btn) and 'Set up land cover' in w.children)
+        button.fire_event('click', None)
+        dialog = next(w for w in walk(root) if isinstance(w, v.Dialog))
+        self.assertTrue(dialog.v_model)
+        close = next(w for w in walk(root) if isinstance(w, v.Btn) and 'Close' in w.children)
+        close.fire_event('click', None)
+        self.assertFalse(dialog.v_model)
+        from mgci.domain.validation import readiness
+        self.assertFalse(readiness(seen[-1].configuration, 'a', 'statistics').ready)

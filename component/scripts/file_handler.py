@@ -5,6 +5,7 @@ import ast
 import io
 import pandas as pd
 from pysepal.solara import get_current_sepal_client
+from mgci.domain.configuration import TransitionTable
 from pathlib import Path
 from typing import Optional, Any
 import io
@@ -12,6 +13,11 @@ import pandas as pd
 
 
 def read_file(file_path: str, **pd_args) -> Any:
+
+    if isinstance(file_path, TransitionTable):
+        table = pd.DataFrame(file_path.rows, columns=['from_code', 'to_code', 'impact_code'])
+        table['transition'] = table.from_code * 100 + table.to_code
+        return table
 
     if not file_path or str(file_path).strip() in ["", "."]:
         raise ValueError("File path cannot be empty")

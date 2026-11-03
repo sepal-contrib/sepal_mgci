@@ -166,6 +166,7 @@ def reduce_regions(
     scale: Optional[int] = None,
     method: str = "clip",
     bands: Optional[List[str]] = None,
+    biobelt_asset: str = param.BIOBELT,
 ) -> ee.Dictionary:
     """Reduce land use/land cover image to bioclimatic belts regions using planimetric
     or real surface area
@@ -195,7 +196,7 @@ def reduce_regions(
     # Define two ways of calculation, with only one date and with both
     ee_lc_start = ee.Image(lc_years[0]).select(0)
 
-    clip_biobelt = ee.Image(param.BIOBELT)
+    clip_biobelt = ee.Image(biobelt_asset)
 
     if rsa:
         # The RSA image is scale-invariant, so the land cover working

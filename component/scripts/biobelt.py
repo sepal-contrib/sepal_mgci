@@ -15,10 +15,10 @@ def unnest(group):
     return ee.List([[ee.String(d_group.get("group"))], [d_group.get("sum")]]).flatten()
 
 
-async def get_belt_area(aoi, biobelt) -> tuple:
+async def get_belt_area(aoi, biobelt, gee_interface=None) -> tuple:
     """returns legend-dict for the belt areas over the AOI feature collection."""
 
-    gee_interface = get_current_gee_interface()
+    gee_interface = gee_interface or get_current_gee_interface()
 
     try:
         area = await gee_interface.get_info_async(

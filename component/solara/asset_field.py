@@ -1,0 +1,35 @@
+"""Land-cover asset combobox: browse once, validate on the explicit action."""
+
+import reacton.ipyvue as ipyvue
+import reacton.ipyvuetify as rv
+import solara
+
+from component.message import cm
+
+
+@solara.component
+def LandCoverAssetField(value, on_value, gee_interface, *, disabled=False, error=None):
+    reload = solara.use_reactive(0)
+
+    async def browse():
+        if disabled:
+            return (), None
+        try:
+            folder = await gee_interface.get_folder_async()
+            entries = await gee_interface.get_assets_async(folder)
+            return tuple(sorted(item['id'] for item in entries if item.get('type') == 'IMAGE_COLLECTION')), None
+        except Exception as exception:
+            return (), str(exception)
+
+    task = solara.lab.use_task(browse, dependencies=[reload.value, disabled],
+                               prefer_threaded=False, raise_error=False)
+    items, browse_error = task.value if task.finished and task.value is not None else ((), None)
+    message = error or browse_error
+    label = cm.reclass_view.ic_default_label if disabled else cm.reclass_view.ic_custom_label
+    field = rv.Combobox(label=label, v_model=value,
+                        on_v_model=lambda selected: on_value(str(selected or '').strip()),
+                        items=list(dict.fromkeys((*items, *((value,) if value else ())))),
+                        disabled=disabled, clearable=True,
+                        prepend_inner_icon='mdi-sync', loading=task.pending,
+                        error_messages=[message] if message else [])
+    ipyvue.use_event(field, 'click:prepend-inner', lambda *_: reload.set(reload.value + 1))

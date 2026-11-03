@@ -79,6 +79,9 @@ def test(session):
     session.install("-r", "requirements.txt")
     session.install("pytest-cov")
     session.run("pytest", "--color=yes", "--cov", "--cov-report=xml", *test_files)
+    if not session.posargs:
+        session.run("python", "-S", "-m", "unittest", "discover", "-s", "tests_offline")
+        session.run("python", "tests_local/run.py")
 
 
 @nox.session(reuse_venv=True)

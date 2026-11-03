@@ -1,0 +1,27 @@
+"""Workspace boundary for installed pysepal versions without a filesystem facade."""
+
+import asyncio
+
+
+class ClientWorkspace:
+    def __init__(self, client):
+        if client is None:
+            raise ValueError('An authenticated SEPAL workspace is required for user files')
+        self.client = client
+
+    async def read_bytes_async(self, path: str) -> bytes:
+        return await asyncio.to_thread(self.client.files.read_bytes, path)
+
+    async def write_async(self, path: str, content, *, overwrite=False):
+        return await asyncio.to_thread(self.client.files.write, path, content, overwrite=overwrite)
+
+    async def mkdir_async(self, path: str, *, parents=False):
+        return await asyncio.to_thread(self.client.files.mkdir, path, parents=parents)
+
+
+def current_workspace():
+    from pysepal import solara as runtime
+
+    if hasattr(runtime, 'get_current_filesystem'):
+        return runtime.get_current_filesystem()
+    return ClientWorkspace(runtime.get_current_sepal_client())
