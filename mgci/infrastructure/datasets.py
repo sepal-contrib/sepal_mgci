@@ -1,12 +1,13 @@
-"""Capture the full image/class scope on explicit dataset inspection."""
+"""List the images of a land-cover dataset and the classes it uses over the area."""
 
+import asyncio
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
 import re
 
 from mgci.domain.codes import class_code
-from mgci.domain.configuration import DatasetDiscovery, DatasetEvidence, ImageSelection
+from mgci.domain.configuration import DatasetDiscovery, DatasetEvidence, ImageSelection, Workflow
 
 
 def _year(metadata):
@@ -15,6 +16,26 @@ def _year(metadata):
         return datetime.fromtimestamp(timestamp / 1000, timezone.utc).year
     found = re.search(r'(?:^|[/_])((?:19|20)\d{2})(?:$|[_-])', metadata['id'])
     return int(found.group(1)) if found else 0
+
+
+def _sample(images):
+    """Legacy get_unique_classes_by_year: the first, middle and last image hold the classes."""
+    if len(images) < 3:
+        return tuple(dict.fromkeys((images[0], images[-1])))
+    return tuple(dict.fromkeys((images[0], images[len(images) // 2], images[-1])))
+
+
+async def _classes(image, aoi, region, gee_interface):
+    import ee
+
+    image = image.select(0)
+    nominal = image.projection().nominalScale()
+    # Legacy scale: double a nominal scale under 30 m, and never go below 30 m.
+    scale = ee.Number(ee.Algorithms.If(nominal.lt(30), nominal.multiply(2), nominal)).max(30)
+    histogram = image.clipToCollection(aoi).reduceRegion(ee.Reducer.frequencyHistogram(), geometry=region,
+                                                         scale=scale, maxPixels=1e13)
+    keys = ee.Dictionary(histogram.get(image.bandNames().get(0), ee.Dictionary({}))).keys()
+    return await gee_interface.get_info_async(keys)
 
 
 async def discover(config, indicator, gee_interface) -> DatasetDiscovery:
@@ -42,13 +63,15 @@ async def discover(config, indicator, gee_interface) -> DatasetDiscovery:
     if not records or len({record['id'] for record in records}) != len(records):
         raise ValueError('Dataset contains no images or duplicate image identifiers')
     images = tuple(sorted((ImageSelection(row['id'], _year(row)) for row in records), key=lambda image: (image.year, image.asset)))
-    classes = set()
-    for selection in images:
-        image = ee.Image(selection.asset).select(0)
-        histogram = image.clipToCollection(aoi).reduceRegion(ee.Reducer.frequencyHistogram(), geometry=aoi_bbox(aoi),
-                                       scale=image.projection().nominalScale(), maxPixels=1e13)
-        keys = ee.Dictionary(histogram.get(image.bandNames().get(0), ee.Dictionary({}))).keys()
-        classes.update(class_code(value) for value in await gee_interface.get_info_async(keys))
+    if config.workflow != Workflow.CUSTOM_RECLASSIFY and config.workflow != Workflow.CUSTOM_CANONICAL \
+            and selected.asset == config.default_asset:
+        # Legacy default flow: the packaged mapping lists the classes, so no histograms run.
+        classes = {source for source, _ in selected.mapping}
+    else:
+        classes = set()
+        for values in await asyncio.gather(*(_classes(ee.Image(image.asset), aoi, aoi_bbox(aoi), gee_interface)
+                                             for image in _sample(images))):
+            classes.update(class_code(value) for value in values)
     version = sha256(json.dumps(records, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     evidence = DatasetEvidence(selected.asset, tuple(image.asset for image in images),
                                tuple(sorted(classes)), config.aoi_identity, 'ready', version)

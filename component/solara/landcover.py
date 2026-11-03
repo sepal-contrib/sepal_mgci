@@ -183,6 +183,12 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
         alert.set(None)
         publish()
 
+    def close():
+        # Closing stops a class check; the default flow starts it again on the next open.
+        if inspect.pending:
+            cancel()
+        opened.set(False)
+
     def open_dialog():
         opened.set(True)
         if not discovered and not reclassify and config.aoi_identity:
@@ -279,7 +285,7 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
                                                  on_reset=lambda: edit_transition(defaults.transition))
             with rv.CardActions():
                 rv.Spacer()
-                CloseAction(lambda: opened.set(False))
+                CloseAction(close)
                 solara.Button(cm.veg_layer.dialog.validate, on_click=validate, small=True, color='primary', classes=['ma-2'])
 
     SetupAlert(alert.value, lambda: alert.set(None))

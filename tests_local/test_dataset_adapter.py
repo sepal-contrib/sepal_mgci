@@ -22,9 +22,7 @@ class DefaultTests(unittest.TestCase):
 
 
 class DatasetAdapterTests(ApiTestCase):
-    def test_discovery_inspects_every_image_and_normalizes_source_codes(self):
-        identity, graph = capture_aoi(ee.FeatureCollection([ee.Feature(ee.Geometry.Point([0, 0]))]))
-        config = replace(initial_configuration(2026), aoi_identity=identity, aoi_graph=graph)
+    def interface(self, histograms):
         class Interface:
             def __init__(self):
                 self.calls = []
@@ -37,14 +35,30 @@ class DatasetAdapterTests(ApiTestCase):
                             {'id': 'lc/2015', 'time': 1420070400000},
                             {'id': 'lc/2018', 'time': 1514764800000},
                             {'id': 'lc/2021', 'time': 1609459200000}]
-                return ['10', '190'] if len(self.calls) < 5 else ['20']
-        interface = Interface()
+                return histograms.pop(0)
+        return Interface()
+
+    def config(self, **values):
+        identity, graph = capture_aoi(ee.FeatureCollection([ee.Feature(ee.Geometry.Point([0, 0]))]))
+        return replace(initial_configuration(2026), aoi_identity=identity, aoi_graph=graph, **values)
+
+    def test_default_dataset_takes_classes_from_packaged_mapping_without_histograms(self):
+        config = self.config()
+        interface = self.interface([])
         result = asyncio.run(discover(config, 'a', interface))
+        self.assertEqual(len(interface.calls), 1)
+        self.assertEqual(result.evidence.classes, tuple(sorted(source for source, _ in config.a.mapping)))
         self.assertEqual(result.images[0].asset, f'{config.a.asset}/2000')
-        self.assertEqual(result.evidence.classes, (10, 20, 190))
         self.assertEqual(len(result.evidence.images), 4)
+
+    def test_custom_dataset_samples_first_middle_last_and_normalizes_codes(self):
+        from mgci.domain.configuration import Workflow
+        config = self.config(workflow=Workflow.CUSTOM_RECLASSIFY)
+        interface = self.interface([['10', '190'], ['10'], ['20']])
+        result = asyncio.run(discover(config, 'a', interface))
+        self.assertEqual(result.evidence.classes, (10, 20, 190))
         self.assertEqual(result.images[-1].year, 2021)
-        self.assertEqual(len(interface.calls), 5)
+        self.assertEqual(len(interface.calls), 4)
         self.assertIn('Image.select', interface.calls[-1])
         self.assertIn('Image.clipToCollection', interface.calls[-1])
         self.assertIn('Collection.map', interface.calls[-1])
