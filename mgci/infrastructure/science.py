@@ -1,11 +1,15 @@
 """Adapt immutable requests to the existing Earth Engine scientific kernels."""
 
+import logging
 from hashlib import sha256
+import time
 import json
 
 from mgci.application.state import Request
 from mgci.domain.validation import readiness
 from mgci.domain.reporting import reporting_breakpoints
+
+log = logging.getLogger('MGCI.infrastructure.science')
 
 
 def capture_aoi(feature_collection) -> tuple[str, str]:
@@ -53,8 +57,14 @@ def build_statistics(request: Request) -> dict:
 
 async def calculate(request: Request, gee_interface) -> dict:
     graphs = build_statistics(request)
+    config = request.configuration
+    log.info('Calculating sub-indicator %s for %s: groups %s, scale %s, rsa %s', request.slot[0].upper(),
+             config.aoi_name or config.aoi_label, ', '.join(graphs), config.scale.metres or 'native', config.rsa)
+    started = time.monotonic()
     # Use the session interface on its owning loop; inputs are already captured.
-    return {key: await gee_interface.get_info_async(graph) for key, graph in graphs.items()}
+    results = {key: await gee_interface.get_info_async(graph) for key, graph in graphs.items()}
+    log.info('Sub-indicator %s calculated in %.1f s', request.slot[0].upper(), time.monotonic() - started)
+    return results
 
 
 def build_layer(request: Request):

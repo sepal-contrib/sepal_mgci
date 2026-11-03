@@ -43,6 +43,8 @@ formatter = "colored_ee"
 stream    = "ext://sys.stdout"
 
 # ─── LOGGERS ────────────────────────────────────────────────
+# MGCI.* (legacy MGCI.scripts.*, new MGCI.application.*, MGCI.infrastructure.*,
+# MGCI.solara.*) inherit the MGCI level and handler.
 
 [loggers.MGCI]
 level     = "DEBUG"
@@ -50,6 +52,11 @@ handlers  = ["mgci_console"]
 propagate = false
 
 [loggers.eeclient]
+level     = "DEBUG"
+handlers  = ["ee_console"]
+propagate = false
+
+[loggers.pysepal]
 level     = "DEBUG"
 handlers  = ["ee_console"]
 propagate = false

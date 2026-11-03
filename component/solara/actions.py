@@ -1,5 +1,6 @@
 """One manual async execution path for statistics, charts, and map preparation."""
 
+import logging
 import solara
 from pysepal.solara.components.task_button import TaskButtonComponent
 from pysepal.solara.notifications import use_notifications
@@ -7,6 +8,8 @@ from pysepal.solara.notifications import use_notifications
 from mgci.domain.validation import readiness
 from .messages import msg
 from .setup import error_text
+
+log = logging.getLogger('MGCI.solara.actions')
 
 
 @solara.component
@@ -25,6 +28,7 @@ def RequestAction(state, publish, indicator, purpose, run, *, label, selection='
             publish()
             return request, await run(request), None, revision
         except Exception as error:
+            log.exception('%s %s failed', indicator.upper(), purpose)
             return request, None, error_text(error), revision
 
     def receive():

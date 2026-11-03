@@ -1,10 +1,13 @@
 """Prepare map data without mutating a map; export only accepted layer graphs."""
 
+import logging
 import json
 
 from .defaults import classification_labels
 from .reports import plain_data
 from .science import build_layer
+
+log = logging.getLogger('MGCI.infrastructure.layers')
 
 
 def layer_choices(config):
@@ -27,6 +30,7 @@ async def _prepare_image(request, gee_interface, display) -> dict:
     import ee
     from component.parameter.module_parameter import BIOBELT_LEGEND
 
+    log.debug('Preparing %s %s', 'layer' if display else 'export', '/'.join(filter(None, request.slot)))
     image = build_layer(request)
     aoi = ee.FeatureCollection(ee.deserializer.decode(json.loads(request.configuration.aoi_graph)))
     land_cover = request.slot[0] == 'a' or request.slot[2].endswith('|land_cover')

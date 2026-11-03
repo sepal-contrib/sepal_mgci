@@ -1,11 +1,14 @@
 """Background submission and retrieval using captured inputs and injected sessions."""
 
+import logging
 import asyncio
 import json
 from types import SimpleNamespace
 
 from .science import build_statistics
 from .task_records import decode_request, encode_request, parse_task_csv, validate_results
+
+log = logging.getLogger('MGCI.infrastructure.tasks')
 
 TASK_FOLDER = 'module_results/sdg_indicators/15.4.2/tasks'
 
@@ -26,6 +29,7 @@ async def submit(request, gee_interface, workspace):
             selectors=['process_id', 'sub_a', 'baseline_degradation', 'final_degradation', 'baseline_transition', 'report_transition'],
         )
         record['task'] = {'id': task.id, 'name': name}
+        log.info('Submitted Earth Engine task %s (%s), record %s', task.id, name, path)
         try:
             await workspace.write_async(path, json.dumps(record), overwrite=True)
         except Exception as error:

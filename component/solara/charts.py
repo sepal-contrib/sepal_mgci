@@ -1,5 +1,6 @@
 """Captured-result charts retaining the existing ipecharts renderers."""
 
+import logging
 from types import SimpleNamespace
 
 import reacton.ipyvuetify as rv
@@ -12,6 +13,8 @@ from mgci.infrastructure.science import calculate
 from .actions import RequestAction
 from .messages import msg
 from component.message import cm
+
+log = logging.getLogger('MGCI.solara.charts')
 
 
 @solara.component
@@ -120,6 +123,7 @@ def ChartPanel(state, publish, indicator, gee_interface, prepare, before_use=Non
             state.export_artifact(captured.request)
             opened.set(True)
         except Exception as error:
+            log.exception('Opening the dashboard failed')
             notifications.error(str(error))
     selection = solara.use_reactive('')
     artifact = state.current(indicator, 'chart') or state.current(indicator, 'statistics')

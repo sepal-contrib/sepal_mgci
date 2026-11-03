@@ -1,8 +1,11 @@
 """Explicit setup operations with injected external work."""
 
+import logging
 from dataclasses import replace
 
 from .state import ResourceState, SessionState
+
+log = logging.getLogger('MGCI.application.operations')
 
 
 async def select_transition(state: SessionState, resource: ResourceState, load, path: str, *, refresh=False) -> bool:
@@ -16,6 +19,7 @@ async def select_transition(state: SessionState, resource: ResourceState, load, 
     try:
         table = await load(path)
     except Exception as error:
+        log.warning('Could not read transition file %s', path, exc_info=True)
         if resource.fail(token, str(error)) and state.revision('b', 'statistics') == revision:
             state.edit(replace(state.configuration, transition=None))
         return False
@@ -38,6 +42,7 @@ async def refresh_transition(state: SessionState, load) -> bool:
     if table is None or not table.explicitly_selected:
         return table is not None
     revision = state.revision('b', 'statistics')
+    log.debug('Refreshing transition file %s', table.source)
     fresh = await load(table.source)
     if state.revision('b', 'statistics') != revision or state.configuration.transition != table:
         raise ValueError('Settings changed while preparing the calculation. Please try again.')

@@ -1,5 +1,6 @@
 """Explicit background submission and historical result retrieval."""
 
+import logging
 import asyncio
 from pathlib import PurePosixPath
 from uuid import uuid4
@@ -17,6 +18,8 @@ from mgci.infrastructure.transitions import load_transition
 from mgci.infrastructure.tasks import submit, retrieve, TASK_FOLDER
 from .messages import msg
 
+log = logging.getLogger('MGCI.solara.tasks')
+
 
 @solara.component
 def BackgroundAction(state, publish, indicator, gee_interface, workspace, prepare):
@@ -32,6 +35,7 @@ def BackgroundAction(state, publish, indicator, gee_interface, workspace, prepar
             record, path = await submit(request, gee_interface, workspace)
             return path, None
         except Exception as error:
+            log.exception('Background calculation of %s failed', indicator.upper())
             if request:
                 state.fail(request, str(error))
             return None, str(error)
@@ -83,6 +87,7 @@ def TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_c
             if revision != generation.current:
                 return None
             await workspace.write_async(output, content)
+            log.info('Task report saved to %s', output)
             if revision != generation.current:
                 return None
             if request is not None:
@@ -91,6 +96,7 @@ def TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_c
             result = (output, msg('tasks.historical_saved', path=output), payload, content) if request is None else (output, None, None, content)
             return revision, result
         except Exception as error:
+            log.exception('Task retrieval failed')
             return revision, (None, str(error), None, None)
 
     def receive():

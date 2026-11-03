@@ -1,9 +1,12 @@
 """Explicit dataset selection and inspection, independent of UI and Earth Engine."""
 
+import logging
 from dataclasses import replace
 
 from mgci.domain.configuration import DatasetDiscovery
 from .state import ResourceState, SessionState
+
+log = logging.getLogger('MGCI.application.discovery')
 
 
 def select_asset(state: SessionState, indicator: str, asset: str):
@@ -30,6 +33,7 @@ async def inspect_dataset(state: SessionState, resource: ResourceState, load, in
                 or tuple(image.asset for image in result.images) != evidence.images):
             raise ValueError('No complete class evidence for the selected dataset and area')
     except Exception as error:
+        log.warning('Class discovery failed for %s', selected.asset, exc_info=True)
         resource.fail(token, str(error))
         return False
     if state.revision(indicator, 'setup') != revision:

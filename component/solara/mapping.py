@@ -1,5 +1,6 @@
 """Controlled mapping table tools, preserving the original nested dialogs."""
 
+import logging
 from dataclasses import replace
 import csv
 
@@ -17,6 +18,8 @@ from mgci.infrastructure.defaults import PARAMETERS, classification_labels
 from mgci.infrastructure.mappings import mapping_csv, parse_mapping
 from .messages import msg
 from .setup import MappingTable
+
+log = logging.getLogger('MGCI.solara.mapping')
 
 
 @solara.component
@@ -137,6 +140,7 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
                 edit(targets=targets, labels=loaded, mapping=mapping)
             active.set('')
         except Exception as exception:
+            log.warning('Mapping %s failed', operation, exc_info=True)
             if action.is_current():
                 error.set(str(exception))
 

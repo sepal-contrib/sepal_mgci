@@ -1,5 +1,6 @@
 """Single-owner lifecycle; call mutations on the session's UI event loop."""
 
+import logging
 from dataclasses import dataclass, replace
 from types import MappingProxyType
 import random
@@ -8,6 +9,8 @@ from uuid import uuid4
 from mgci.domain.configuration import Configuration, Workflow
 from mgci.domain.provenance import scientific_identity
 from mgci.domain.validation import PURPOSES, NotReady, readiness
+
+log = logging.getLogger('MGCI.application.state')
 
 
 def freeze_payload(value):
@@ -70,9 +73,13 @@ class SessionState:
         if (configuration.workflow == Workflow.CUSTOM_RECLASSIFY
                 and self._configuration.workflow != configuration.workflow):
             configuration = replace(configuration, transition=None)
+        changed = []
         for indicator, purpose in self._revisions:
             if scientific_identity(self._configuration, indicator, purpose) != scientific_identity(configuration, indicator, purpose):
                 self._revisions[indicator, purpose] += 1
+                changed.append(f'{indicator}/{purpose}')
+        if changed:
+            log.debug('Edit invalidates %s', ', '.join(changed))
         for (indicator, purpose, _), slot in self._slots.items():
             before = scientific_identity(self._configuration, indicator, purpose)
             after = scientific_identity(configuration, indicator, purpose)
@@ -100,6 +107,7 @@ class SessionState:
                           self._configuration)
         slot.latest, slot.artifact = request, None
         slot.status, slot.error = 'pending', None
+        log.debug('Prepared %s %s', '/'.join(filter(None, key)), request.request_id[:8])
         return request
 
     def _accepts(self, request: Request) -> bool:
@@ -112,7 +120,9 @@ class SessionState:
 
     def accept(self, request: Request, payload) -> bool:
         if not self._accepts(request):
+            log.debug('Rejected stale result %s %s', '/'.join(filter(None, request.slot)), request.request_id[:8])
             return False
+        log.debug('Accepted %s %s', '/'.join(filter(None, request.slot)), request.request_id[:8])
         artifact = Artifact(request, freeze_payload(payload))
         slot = self._slots[request.slot]
         slot.artifact, slot.status = artifact, 'ready'
@@ -137,12 +147,14 @@ class SessionState:
             return False
         slot = self._slots[request.slot]
         slot.status, slot.error = 'error', str(error)
+        log.debug('Failed %s %s: %s', '/'.join(filter(None, request.slot)), request.request_id[:8], error)
         return True
 
     def cancel(self, request: Request) -> bool:
         if not self._accepts(request):
             return False
         self._slots[request.slot].status = 'cancelled'
+        log.debug('Cancelled %s %s', '/'.join(filter(None, request.slot)), request.request_id[:8])
         return True
 
     def current(self, indicator: str, purpose: str, selection: str = ''):

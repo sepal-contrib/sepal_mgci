@@ -1,11 +1,14 @@
 """AOI context layers share the same stale-response rules as thematic outputs."""
 
+import logging
 import json
 
 import solara
 from pysepal.solara.notifications import use_notifications
 
 from mgci.infrastructure.areas import prepare_biobelt
+
+log = logging.getLogger('MGCI.solara.areas')
 
 
 @solara.component
@@ -20,6 +23,7 @@ def BiobeltOverlay(config, map_, gee_interface, on_legend, on_ready):
         try:
             return identity, await prepare_biobelt(config, gee_interface), None
         except Exception as error:
+            log.exception('Bioclimatic belt overlay failed')
             return identity, None, str(error)
 
     def clear():

@@ -1,5 +1,6 @@
 """Controlled AOI picker with the reference app's reporting-country scope."""
 
+import logging
 import asyncio
 
 import reacton.ipyvuetify as rv
@@ -16,6 +17,8 @@ from component.message import cm
 from component.parameter.module_parameter import CUSTOM_AOI_ITEMS
 from mgci.application.state import ResourceState
 from mgci.infrastructure.areas import area_metadata, prepare_area_preview, reporting_admin_items
+
+log = logging.getLogger('MGCI.solara.aoi')
 
 
 @solara.component
@@ -58,6 +61,7 @@ def ReportingAreaPicker(on_value, map_, gee_interface):
                 preview = await prepare_area_preview(result, gee_interface)
                 return token, result, preview, None
         except Exception as error:
+            log.exception('Area of interest selection failed')
             return token, None, None, str(error)
 
     def receive():

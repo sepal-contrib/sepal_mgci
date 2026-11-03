@@ -1,8 +1,11 @@
 """Shared source selection and retained drafts for the land-cover dialog."""
 
+import logging
 from dataclasses import replace
 
 from mgci.domain.configuration import Workflow
+
+log = logging.getLogger('MGCI.application.landcover')
 
 
 class WorkflowDrafts:
@@ -64,6 +67,7 @@ async def inspect_shared_dataset(state, resources, load):
                 or any(getattr(current, key).asset != captured.a.asset for key in ('a', 'b'))):
             raise ValueError('Setup changed during discovery; get classes again')
     except Exception as error:
+        log.warning('Class discovery failed for %s', captured.a.asset, exc_info=True)
         for key in ('a', 'b'):
             resources[key].fail(tokens[key], str(error))
         return False
@@ -78,4 +82,5 @@ async def inspect_shared_dataset(state, resources, load):
         images = retained or (preferred if len(preferred) >= 3 else result.images[:3])
         values[key] = replace(selected, evidence=evidence, images=images)
     state.edit(replace(state.configuration, **values))
+    log.info('Discovered %d classes and %d images in %s', len(evidence.classes), len(result.images), captured.a.asset)
     return True

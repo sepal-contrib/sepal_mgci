@@ -1,5 +1,6 @@
 """Indicator cards, combined calculations, and immutable report revisions."""
 
+import logging
 import asyncio
 from types import SimpleNamespace
 from dataclasses import replace
@@ -18,6 +19,8 @@ from mgci.infrastructure.tasks import submit
 from .scale import ScaleField
 from .setup import ReadinessMessages, error_text
 from .years import IndicatorYears
+
+log = logging.getLogger('MGCI.solara.settings')
 
 
 # Legacy calculation_tile message when work runs as an Earth Engine task.
@@ -70,12 +73,14 @@ def CalculationAction(state, publish, indicators, run, prepare=None, background=
                             if (not retryable or workspace is None
                                     or state.revision(request.slot[0], 'statistics') != execution_revision):
                                 raise
+                            log.warning('On-the-fly calculation hit an Earth Engine limit; submitting a task: %s', error)
                             _, path = await submit(request, gee_interface, workspace)
                             notifications.warning(TASKED.format(path=path))
                         else:
                             if state.accept(request, payload):
                                 completed += 1
                 except Exception as error:
+                    log.exception('Calculation of %s failed', request.slot[0].upper())
                     if state.fail(request, error_text(error)):
                         notifications.error(error_text(error))
                 finally:
@@ -90,6 +95,7 @@ def CalculationAction(state, publish, indicators, run, prepare=None, background=
             publish()
             raise
         except Exception as error:
+            log.exception('Calculation failed')
             for request in requests:
                 state.cancel(request)
             publish()
@@ -131,8 +137,10 @@ def ReportAction(state, workspace, before_export=None, indicators=('a', 'b'), on
             for artifact in revision.artifacts:
                 state.export_artifact(artifact.request)
             await workspace.write_async(f'{folder}/{revision.filename}', content)
+            log.info('Report saved to %s/%s', folder, revision.filename)
             return revision, folder, content, None
         except Exception as error:
+            log.exception('Report export failed')
             return revision, None, None, str(error)
 
     def receive():

@@ -1,5 +1,6 @@
 """MGCI export controls backed by pysepal's submission controller."""
 
+import logging
 import reacton.ipyvuetify as rv
 import solara
 from pysepal.solara.components.export import use_export_dialog
@@ -11,6 +12,8 @@ from mgci.domain.validation import readiness
 from mgci.infrastructure.layers import export_source, prepare_export
 from .messages import msg
 from .setup import error_text
+
+log = logging.getLogger('MGCI.solara.export')
 
 
 @solara.component
@@ -84,6 +87,7 @@ def LayerExport(state, artifacts, gee_interface, drive_interface, sepal_client, 
             publish()
             return request, await prepare_export(request, gee_interface), None
         except Exception as error:
+            log.exception('Image export preparation failed')
             return request, None, error_text(error)
 
     def receive():
@@ -123,6 +127,7 @@ def LayerExport(state, artifacts, gee_interface, drive_interface, sepal_client, 
             current_controller._state.selected_bands.set(tuple(captured.payload['export_bands']))
             current_controller.submit_export()
         except Exception as error:
+            log.exception('Image export failed')
             notifications.error(str(error))
 
     def cancel_opening():

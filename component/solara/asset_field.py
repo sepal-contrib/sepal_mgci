@@ -1,10 +1,13 @@
 """Land-cover asset combobox: browse once, validate on the explicit action."""
 
+import logging
 import reacton.ipyvue as ipyvue
 import reacton.ipyvuetify as rv
 import solara
 
 from component.message import cm
+
+log = logging.getLogger('MGCI.solara.asset_field')
 
 
 @solara.component
@@ -19,6 +22,7 @@ def LandCoverAssetField(value, on_value, gee_interface, *, disabled=False, error
             entries = await gee_interface.get_assets_async(folder)
             return tuple(sorted(item['id'] for item in entries if item.get('type') == 'IMAGE_COLLECTION')), None
         except Exception as exception:
+            log.warning('Could not list assets', exc_info=True)
             return (), str(exception)
 
     task = solara.lab.use_task(browse, dependencies=[reload.value, disabled],
