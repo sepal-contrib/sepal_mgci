@@ -10,7 +10,6 @@ from mgci.infrastructure.layers import layer_choices, prepare_layer
 from mgci.infrastructure.reports import plain_data
 from .actions import RequestAction
 from .messages import msg
-from .export import LayerExport
 from component.message import cm
 
 
@@ -61,7 +60,6 @@ def install_layer(map_, artifact):
 def LayerPanel(state, publish, map_, gee_interface, drive_interface, sepal_client, prepare=None, before_use=None,
                enabled=None):
     selected = solara.use_reactive('')
-    artifacts = current_layers(state)
     # Like the legacy selector, offer only the indicators switched on in the settings.
     choices = tuple(choice for choice in layer_choices(state.configuration) if enabled is None or choice[0] in enabled.value)
     indexed = {f'{indicator}:{selector}': (indicator, selector, title) for indicator, selector, title in choices}
@@ -81,9 +79,6 @@ def LayerPanel(state, publish, map_, gee_interface, drive_interface, sepal_clien
             RequestAction(state, publish, indicator, 'layer', lambda request: prepare_layer(request, gee_interface),
                           label=msg('layers.add'), selection=selector, prepare=prepare, disabled=current is None,
                           block=True)
-        with rv.Html(tag='div', class_='d-block mt-2', style_='width:100%;'):
-            LayerExport(state, artifacts if current else (), gee_interface, drive_interface, sepal_client, before_use,
-                        selection=current, publish=publish, prepare=prepare)
 
 
 @solara.component

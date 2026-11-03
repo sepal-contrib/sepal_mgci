@@ -21,6 +21,7 @@ from mgci.infrastructure.transitions import load_transition
 from mgci.infrastructure.workspace import ClientWorkspace
 from .charts import ChartPanel
 from .landcover import LandCoverPanel
+from .export import ExportPanel
 from .layers import LayerPanel, MapOutputs
 from .session import use_session_state
 from .settings import SettingsPanel
@@ -111,10 +112,14 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
                             'toggle_icon': 'mdi-chart-line'},
         right_panel_content=[
             {'content': [AdminButton(logger_instance=logging.getLogger('MGCI'))]},
-            {'title': 'Visualize and export layers', 'icon': 'mdi-layers',
+            {'title': 'Visualize layers', 'icon': 'mdi-layers',
              'content': [LayerPanel(state, publish, map_, gee_interface, drive_interface, sepal_client, prepare, before_export, enabled)],
              'description': 'To add layers to the map, you will first need to select the area of interest '
                             'and the years in the 3. Indicator settings step.'},
+            {'title': 'Export', 'icon': 'mdi-export-variant',
+             'content': [ExportPanel(state, gee_interface, drive_interface, sepal_client, enabled)],
+             'description': 'Export the layers of both sub-indicators to Earth Engine, Google Drive or your '
+                            'SEPAL workspace. Layers become available once their sub-indicator is set up.'},
             {'title': 'Sub indicator A', 'icon': 'mdi-chart-bar',
              'content': [ChartPanel(state, publish, 'a', gee_interface, prepare, before_export, enabled)],
              'description': 'Explore land-cover composition for Sub-indicator A by year and mountain belt.'},

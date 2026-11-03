@@ -69,7 +69,8 @@
   "layers": {
     "label": "Layers",
     "add": "Add layer",
-    "export": "Export layer",
+    "export": "Export",
+    "export_title": "Export layers",
     "selection_changed": "The selected layer changed. Review it before exporting."
   },
   "reports": {
