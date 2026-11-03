@@ -10,6 +10,7 @@ import asyncio
 
 import component.scripts as cs
 from component.scripts.gee import reduce_regions
+from component.scripts.reclassification import normalize_matrix
 
 
 def freeze_input(value):
@@ -26,7 +27,7 @@ def freeze_input(value):
 
 
 def _integer_matrix(matrix):
-    return {int(source): int(target) for source, target in (matrix or {}).items()}
+    return normalize_matrix(matrix)
 
 
 def results_context(model, scale, indicator):

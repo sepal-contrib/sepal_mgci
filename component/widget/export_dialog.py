@@ -14,6 +14,7 @@ import component.parameter.module_parameter as param
 from component.message import cm
 from component.model.model import MgciModel
 from component.scripts.layers import get_layer_a, get_layer_b
+from component.scripts.setup_check import check_setup
 from component.scripts.aoi_geometry import aoi_bbox
 
 
@@ -128,6 +129,10 @@ class ExportMapDialog(sw.Dialog):
 
     def get_ee_image(self, *_) -> ee.Image:
         selection = self.w_layers.v_model
+
+        if not selection or selection[0] not in ("a", "b"):
+            raise ValueError("No valid layer selected")
+        check_setup(self.model, f"sub_{selection[0]}")
 
         aoi = self.model.aoi_model.feature_collection
 

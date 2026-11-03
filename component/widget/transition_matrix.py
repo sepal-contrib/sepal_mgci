@@ -3,7 +3,7 @@ import ipyvuetify as v
 import numpy as np
 import pandas as pd
 
-from traitlets import Bool, Dict, List, Unicode, directional_link, link, observe
+from traitlets import Bool, Dict, List, Unicode, directional_link, observe
 
 from component.scripts.file_handler import df_to_csv, read_file
 import pysepal.sepalwidgets as sw
@@ -65,6 +65,7 @@ class CustomTransitionMatrix(sw.Layout):
     def read_inputs(self, change):
         """Read user custom input from custom transition matrix"""
 
+        self.custom_transition_matrix = ""
         if change["new"]:
             # Get TextField from change widget
             text_field_msg = change["owner"]
@@ -111,25 +112,32 @@ class TransitionMatrix(sw.Layout):
         )
 
         directional_link(
-            (self.custom_transition_matrix, "custom_transition_matrix"),
-            (self, "transition_matrix"),
-        )
-        directional_link(
             (self.model, "lulc_classes_sub_b"),
             (self.custom_transition_matrix, "lulc_classes_sub_b"),
         )
 
-        link(
-            (self.transition_matrix_view, "transition_matrix"),
-            (self, "transition_matrix"),
+        self.custom_transition_matrix.observe(
+            self._select_transition_source, "custom_transition_matrix"
         )
+        self.transition_matrix_view.observe(
+            self._select_transition_source, "transition_matrix"
+        )
+        self._select_transition_source()
 
         self.children = [self.transition_matrix_view]
 
         # Create a link between the transition matrix and the model
         directional_link(
-            (self.transition_matrix_view, "transition_matrix"),
+            (self, "transition_matrix"),
             (self.model, "transition_matrix"),
+        )
+
+    def _select_transition_source(self, *_):
+        """Only the active input can supply the calculation's transition file."""
+        self.transition_matrix = (
+            self.transition_matrix_view.transition_matrix
+            if self.show_matrix
+            else self.custom_transition_matrix.custom_transition_matrix
         )
 
     @observe("show_matrix")
@@ -145,11 +153,10 @@ class TransitionMatrix(sw.Layout):
 
         else:
             self.children = [self.custom_transition_matrix]
+            self.custom_transition_matrix.custom_transition_matrix = ""
             self.custom_transition_matrix.input_impact.reset()
 
-            self.transition_matrix_view.transition_matrix = (
-                ""  # TODO: check why this???
-            )
+        self._select_transition_source()
 
     @observe("disabled")
     def disable_edition(self, change):

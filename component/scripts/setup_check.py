@@ -1,12 +1,16 @@
 """One check of the user's setup, shared by every step that computes results.
 
-"Validate & close" in the land cover step, the calculation, the report export
-and both dashboards call it, so they accept and refuse the same setups. It
+"Validate & close", calculations, charts, map layers and exports call it,
+so they accept and refuse the same setups. It
 reads only the model, never the widgets.
 """
 
+from itertools import product
+
 from component.message import cm
-from component.parameter.module_parameter import LULC_DEFAULT
+from component.parameter.module_parameter import LULC_DEFAULT, LC_COLOR
+from component.scripts.file_handler import read_file
+from component.scripts.reclassification import class_code, normalize_matrix
 
 INDICATORS = ("sub_a", "sub_b")
 
@@ -35,20 +39,59 @@ def check_land_cover(model, indicators=INDICATORS):
     custom = getattr(model, "answer_custom_lulc", False)
     reclassify = getattr(model, "answer_need_reclassify", True)
 
-    if not model.lc_asset_sub_a:
-        _fail("no_asset", "vegetation")
-    if custom and model.lc_asset_sub_a == LULC_DEFAULT:
-        _fail("default_asset", "vegetation")
-
     for indicator in indicators:
+        asset = getattr(model, f"lc_asset_{indicator}")
+        if not asset:
+            _fail("no_asset", "vegetation")
+        if custom and not reclassify and asset == LULC_DEFAULT:
+            _fail("default_asset", "vegetation")
         # The image list is emptied when the images of a new asset cannot be read.
-        if custom and not getattr(model, f"ic_items_{indicator}"):
+        if not getattr(model, f"ic_items_{indicator}"):
             _fail("no_images", "vegetation")
-        matrix = getattr(model, f"matrix_{indicator}") or {}
-        if (not custom or reclassify) and not any(matrix.values()):
+        try:
+            matrix = normalize_matrix(getattr(model, f"matrix_{indicator}"))
+        except ValueError:
+            _fail("invalid_matrix", "vegetation", indicator=_letter(indicator))
+        if (not custom or reclassify) and not matrix:
             _fail("no_matrix", "vegetation", indicator=_letter(indicator))
-        if indicator == "sub_b" and not model.transition_matrix:
-            _fail("no_transition", "vegetation")
+        if matrix and any(target == 0 for target in matrix.values()):
+            _fail("incomplete_matrix", "vegetation", indicator=_letter(indicator))
+        classes = getattr(model, f"lulc_classes_{indicator}", None) or LC_COLOR.index
+        try:
+            targets = {class_code(code) for code in classes}
+        except ValueError:
+            _fail("invalid_matrix", "vegetation", indicator=_letter(indicator))
+        if set(matrix.values()) - targets:
+            _fail("invalid_matrix", "vegetation", indicator=_letter(indicator))
+        if indicator == "sub_b":
+            if not model.transition_matrix:
+                _fail("no_transition", "vegetation")
+            _check_transition(model.transition_matrix, set(matrix.values()) or targets)
+
+
+def _check_transition(path, targets):
+    """Every possible output-class pair needs one valid impact."""
+    try:
+        table = read_file(path)
+    except Exception as error:
+        _fail("unreadable_transition", "vegetation", path=path, reason=str(error))
+
+    try:
+        rows = table.to_dict("records")
+        pairs = [
+            (class_code(row["from_code"]), class_code(row["to_code"]))
+            for row in rows
+        ]
+        impacts = [class_code(row["impact_code"]) for row in rows]
+        valid = (
+            len(pairs) == len(set(pairs))
+            and set(impacts) <= {1, 2, 3}
+            and set(product(targets, repeat=2)) <= set(pairs)
+        )
+    except (ValueError, KeyError, TypeError, AttributeError):
+        valid = False
+    if not valid:
+        _fail("invalid_transition", "vegetation")
 
 
 def check_land_cover_step(model):

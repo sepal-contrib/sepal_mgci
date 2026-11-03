@@ -6,6 +6,7 @@ import pandas as pd
 from pathlib import Path
 
 from component.scripts.file_handler import read_file
+from component.scripts.reclassification import normalize_matrix
 from component.scripts.aoi_geometry import aoi_bbox
 from pysepal.scripts.gee_interface import GEEInterface
 
@@ -30,7 +31,7 @@ def no_remap(image: ee.Image, remap_matrix: Optional[dict] = None):
     """return remapped or raw image if there's a matrix"""
 
     if remap_matrix:
-        from_, to_ = list(zip(*remap_matrix.items()))
+        from_, to_ = zip(*normalize_matrix(remap_matrix).items())
         return image.remap(from_, to_, NO_DATA_VALUE).selfMask()
 
     return image

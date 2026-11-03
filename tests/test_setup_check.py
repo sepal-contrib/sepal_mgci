@@ -10,6 +10,7 @@ from component.scripts.setup_check import (
     check_setup,
     check_years,
 )
+from component.scripts import setup_check
 from component.scripts.sub_a import get_mgci
 from component.message import cm
 from tests.setup_model import complete_model, custom_model, image
@@ -44,10 +45,75 @@ def test_a_missing_land_cover_asset_is_refused():
         check_land_cover(complete_model(lc_asset_sub_a=""))
 
 
-def test_the_default_asset_is_refused_for_a_custom_map():
+def test_the_default_asset_can_be_reclassified():
     model = complete_model(answer_custom_lulc=True, answer_need_reclassify=True)
-    with pytest.raises(SetupError, match="custom land cover map"):
-        check_land_cover(model)
+    check_land_cover(model)
+
+
+@pytest.mark.parametrize(
+    "matrix",
+    [{"10": 1, "20": 0}, {10: 1, 20: None}, {10: 1, 20: 999}, {"bad": 1}, {10: 1.5}],
+)
+def test_incomplete_or_invalid_reclassification_is_refused(matrix):
+    with pytest.raises(SetupError):
+        check_land_cover(custom_model(matrix_sub_a=matrix), ("sub_a",))
+
+
+def test_target_classes_must_match_the_reclassification():
+    with pytest.raises(SetupError):
+        check_land_cover(
+            custom_model(
+                matrix_sub_a={10: 12},
+                lulc_classes_sub_a={1: ("Built", "#000000")},
+            ),
+            ("sub_a",),
+        )
+
+
+def test_b_checks_its_own_asset():
+    with pytest.raises(SetupError):
+        check_land_cover(custom_model(lc_asset_sub_b=""), ("sub_b",))
+
+
+def test_transition_matrix_requires_every_pair_not_just_every_code(tmp_path):
+    path = tmp_path / "transition.csv"
+    path.write_text("from_code,to_code,impact_code\n1,1,2\n2,2,2\n")
+    with pytest.raises(SetupError):
+        check_land_cover(custom_model(transition_matrix=str(path)), ("sub_b",))
+
+
+def test_transition_validation_reads_sepal_workspace_files(monkeypatch):
+    path = "module_results/sdg_indicators/15.4.2/custom_transition/transition_matrix.csv"
+
+    def read_workspace_file(selected_path):
+        assert selected_path == path
+        return pd.DataFrame(
+            [(1, 1, 2), (1, 2, 1), (2, 1, 3), (2, 2, 2)],
+            columns=["from_code", "to_code", "impact_code"],
+        )
+
+    monkeypatch.setattr(setup_check, "read_file", read_workspace_file, raising=False)
+    check_land_cover(custom_model(transition_matrix=path), ("sub_b",))
+
+
+def test_transition_file_access_error_identifies_the_file(monkeypatch):
+    path = "module_results/unavailable.csv"
+
+    def unreadable(_path):
+        raise OSError("Access denied")
+
+    monkeypatch.setattr(setup_check, "read_file", unreadable, raising=False)
+    with pytest.raises(SetupError) as error:
+        check_land_cover(custom_model(transition_matrix=path), ("sub_b",))
+    assert path in str(error.value)
+    assert "Access denied" in str(error.value)
+
+
+def test_setup_validation_does_not_change_form_values():
+    model = custom_model(matrix_sub_a={"10": "1", "20": "2"})
+    before = dict(vars(model))
+    check_land_cover(model)
+    assert vars(model) == before
 
 
 def test_a_custom_asset_whose_images_could_not_be_read_is_refused():

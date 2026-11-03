@@ -252,6 +252,9 @@ class VegetationView(sw.Layout):
 
     def _configure_task_button(self):
         def get_reclassify_table():
+            asset = self.w_reclass_a.w_ic_select.v_model
+            aoi = self.aoi_model.feature_collection
+
             def callback(results):
                 """
                 Display a reclassify table which will lead the user to select
@@ -260,6 +263,11 @@ class VegetationView(sw.Layout):
                 Return:
                     self
                 """
+                if (
+                    self.w_reclass_a.w_ic_select.v_model != asset
+                    or self.aoi_model.feature_collection is not aoi
+                ):
+                    return
                 log.debug(f"Setting reclassify table with {results}")
 
                 self.reclassify_tile_a.w_reclass.on_get_classes_done(results)
@@ -390,20 +398,6 @@ class VegetationView(sw.Layout):
 
         Return a warning for each sub-indicator that cannot use it.
         """
-
-        custom_lulc = self.w_questionnaire.ans_custom_lulc
-        need_reclassify = self.w_questionnaire.ans_reclassify_custom_lulc
-        need_change_transition = self.w_questionnaire.ans_transition_matrix
-
-        if custom_lulc:
-            if not need_reclassify:
-                self.transition_view.set_default_values()
-
-        if not custom_lulc:
-            if not need_change_transition:
-                self.transition_view.set_default_values()
-            self.reclassify_tile_a.use_default()
-            self.reclassify_tile_b.use_default()
 
         return check_land_cover_step(self.model)
 

@@ -257,19 +257,6 @@ class CalculationView(sw.Card):
         self.model.results, results = {}, {}
         self.model.done = False
 
-        # As pre step, make sure model.matrix_sub_a and model.matrix_sub_b are
-        # dictionaries of int keys and int values, but only if they're not empty
-
-        if self.model.matrix_sub_a:
-            self.model.matrix_sub_a = {
-                int(k): int(v) for k, v in self.model.matrix_sub_a.items()
-            }
-
-        if self.model.matrix_sub_b:
-            self.model.matrix_sub_b = {
-                int(k): int(v) for k, v in self.model.matrix_sub_b.items()
-            }
-
         aoi_name = self.model.aoi_model.name
         report_folder = cs.get_report_folder(aoi_name, sepal_client=self.sepal_client)
 

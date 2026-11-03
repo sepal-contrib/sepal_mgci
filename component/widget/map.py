@@ -9,6 +9,7 @@ from pysepal.solara import get_current_gee_interface
 
 from component.model.model import MgciModel
 from component.scripts.layers import get_layer_a, get_layer_b
+from component.scripts.setup_check import check_setup
 from component.widget.export_dialog import ExportMapDialog
 from component.parameter.visualization import (
     degradation_legend_data,
@@ -226,6 +227,10 @@ class LayerHandler(sw.Layout):
 
         if not selection:
             raise Exception("No layer selected")
+
+        if selection[0] not in ("a", "b"):
+            raise ValueError("No valid layer selected")
+        check_setup(self.model, f"sub_{selection[0]}")
 
         aoi = self.model.aoi_model.feature_collection
 

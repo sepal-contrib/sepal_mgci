@@ -271,17 +271,27 @@ class ReclassifyView(sw.Card):
     def _configure_tasks(self) -> None:
 
         gee_interface = get_current_gee_interface()
+        asset = getattr(self.model, "src_gee", None)
+        request = self._image_list_request = object()
 
         def set_ids(result):
             """Set image collection ids to ic_items model attribute on change. set empty
             table"""
             log.debug("QQQQQQQQQQQQQQQQQQQQQQ Setting ids")
-            self.model.ic_items = result
+            if (
+                self._image_list_request is request
+                and getattr(self.model, "src_gee", None) == asset
+            ):
+                self.model.ic_items = result
             # self.reclassify_table.set_table({}, {})
 
         def clear_ids(_error):
             # Drop the images of the previous asset; the asset field shows the error.
-            self.model.ic_items = []
+            if (
+                self._image_list_request is request
+                and getattr(self.model, "src_gee", None) == asset
+            ):
+                self.model.ic_items = []
 
         self._tasks["set_ic_items"] = gee_interface.create_task(
             func=gee_interface.get_info_async,
@@ -294,7 +304,14 @@ class ReclassifyView(sw.Card):
         """set image collection ids to ic_items model attribute on change. set empty
         table"""
 
+        self._image_list_request = None
+        self.model.ic_items = []
+        self.model.matrix = {}
+        self.model.src_class = {}
+        self.model.table_created = False
+        self.reclassify_table.set_table({}, {})
         if change["new"]:
+            self._configure_tasks()
             collection_ids = scripts.get_image_collection_ids(change["new"])
             self._tasks["set_ic_items"].start(collection_ids)
 
