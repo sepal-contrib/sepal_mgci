@@ -19,16 +19,21 @@ def next_to(step_id):
     return {"label": cm.app.step_action.next, "next": step_id}
 
 
-def test_each_step_window_can_be_closed_and_opens_the_next_step_window():
+def back_to(step_id):
+    return {"label": cm.app.step_action.back, "next": step_id, "cancel": True}
+
+
+def test_each_step_window_can_be_closed_and_moves_back_and_forth():
     steps = add_step_actions(STEPS)
 
     assert [step.get("actions") for step in steps] == [
         [CLOSE, next_to(3)],
-        [CLOSE, next_to(4)],
+        [CLOSE, back_to(2), next_to(4)],
         # "4. Results" opens the results panel, not a window: close this one first.
-        [CLOSE, {**next_to(5), "close": True}],
+        [CLOSE, back_to(3), {**next_to(5), "close": True}],
         None,
-        [CLOSE],
+        # "Back" skips "4. Results", which has no window.
+        [CLOSE, back_to(4)],
     ]
 
 

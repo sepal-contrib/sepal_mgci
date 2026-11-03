@@ -80,3 +80,19 @@ class LayerAdapterTests(ApiTestCase):
         install_layer(map_, state.current(*request.slot))
         self.addCleanup(map_.layers[0][1].close)
         self.assertEqual(map_.bounds, [(0, 0, 1, 1)])
+
+
+class LayerChoiceTests(ApiTestCase):
+    setUp = fixtures.ScienceAdapterTests.setUp
+
+    def test_empty_year_rows_have_no_layers(self):
+        from mgci.domain.configuration import ImageSelection
+        from mgci.infrastructure.layers import layer_choices
+        empty = tuple(ImageSelection('', 0) for _ in range(3))
+        config = replace(self.config, b=replace(self.config.b, images=empty))
+        titles = [title for indicator, _, title in layer_choices(config) if indicator == 'b']
+        self.assertEqual(titles, [])
+        report_only = replace(self.config, b=replace(self.config.b, images=(*empty[:2], self.config.b.images[2])))
+        self.assertEqual([title for indicator, _, title in layer_choices(report_only) if indicator == 'b'],
+                         [f'Land cover {self.config.b.images[2].year}'])
+        self.assertFalse(any(' 0' in title for _, _, title in layer_choices(self.config)))

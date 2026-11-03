@@ -9,6 +9,7 @@ from pysepal.solara.components.legend import LegendComponent
 from mgci.infrastructure.layers import layer_choices, prepare_layer
 from mgci.infrastructure.reports import plain_data
 from .actions import RequestAction
+from .setup import ReadinessMessages
 from .messages import msg
 from component.message import cm
 
@@ -79,6 +80,10 @@ def LayerPanel(state, publish, map_, gee_interface, drive_interface, sepal_clien
             RequestAction(state, publish, indicator, 'layer', lambda request: prepare_layer(request, gee_interface),
                           label=msg('layers.add'), selection=selector, prepare=prepare, disabled=current is None,
                           block=True)
+        if current is not None:
+            # Says why "Add layer" is disabled for the selected layer.
+            with rv.Html(tag='div', class_='mt-2'):
+                ReadinessMessages(state.configuration, indicator, 'layer')
 
 
 @solara.component

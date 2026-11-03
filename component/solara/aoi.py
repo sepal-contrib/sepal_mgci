@@ -129,6 +129,6 @@ def ReportingAreaPicker(on_value, map_, gee_interface):
         elif method.value == 'ASSET':
             AssetSelectComponent(types=['TABLE'], value=asset.value, on_value=set_asset, loading=asset_loading,
                                  gee_interface=gee_interface)
-        if method.value:
-            TaskButtonComponent(label=cm.aoi.view.btn, on_start=start, on_cancel=cancel,
-                                running=select.pending, external_busy=not ready, small=True)
+        # Always shown, as the pysepal AoiView button; disabled until a method and area are chosen.
+        TaskButtonComponent(label=cm.aoi.view.btn, on_start=start, on_cancel=cancel,
+                            running=select.pending, external_busy=not (method.value and ready), small=True)

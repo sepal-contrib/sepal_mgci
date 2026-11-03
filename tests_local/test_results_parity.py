@@ -11,8 +11,8 @@ from test_report_adapter import report_state
 from test_solara_components import walk
 
 
-class ChartParityTests(unittest.TestCase):
-    def test_changing_year_retains_selected_mountain_belt(self):
+class ChartParityTests(unittest.IsolatedAsyncioTestCase):
+    async def test_changing_year_retains_selected_mountain_belt(self):
         state = report_state()
         selected = state.configuration.a
         state.edit(replace(state.configuration, a=replace(selected,
@@ -33,7 +33,7 @@ class ChartParityTests(unittest.TestCase):
         changed = next(widget for widget in walk(root) if isinstance(widget, MgciDashboard))
         self.assertEqual(changed.selected_belt, 1)
 
-    def test_b_flow_and_matrix_keep_period_and_impact_explanations(self):
+    async def test_b_flow_and_matrix_keep_period_and_impact_explanations(self):
         state = report_state()
         selected = state.configuration.b
         images = tuple(ImageSelection(f'lc/{year}', year) for year in (2000, 2015, 2018))
@@ -55,3 +55,25 @@ class ChartParityTests(unittest.TestCase):
         self.assertIn('From class ↓', text())
         self.assertIn('No observed area', text())
         self.assertIn('Degradation', text())
+
+
+class ChartResizeTests(unittest.IsolatedAsyncioTestCase):
+    async def test_shown_dialog_nudges_each_chart_to_redraw(self):
+        import asyncio
+        from component.solara.charts import _charts
+        state = report_state()
+        selected = state.configuration.b
+        images = tuple(ImageSelection(f'lc/{year}', year) for year in (2000, 2015, 2018))
+        selected = replace(selected, images=images,
+            evidence=replace(selected.evidence, images=tuple(image.asset for image in images)))
+        matrix = TransitionTable(((1, 1, 2), (1, 4, 3), (4, 1, 1), (4, 4, 2)), 'matrix.csv', 'digest', True)
+        state.edit(replace(state.configuration, b=selected, transition=matrix))
+        request = state.prepare('b', 'statistics')
+        rows = [{'biobelt': 1, 'groups': [{'lc': 104, 'sum': 3.0}, {'lc': 401, 'sum': 1.0}]}]
+        state.accept(request, {'2000_2015_2018': {'baseline_transition': rows, 'report_transition': rows}})
+        root, context = solara.render(BChart(state.current('b', 'statistics'), 'baseline', True), handle_error=False)
+        self.addCleanup(context.close)
+        charts = [chart for widget in walk(root) for chart in _charts(widget)]
+        self.assertTrue(charts)
+        await asyncio.sleep(.4)
+        self.assertTrue(all({'mgci-resize-a', 'mgci-resize-b'} & set(chart._dom_classes) for chart in charts))

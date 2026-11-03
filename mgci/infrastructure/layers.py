@@ -15,14 +15,22 @@ def layer_choices(config):
     from component.message import cm
 
     names = cm.layers
-    choices = [('a', image.asset, f'{names.land_cover} {image.year}') for image in config.a.images]
-    for image in config.b.images[2:]:
-        choices.append(('b', f'{image.asset}|final_degradation', f'{names.final_degradation} {image.year}'))
-    if len(config.b.images) >= 3:
-        choices.append(('b', f'{config.b.images[2].asset}|baseline_degradation', names.baseline_degradation))
-    choices += [('b', f'{image.asset}|report_degradation', f'{names.report_degradation} {image.year}')
-                for image in config.b.images[2:]]
-    choices += [('b', f'{image.asset}|land_cover', f'{names.land_cover} {image.year}') for image in config.b.images]
+
+    def complete(images):
+        # A year row without an image or a year has no layer yet.
+        return tuple(image for image in images if image.asset and image.year > 0)
+
+    choices = [('a', image.asset, f'{names.land_cover} {image.year}') for image in complete(config.a.images)]
+    baseline, reports = config.b.images[:2], complete(config.b.images[2:])
+    if len(complete(baseline)) == 2:
+        for image in reports:
+            choices.append(('b', f'{image.asset}|final_degradation', f'{names.final_degradation} {image.year}'))
+        if config.b.images[2:3] and config.b.images[2] in reports:
+            choices.append(('b', f'{config.b.images[2].asset}|baseline_degradation', names.baseline_degradation))
+        choices += [('b', f'{image.asset}|report_degradation', f'{names.report_degradation} {image.year}')
+                    for image in reports]
+    choices += [('b', f'{image.asset}|land_cover', f'{names.land_cover} {image.year}')
+                for image in complete(config.b.images)]
     return tuple(choices)
 
 

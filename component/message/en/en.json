@@ -12,6 +12,7 @@
         },
         "step_action" : {
             "close" : "Close",
+            "back" : "Back",
             "next" : "Next"
         }
     },

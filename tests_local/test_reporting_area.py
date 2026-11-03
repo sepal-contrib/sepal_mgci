@@ -67,3 +67,15 @@ class ReportingAreaTests(unittest.IsolatedAsyncioTestCase):
         frame = pd.read_parquet(files('pygaul').joinpath('data/gaul_database.parquet'))
         expected = set(frame.loc[frame.iso3_code.isin(iso), 'gaul0_code'].astype(str))
         self.assertEqual({item['value'] for item in reporting_admin_items()}, expected)
+
+
+class AreaButtonTests(unittest.IsolatedAsyncioTestCase):
+    async def test_select_button_is_shown_from_the_start_and_disabled(self):
+        @solara.component
+        def Harness():
+            NotificationProvider()
+            ReportingAreaPicker(lambda result: None, SimpleNamespace(remove_layer=lambda *a, **k: None), object())
+        root, context = solara.render(Harness(), handle_error=False)
+        self.addCleanup(context.close)
+        button = next(w for w in walk(root) if isinstance(w, v.Btn) and 'Select Area of Interest (AOI)' in w.children)
+        self.assertTrue(button.disabled)

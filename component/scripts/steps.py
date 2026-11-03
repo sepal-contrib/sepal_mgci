@@ -18,10 +18,10 @@ def opens_panel_only(step):
 
 
 def add_step_actions(steps):
-    """Give each step window a "Close" button, and a "Next" button to the next step.
+    """Give each step window "Close", "Back" to the previous window and "Next".
 
-    "Next" to a step that opens only a panel closes this window first, and
-    ``MgciMapApp`` then opens the panel instead of an empty window.
+    "Back" skips steps that only open a panel. "Next" to such a step closes this
+    window first, and ``MgciMapApp`` then opens the panel instead of an empty window.
     """
     close = {"label": cm.app.step_action.close, "close": True, "cancel": True}
     result = []
@@ -29,6 +29,10 @@ def add_step_actions(steps):
         step = dict(step)
         if _opens_window(step):
             actions = [close]
+            previous = next((other for other in reversed(steps[:index]) if _opens_window(other)), None)
+            if previous is not None:
+                # "cancel" only gives the button the outlined style of "Close".
+                actions.append({"label": cm.app.step_action.back, "next": previous["id"], "cancel": True})
             following = steps[index + 1] if index + 1 < len(steps) else None
             if following is not None:
                 next_step = {"label": cm.app.step_action.next, "next": following["id"]}
