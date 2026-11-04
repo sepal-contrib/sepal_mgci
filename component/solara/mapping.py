@@ -18,6 +18,7 @@ from mgci.infrastructure.defaults import PARAMETERS, classification_labels
 from mgci.infrastructure.mappings import mapping_csv, parse_mapping
 from .messages import msg
 from .setup import MappingTable
+from .toasts import LASTING
 
 log = logging.getLogger('MGCI.solara.mapping')
 
@@ -121,7 +122,7 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
                     path = f'{folder}/{normalize_str(name)}.csv'
                     await workspace.mkdir_async(folder, parents=True)
                     await workspace.write_async(path, mapping_csv(captured.mapping))
-                    notifications.success(msg('landcover.saved', path=path))
+                    notifications.success(msg('landcover.saved', path=path), timeout=LASTING)
                     active.set('')
                     return
                 if not path:

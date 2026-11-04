@@ -65,3 +65,5 @@ class ToastTimeoutTests(unittest.TestCase):
         from pysepal.solara.notifications import Toast, ToastType
         self.assertIsNone(Toast(message='failed', type=ToastType.ERROR).effective_timeout())
         self.assertEqual(Toast(message='done', type=ToastType.SUCCESS).effective_timeout(), 3.0)
+        from component.solara.toasts import LASTING
+        self.assertGreater(LASTING, 3.0)

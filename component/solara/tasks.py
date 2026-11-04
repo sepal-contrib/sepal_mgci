@@ -16,6 +16,7 @@ from mgci.infrastructure.reports import build_workbook, build_legacy_workbook
 from mgci.infrastructure.transitions import load_transition
 from mgci.infrastructure.tasks import submit, retrieve, TASK_FOLDER
 from .messages import msg
+from .toasts import LASTING
 
 log = logging.getLogger('MGCI.solara.tasks')
 
@@ -44,7 +45,7 @@ def BackgroundAction(state, publish, indicator, gee_interface, workspace, prepar
     def receive():
         if run.finished and run.value:
             path, error = run.value
-            notifications.error(error) if error else notifications.success(msg('tasks.submitted', path=path))
+            notifications.error(error) if error else notifications.success(msg('tasks.submitted', path=path), timeout=LASTING)
     solara.use_effect(receive, [run.finished, run.value])
     TaskButtonComponent(label=msg('tasks.submit', indicator=indicator.upper()), small=True, running=run.pending,
                         external_busy=workspace is None or not readiness(state.configuration, indicator, 'statistics').ready,
@@ -112,7 +113,7 @@ def TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_c
             elif error:
                 notifications.error(error)
             else:
-                notifications.success(msg('reports.saved', path=output))
+                notifications.success(msg('reports.saved', path=output), timeout=LASTING)
     solara.use_effect(receive, [fetch.pending, fetch.finished, fetch.error, fetch.cancelled, fetch.value])
 
     def cancel():

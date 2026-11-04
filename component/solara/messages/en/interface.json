@@ -6,8 +6,7 @@
     "error": "Enter a scale from {min} to {max} m."
   },
   "calculation": {
-    "run": "Calculate {indicator}",
-    "complete": "The computation has been completed."
+    "run": "Calculate {indicator}"
   },
   "setup": {
     "yes": "Yes",

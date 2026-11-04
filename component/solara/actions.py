@@ -41,10 +41,9 @@ def RequestAction(state, publish, indicator, purpose, run, *, label, selection='
             accepted = state.fail(request, error) if error else state.accept(request, payload)
             if accepted:
                 publish()
+                # Success needs no toast: the layer or chart appears.
                 if error:
                     notifications.error(error)
-                else:
-                    notifications.success(msg('calculation.complete'))
 
     solara.use_effect(receive, [task.pending, task.cancelled, task.finished, task.error, task.value])
 
