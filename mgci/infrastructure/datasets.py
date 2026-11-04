@@ -9,6 +9,10 @@ import re
 from mgci.domain.codes import class_code
 from mgci.domain.configuration import DatasetDiscovery, DatasetEvidence, ImageSelection, Workflow
 
+# Image records of the default dataset, listed once per server process. It is a
+# public collection shared by every session, and its images do not depend on the AOI.
+_DEFAULT_RECORDS = {}
+
 
 def _year(metadata):
     timestamp = metadata.get('time')
@@ -35,6 +39,28 @@ async def _classes(image, aoi, region, gee_interface):
     return await gee_interface.get_info_async(keys)
 
 
+async def _records(asset, gee_interface):
+    import ee
+
+    metadata = await gee_interface.get_asset_async(asset)
+    asset_type = metadata.get('type', '').upper()
+    if asset_type == 'IMAGE_COLLECTION':
+        collection = ee.ImageCollection(asset)
+        records = await gee_interface.get_info_async(collection.toList(collection.size()).map(
+            lambda item: ee.Dictionary({'id': ee.Image(item).id(), 'time': ee.Image(item).get('system:time_start')})
+        ))
+    elif asset_type == 'IMAGE':
+        records = [{'id': asset, 'time': metadata.get('properties', {}).get('system:time_start')}]
+    else:
+        raise ValueError('Select an Earth Engine image or image collection')
+    if asset_type == 'IMAGE_COLLECTION':
+        records = [{**record, 'id': record['id'] if '/' in record['id']
+                    else f"{asset.rstrip('/')}/{record['id']}"} for record in records]
+    if not records or len({record['id'] for record in records}) != len(records):
+        raise ValueError('Dataset contains no images or duplicate image identifiers')
+    return records
+
+
 async def discover(config, indicator, gee_interface) -> DatasetDiscovery:
     import ee
     from component.scripts.aoi_geometry import aoi_bbox
@@ -43,25 +69,16 @@ async def discover(config, indicator, gee_interface) -> DatasetDiscovery:
         raise ValueError('Select an area of interest before getting classes')
     selected = getattr(config, indicator)
     aoi = ee.FeatureCollection(ee.deserializer.decode(json.loads(config.aoi_graph)))
-    metadata = await gee_interface.get_asset_async(selected.asset)
-    asset_type = metadata.get('type', '').upper()
-    if asset_type == 'IMAGE_COLLECTION':
-        collection = ee.ImageCollection(selected.asset)
-        records = await gee_interface.get_info_async(collection.toList(collection.size()).map(
-            lambda item: ee.Dictionary({'id': ee.Image(item).id(), 'time': ee.Image(item).get('system:time_start')})
-        ))
-    elif asset_type == 'IMAGE':
-        records = [{'id': selected.asset, 'time': metadata.get('properties', {}).get('system:time_start')}]
+    default = (config.workflow in (Workflow.DEFAULT, Workflow.DEFAULT_EDIT_TRANSITIONS)
+               and selected.asset == config.default_asset)
+    if default and selected.asset in _DEFAULT_RECORDS:
+        records = _DEFAULT_RECORDS[selected.asset]
     else:
-        raise ValueError('Select an Earth Engine image or image collection')
-    if asset_type == 'IMAGE_COLLECTION':
-        records = [{**record, 'id': record['id'] if '/' in record['id']
-                    else f"{selected.asset.rstrip('/')}/{record['id']}"} for record in records]
-    if not records or len({record['id'] for record in records}) != len(records):
-        raise ValueError('Dataset contains no images or duplicate image identifiers')
+        records = await _records(selected.asset, gee_interface)
+        if default:
+            _DEFAULT_RECORDS[selected.asset] = records
     images = tuple(sorted((ImageSelection(row['id'], _year(row)) for row in records), key=lambda image: (image.year, image.asset)))
-    if config.workflow != Workflow.CUSTOM_RECLASSIFY and config.workflow != Workflow.CUSTOM_CANONICAL \
-            and selected.asset == config.default_asset:
+    if default:
         # Legacy default flow: the packaged mapping lists the classes, so no histograms run.
         classes = {source for source, _ in selected.mapping}
     else:

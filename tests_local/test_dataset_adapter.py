@@ -22,6 +22,12 @@ class DefaultTests(unittest.TestCase):
 
 
 class DatasetAdapterTests(ApiTestCase):
+    def setUp(self):
+        from mgci.infrastructure import datasets
+        super().setUp()
+        datasets._DEFAULT_RECORDS.clear()
+        self.addCleanup(datasets._DEFAULT_RECORDS.clear)
+
     def interface(self, histograms):
         class Interface:
             def __init__(self):
@@ -50,6 +56,17 @@ class DatasetAdapterTests(ApiTestCase):
         self.assertEqual(result.evidence.classes, tuple(sorted(source for source, _ in config.a.mapping)))
         self.assertEqual(result.images[0].asset, f'{config.a.asset}/2000')
         self.assertEqual(len(result.evidence.images), 4)
+
+    def test_default_dataset_is_listed_once_for_every_area_and_sub_indicator(self):
+        from mgci.domain.configuration import Workflow
+        interface = self.interface([])
+        first = asyncio.run(discover(self.config(), 'a', interface))
+        identity, graph = capture_aoi(ee.FeatureCollection([ee.Feature(ee.Geometry.Point([1, 1]))]))
+        other = replace(self.config(workflow=Workflow.DEFAULT_EDIT_TRANSITIONS), aoi_identity=identity, aoi_graph=graph)
+        second = asyncio.run(discover(other, 'b', interface))
+        self.assertEqual(len(interface.calls), 1)
+        self.assertEqual(second.evidence.images, first.evidence.images)
+        self.assertEqual(second.evidence.aoi_identity, identity)
 
     def test_custom_dataset_reads_every_image_and_normalizes_codes(self):
         from mgci.domain.configuration import Workflow
