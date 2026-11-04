@@ -115,14 +115,22 @@ def error_text(error):
     return str(error)
 
 
+def readiness_text(config, indicator, purpose='statistics'):
+    """One line naming the sub-indicator and why it cannot run, or '' when it is ready."""
+    codes = dict.fromkeys(issue.code for issue in readiness(config, indicator, purpose).issues)
+    if not codes:
+        return ''
+    return ' '.join([msg('setup.unavailable', indicator=indicator.upper()), *(msg(f'validation.{code}') for code in codes)])
+
+
 @solara.component
-def ReadinessMessages(config, indicator, purpose='statistics'):
-    issues = readiness(config, indicator, purpose).issues
-    if issues:
-        with rv.Alert(type='warning', outlined=True, dense=True):
-            rv.Html(tag='div', children=[msg('setup.unavailable', indicator=indicator.upper())])
-            for code in dict.fromkeys(issue.code for issue in issues):
-                rv.Html(tag='div', children=[msg(f'validation.{code}')])
+def ReadinessMessages(config, indicators, purpose='statistics'):
+    """All the reasons in one filled alert, one line per sub-indicator, like the legacy sw.Alert."""
+    lines = [line for line in (readiness_text(config, indicator, purpose) for indicator in indicators) if line]
+    if lines:
+        with rv.Alert(type='warning', text=True, dense=True, class_='mt-5'):
+            for line in lines:
+                rv.Html(tag='div', children=[line])
 
 
 @solara.component

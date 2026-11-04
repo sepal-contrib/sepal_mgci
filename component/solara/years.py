@@ -117,8 +117,6 @@ def IndicatorYears(config, indicator, enabled, on_enabled, on_images):
                                 elif indicator == 'a' and index:
                                     rv.Html(tag='span', children=[', '])
                                 rv.Chip(color='success', small=True, children=[year])
-                    elif enabled:
-                        rv.Alert(type='warning', outlined=True, dense=True, children=[cm.setup.years_incomplete])
     with rv.Dialog(v_model=opened.value, on_v_model=opened.set, persistent=True, eager=True, max_width=750):
         with rv.Card(max_width=750, min_height=420, class_='pa-4', style_='height:100%;'):
             with rv.CardTitle():

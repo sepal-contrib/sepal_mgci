@@ -249,8 +249,7 @@ def SettingsPanel(state, publish, gee_interface, workspace, prepare, before_expo
                     with rv.Html(tag='div', class_='d-flex'):
                         with HelpTooltip(cm.dashboard.help.scale, top=True):
                             ScaleField(config.scale, lambda value: edit(scale=value))
-        for indicator in enabled.value:
-            ReadinessMessages(config, indicator)
+        ReadinessMessages(config, enabled.value)
         # Messages sit above the buttons, as in the legacy tile.
         if status.value is not None and status.value[2] == revisions():
             kind, lines, _, download = status.value

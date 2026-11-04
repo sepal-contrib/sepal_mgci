@@ -104,7 +104,7 @@ def DatasetEditor(state, publish, indicator, resource, gee_interface):
                             running=inspect.pending, external_busy=not state.configuration.aoi_identity, small=True)
         if selected.evidence and state.configuration.workflow != Workflow.CUSTOM_CANONICAL:
             MappingTable(selected, selected.evidence.classes, lambda mapping: edit(mapping=mapping))
-        ReadinessMessages(state.configuration, indicator, 'setup')
+        ReadinessMessages(state.configuration, (indicator,), 'setup')
 
     def edit(**values):
         state.edit(replace(state.configuration, **{indicator: replace(getattr(state.configuration, indicator), **values)}))

@@ -9,7 +9,7 @@ from pysepal.solara.components.legend import LegendComponent
 from mgci.infrastructure.layers import layer_choices, prepare_layer
 from mgci.infrastructure.reports import plain_data
 from .actions import RequestAction
-from .setup import ReadinessMessages
+from .setup import readiness_text
 from .messages import msg
 from component.message import cm
 
@@ -72,18 +72,16 @@ def LayerPanel(state, publish, map_, gee_interface, drive_interface, sepal_clien
         if group:
             items.extend([{'header': header}, *group])
     with rv.Html(tag='div', class_='pa-2'):
-        with rv.Col():
-            rv.Select(label=msg('layers.label'), items=items,
-                      v_model=selected.value, on_v_model=selected.set, style_='max-width:362px;')
         indicator, selector, _ = current or ('a', '', '')
+        # A short hint, not an alert: it explains the disabled "Add layer" for this sub-indicator.
+        reason = readiness_text(state.configuration, indicator, 'layer') if current is not None else ''
+        with rv.Col():
+            rv.Select(label=msg('layers.label'), items=items, v_model=selected.value, on_v_model=selected.set,
+                      hint=reason, persistent_hint=bool(reason), style_='max-width:362px;')
         with rv.Html(tag='div', class_='d-block mt-2', style_='width:100%;'):
             RequestAction(state, publish, indicator, 'layer', lambda request: prepare_layer(request, gee_interface),
                           label=msg('layers.add'), selection=selector, prepare=prepare, disabled=current is None,
                           block=True)
-        if current is not None:
-            # Says why "Add layer" is disabled for the selected layer.
-            with rv.Html(tag='div', class_='mt-2'):
-                ReadinessMessages(state.configuration, indicator, 'layer')
 
 
 @solara.component

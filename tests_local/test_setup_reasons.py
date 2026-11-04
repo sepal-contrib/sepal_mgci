@@ -40,3 +40,19 @@ class LegacyReasonTests(unittest.TestCase):
         text = error_text(NotReady(readiness(config, 'a', 'statistics').issues))
         self.assertNotIn('Issue(', text)
         self.assertIn('area of interest', text)
+
+
+class ReadinessAlertTests(unittest.TestCase):
+    def test_both_sub_indicators_share_one_filled_alert(self):
+        import ipyvuetify as v
+        import solara
+        from component.solara.setup import ReadinessMessages
+        from test_solara_components import walk
+        root, context = solara.render(ReadinessMessages(initial_configuration(2024), ('a', 'b')), handle_error=False)
+        self.addCleanup(context.close)
+        alerts = [w for w in walk(root) if isinstance(w, v.Alert)]
+        self.assertEqual(len(alerts), 1)
+        self.assertTrue(alerts[0].text)
+        self.assertFalse(alerts[0].outlined)
+        lines = [child.children[0] for child in alerts[0].children]
+        self.assertEqual([line.split(' is not ready')[0] for line in lines], ['Sub-indicator A', 'Sub-indicator B'])

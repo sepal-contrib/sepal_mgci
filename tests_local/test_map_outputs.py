@@ -48,3 +48,25 @@ class LayerChoicesTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(value.startswith('a:') for value in values()))
         enabled.set(('a', 'b'))
         self.assertTrue(any(value.startswith('b:') for value in values()))
+
+    async def test_unready_layer_explains_itself_in_a_hint_not_an_alert(self):
+        import ipyvuetify as v
+        from pysepal.solara.notifications import NotificationProvider
+        from component.solara.layers import LayerPanel
+
+        @solara.component
+        def Harness():
+            # No AOI yet, so sub-indicator A cannot make layers.
+            state, publish = use_session_state(initial_configuration(2026))
+            NotificationProvider()
+            LayerPanel(state, publish, SepalMap(gee=False, dc=False), object(), object(), None)
+
+        root, context = solara.render(Harness(), handle_error=False)
+        self.addCleanup(context.close)
+        select = next(w for w in walk(root) if isinstance(w, v.Select))
+        self.assertEqual(select.hint, '')
+        select.v_model = next(item['value'] for item in select.items if item.get('value', '').startswith('a:'))
+        select = next(w for w in walk(root) if isinstance(w, v.Select))
+        self.assertTrue(select.hint.startswith('Sub-indicator A is not ready:'))
+        self.assertTrue(select.persistent_hint)
+        self.assertFalse([w for w in walk(root) if isinstance(w, v.Alert)])
