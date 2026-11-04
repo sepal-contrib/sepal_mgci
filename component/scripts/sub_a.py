@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import Optional, Tuple
 
 import pandas as pd
 import component.scripts as cs
@@ -17,8 +17,6 @@ from component.scripts.report_scripts import (
     get_obs_status,
 )
 
-if TYPE_CHECKING:
-    from component.model.model import MgciModel
 
 
 LC_MAP_MATRIX = pd.read_csv(param.LC_MAP_MATRIX)

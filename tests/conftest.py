@@ -5,9 +5,6 @@ from pysepal.scripts.utils import init_ee
 import ee
 import pytest
 
-from component.model.model import MgciModel
-from component.tile.aoi_tile import AoiView
-from pysepal.mapping import SepalMap
 from pysepal.scripts.gee_interface import GEEInterface
 import pandas as pd
 
@@ -199,23 +196,8 @@ def gee_interface() -> GEEInterface:
 
 
 @pytest.fixture
-def mgci_model(gee_interface) -> MgciModel:
-    # MgciModel derives its AoiModel from an AoiView (aoi_view.model), the way
-    # solara_app.Page builds it.
-    aoi_view = AoiView(map_=SepalMap(gee_interface=gee_interface))
-    return MgciModel(aoi_view)
-
-
-@pytest.fixture
 def default_target_classes() -> dict:
     return {
         row.lc_class: (row.desc, row.color)
         for _, row in pd.read_csv(param.LC_CLASSES).iterrows()
     }
-
-
-def argentina_model() -> MgciModel:
-    # NOTE: unused helper kept for parity with the other model fixtures.
-    aoi_view = AoiView(map_=SepalMap(gee_interface=GEEInterface()))
-
-    return MgciModel(aoi_view)

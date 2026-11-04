@@ -8,7 +8,7 @@ from pysepal.solara.notifications import NotificationProvider
 
 from test_report_adapter import report_state
 from test_solara_components import walk
-from component.solara.calculation import StatisticsAction
+from component.solara.actions import RequestAction
 
 
 async def until(predicate):
@@ -30,7 +30,7 @@ class CalculationComponentTests(unittest.IsolatedAsyncioTestCase):
         @solara.component
         def Harness():
             NotificationProvider()
-            StatisticsAction(state, lambda: None, 'a', runner)
+            RequestAction(state, lambda: None, 'a', 'statistics', runner, label='Calculate A')
         root, context = solara.render(Harness(), handle_error=False)
         self.addCleanup(context.close)
         button = next(w for w in walk(root) if isinstance(w, v.Btn) and 'Calculate A' in w.children)
@@ -49,7 +49,7 @@ class CalculationComponentTests(unittest.IsolatedAsyncioTestCase):
         @solara.component
         def Harness():
             NotificationProvider()
-            StatisticsAction(state, lambda: None, 'a', runner)
+            RequestAction(state, lambda: None, 'a', 'statistics', runner, label='Calculate A')
         root, context = solara.render(Harness(), handle_error=False)
         self.addCleanup(context.close)
         button = next(w for w in walk(root) if isinstance(w, v.Btn) and 'Calculate A' in w.children)
@@ -64,7 +64,7 @@ class CalculationComponentTests(unittest.IsolatedAsyncioTestCase):
         async def runner(request):
             return {'2000': {'sub_a': []}}
         with patch('component.solara.actions.use_notifications', return_value=notifier):
-            root, context = solara.render(StatisticsAction(state, lambda: None, 'a', runner), handle_error=False)
+            root, context = solara.render(RequestAction(state, lambda: None, 'a', 'statistics', runner, label='Calculate A'), handle_error=False)
             self.addCleanup(context.close)
             next(w for w in walk(root) if isinstance(w, v.Btn) and 'Calculate A' in w.children).fire_event('click', None)
             await until(lambda: state.current('a', 'statistics') is not None)

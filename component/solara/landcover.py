@@ -22,7 +22,7 @@ from .messages import msg
 from .setup import MappingTable, ReadinessMessages, WorkflowQuestions, TransitionEditor
 
 
-# New readiness codes rendered with the legacy setup catalogue (component/scripts/setup_check.py).
+# New readiness codes rendered with the legacy setup messages (cm.setup).
 LEGACY_SETUP = {
     'aoi_required': 'no_aoi', 'asset_required': 'no_asset', 'default_raw_asset': 'default_asset',
     'mapping_incomplete': 'incomplete_matrix', 'mapping_unassigned': 'no_matrix',

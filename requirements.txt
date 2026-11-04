@@ -1,7 +1,6 @@
 # These libs are requested to build common python libs
 # If you are an advanced user and you are sure to not use them, you can comment the following lines
 wheel
-voila
 earthengine-api
 
 pysepal>=4.1.0,<5  # Solara/ee-client generation
@@ -18,13 +17,10 @@ anyio<4.15
 scipy
 
 # custom libs
-matplotlib
 pandas
 openpyxl>=3.0.3
-plotly
 pytest
 pygaul>=0.4.2 # GAUL 2024 columns (gaul0_code); required by pysepal 4
-seaborn
 
 ipyvuetify<3
 ipecharts>=1.4

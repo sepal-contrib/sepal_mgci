@@ -28,49 +28,6 @@ def close_tree(widget, keep=()):
     close(widget)
 
 
-class DashboardRequestSelector(sw.Flex):
-    """Compact year or period buttons for requesting dashboard data."""
-
-    def __init__(self, on_request, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.class_ = "d-flex flex-wrap justify-center"
-        self.on_request = on_request
-        self.buttons = {}
-        self.loading_key = None
-
-    def set_choices(self, choices):
-        previous = list(self.buttons.values())
-        self.buttons = {}
-        for key, label, value in choices:
-            button = v.Btn(
-                small=True,
-                color="primary",
-                outlined=True,
-                class_="text-none ma-1 px-3",
-                children=[label],
-            )
-            button.on_event("click", lambda *_, selected=value: self.on_request(selected))
-            self.buttons[key] = button
-        self.children = list(self.buttons.values())
-        for button in previous:
-            button.close()
-
-    def mark_selected(self, selected):
-        for key, button in self.buttons.items():
-            button.outlined = key != selected
-
-    def set_loading(self, key, loading):
-        if loading:
-            self.loading_key = key
-        elif self.loading_key != key:
-            return
-        else:
-            self.loading_key = None
-        for button_key, button in self.buttons.items():
-            button.loading = self.loading_key == button_key
-            button.disabled = self.loading_key is not None
-
-
 class BeltSelector(sw.Flex):
     """Compact mountain belt buttons shared by both indicator charts."""
 

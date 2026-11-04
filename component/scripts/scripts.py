@@ -1,5 +1,4 @@
 from io import BytesIO
-from typing import TYPE_CHECKING
 from component.scripts.file_handler import read_file
 from component.types import Pathlike
 import random
@@ -21,8 +20,6 @@ from component.scripts import mountain_area as mntn
 from component.scripts import sub_a as sub_a
 from component.scripts import sub_b as sub_b
 
-if TYPE_CHECKING:
-    from component.model.model import MgciModel
 
 
 __all__ = [
@@ -302,7 +299,7 @@ def interpolate_sub_a_data(
     """Interpolate sub A data between two years.
 
     Args:
-        mode (MgciModel): MGCI model containing results from calculation
+        mode: the calculation results
         year1 (int): first year
         year2 (int): second year
         target_year (int): target year
