@@ -4,6 +4,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *[Uu]ntitled*
+nox_ui.ipynb
 ,nox
 # C extensions
 *.so
