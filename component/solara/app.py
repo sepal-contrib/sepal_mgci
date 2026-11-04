@@ -1,7 +1,6 @@
 """MGCI application shell: session state, map and the step and results panels."""
 
 import logging
-from dataclasses import replace
 
 import solara
 from pysepal.mapping import SepalMap
@@ -15,8 +14,6 @@ from component.widget.app_shell import MgciMapApp
 from mgci.application.operations import prepare_request, refresh_transition
 from mgci.application.state import ResourceState
 from mgci.infrastructure.defaults import initial_configuration
-from mgci.infrastructure.areas import area_metadata
-from mgci.infrastructure.science import capture_aoi
 from mgci.infrastructure.transitions import load_transition
 from mgci.infrastructure.workspace import ClientWorkspace
 from .charts import ChartPanel
@@ -27,25 +24,7 @@ from .session import use_session_state
 from .settings import SettingsPanel
 from .tasks import TaskPanel
 from .areas import BiobeltOverlay
-from .aoi import ReportingAreaPicker
-
-
-@solara.component
-def AreaPanel(state, publish, resources, map_, gee_interface):
-
-    def choose(result):
-        identity, graph = capture_aoi(result.feature_collection) if result is not None else ('', '')
-        name, code = area_metadata(result)
-        state.edit(replace(state.configuration, aoi_identity=identity, aoi_graph=graph,
-                           aoi_name=name, ref_area=code, aoi_label=result.name if result is not None else '',
-                           a=replace(state.configuration.a, evidence=None),
-                           b=replace(state.configuration.b, evidence=None)))
-        # The transition file does not depend on the area; keep a selection in progress.
-        for key in ('a', 'b', 'b_classes'):
-            resources[key].begin('')
-        publish()
-
-    ReportingAreaPicker(choose, map_, gee_interface)
+from .aoi import AreaPanel
 
 
 @solara.component

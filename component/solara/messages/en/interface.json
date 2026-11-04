@@ -95,5 +95,8 @@
     "download": "Download historical results",
     "original_transition": "Original transition CSV for this historical task",
     "historical_saved": "Historical report saved to {path}. The legacy task has no verifiable input fingerprint."
+  },
+  "areas": {
+    "not_reporting": "{name} is not an SDG reporting country or area. Select another area."
   }
 }

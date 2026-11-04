@@ -1,81 +1,103 @@
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 import unittest
 
 import ipyvuetify as v
 import solara
-from pysepal.solara.notifications import NotificationProvider
 
-from component.solara.aoi import ReportingAreaPicker
-from mgci.infrastructure.areas import reporting_admin_items
+from component.solara import aoi
+from mgci.application.state import ResourceState
 from test_solara_components import walk
-from test_solara_calculation import until
 
 
-class ReportingAreaTests(unittest.IsolatedAsyncioTestCase):
-    async def test_changed_selection_rejects_late_success(self):
-        publications = []
-        future = asyncio.get_running_loop().create_future()
-        started = []
-        async def process(*args, **kwargs):
-            started.append(True)
-            try:
-                return await asyncio.shield(future)
-            except asyncio.CancelledError:
-                return await future
-        class Map:
-            def remove_layer(self, *args, **kwargs):
-                pass
-            def add_layer(self, *args, **kwargs):
-                raise AssertionError('Obsolete AOI must not reach the map')
+def render_panel(test, captured, notifier, state):
+    @solara.component
+    def FakeAoiView(**props):
+        captured.update(props)
+        props['clear_ref'].current = captured.setdefault('clear', MagicMock())
+
+    for target in (patch.object(aoi, 'AoiView', FakeAoiView), patch.object(aoi, 'use_notifications', return_value=notifier)):
+        target.start()
+        test.addCleanup(target.stop)
+    resources = {key: ResourceState() for key in ('a', 'b', 'transition', 'b_classes')}
+    root, context = solara.render(aoi.AreaPanel(state, lambda: None, resources, None, object()), handle_error=False)
+    test.addCleanup(context.close)
+
+
+class AreaPanelTests(unittest.TestCase):
+    def setUp(self):
+        from mgci.infrastructure.defaults import initial_configuration
+        self.state = SimpleNamespace(configuration=initial_configuration(), edit=MagicMock())
+
+    def test_uses_the_pysepal_picker_with_the_reference_methods(self):
+        captured, notifier = {}, MagicMock()
+        render_panel(self, captured, notifier, self.state)
+        self.assertEqual(captured['methods'], ['ADMIN0', 'ADMIN1', 'ADMIN2', 'ASSET'])
+        self.assertTrue(captured['gee'])
+
+    def test_reporting_country_is_stored_with_its_m49_code(self):
+        captured, notifier = {}, MagicMock()
+        render_panel(self, captured, notifier, self.state)
+        with patch.object(aoi, 'capture_aoi', return_value=('id', 'graph')):
+            captured['on_value'](SimpleNamespace(name='AND', method='ADMIN0', feature_collection=object()))
+        config = self.state.edit.call_args.args[0]
+        self.assertEqual((config.aoi_name, config.ref_area, config.aoi_identity), ('Andorra', '020', 'id'))
+        notifier.error.assert_not_called()
+
+    def test_area_outside_the_reporting_countries_is_rejected(self):
+        captured, notifier = {}, MagicMock()
+        render_panel(self, captured, notifier, self.state)
+        captured['on_value'](SimpleNamespace(name='TWN', method='ADMIN0', feature_collection=object()))
+        self.state.edit.assert_not_called()
+        notifier.error.assert_called_once()
+        self.assertIn('TWN', notifier.error.call_args.args[0])
+        captured['clear'].assert_called_once()
+
+
+class PysepalPickerTests(unittest.IsolatedAsyncioTestCase):
+    async def test_offers_only_the_reference_methods(self):
+        from pysepal.solara.components.aoi import aoi_view
+        from pysepal.solara.notifications import NotificationProvider
+
         @solara.component
         def Harness():
             NotificationProvider()
-            ReportingAreaPicker(publications.append, Map(), object())
-        async def preview(*args):
-            return None, 'url', (0, 0, 1, 1)
-        with patch('component.solara.aoi.reporting_admin_items', return_value=[{'text':'Andorra', 'value':'285'}]), \
-             patch('component.solara.aoi.process_admin', process), \
-             patch('component.solara.aoi.prepare_area_preview', preview), \
-             patch('component.solara.aoi.area_metadata', return_value=('Andorra', '020')):
+            aoi_view.AoiView(methods=aoi.METHODS, gee=True)
+        with patch.object(aoi_view, 'get_current_gee_interface'), patch.object(aoi_view.su, 'init_ee'):
             root, context = solara.render(Harness(), handle_error=False)
             self.addCleanup(context.close)
-            method = next(w for w in walk(root) if isinstance(w, v.Select))
-            method.v_model = 'ADMIN0'
+            await asyncio.sleep(0)
+        method = next(w for w in walk(root) if isinstance(w, v.Select))
+        self.assertEqual([item['value'] for item in method.items if 'value' in item], aoi.METHODS)
+
+    async def test_rejection_follows_the_picker_success_and_clears_it(self):
+        from pysepal.solara.components.aoi import aoi_view
+        from mgci.infrastructure.defaults import initial_configuration
+        calls = []
+        notifier = MagicMock()
+        notifier.success.side_effect = lambda text: calls.append('success')
+        notifier.error.side_effect = lambda text: calls.append('error')
+        state = SimpleNamespace(configuration=initial_configuration(), edit=MagicMock())
+        resources = {key: ResourceState() for key in ('a', 'b', 'transition', 'b_classes')}
+        async def process(**kwargs):
+            return SimpleNamespace(name='TWN', method='ADMIN0', feature_collection=None, spec=None)
+        with patch.object(aoi_view, 'get_current_gee_interface'), patch.object(aoi_view.su, 'init_ee'), \
+             patch.object(aoi_view, 'use_notifications', return_value=notifier), \
+             patch.object(aoi, 'use_notifications', return_value=notifier), \
+             patch.object(aoi_view, 'process_admin', process):
+            root, context = solara.render(aoi.AreaPanel(state, lambda: None, resources, None, object()),
+                                          handle_error=False)
+            self.addCleanup(context.close)
+            next(w for w in walk(root) if isinstance(w, v.Select)).v_model = 'ADMIN0'
             await asyncio.sleep(.05)
-            country = next(w for w in walk(root) if isinstance(w, v.Autocomplete))
-            country.v_model = '285'
+            [w for w in walk(root) if isinstance(w, v.Select)][1].v_model = '170'
             await asyncio.sleep(.05)
-            button = next(w for w in walk(root) if isinstance(w, v.Btn) and 'Select Area of Interest (AOI)' in w.children)
-            self.assertFalse(button.disabled)
-            button.fire_event('click', None)
-            await until(lambda: bool(started))
-            country.v_model = None
-            future.set_result(SimpleNamespace(name='AND', method='ADMIN0'))
-            await asyncio.sleep(.1)
-            self.assertTrue(publications)
-            self.assertTrue(all(item is None for item in publications))
-
-    def test_country_list_matches_reference_reporting_scope(self):
-        import csv
-        from importlib.resources import files
-        import pandas as pd
-        from mgci.infrastructure.defaults import PARAMETERS
-        with (PARAMETERS / 'm49_countries.csv').open() as stream:
-            iso = {row['iso31661'] for row in csv.DictReader(stream, delimiter=';')}
-        frame = pd.read_parquet(files('pygaul').joinpath('data/gaul_database.parquet'))
-        expected = set(frame.loc[frame.iso3_code.isin(iso), 'gaul0_code'].astype(str))
-        self.assertEqual({item['value'] for item in reporting_admin_items()}, expected)
-
-
-class AreaButtonTests(unittest.IsolatedAsyncioTestCase):
-    async def test_select_button_is_shown_from_the_start_and_disabled(self):
-        @solara.component
-        def Harness():
-            NotificationProvider()
-            ReportingAreaPicker(lambda result: None, SimpleNamespace(remove_layer=lambda *a, **k: None), object())
-        root, context = solara.render(Harness(), handle_error=False)
-        self.addCleanup(context.close)
-        button = next(w for w in walk(root) if isinstance(w, v.Btn) and 'Select Area of Interest (AOI)' in w.children)
-        self.assertTrue(button.disabled)
+            next(w for w in walk(root) if isinstance(w, v.Btn) and not w.disabled).fire_event('click', None)
+            for _ in range(50):
+                if 'error' in calls:
+                    break
+                await asyncio.sleep(.02)
+        self.assertEqual(calls, ['success', 'error'])
+        # Only the clear reaches the state, and it empties the AOI.
+        self.assertEqual([call.args[0].aoi_name for call in state.edit.call_args_list], [''])
