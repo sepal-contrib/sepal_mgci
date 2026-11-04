@@ -23,6 +23,9 @@ with patch('socket.socket.connect', side_effect=AssertionError('Network forbidde
     import component.solara.scale
     import component.solara.app
     import mgci.infrastructure.science
+    # The notebooks import the kernels before they start Earth Engine.
+    import component.scripts.gee
+    import component.scripts.surface_area
     from mgci.infrastructure.reports import build_workbook
     try:
         build_workbook(())
