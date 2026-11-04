@@ -57,3 +57,11 @@ class MigrationShellTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(dialog.v_model)
         from mgci.domain.validation import readiness
         self.assertFalse(readiness(seen[-1].configuration, 'a', 'statistics').ready)
+
+
+class ToastTimeoutTests(unittest.TestCase):
+    def test_errors_persist_until_clicked_and_other_toasts_still_expire(self):
+        import component.solara.app  # noqa: F401  (sets the defaults on import)
+        from pysepal.solara.notifications import Toast, ToastType
+        self.assertIsNone(Toast(message='failed', type=ToastType.ERROR).effective_timeout())
+        self.assertEqual(Toast(message='done', type=ToastType.SUCCESS).effective_timeout(), 3.0)

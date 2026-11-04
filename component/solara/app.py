@@ -6,7 +6,7 @@ import solara
 from pysepal.mapping import SepalMap
 from pysepal.solara import get_current_theme_state
 from pysepal.solara.components.admin import AdminButton
-from pysepal.solara.notifications import NotificationProvider
+from pysepal.solara.notifications import TOAST_TIMEOUT_DEFAULTS, NotificationProvider, ToastType
 
 from component.message import cm
 from component.scripts.steps import add_step_actions
@@ -25,6 +25,10 @@ from .settings import SettingsPanel
 from .tasks import TaskPanel
 from .areas import BiobeltOverlay
 from .aoi import AreaPanel
+
+
+# Error toasts stay until the user clicks them; the others keep pysepal's 3 s.
+TOAST_TIMEOUT_DEFAULTS[ToastType.ERROR] = None
 
 
 @solara.component
