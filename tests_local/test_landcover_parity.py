@@ -166,3 +166,22 @@ class LandCoverParityTests(unittest.IsolatedAsyncioTestCase):
             future.set_result(b'from_code,to_code\n10,4\n20,1\n')
             await until(lambda: any(isinstance(widget, v.Alert) and widget.type == 'error' for widget in widgets(root)))
             self.assertEqual(state.configuration.a.mapping, edited)
+
+
+class StepCardTests(unittest.IsolatedAsyncioTestCase):
+    async def test_step_contents_are_flat(self):
+        from mgci.application.state import ResourceState
+        config = replace(report_state().configuration, workflow=Workflow.CUSTOM_RECLASSIFY)
+        resources = {key: ResourceState() for key in ('a', 'b', 'transition')}
+        @solara.component
+        def Harness():
+            state, publish = use_session_state(config)
+            NotificationProvider()
+            LandCoverPanel(state, publish, resources, Interface(), None, None)
+        root, context = solara.render(Harness(), handle_error=False)
+        self.addCleanup(context.close)
+        contents = [widget for widget in widgets(root) if isinstance(widget, v.StepperContent)]
+        self.assertEqual(len(contents), 4)
+        for content in contents:
+            card = next(child for child in content.children if isinstance(child, v.Card))
+            self.assertEqual(card.elevation, 0)

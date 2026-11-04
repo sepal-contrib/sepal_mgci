@@ -249,7 +249,8 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
                                 style_='box-shadow:inherit!important;background-color:inherit!important;'):
                     rv.StepperStep(step=1, editable=True, children=[cm.veg_layer.stepper.header.data_selection])
                     with rv.StepperContent(step=1):
-                        with rv.Card():
+                        # Flat: the legacy elevated card showed as a shadow under the lone asset field.
+                        with rv.Card(elevation=0):
                             with rv.Html(tag='div', class_='mx-2'):
                                 classes = TaskButtonComponent(label=cm.reclass.get_classes, on_start=inspect, on_cancel=cancel,
                                                               running=inspect.pending, small=True,
@@ -264,21 +265,21 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
                         with rv.StepperContent(step=2):
                             # Legacy layout: a d-block wrapper (keeps the description black) and
                             # the ReclassifyView card with pa-5 around the table.
-                            with rv.Card():
+                            with rv.Card(elevation=0):
                                 with rv.Html(tag='div', class_='d-block'):
                                     rv.CardText(children=[cm.reclass.description])
                                     with rv.Card(class_='pa-5'):
                                         MappingEditor(state, publish, 'a', workspace, sepal_client)
                         rv.StepperStep(step=3, editable=discovered, children=[cm.veg_layer.stepper.header.reclassify_b])
                         with rv.StepperContent(step=3):
-                            with rv.Card():
+                            with rv.Card(elevation=0):
                                 with rv.Card(class_='pa-5'):
                                     MappingEditor(state, publish, 'b', workspace, sepal_client)
                     matrix_step = 4 if reclassify else 2
                     rv.StepperStep(step=matrix_step, editable=discovered if reclassify else True,
                                    children=[cm.veg_layer.stepper.header.transition_matrix])
                     with rv.StepperContent(step=matrix_step):
-                        with rv.Card():
+                        with rv.Card(elevation=0):
                             if reclassify:
                                 TransitionFile(state, publish, resources['transition'], load_transition, sepal_client)
                             else:
