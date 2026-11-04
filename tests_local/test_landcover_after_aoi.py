@@ -93,3 +93,43 @@ class LandCoverAfterAreaTests(unittest.IsolatedAsyncioTestCase):
             await until(lambda: state.configuration.a.evidence is not None)
             self.assertTrue(readiness(state.configuration, 'a', 'setup').ready)
             self.assertTrue(readiness(state.configuration, 'b', 'setup').ready)
+
+
+class DefaultDatasetTests(unittest.IsolatedAsyncioTestCase):
+    async def run_after_aoi(self, workflow):
+        from mgci.domain.configuration import Workflow
+        seen, calls = [], []
+        resources = {key: ResourceState() for key in ('a', 'b', 'transition')}
+        async def discover(config, indicator, interface):
+            calls.append(indicator)
+            images = tuple(ImageSelection(f'{config.a.asset}/{year}', year) for year in (2000, 2015, 2018))
+            return DatasetDiscovery(DatasetEvidence(config.a.asset, tuple(image.asset for image in images),
+                                                    (10, 190), config.aoi_identity, 'ready'), images)
+        @solara.component
+        def Harness():
+            state, publish = use_session_state(replace(initial_configuration(2026), workflow=workflow))
+            seen.append((state, publish))
+            NotificationProvider()
+            LandCoverPanel(state, publish, resources, Interface(), None, None)
+        with patch('component.solara.landcover.discover', discover):
+            root, context = solara.render(Harness(), handle_error=False)
+            self.addCleanup(context.close)
+            await asyncio.sleep(.05)
+            self.assertEqual(calls, [], 'Nothing to discover before an AOI')
+            state, publish = seen[-1]
+            state.edit(replace(state.configuration, aoi_identity='aoi', aoi_graph='captured'))
+            publish()
+            await asyncio.sleep(.1)
+        return state, calls
+
+    async def test_default_dataset_is_ready_without_opening_the_dialog(self):
+        from mgci.domain.configuration import Workflow
+        state, calls = await self.run_after_aoi(Workflow.DEFAULT)
+        self.assertTrue(calls)
+        self.assertTrue(readiness(state.configuration, 'a', 'statistics').ready)
+        self.assertTrue(readiness(state.configuration, 'b', 'statistics').ready)
+
+    async def test_custom_dataset_still_waits_for_get_classes(self):
+        from mgci.domain.configuration import Workflow
+        state, calls = await self.run_after_aoi(Workflow.CUSTOM_RECLASSIFY)
+        self.assertEqual(calls, [])

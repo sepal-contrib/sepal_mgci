@@ -184,15 +184,22 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
         publish()
 
     def close():
-        # Closing stops a class check; the default flow starts it again on the next open.
-        if inspect.pending:
+        # Closing stops a custom dataset check; the light default listing keeps running.
+        if inspect.pending and custom:
             cancel()
         opened.set(False)
 
     def open_dialog():
         opened.set(True)
-        if not discovered and not reclassify and config.aoi_identity:
+        if not discovered and not reclassify and config.aoi_identity and not inspect.pending:
             inspect()
+
+    def use_default():
+        # Legacy use_default(): the default dataset is usable without opening the dialog.
+        # Its discovery only lists the images; the packaged mapping gives the classes.
+        if not custom and config.aoi_identity and not discovered and not inspect.pending:
+            inspect()
+    solara.use_effect(use_default, [config.aoi_identity, config.workflow])
 
     def select(value):
         asset = str(value or '')
