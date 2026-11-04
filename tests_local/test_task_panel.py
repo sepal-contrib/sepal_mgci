@@ -46,8 +46,10 @@ class TaskPanelTests(unittest.IsolatedAsyncioTestCase):
             self.addCleanup(context.close)
             def fields():
                 return [widget for widget in walk(root) if isinstance(widget, v.TextField)]
-            def report_downloads():
-                return [widget for widget in walk(root) if isinstance(widget, v.Btn) and 'Download report' in widget.children]
+            def downloads():
+                # The report is saved to the workspace; the panel offers no browser download.
+                return [widget for widget in walk(root) if isinstance(widget, v.Btn) and 'Download' in str(widget.children)
+                        and 'Export tables' not in str(widget.children)]
             fields()[0].v_model = 'tasks/first.json'
             button = next(widget for widget in walk(root) if isinstance(widget, v.Btn)
                           and 'Download & Export tables' in widget.children)
@@ -65,21 +67,22 @@ class TaskPanelTests(unittest.IsolatedAsyncioTestCase):
                     workbook.assert_not_called()
             fields()[1].v_model = 'original.csv'
             button.fire_event('click', None)
-            await until(lambda: len(writes) == 1 and bool(report_downloads()))
+            await until(lambda: len(writes) == 1)
+            self.assertEqual(downloads(), [])
             self.assertEqual(writes[0][1], b'historical workbook')
             self.assertEqual(workbook.call_args.args[2].source, 'original.csv')
             self.assertEqual(state.history, ())
             self.assertIsNone(state.current('b', 'statistics'))
             fields()[0].v_model = 'tasks/second.json'
             self.assertEqual(len(fields()), 1)
-            self.assertEqual(report_downloads(), [])
+            self.assertEqual(downloads(), [])
             button.fire_event('click', None)
             await until(lambda: len(fields()) == 2)
             self.assertEqual(fields()[1].v_model, '')
             self.assertEqual(reads, ['unavailable.csv', 'invalid.csv', 'original.csv'])
             self.assertEqual(len(writes), 1)
 
-    async def test_retrieved_workbook_is_downloadable_and_previous_report_is_retained(self):
+    async def test_retrieved_workbook_is_saved_and_previous_report_is_retained(self):
         state = report_state()
         request = state.prepare('a', 'statistics')
         writes = []
@@ -111,7 +114,8 @@ class TaskPanelTests(unittest.IsolatedAsyncioTestCase):
             button.fire_event('click', None)
             await until(lambda: bool(writes))
             await asyncio.sleep(.05)
-            self.assertTrue(any('Download report' in str(w.children) for w in walk(root) if isinstance(w, v.Btn)))
+            self.assertFalse(any('Download report' in str(w.children) for w in walk(root) if isinstance(w, v.Btn)))
+            self.assertTrue(writes[0][0].startswith('module_results/sdg_indicators/15.4.2/reports/'))
             button.fire_event('click', None)
             await until(lambda: len(writes) == 2)
             self.assertEqual([row[1] for row in writes], [b'workbook', b'workbook'])
@@ -176,3 +180,16 @@ class TaskPanelLegacyLayoutTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(any('Please select a task file.' in w.children for w in alerts))
             text = ' '.join(str(c) for w in walk(root) for c in (getattr(w, 'children', ()) or ()) if isinstance(c, str))
             self.assertNotIn('Task record', text)
+
+
+class TaskPanelLayoutTests(unittest.IsolatedAsyncioTestCase):
+    async def test_export_button_sits_on_the_right(self):
+        @solara.component
+        def Harness():
+            NotificationProvider()
+            TaskPanel(report_state(), lambda: None, object(), object(), object(), None)
+        root, context = solara.render(Harness(), handle_error=False)
+        self.addCleanup(context.close)
+        row = next(w for w in walk(root) if isinstance(w, v.Html) and 'justify-end' in (w.class_ or '')
+                   and any(isinstance(c, v.Btn) and 'Download & Export tables' in c.children for c in w.children))
+        self.assertIsNotNone(row)

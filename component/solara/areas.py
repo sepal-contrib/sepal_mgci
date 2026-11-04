@@ -12,7 +12,7 @@ log = logging.getLogger('MGCI.solara.areas')
 
 
 @solara.component
-def BiobeltOverlay(config, map_, gee_interface, on_legend, on_ready):
+def BiobeltOverlay(config, map_, gee_interface, on_legend):
     notifications = use_notifications()
     identity = (config.aoi_identity, config.biobelt)
 
@@ -44,6 +44,5 @@ def BiobeltOverlay(config, map_, gee_interface, on_legend, on_ready):
             map_.add_layer(EELayer(ee_object=ee.Image(ee.deserializer.decode(json.loads(payload['graph']))),
                                   url=payload['url'], name='Bioclimatic belts', attribution='Google Earth Engine', max_zoom=24), key='biobelts')
             on_legend(payload['legend'])
-            on_ready()
     solara.use_effect(receive, [task.finished, task.value])
     solara.use_effect(lambda: lambda: map_.remove_layer('biobelts', none_ok=True), [])

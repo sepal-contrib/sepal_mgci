@@ -41,13 +41,7 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
     NotificationProvider()
     context_legend = solara.use_reactive(None)
     enabled = solara.use_reactive(('a', 'b'))
-    app_ref = solara.use_ref(None)
-
-    def close_aoi():
-        if app_ref.current is not None and app_ref.current.current_step == 2:
-            app_ref.current.vue_handle_step_deactivation()
-
-    BiobeltOverlay(state.configuration, map_, gee_interface, context_legend.set, close_aoi)
+    BiobeltOverlay(state.configuration, map_, gee_interface, context_legend.set)
     MapOutputs(state, map_, context_legend.value)
 
     async def load(path):
@@ -82,7 +76,7 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
         {'id': 6, 'name': cm.app.drawer_item.task, 'icon': 'mdi-export', 'display': 'dialog',
          'content': [TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_client)]},
     ])
-    shell = MgciMapApp.element(app_title='SDG 15.4.2', app_icon='mdi-image-filter-hdr', main_map=[map_],
+    MgciMapApp.element(app_title='SDG 15.4.2', app_icon='mdi-image-filter-hdr', main_map=[map_],
         theme_state=theme, steps_data=steps, dialog_width=750,
         repo_url='https://github.com/sepal-contrib/sepal_mgci',
         right_panel_config={'title': 'Results', 'icon': 'mdi-image-filter-hdr', 'width': 400,
@@ -106,7 +100,3 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
              'content': [ChartPanel(state, publish, 'b', gee_interface, prepare, before_export, enabled)],
              'description': 'Explore land-cover transitions by period and mountain belt.'},
         ])
-
-    def bind_shell():
-        app_ref.current = solara.get_widget(shell)
-    solara.use_effect(bind_shell, [shell])

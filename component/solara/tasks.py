@@ -2,7 +2,6 @@
 
 import logging
 import asyncio
-from pathlib import PurePosixPath
 from uuid import uuid4
 
 import reacton.ipyvuetify as rv
@@ -156,18 +155,13 @@ def TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_c
                                initial_folder=TASK_FOLDER, extensions=['.json'])
         else:
             rv.Alert(type='warning', children=[msg('setup.workspace_required')])
-        TaskButtonComponent(label=cm.dashboard.label.calculate_from_task,
-                            on_start=start, on_cancel=cancel, small=True,
-                            running=fetch.pending, external_busy=workspace is None)
+        with rv.Html(tag='div', class_='d-flex justify-end'):
+            TaskButtonComponent(label=cm.dashboard.label.calculate_from_task,
+                                on_start=start, on_cancel=cancel, small=True,
+                                running=fetch.pending, external_busy=workspace is None)
         if missing.value:
             rv.Alert(type='error', text=True, class_='mt-5', children=[msg('tasks.no_file')])
-        if completed.value and completed.value[3] is not None:
-            solara.FileDownload(completed.value[3], filename=PurePosixPath(completed.value[0]).name,
-                                label=msg('task_report.download'))
         if needs_transition.value:
             if sepal_client is not None:
                 FileInputComponent(value=original_transition.value, on_value=choose_transition, sepal_client=sepal_client,
                                    extensions=['.csv'], label=msg('tasks.original_transition'))
-        if completed.value and completed.value[2] is not None:
-            import json
-            solara.FileDownload(json.dumps(completed.value[2], indent=2).encode(), filename='historical-results.json', label=msg('tasks.download'))

@@ -92,7 +92,6 @@
     "no_file": "Please select a task file.",
     "retrieve": "Retrieve and save report",
     "legacy": "This legacy task has no captured input provenance. Its results are available as history; workbook reconstruction still requires the original transition data.",
-    "download": "Download historical results",
     "original_transition": "Original transition CSV for this historical task",
     "historical_saved": "Historical report saved to {path}. The legacy task has no verifiable input fingerprint."
   },
