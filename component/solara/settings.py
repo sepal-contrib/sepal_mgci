@@ -175,7 +175,8 @@ def StatusAlert(kind, lines, download=None):
     """Legacy alert above the action row: calculation progress, results and report links."""
     with rv.Alert(type=kind, text=True, class_='mt-5'):
         for line in lines:
-            solara.Markdown(line, style='padding:0;')
+            # solara.Markdown carries the Jupyter text colour; inherit the alert's instead.
+            solara.Markdown(line, style='padding:0;color:inherit;')
         if download is not None:
             revision, content = download
             with rv.Html(tag='p'):

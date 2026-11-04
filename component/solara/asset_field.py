@@ -11,7 +11,7 @@ log = logging.getLogger('MGCI.solara.asset_field')
 
 
 @solara.component
-def LandCoverAssetField(value, on_value, gee_interface, *, disabled=False, error=None, busy=False, hint=''):
+def LandCoverAssetField(value, on_value, gee_interface, *, disabled=False, error=None, busy=False, hint='', append=None):
     reload = solara.use_reactive(0)
 
     async def browse():
@@ -37,5 +37,7 @@ def LandCoverAssetField(value, on_value, gee_interface, *, disabled=False, error
                         # pysepal AssetSelect defaults, kept by the legacy field.
                         dense=True, class_='my-5 mx-1', hint=hint, persistent_hint=bool(hint),
                         prepend_inner_icon='mdi-sync', loading=task.pending or busy,
-                        error_messages=[message] if message else [])
+                        error_messages=[message] if message else [],
+                        # The outer slot lines up with the input row, not with the hint and error lines below it.
+                        v_slots=[{'name': 'append-outer', 'children': append}] if append is not None else [])
     ipyvue.use_event(field, 'click:prepend-inner', lambda *_: reload.set(reload.value + 1))

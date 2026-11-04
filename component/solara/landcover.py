@@ -243,15 +243,15 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
                     rv.StepperStep(step=1, editable=True, children=[cm.veg_layer.stepper.header.data_selection])
                     with rv.StepperContent(step=1):
                         with rv.Card():
-                            with rv.Html(tag='div', class_='d-flex align-center mx-2'):
-                                with rv.Html(tag='div', style_='flex:1;min-width:0;'):
-                                    LandCoverAssetField(config.a.asset, select, gee_interface, disabled=not custom,
-                                                        error=resources['a'].error, busy=inspect.pending,
-                                                        hint='' if config.aoi_identity else msg('validation.aoi_required'))
-                                if reclassify:
-                                    TaskButtonComponent(label=cm.reclass.get_classes, on_start=inspect, on_cancel=cancel,
-                                                        running=inspect.pending, small=True,
-                                                        external_busy=not config.aoi_identity or not config.a.asset)
+                            with rv.Html(tag='div', class_='mx-2'):
+                                classes = TaskButtonComponent(label=cm.reclass.get_classes, on_start=inspect, on_cancel=cancel,
+                                                              running=inspect.pending, small=True,
+                                                              external_busy=not config.aoi_identity or not config.a.asset
+                                                              ) if reclassify else None
+                                LandCoverAssetField(config.a.asset, select, gee_interface, disabled=not custom,
+                                                    error=resources['a'].error, busy=inspect.pending,
+                                                    hint='' if config.aoi_identity else msg('validation.aoi_required'),
+                                                    append=classes)
                     if reclassify:
                         rv.StepperStep(step=2, editable=discovered, children=[cm.veg_layer.stepper.header.reclassify_a])
                         with rv.StepperContent(step=2):

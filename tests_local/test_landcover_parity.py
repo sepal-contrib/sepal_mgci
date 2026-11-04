@@ -58,6 +58,9 @@ class LandCoverParityTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(selectors), 1)
         buttons = [widget for widget in widgets(root) if isinstance(widget, v.Btn)]
         self.assertEqual(sum('Get classes' in button.children for button in buttons), 1)
+        # Inside the field's outer slot, so it centres on the input and not on the hint below.
+        slot = next(item for item in selectors[0].v_slots if item['name'] == 'append-outer')
+        self.assertIn('Get classes', slot['children'].children)
         tables = [widget for widget in widgets(root) if isinstance(widget, v.SimpleTable)]
         self.assertEqual(sum(table.height == '300px' for table in tables), 2)
         # Footer Close buttons; the legacy alert dialog's full-width Close is plain.
