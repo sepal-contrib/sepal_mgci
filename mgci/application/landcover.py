@@ -8,6 +8,10 @@ from mgci.domain.configuration import Workflow
 log = logging.getLogger('MGCI.application.landcover')
 
 
+def _family(workflow):
+    return 'default' if workflow in (Workflow.DEFAULT, Workflow.DEFAULT_EDIT_TRANSITIONS) else 'custom'
+
+
 class WorkflowDrafts:
     def __init__(self, defaults):
         self.defaults = defaults
@@ -19,7 +23,20 @@ class WorkflowDrafts:
             return
         self._drafts[current.workflow] = (current.a, current.b, current.transition)
         saved = self._drafts.get(workflow)
-        if saved is not None:
+        if _family(workflow) == _family(current.workflow):
+            # Same dataset: keep its asset, years and classes; only the mapping or transitions differ.
+            a, b, transition = current.a, current.b, saved[2] if saved else self.defaults.transition
+            if workflow == Workflow.DEFAULT:
+                transition = self.defaults.transition
+            elif workflow == Workflow.CUSTOM_CANONICAL:
+                a, b = replace(a, mapping=()), replace(b, mapping=())
+                transition = self.defaults.transition
+            elif workflow == Workflow.CUSTOM_RECLASSIFY:
+                same = saved is not None and saved[0].asset == current.a.asset
+                a = replace(a, mapping=saved[0].mapping if same else ())
+                b = replace(b, mapping=saved[1].mapping if same else ())
+                transition = saved[2] if saved else None
+        elif saved is not None:
             a, b, transition = saved
         elif workflow in (Workflow.DEFAULT, Workflow.DEFAULT_EDIT_TRANSITIONS):
             a, b, transition = self.defaults.a, self.defaults.b, self.defaults.transition

@@ -86,3 +86,40 @@ class RestoreSetupTests(unittest.TestCase):
         opened = configuration()
         edited = replace(opened, a=replace(opened.a, asset='users/me/other', evidence=None, images=()))
         self.assertEqual(restore_setup(edited, opened).a, opened.a)
+
+
+class SameDatasetWorkflowTests(unittest.TestCase):
+    def setUp(self):
+        from mgci.domain.configuration import DatasetEvidence, ImageSelection
+        from mgci.infrastructure.defaults import initial_configuration
+        self.defaults = initial_configuration(2026)
+        asset = self.defaults.a.asset
+        self.evidence = DatasetEvidence(asset, (f'{asset}/2000', f'{asset}/2010'), (10, 20), 'aoi', 'ready')
+        self.years = (ImageSelection(f'{asset}/2000', 2000), ImageSelection(f'{asset}/2010', 2010))
+
+    def test_edit_transitions_toggle_keeps_years_and_classes(self):
+        from mgci.domain.configuration import TransitionTable
+        state = SessionState(replace(self.defaults, aoi_identity='aoi',
+                                     a=replace(self.defaults.a, evidence=self.evidence, images=self.years)))
+        drafts = WorkflowDrafts(self.defaults)
+        drafts.select(state, Workflow.DEFAULT_EDIT_TRANSITIONS)
+        self.assertEqual((state.configuration.a.images, state.configuration.a.evidence), (self.years, self.evidence))
+        edited = TransitionTable(((1, 1, 2),), 'mine.csv', 'digest', True)
+        state.edit(replace(state.configuration, transition=edited))
+        drafts.select(state, Workflow.DEFAULT)
+        self.assertEqual(state.configuration.transition, self.defaults.transition)
+        self.assertEqual(state.configuration.a.images, self.years)
+        drafts.select(state, Workflow.DEFAULT_EDIT_TRANSITIONS)
+        self.assertEqual(state.configuration.transition, edited)
+
+    def test_reclassify_answer_keeps_the_current_custom_asset(self):
+        custom = configuration()
+        drafts = WorkflowDrafts(self.defaults)
+        state = SessionState(custom)
+        drafts.select(state, Workflow.CUSTOM_CANONICAL)
+        state.edit(replace(state.configuration, a=replace(state.configuration.a, asset='users/me/new'),
+                           b=replace(state.configuration.b, asset='users/me/new')))
+        drafts.select(state, Workflow.CUSTOM_RECLASSIFY)
+        self.assertEqual(state.configuration.a.asset, 'users/me/new')
+        # The saved table was for another asset, so it does not come back.
+        self.assertEqual(state.configuration.a.mapping, ())
