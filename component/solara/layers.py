@@ -10,8 +10,7 @@ from mgci.infrastructure.layers import layer_choices, prepare_layer
 from mgci.infrastructure.reports import plain_data
 from .actions import RequestAction
 from .setup import readiness_text
-from .messages import msg
-from component.message import cm
+from component.message import msg
 
 
 def current_layers(state):
@@ -66,7 +65,7 @@ def LayerPanel(state, publish, map_, gee_interface, drive_interface, sepal_clien
     indexed = {f'{indicator}:{selector}': (indicator, selector, title) for indicator, selector, title in choices}
     current = indexed.get(selected.value)
     items = []
-    for key, header in (('a', cm.layers.sub_a_header), ('b', cm.layers.sub_b_header)):
+    for key, header in (('a', msg('layers.sub_a_header')), ('b', msg('layers.sub_b_header'))):
         group = [{'text': title.removeprefix('Land cover ') if key == 'a' else title, 'value': value}
                  for value, (indicator, _, title) in indexed.items() if indicator == key]
         if group:

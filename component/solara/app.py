@@ -8,7 +8,7 @@ from pysepal.solara import get_current_theme_state
 from pysepal.solara.components.admin import AdminButton
 from pysepal.solara.notifications import NotificationProvider
 
-from component.message import cm
+from component.message import msg
 from component.scripts.steps import add_step_actions
 from component.widget.app_shell import MgciMapApp
 from mgci.application.operations import prepare_request, refresh_transition
@@ -66,15 +66,15 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
             state.export_artifact(artifact.request)
 
     steps = add_step_actions([
-        {'id': 2, 'name': cm.app.drawer_item.aoi, 'icon': 'mdi-map-marker-check', 'display': 'dialog',
+        {'id': 2, 'name': msg('app.drawer_item.aoi'), 'icon': 'mdi-map-marker-check', 'display': 'dialog',
          'content': [AreaPanel(state, publish, resources, map_, gee_interface)]},
-        {'id': 3, 'name': cm.app.drawer_item.vegetation, 'icon': 'mdi-pine-tree', 'display': 'dialog',
+        {'id': 3, 'name': msg('app.drawer_item.vegetation'), 'icon': 'mdi-pine-tree', 'display': 'dialog',
          'content': [LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load, workspace)]},
-        {'id': 4, 'name': cm.app.drawer_item.calculation, 'icon': 'mdi-cogs', 'display': 'dialog',
+        {'id': 4, 'name': msg('app.drawer_item.calculation'), 'icon': 'mdi-cogs', 'display': 'dialog',
          'content': [SettingsPanel(state, publish, gee_interface, workspace, prepare, before_export, enabled)]},
-        {'id': 5, 'name': cm.app.drawer_item.dashboard, 'icon': 'mdi-view-dashboard', 'display': 'dialog',
+        {'id': 5, 'name': msg('app.drawer_item.dashboard'), 'icon': 'mdi-view-dashboard', 'display': 'dialog',
          'content': [], 'right_panel_action': 'toggle'},
-        {'id': 6, 'name': cm.app.drawer_item.task, 'icon': 'mdi-export', 'display': 'dialog',
+        {'id': 6, 'name': msg('app.drawer_item.task'), 'icon': 'mdi-export', 'display': 'dialog',
          'content': [TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_client)]},
     ])
     MgciMapApp.element(app_title='SDG 15.4.2', app_icon='mdi-image-filter-hdr', main_map=[map_],

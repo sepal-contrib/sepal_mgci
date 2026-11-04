@@ -10,7 +10,7 @@ import solara
 from pysepal.solara.components.task_button import TaskButtonComponent
 from pysepal.solara.notifications import use_notifications
 
-from component.message import cm
+from component.message import msg
 from mgci.application.reports import prepare_report
 from mgci.domain.validation import NotReady, readiness
 from mgci.infrastructure.reports import build_report_revision
@@ -46,8 +46,8 @@ def CalculationAction(state, publish, indicators, run, prepare=None, background=
                 checked = readiness(state.configuration, key, 'statistics')
                 if not checked.ready:
                     raise NotReady(checked.issues)
-            area = cm.dashboard.label.rsa_name if state.configuration.rsa else cm.dashboard.label.plan
-            notifications.info(cm.dashboard.alert.computing.format(area))
+            area = msg('dashboard.label.rsa_name') if state.configuration.rsa else msg('dashboard.label.plan')
+            notifications.info(msg('dashboard.alert.computing', area=area))
             # Refresh B first; its file load must finish before capturing A.
             for key in sorted(selected, reverse=True):
                 if state.revision(key, 'statistics') != revisions[key]:
@@ -108,7 +108,7 @@ def CalculationAction(state, publish, indicators, run, prepare=None, background=
         publish()
 
     valid = bool(indicators) and all(readiness(state.configuration, key, 'statistics').ready for key in indicators)
-    TaskButtonComponent(label=cm.dashboard.label.calculate,
+    TaskButtonComponent(label=msg('dashboard.label.calculate'),
                         on_start=lambda: task(tuple(indicators), {key: state.revision(key, 'statistics') for key in indicators}, background),
                         on_cancel=cancel, running=task.pending,
                         external_busy=not valid or (background and workspace is None), small=True)
@@ -165,7 +165,7 @@ def ReportAction(state, workspace, before_export=None, indicators=('a', 'b'), on
             notifications.error(str(error))
 
     with rv.Html(tag='div', class_='d-inline-block ml-2'):
-        TaskButtonComponent(label=cm.dashboard.label.download, on_start=start, on_cancel=save.cancel,
+        TaskButtonComponent(label=msg('dashboard.label.download'), on_start=start, on_cancel=save.cancel,
                             running=save.pending, external_busy=not artifacts or any(a is None for a in artifacts) or workspace is None,
                             small=True)
 
@@ -235,20 +235,20 @@ def SettingsPanel(state, publish, gee_interface, workspace, prepare, before_expo
                                lambda images, key=indicator: edit(**{key: replace(getattr(state.configuration, key), images=images)}))
         with rv.ExpansionPanels(class_='my-2'):
             with rv.ExpansionPanel():
-                rv.ExpansionPanelHeader(children=[cm.dashboard.advanced_options])
+                rv.ExpansionPanelHeader(children=[msg('dashboard.advanced_options')])
                 # Legacy controls only: DEM, source and reference area stay fixed
                 # configuration values, as in the original calculation tile.
                 with rv.ExpansionPanelContent():
                     with rv.Html(tag='div', class_='d-flex'):
-                        with HelpTooltip(cm.dashboard.help.rsa):
-                            rv.Switch(label=cm.dashboard.label.rsa, v_model=config.rsa,
+                        with HelpTooltip(msg('dashboard.help.rsa')):
+                            rv.Switch(label=msg('dashboard.label.rsa'), v_model=config.rsa,
                                       on_v_model=lambda value: edit(rsa=bool(value)))
                     with rv.Html(tag='div', class_='d-flex'):
-                        with HelpTooltip(cm.dashboard.help.background):
-                            rv.Switch(label=cm.dashboard.label.background, v_model=background.value,
+                        with HelpTooltip(msg('dashboard.help.background')):
+                            rv.Switch(label=msg('dashboard.label.background'), v_model=background.value,
                                       on_v_model=background.set)
                     with rv.Html(tag='div', class_='d-flex'):
-                        with HelpTooltip(cm.dashboard.help.scale, top=True):
+                        with HelpTooltip(msg('dashboard.help.scale'), top=True):
                             ScaleField(config.scale, lambda value: edit(scale=value))
         ReadinessMessages(config, enabled.value)
         # Messages sit above the buttons, as in the legacy tile.

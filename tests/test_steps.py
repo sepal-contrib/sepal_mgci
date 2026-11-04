@@ -1,6 +1,6 @@
 import ipyvuetify as v
 
-from component.message import cm
+from component.message import msg
 from component.scripts.steps import add_step_actions
 from component.widget.app_shell import MgciMapApp
 
@@ -12,15 +12,15 @@ STEPS = [
     {"id": 6, "display": "dialog", "content": "export from task"},
 ]
 
-CLOSE = {"label": cm.app.step_action.close, "close": True, "cancel": True}
+CLOSE = {"label": msg('app.step_action.close'), "close": True, "cancel": True}
 
 
 def next_to(step_id):
-    return {"label": cm.app.step_action.next, "next": step_id}
+    return {"label": msg('app.step_action.next'), "next": step_id}
 
 
 def back_to(step_id):
-    return {"label": cm.app.step_action.back, "next": step_id, "cancel": True}
+    return {"label": msg('app.step_action.back'), "next": step_id, "cancel": True}
 
 
 def test_each_step_window_can_be_closed_and_moves_back_and_forth():

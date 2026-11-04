@@ -9,13 +9,12 @@ import solara
 from pysepal.solara.components.inputs import FileInputComponent
 from pysepal.solara.notifications import use_notifications
 from pysepal.solara.components.task_button import TaskButtonComponent
-from component.message import cm
+from component.message import msg
 
 from mgci.domain.validation import readiness
 from mgci.infrastructure.reports import build_workbook, build_legacy_workbook
 from mgci.infrastructure.transitions import load_transition
 from mgci.infrastructure.tasks import submit, retrieve, TASK_FOLDER
-from .messages import msg
 from .toasts import LASTING
 
 log = logging.getLogger('MGCI.solara.tasks')
@@ -149,15 +148,15 @@ def TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_c
     solara.use_effect(lifetime, [])
     # Legacy DownloadTaskView: flat card, catalogue title/description, default file button.
     with rv.Card(elevation=0, class_='ma-0 pa-0'):
-        rv.CardTitle(children=[cm.dashboard.tasks.title], class_='px-0 mx-0')
-        solara.Markdown(cm.dashboard.tasks.description.format(TASK_FOLDER))
+        rv.CardTitle(children=[msg('dashboard.tasks.title')], class_='px-0 mx-0')
+        solara.Markdown(msg('dashboard.tasks.description', folder=TASK_FOLDER))
         if sepal_client is not None:
             FileInputComponent(value=path.value, on_value=choose_path, sepal_client=sepal_client,
                                initial_folder=TASK_FOLDER, extensions=['.json'])
         else:
             rv.Alert(type='warning', children=[msg('setup.workspace_required')])
         with rv.Html(tag='div', class_='d-flex justify-end'):
-            TaskButtonComponent(label=cm.dashboard.label.calculate_from_task,
+            TaskButtonComponent(label=msg('dashboard.label.calculate_from_task'),
                                 on_start=start, on_cancel=cancel, small=True,
                                 running=fetch.pending, external_busy=workspace is None)
         if missing.value:

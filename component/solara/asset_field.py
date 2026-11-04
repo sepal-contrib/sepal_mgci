@@ -5,7 +5,7 @@ import reacton.ipyvue as ipyvue
 import reacton.ipyvuetify as rv
 import solara
 
-from component.message import cm
+from component.message import msg
 
 log = logging.getLogger('MGCI.solara.asset_field')
 
@@ -29,7 +29,7 @@ def LandCoverAssetField(value, on_value, gee_interface, *, disabled=False, error
                                prefer_threaded=False, raise_error=False)
     items, browse_error = task.value if task.finished and task.value is not None else ((), None)
     message = error or browse_error
-    label = cm.reclass_view.ic_default_label if disabled else cm.reclass_view.ic_custom_label
+    label = msg('reclass_view.ic_default_label') if disabled else msg('reclass_view.ic_custom_label')
     field = rv.Combobox(label=label, v_model=value,
                         on_v_model=lambda selected: on_value(str(selected or '').strip()),
                         items=list(dict.fromkeys((*items, *((value,) if value else ())))),

@@ -7,7 +7,7 @@ import solara
 from mgci.domain.configuration import Configuration, IndicatorConfig, ScalePolicy, Workflow
 from component.solara.scale import ScaleField
 from component.solara.session import use_session_state
-from component.solara.messages import messages
+from component.message import messages
 
 
 def walk(widget):

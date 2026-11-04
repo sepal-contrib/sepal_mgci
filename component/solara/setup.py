@@ -6,12 +6,11 @@ import pysepal.sepalwidgets as sw
 import reacton.ipyvuetify as rv
 import solara
 
-from component.message import cm
+from component.message import msg
 from mgci.domain.configuration import ImageSelection, Workflow
 from mgci.domain.codes import class_code
 from mgci.domain.validation import NotReady, readiness
 from mgci.infrastructure.defaults import classification_labels
-from .messages import msg
 
 
 @solara.component
@@ -19,23 +18,23 @@ def WorkflowQuestions(value: Workflow, on_value):
     custom = value in (Workflow.CUSTOM_CANONICAL, Workflow.CUSTOM_RECLASSIFY)
     with rv.Html(tag='div', class_='pa-0 ma-0'):
         # pysepal's Markdown widget, as in the legacy questionnaire (same link styling).
-        sw.Markdown.element(mkd_str=cm.veg_layer.description, class_='pa-0 ma-0')
-        rv.Html(tag='h3', children=[cm.veg_layer.questionnaire.q1])
+        sw.Markdown.element(mkd_str=msg('veg_layer.description'), class_='pa-0 ma-0')
+        rv.Html(tag='h3', children=[msg('veg_layer.questionnaire.q1')])
         with rv.RadioGroup(v_model=custom, on_v_model=lambda yes: on_value(
                 Workflow.CUSTOM_CANONICAL if yes else Workflow.DEFAULT), row=True):
             rv.Radio(label=msg('setup.no'), value=False)
             rv.Radio(label=msg('setup.yes'), value=True)
         if custom:
-            rv.Html(tag='h3', children=[cm.veg_layer.questionnaire.q3])
+            rv.Html(tag='h3', children=[msg('veg_layer.questionnaire.q3')])
             with rv.RadioGroup(v_model=value == Workflow.CUSTOM_RECLASSIFY,
                                on_v_model=lambda yes: on_value(Workflow.CUSTOM_RECLASSIFY if yes else Workflow.CUSTOM_CANONICAL), row=True):
                 rv.Radio(label=msg('setup.no'), value=False)
                 rv.Radio(label=msg('setup.yes'), value=True)
             if value == Workflow.CUSTOM_CANONICAL:
                 rv.Alert(type='warning', text=True, icon='mdi-information', class_='mt-5',
-                         children=[rv.Html(tag='p', children=[cm.veg_layer.questionnaire.alert_not_classify])])
+                         children=[rv.Html(tag='p', children=[msg('veg_layer.questionnaire.alert_not_classify')])])
         else:
-            rv.Html(tag='h3', children=[cm.veg_layer.questionnaire.q2])
+            rv.Html(tag='h3', children=[msg('veg_layer.questionnaire.q2')])
             with rv.RadioGroup(v_model=value == Workflow.DEFAULT_EDIT_TRANSITIONS,
                                on_v_model=lambda yes: on_value(Workflow.DEFAULT_EDIT_TRANSITIONS if yes else Workflow.DEFAULT), row=True):
                 rv.Radio(label=msg('setup.no'), value=False)
@@ -57,8 +56,8 @@ def MappingTable(selected, classes, on_value, source_labels=None):
     with rv.SimpleTable(dense=True, class_='elevation-1', fixed_header=True, height='300px'):
         with rv.Html(tag='thead'):
             with rv.Html(tag='tr'):
-                rv.Html(tag='th', children=[cm.rec.rec.headers[0]])
-                rv.Html(tag='th', children=[cm.rec.rec.headers[1]])
+                rv.Html(tag='th', children=[msg('rec.rec.headers.0')])
+                rv.Html(tag='th', children=[msg('rec.rec.headers.1')])
         with rv.Html(tag='tbody'):
             for source in classes:
                 with rv.Html(tag='tr'):
@@ -158,7 +157,7 @@ def TransitionEditor(table, labels, on_value, disabled=False, on_reset=None):
                    v_slots=[{'name': 'activator', 'variable': 'tooltip', 'children': short}])
 
     with rv.Toolbar(flat=True, class_='mb-2'):
-        rv.ToolbarTitle(children=[cm.veg_layer.stepper.header.transition_matrix])
+        rv.ToolbarTitle(children=[msg('veg_layer.stepper.header.transition_matrix')])
         rv.Spacer()
         rv.Divider(vertical=True, class_='mx-2')
         with solara.Tooltip(msg('landcover.reset')):

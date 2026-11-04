@@ -12,24 +12,23 @@ log = logging.getLogger('MGCI.infrastructure.layers')
 
 def layer_choices(config):
     """(indicator, selector, title) for every layer, with the legacy selector titles."""
-    from component.message import cm
+    from component.message import msg
 
-    names = cm.layers
 
     def complete(images):
         # A year row without an image or a year has no layer yet.
         return tuple(image for image in images if image.asset and image.year > 0)
 
-    choices = [('a', image.asset, f'{names.land_cover} {image.year}') for image in complete(config.a.images)]
+    choices = [('a', image.asset, f'{msg("layers.land_cover")} {image.year}') for image in complete(config.a.images)]
     baseline, reports = config.b.images[:2], complete(config.b.images[2:])
     if len(complete(baseline)) == 2:
         for image in reports:
-            choices.append(('b', f'{image.asset}|final_degradation', f'{names.final_degradation} {image.year}'))
+            choices.append(('b', f'{image.asset}|final_degradation', f'{msg("layers.final_degradation")} {image.year}'))
         if config.b.images[2:3] and config.b.images[2] in reports:
-            choices.append(('b', f'{config.b.images[2].asset}|baseline_degradation', names.baseline_degradation))
-        choices += [('b', f'{image.asset}|report_degradation', f'{names.report_degradation} {image.year}')
+            choices.append(('b', f'{config.b.images[2].asset}|baseline_degradation', msg('layers.baseline_degradation')))
+        choices += [('b', f'{image.asset}|report_degradation', f'{msg("layers.report_degradation")} {image.year}')
                     for image in reports]
-    choices += [('b', f'{image.asset}|land_cover', f'{names.land_cover} {image.year}')
+    choices += [('b', f'{image.asset}|land_cover', f'{msg("layers.land_cover")} {image.year}')
                 for image in complete(config.b.images)]
     return tuple(choices)
 
@@ -87,13 +86,13 @@ def export_sources(config, indicators, session_id):
     Layers whose indicator is not ready are listed disabled, as the dialog shows them.
     """
     from pysepal.solara.components.export import ExportSource, ResolvedExport
-    from component.message import cm
+    from component.message import msg
     from component.scripts.aoi_geometry import aoi_bbox
     from mgci.application.state import Request
     from mgci.domain.provenance import scientific_identity
     from mgci.domain.validation import readiness
 
-    headers = {'a': cm.layers.sub_a_header, 'b': cm.layers.sub_b_header}
+    headers = {'a': msg('layers.sub_a_header'), 'b': msg('layers.sub_b_header')}
     ready = {key: readiness(config, key, 'image_export').ready for key in ('a', 'b')}
     sources = []
     for indicator, selector, title in layer_choices(config):

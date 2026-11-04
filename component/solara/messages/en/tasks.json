@@ -1,6 +1,0 @@
-{
-  "task_report": {
-    "download": "Download report",
-    "description": "This section helps you retrieve calculations running in the background on Google Earth Engine.\n\n- Locate your task file in `{folder}`.\n- Check whether the calculation has completed and download its reporting tables.\n- Results from the current calculation can populate its dashboard. Earlier calculations remain historical reports with their original settings.\n\nFollow the steps below to retrieve your calculation outputs."
-  }
-}

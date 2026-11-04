@@ -4,7 +4,7 @@ import solara
 from pysepal.solara.components.export import ExportLauncher
 
 from mgci.infrastructure.layers import export_sources
-from .messages import msg
+from component.message import msg
 
 
 @solara.component

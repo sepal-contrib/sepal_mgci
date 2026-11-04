@@ -1,6 +1,6 @@
 """Footer buttons of the step windows of the app shell."""
 
-from component.message import cm
+from component.message import msg
 
 
 def _opens_window(step):
@@ -23,7 +23,7 @@ def add_step_actions(steps):
     "Back" skips steps that only open a panel. "Next" to such a step closes this
     window first, and ``MgciMapApp`` then opens the panel instead of an empty window.
     """
-    close = {"label": cm.app.step_action.close, "close": True, "cancel": True}
+    close = {"label": msg('app.step_action.close'), "close": True, "cancel": True}
     result = []
     for index, step in enumerate(steps):
         step = dict(step)
@@ -32,10 +32,10 @@ def add_step_actions(steps):
             previous = next((other for other in reversed(steps[:index]) if _opens_window(other)), None)
             if previous is not None:
                 # "cancel" only gives the button the outlined style of "Close".
-                actions.append({"label": cm.app.step_action.back, "next": previous["id"], "cancel": True})
+                actions.append({"label": msg('app.step_action.back'), "next": previous["id"], "cancel": True})
             following = steps[index + 1] if index + 1 < len(steps) else None
             if following is not None:
-                next_step = {"label": cm.app.step_action.next, "next": following["id"]}
+                next_step = {"label": msg('app.step_action.next'), "next": following["id"]}
                 if _opens_window(following):
                     actions.append(next_step)
                 elif opens_panel_only(following):

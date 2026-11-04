@@ -6,7 +6,7 @@ import component.scripts as cs
 # isort: off
 from component.parameter.index_parameters import sub_a_cols, sub_a_landtype_cols
 import component.parameter.module_parameter as param
-from component.message import cm
+from component.message import msg
 
 
 from component.scripts.report_scripts import (
@@ -33,8 +33,10 @@ def _check_target_classes(df: pd.DataFrame) -> None:
             str(int(code)) if float(code).is_integer() else str(code) for code in unknown
         )
         raise ValueError(
-            cm.setup.unknown_classes.format(
-                classes=classes, step=cm.app.drawer_item.vegetation
+            msg(
+                "setup.unknown_classes",
+                classes=classes,
+                step=msg("app.drawer_item.vegetation"),
             )
         )
 

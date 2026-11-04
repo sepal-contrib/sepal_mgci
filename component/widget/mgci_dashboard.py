@@ -4,7 +4,7 @@ import pysepal.sepalwidgets as sw
 from ipywidgets import Widget
 
 import component.parameter.module_parameter as param
-from component.message import cm
+from component.message import msg
 from component.scripts.plots import get_land_cover_bar_chart
 from component.scripts.sub_a import get_mgci
 
@@ -120,7 +120,7 @@ class MgciDashboard(sw.Layout):
                 v.Html(
                     tag="div",
                     class_="text-overline",
-                    children=[cm.dashboard.global_.title],
+                    children=[msg('dashboard.global_.title')],
                 ),
                 v.Html(
                     tag="div",
@@ -130,7 +130,7 @@ class MgciDashboard(sw.Layout):
                 v.Html(
                     tag="div",
                     class_="text-body-2 mt-2",
-                    children=[cm.dashboard.global_.desc.format(param.UNITS["sqkm"][1])],
+                    children=[msg('dashboard.global_.desc', unit=param.UNITS["sqkm"][1])],
                 ),
             ],
         )
@@ -183,7 +183,7 @@ class MgciDashboard(sw.Layout):
         self.chart_description.children = (
             []
             if belt == "Total"
-            else [getattr(cm.dashboard.individual.desc, f"belt_{int(belt)}")]
+            else [msg(f"dashboard.individual.desc.belt_{int(belt)}")]
         )
         values = self.df if belt == "Total" else self.df[self.df.belt_class == belt]
         chart = get_land_cover_bar_chart(values, self.model.lulc_classes_sub_a or {})

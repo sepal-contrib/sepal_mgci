@@ -12,8 +12,7 @@ from mgci.infrastructure.charts import chart_choices, chart_frame
 from mgci.infrastructure.defaults import classification_labels
 from mgci.infrastructure.science import calculate
 from .actions import RequestAction
-from .messages import msg
-from component.message import cm
+from component.message import msg
 
 log = logging.getLogger('MGCI.solara.charts')
 
@@ -182,7 +181,7 @@ def ChartPanel(state, publish, indicator, gee_interface, prepare, before_use=Non
                 with rv.Card(class_='pa-2 d-flex flex-column', style_='box-sizing:border-box; height:min(1180px, calc(90vh - 16px)); height:min(1180px, calc(90dvh - 16px));'):
                     rv.CardTitle(children=['Results'])
                     with rv.CardText(class_='flex-grow-1', style_='min-height:0; overflow-y:auto;'):
-                        rv.Html(tag='h3', class_='mb-3', children=[cm.dashboard.window_title.format(indicator=indicator.upper(), area=artifact.request.configuration.aoi_name)])
+                        rv.Html(tag='h3', class_='mb-3', children=[msg('dashboard.window_title', indicator=indicator.upper(), area=artifact.request.configuration.aoi_name)])
                         rv.Html(tag='div', class_='text-caption text-center', children=['Year' if indicator == 'a' else 'Period'])
                         with rv.Html(tag='div', class_='d-flex flex-wrap justify-center'):
                             for key, label in choices:
@@ -194,5 +193,5 @@ def ChartPanel(state, publish, indicator, gee_interface, prepare, before_use=Non
                             BChart(artifact, current, opened.value)
                     with rv.CardActions():
                         rv.Spacer()
-                        solara.Button(cm.app.step_action.close, on_click=lambda: opened.set(False), small=True, text=True,
+                        solara.Button(msg('app.step_action.close'), on_click=lambda: opened.set(False), small=True, text=True,
                                       outlined=True, color='primary', classes=['mr-2'])

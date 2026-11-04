@@ -6,7 +6,7 @@ from pysepal.solara.components.task_button import TaskButtonComponent
 from pysepal.solara.notifications import use_notifications
 
 from mgci.domain.validation import readiness
-from .messages import msg
+from component.message import msg
 from .setup import error_text
 
 log = logging.getLogger('MGCI.solara.actions')

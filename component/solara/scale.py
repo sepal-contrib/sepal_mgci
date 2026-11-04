@@ -4,8 +4,7 @@ import reacton.ipyvuetify as rv
 import solara
 
 from mgci.domain.configuration import ScalePolicy
-from component.message import cm
-from .messages import msg
+from component.message import msg
 
 
 @solara.component
@@ -29,7 +28,7 @@ def ScaleField(value: ScalePolicy, on_value):
         on_value(ScalePolicy('custom', metres))
 
     with rv.Html(tag='div'):
-        rv.Html(tag='div', class_='text-subtitle-2 mb-1', children=[cm.dashboard.label.scale])
+        rv.Html(tag='div', class_='text-subtitle-2 mb-1', children=[msg('dashboard.label.scale')])
         with rv.Html(tag='div', class_='d-flex align-center', style_='gap: 12px;'):
             with rv.BtnToggle(v_model=selected, on_v_model=choose, dense=True,
                               color='secondary', style_='background: transparent; flex-wrap: wrap;'):
@@ -39,5 +38,5 @@ def ScaleField(value: ScalePolicy, on_value):
                            color='secondary' if preset == selected else None,
                            children=[msg('scale.native') if preset == 0 else str(preset)])
             rv.TextField(v_model=raw.value, on_v_model=custom, type='number', suffix='m',
-                         dense=True, hide_details=False, placeholder=cm.dashboard.label.custom_scale,
+                         dense=True, hide_details=False, placeholder=msg('dashboard.label.custom_scale'),
                          style_='max-width: 128px;', error_messages=[] if valid else [msg('scale.error', min=10, max=1500)])

@@ -12,11 +12,10 @@ from pysepal.solara.components.task_button import TaskButtonComponent
 from pysepal.scripts.utils import normalize_str
 from pysepal.solara.notifications import use_notifications
 
-from component.message import cm
+from component.message import msg
 from mgci.infrastructure.classifications import parse_classification
 from mgci.infrastructure.defaults import PARAMETERS, classification_labels
 from mgci.infrastructure.mappings import mapping_csv, parse_mapping
-from .messages import msg
 from .setup import MappingTable
 from .toasts import LASTING
 
@@ -38,30 +37,28 @@ def IconAction(icon, title, action, disabled=False, last=False):
 @solara.component
 def DialogCancel(action):
     """Legacy BaseDialog cancel button: small, filled secondary."""
-    solara.Button(cm.reclass.tooltip.load_target.cancel_btn, small=True, color='secondary', on_click=action)
+    solara.Button(msg('reclass.tooltip.load_target.cancel_btn'), small=True, color='secondary', on_click=action)
 
 
 @solara.component
 def CloseAction(action):
-    solara.Button(cm.app.step_action.close, small=True, text=True, outlined=True,
+    solara.Button(msg('app.step_action.close'), small=True, text=True, outlined=True,
                   color='primary', on_click=action)
 
 
 @solara.component
 def SaveName(filename, folder):
     """Legacy save field: normalized on blur, with a live destination preview."""
-    field = rv.TextField(label=cm.reclass.dialog.save.w_file_label, v_model=filename.value,
+    field = rv.TextField(label=msg('reclass.dialog.save.w_file_label'), v_model=filename.value,
                          on_v_model=lambda value: filename.set(value or ''))
     ipyvue.use_event(field, 'blur', lambda *_: filename.set(normalize_str(filename.value)) if filename.value else None)
     with rv.Alert(type='info', text=True, class_='mt-5'):
         if filename.value:
             name = f'{normalize_str(filename.value.removesuffix(".csv"))}.csv'
-            # Catalogue text: "Your file will be saved on: {} </br> as {}."
-            on, as_, end = cm.reclass.dialog.save.alert.active.split('{}')
-            rv.Html(tag='p', children=[f'{on}{folder}', rv.Html(tag='br'),
-                                       f"{as_.replace('</br>', '').strip()} {name}{end}"])
+            rv.Html(tag='p', children=[msg('reclass.dialog.save.alert.folder', folder=folder), rv.Html(tag='br'),
+                                       msg('reclass.dialog.save.alert.name', name=name)])
         else:
-            rv.Html(tag='p', children=[cm.reclass.dialog.save.alert.default])
+            rv.Html(tag='p', children=[msg('reclass.dialog.save.alert.default')])
 
 
 def source_labels(selected, default_asset):
@@ -115,10 +112,10 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
                     raise ValueError(msg('landcover.workspace_required'))
                 if operation == 'save':
                     if not captured.mapping:
-                        raise ValueError(cm.reclass.dialog.save.error.no_matrix)
+                        raise ValueError(msg('reclass.dialog.save.error.no_matrix'))
                     name = name.strip().removesuffix('.csv')
                     if not name:
-                        raise ValueError(cm.reclass.dialog.save.error.no_name)
+                        raise ValueError(msg('reclass.dialog.save.error.no_name'))
                     path = f'{folder}/{normalize_str(name)}.csv'
                     await workspace.mkdir_async(folder, parents=True)
                     await workspace.write_async(path, mapping_csv(captured.mapping))
@@ -126,7 +123,7 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
                     active.set('')
                     return
                 if not path:
-                    raise ValueError(cm.reclass.dialog.import_.error.no_file)
+                    raise ValueError(msg('reclass.dialog.import_.error.no_file'))
                 content = await workspace.read_bytes_async(path)
                 loaded = parse_mapping(content, captured) if operation == 'import' else parse_classification(content)
             if not action.is_current():
@@ -150,23 +147,23 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
     # orange while partial and green when complete.
     progress = round(100 * assigned / len(classes)) if classes else 0
     with rv.Toolbar(flat=True, color='accent'):
-        rv.Html(tag='span', children=[cm.reclass.title])
+        rv.Html(tag='span', children=[msg('reclass.title')])
         rv.Html(tag='span', class_='ml-2 warning--text',
-                children=[cm.reclass.non_complete.format(f'{assigned} of {len(classes)}')]
+                children=[msg('reclass.non_complete', assigned=f'{assigned} of {len(classes)}')]
                 if assigned < len(classes) else [])
         rv.Spacer()
         rv.Divider(vertical=True, class_='mx-2')
-        IconAction('mdi-information', cm.reclass.tooltip.info, lambda: open_dialog('info'))
+        IconAction('mdi-information', msg('reclass.tooltip.info'), lambda: open_dialog('info'))
         if indicator == 'b':
-            IconAction('mdi-table', cm.reclass.tooltip.load_target.btn, lambda: open_dialog('target'))
-        IconAction('mdi-content-save', cm.reclass.tooltip.save_matrix, lambda: open_dialog('save'))
-        IconAction('mdi-upload', cm.reclass.tooltip.load_matrix, lambda: open_dialog('import'), last=True)
+            IconAction('mdi-table', msg('reclass.tooltip.load_target.btn'), lambda: open_dialog('target'))
+        IconAction('mdi-content-save', msg('reclass.tooltip.save_matrix'), lambda: open_dialog('save'))
+        IconAction('mdi-upload', msg('reclass.tooltip.load_matrix'), lambda: open_dialog('import'), last=True)
     rv.ProgressLinear(value=progress, height=5,
                       color='error' if progress == 0 else 'warning' if progress < 100 else 'success')
     MappingTable(selected, classes, lambda mapping: edit(mapping=mapping), source_names)
 
-    titles = {'info': 'Land cover classes', 'target': cm.reclass.tooltip.load_target.title,
-              'import': cm.reclass.dialog.import_.title, 'save': cm.reclass.dialog.save.title}
+    titles = {'info': 'Land cover classes', 'target': msg('reclass.tooltip.load_target.title'),
+              'import': msg('reclass.dialog.import_.title'), 'save': msg('reclass.dialog.save.title')}
     with rv.Dialog(v_model=bool(active.value), on_v_model=lambda value: None if value else close_dialog(),
                    max_width=950, overlay_opacity=0.7, eager=True):
         with rv.Card(class_='pa-2'):
@@ -177,7 +174,7 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
                         with rv.Html(tag='thead'):
                             with rv.Html(tag='tr'):
                                 for key in ('lc_class', 'desc', 'color'):
-                                    rv.Html(tag='th', children=[cm.reclass.default_table.header[key]])
+                                    rv.Html(tag='th', children=[msg(f'reclass.default_table.header.{key}')])
                         with rv.Html(tag='tbody'):
                             for code, name, color in labels:
                                 with rv.Html(tag='tr'):
@@ -190,7 +187,7 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
                     if active.value == 'target':
                         # Legacy TargetClassesDialog: "use SEEA" / "Custom" toggles
                         # (selected one filled) above an always visible file input.
-                        rv.Html(tag='span', children=[cm.reclass.dialog.target.description])
+                        rv.Html(tag='span', children=[msg('reclass.dialog.target.description')])
                         with rv.Html(tag='div', class_='mt-5'):
                             solara.Button(msg('landcover.standard'), on_click=lambda: target_mode.set('standard'),
                                           small=True, color='primary', outlined=target_mode.value != 'standard', classes=['mr-2'])
@@ -206,7 +203,7 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
                         FileInputComponent(value=file_path.value, on_value=choose_file, sepal_client=sepal_client,
                                            extensions=['.csv'],
                                            initial_folder=folder if active.value == 'import' else class_folder,
-                                           label='filename' if active.value == 'import' else cm.rec.rec.input.classif.label,
+                                           label='filename' if active.value == 'import' else msg('rec.rec.input.classif.label'),
                                            ).key(f'file-{active.value}')
                     else:
                         rv.Html(tag='p', children=[msg('landcover.workspace_required')])
@@ -216,8 +213,8 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
                 rv.Spacer()
                 DialogCancel(close_dialog)
                 if active.value and active.value != 'info':
-                    labels_ = {'save': cm.reclass.dialog.save.btn_label, 'target': cm.reclass.dialog.target.btn_label}
-                    TaskButtonComponent(label=labels_.get(active.value, cm.reclass.dialog.import_.btn_label),
+                    labels_ = {'save': msg('reclass.dialog.save.btn_label'), 'target': msg('reclass.dialog.target.btn_label')}
+                    TaskButtonComponent(label=labels_.get(active.value, msg('reclass.dialog.import_.btn_label')),
                                         on_start=lambda: action(active.value, selected, state.revision(indicator, 'setup'),
                                                                 file_path.value, filename.value, target_mode.value),
                                         on_cancel=action.cancel, running=action.pending, small=True, color='secondary')

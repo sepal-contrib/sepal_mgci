@@ -9,7 +9,7 @@ from pysepal.solara.notifications import use_notifications
 
 from mgci.infrastructure.areas import area_metadata
 from mgci.infrastructure.science import capture_aoi
-from .messages import msg
+from component.message import msg
 
 log = logging.getLogger('MGCI.solara.aoi')
 

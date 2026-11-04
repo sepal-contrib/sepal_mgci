@@ -7,7 +7,7 @@ import reacton.ipyvuetify as rv
 import solara
 from traitlets import Dict, List, Unicode
 
-from component.message import cm
+from component.message import msg
 from mgci.domain.codes import class_code
 from mgci.domain.configuration import ImageSelection
 from mgci.domain.reporting import reporting_breakpoints
@@ -74,14 +74,16 @@ def year_errors(images, indicator):
         errors.append('Choose a baseline and reporting years in increasing order.')
     if indicator == 'a' and len({image.year for image in images}) != len(images):
         errors.append('Choose only one image per year.')
-    return errors or ([] if images else [cm.setup.years_incomplete])
+    return errors or ([] if images else [msg('setup.years_incomplete')])
 
 
 @solara.component
 def IndicatorYears(config, indicator, enabled, on_enabled, on_images):
     opened = solara.use_reactive(False)
     selected = getattr(config, indicator)
-    text = cm.calculation[f'sub_{indicator}']
+    def text(key):
+        return msg(f'calculation.sub_{indicator}.{key}')
+
     images = selected.images
     errors = year_errors(images, indicator)
     assets = selected.evidence.images if selected.evidence else tuple(image.asset for image in images if image.asset)
@@ -98,14 +100,14 @@ def IndicatorYears(config, indicator, enabled, on_enabled, on_images):
         with rv.ListItemContent():
             with rv.Card():
                 with rv.CardTitle():
-                    rv.Html(tag='span', children=[text.title])
+                    rv.Html(tag='span', children=[text('title')])
                     rv.Spacer()
                     solara.Button(icon_name='mdi-layers-plus', icon=True, disabled=not enabled,
                                   on_click=lambda: opened.set(True), classes=['mr-2'])
                     rv.Switch(v_model=enabled, on_v_model=on_enabled,
-                              attributes={'aria-label': text.title})
+                              attributes={'aria-label': text('title')})
                 with rv.CardText():
-                    rv.Html(tag='span', children=[text.desc_active if enabled else text.desc_disabled])
+                    rv.Html(tag='span', children=[text('desc_active') if enabled else text('desc_disabled')])
                     rv.Spacer(class_='my-2')
                     if enabled and years and not errors:
                         with rv.Html(tag='span', class_='mt-2'):
@@ -120,7 +122,7 @@ def IndicatorYears(config, indicator, enabled, on_enabled, on_images):
     with rv.Dialog(v_model=opened.value, on_v_model=opened.set, persistent=True, eager=True, max_width=750):
         with rv.Card(max_width=750, min_height=420, class_='pa-4', style_='height:100%;'):
             with rv.CardTitle():
-                rv.Html(tag='span', children=[text.title])
+                rv.Html(tag='span', children=[text('title')])
                 rv.Spacer()
                 with solara.Tooltip('Reset all values'):
                     solara.Button(icon=True, icon_name='mdi-broom', color='primary',
@@ -132,7 +134,7 @@ def IndicatorYears(config, indicator, enabled, on_enabled, on_images):
             with rv.CardActions():
                 rv.Spacer()
                 # Legacy CloseBtn (outlined primary) and OK (filled primary) with mr-2.
-                solara.Button(cm.app.step_action.close, on_click=lambda: opened.set(False), small=True,
+                solara.Button(msg('app.step_action.close'), on_click=lambda: opened.set(False), small=True,
                               text=True, outlined=True, color='primary', classes=['mr-2'])
                 solara.Button('OK', on_click=lambda: opened.set(False), disabled=bool(errors), small=True,
                               color='primary', classes=['mr-2'])
