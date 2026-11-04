@@ -57,3 +57,38 @@ class CalculationComponentTests(unittest.IsolatedAsyncioTestCase):
         await until(lambda: state.current('a', 'statistics') is not None)
         self.assertEqual(len(state.history), 1)
         self.assertEqual(state.current('a', 'statistics').payload['2000']['sub_a'], ())
+
+
+class SettingsCalculationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_first_calculation_keeps_running_when_the_status_alert_appears(self):
+        from unittest.mock import patch
+        from component.solara.settings import SettingsPanel
+        from mgci.domain.validation import readiness
+        state = report_state()
+        self.assertTrue(readiness(state.configuration, 'a', 'statistics').ready)
+        pending = asyncio.get_running_loop().create_future()
+        started, cancelled = [], []
+        async def calculate(request, gee_interface):
+            started.append(request)
+            try:
+                return await pending
+            except asyncio.CancelledError:
+                cancelled.append(request)
+                raise
+        @solara.component
+        def Harness():
+            NotificationProvider()
+            SettingsPanel(state, lambda: None, object(), None, None, None, enabled=('a',))
+        with patch('component.solara.settings.calculate', calculate):
+            root, context = solara.render(Harness(), handle_error=False)
+            self.addCleanup(context.close)
+            button = next(w for w in walk(root) if isinstance(w, v.Btn) and 'Calculate indicator' in str(w.children))
+            button.fire_event('click', None)
+            await until(lambda: bool(started))
+            await asyncio.sleep(.05)
+            self.assertEqual(cancelled, [])
+            self.assertTrue(any(isinstance(w, v.Alert) for w in walk(root)))
+            running = [w for w in walk(root) if isinstance(w, v.Btn) and 'Cancel' in str(w.children)]
+            self.assertTrue(running, 'The button must show Cancel while the first calculation runs')
+            pending.set_result({'2000': {'sub_a': []}})
+            await until(lambda: state.current('a', 'statistics') is not None)

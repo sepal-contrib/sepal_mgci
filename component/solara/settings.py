@@ -254,8 +254,9 @@ def SettingsPanel(state, publish, gee_interface, workspace, prepare, before_expo
         # Messages sit above the buttons, as in the legacy tile.
         if status.value is not None and status.value[2] == revisions():
             kind, lines, _, download = status.value
-            StatusAlert(kind, lines, download)
-        with rv.Html(tag='div', class_='d-flex flex-wrap align-start mt-4'):
+            StatusAlert(kind, lines, download).key('status')
+        # Keyed so the alert appearing above does not remount the row and drop the running task.
+        with rv.Html(tag='div', class_='d-flex flex-wrap align-start mt-4').key('actions'):
             CalculationAction(state, publish, enabled.value, lambda request: calculate(request, gee_interface),
                               prepare, background.value, workspace, gee_interface, notify=inline)
             ReportAction(state, workspace, before_export, enabled.value, on_saved=saved,
