@@ -150,7 +150,7 @@ def TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_c
     # Legacy DownloadTaskView: flat card, catalogue title/description, default file button.
     with rv.Card(elevation=0, class_='ma-0 pa-0'):
         rv.CardTitle(children=[cm.dashboard.tasks.title], class_='px-0 mx-0')
-        solara.Markdown(cm.dashboard.tasks.description.format(TASK_FOLDER), style='max-width:400px;')
+        solara.Markdown(cm.dashboard.tasks.description.format(TASK_FOLDER))
         if sepal_client is not None:
             FileInputComponent(value=path.value, on_value=choose_path, sepal_client=sepal_client,
                                initial_folder=TASK_FOLDER, extensions=['.json'])
