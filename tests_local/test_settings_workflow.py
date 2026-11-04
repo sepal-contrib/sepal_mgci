@@ -31,8 +31,7 @@ def walk_slots(widget):
 
 
 class YearDialogTests(unittest.TestCase):
-    def test_close_retains_draft_reset_is_explicit_and_disable_keeps_years(self):
-        state = report_state()
+    def render(self, state):
         config = solara.reactive(state.configuration)
         enabled = solara.reactive(True)
         @solara.component
@@ -41,23 +40,43 @@ class YearDialogTests(unittest.TestCase):
                            lambda images: config.set(replace(config.value, a=replace(config.value.a, images=images))))
         root, context = solara.render(Harness(), handle_error=False)
         self.addCleanup(context.close)
-        editor = next(w for w in walk(root) if isinstance(w, YearListA))
-        dialog = next(w for w in walk(root) if isinstance(w, v.Dialog))
-        dialog.v_model = True
-        editor.v_model = {1: {'asset': 'lc/2000', 'year': None}}
-        close = next(w for w in walk(root) if isinstance(w, v.Btn) and 'Close' in w.children)
-        close.fire_event('click', None)
-        self.assertFalse(dialog.v_model)
-        self.assertEqual(config.value.a.images, (ImageSelection('lc/2000', 0),))
+        def button(label):
+            return next(w for w in walk_slots(root) if isinstance(w, v.Btn)
+                        and (label in w.children or w.attributes.get('aria-label') == label))
+        def editor():
+            return next(w for w in walk(root) if isinstance(w, YearListA))
+        def open_dialog():
+            next(w for w in walk(root) if isinstance(w, v.Btn) and w.children
+                 and getattr(w.children[0], 'children', None) == ['mdi-layers-plus']).fire_event('click', None)
+        return config, enabled, button, editor, open_dialog
+
+    def test_close_discards_the_draft_and_reopening_shows_the_saved_years(self):
+        state = report_state()
+        saved = state.configuration.a.images
+        config, _, button, editor, open_dialog = self.render(state)
+        open_dialog()
+        editor().v_model = {1: {'asset': 'lc/2000', 'year': None}}
+        button('Reset all values').fire_event('click', None)
+        self.assertEqual(editor().v_model, {1: {'asset': None, 'year': None}})
+        button('Close').fire_event('click', None)
+        self.assertEqual(config.value.a.images, saved)
+        open_dialog()
+        self.assertEqual(editor().v_model, {1: {'asset': saved[0].asset, 'year': saved[0].year}})
+
+    def test_ok_saves_the_draft_and_disable_keeps_years(self):
+        state = report_state()
+        config, enabled, button, editor, open_dialog = self.render(state)
+        open_dialog()
+        editor().v_model = {1: {'asset': 'lc/2000', 'year': 2005}}
+        self.assertEqual(config.value.a.images, state.configuration.a.images)
+        button('OK').fire_event('click', None)
+        self.assertEqual(config.value.a.images, (ImageSelection('lc/2000', 2005),))
         enabled.set(False)
         enabled.set(True)
-        self.assertEqual(config.value.a.images[0].asset, 'lc/2000')
-        reset = next(w for w in walk_slots(root) if isinstance(w, v.Btn) and w.attributes.get('aria-label') == 'Reset all values')
-        self.assertEqual(reset.color, 'primary')
-        ok = next(w for w in walk(root) if isinstance(w, v.Btn) and 'OK' in w.children)
+        self.assertEqual(config.value.a.images, (ImageSelection('lc/2000', 2005),))
+        close, ok = button('Close'), button('OK')
         self.assertEqual((close.color, close.outlined, ok.color), ('primary', True, 'primary'))
-        reset.fire_event('click', None)
-        self.assertEqual(config.value.a.images, (ImageSelection('', 0),))
+        self.assertEqual(button('Reset all values').color, 'primary')
 
 
 class SettingsActionTests(unittest.IsolatedAsyncioTestCase):

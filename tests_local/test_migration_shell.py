@@ -67,3 +67,42 @@ class ToastTimeoutTests(unittest.TestCase):
         self.assertEqual(Toast(message='done', type=ToastType.SUCCESS).effective_timeout(), 3.0)
         from component.solara.toasts import LASTING
         self.assertGreater(LASTING, 3.0)
+
+
+class LandCoverDialogDraftTests(unittest.IsolatedAsyncioTestCase):
+    async def render(self):
+        from dataclasses import replace
+        seen = []
+        resources = {key: ResourceState() for key in ('a', 'b', 'transition')}
+        @solara.component
+        def Harness():
+            state, publish = use_session_state(initial_configuration(2026))
+            seen.append((state, publish))
+            NotificationProvider()
+            LandCoverPanel(state, publish, resources, object(), None, None)
+        root, context = solara.render(Harness(), handle_error=False)
+        self.addCleanup(context.close)
+        def press(label):
+            next(w for w in walk(root) if isinstance(w, v.Btn) and label in w.children).fire_event('click', None)
+        def edit_mapping():
+            state, publish = seen[-1]
+            state.edit(replace(state.configuration, a=replace(state.configuration.a, mapping=((10, 3),))))
+            publish()
+        return seen, press, edit_mapping
+
+    async def test_close_restores_the_setup_from_when_the_dialog_opened(self):
+        seen, press, edit_mapping = await self.render()
+        before = seen[-1][0].configuration.a.mapping
+        press('Set up land cover')
+        edit_mapping()
+        press('Close')
+        self.assertEqual(seen[-1][0].configuration.a.mapping, before)
+
+    async def test_reopening_after_close_starts_from_the_saved_setup_again(self):
+        seen, press, edit_mapping = await self.render()
+        before = seen[-1][0].configuration.a.mapping
+        for _ in range(2):
+            press('Set up land cover')
+            edit_mapping()
+            press('Close')
+        self.assertEqual(seen[-1][0].configuration.a.mapping, before)

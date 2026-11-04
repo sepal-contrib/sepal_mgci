@@ -66,3 +66,23 @@ class SharedDiscoveryTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await pending)
         self.assertIsNone(state.configuration.a.evidence)
         self.assertIsNone(state.configuration.b.evidence)
+
+
+class RestoreSetupTests(unittest.TestCase):
+    def test_close_undoes_edits_but_keeps_classes_found_for_the_same_asset(self):
+        from mgci.application.landcover import restore_setup
+        from mgci.domain.configuration import DatasetEvidence, TransitionTable
+        opened = configuration()
+        evidence = DatasetEvidence(opened.a.asset, ('lc/2000',), (10, 20), 'aoi', 'ready')
+        edited = replace(opened, a=replace(opened.a, mapping=((10, 3),), evidence=evidence),
+                         transition=TransitionTable(((1, 1, 2),), 'mine.csv', 'digest', True))
+        restored = restore_setup(edited, opened)
+        self.assertEqual(restored.a.mapping, opened.a.mapping)
+        self.assertEqual(restored.transition, opened.transition)
+        self.assertEqual(restored.a.evidence, evidence)
+
+    def test_a_new_asset_returns_with_its_own_classes_and_years(self):
+        from mgci.application.landcover import restore_setup
+        opened = configuration()
+        edited = replace(opened, a=replace(opened.a, asset='users/me/other', evidence=None, images=()))
+        self.assertEqual(restore_setup(edited, opened).a, opened.a)

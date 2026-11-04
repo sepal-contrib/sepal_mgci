@@ -9,7 +9,7 @@ from pysepal.solara.components.task_button import TaskButtonComponent
 from pysepal.solara.notifications import use_notifications
 
 from mgci.application.discovery import inspect_dataset, select_asset
-from mgci.application.landcover import WorkflowDrafts, inspect_shared_dataset, select_shared_asset
+from mgci.application.landcover import WorkflowDrafts, inspect_shared_dataset, restore_setup, select_shared_asset
 from component.message import msg
 from .mapping import MappingEditor, CloseAction
 from .asset_field import LandCoverAssetField
@@ -110,6 +110,8 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
     opened = solara.use_reactive(False)
     step = solara.use_reactive(1)
     alert = solara.use_reactive(None)
+    # The configuration when the dialog opened: Close restores it, Validate keeps the edits.
+    opened_with = solara.use_ref(None)
     defaults = solara.use_memo(initial_configuration, [])
     drafts = solara.use_memo(lambda: WorkflowDrafts(defaults), [])
     config = state.configuration
@@ -151,8 +153,19 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
         if inspect.pending and custom:
             cancel()
         opened.set(False)
+        if opened_with.current is not None:
+            restored = restore_setup(state.configuration, opened_with.current)
+            opened_with.current = None
+            if restored != state.configuration:
+                cancel()
+                for resource in resources.values():
+                    resource.begin('')
+                state.edit(restored)
+                step.set(1)
+                publish()
 
     def open_dialog():
+        opened_with.current = state.configuration
         opened.set(True)
         if not discovered and not reclassify and config.aoi_identity and not inspect.pending:
             inspect()
@@ -186,6 +199,7 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
                    for key in ('a', 'b') if not readiness(state.configuration, key, 'setup').ready}
         ready = [key.upper() for key in ('a', 'b') if key not in reasons]
         if ready:
+            opened_with.current = None
             opened.set(False)
             if reasons:
                 alert.set(('warning', tuple(msg('setup.partial', reason=text, ready=', '.join(ready))

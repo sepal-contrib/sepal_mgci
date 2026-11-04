@@ -84,3 +84,18 @@ async def inspect_shared_dataset(state, resources, load):
     state.edit(replace(state.configuration, **values))
     log.info('Discovered %d classes and %d images in %s', len(evidence.classes), len(result.images), captured.a.asset)
     return True
+
+
+def restore_setup(config, snapshot):
+    """The configuration after the setup dialog closes unconfirmed: its edits undone.
+
+    The asset, mapping, targets, labels and transitions return to ``snapshot``.
+    Classes discovered for an unchanged asset stay: they describe the data, not a choice.
+    """
+    def restore(current, previous):
+        if current.asset != previous.asset:
+            return previous
+        return replace(current, mapping=previous.mapping, targets=previous.targets, labels=previous.labels)
+
+    return replace(config, a=restore(config.a, snapshot.a), b=restore(config.b, snapshot.b),
+                   transition=snapshot.transition)
