@@ -89,7 +89,7 @@ def build_layer(request: Request):
         if asset not in {image.asset for image in allowed}:
             raise ValueError('Select an image from the validated request')
         if band == 'land_cover':
-            # Legacy band names from get_transition: baseline start, baseline end, report.
+            # Band names from get_transition: baseline start, baseline end, report.
             position = [image.asset for image in selected.images].index(asset)
             name = ('land_cover_start', 'land_cover_end')[position] if position < 2 else 'land_cover_report'
             layer = no_remap(ee.Image(asset).select(0), dict(selected.mapping)).rename(name)

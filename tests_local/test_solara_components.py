@@ -128,7 +128,7 @@ class SessionHookTests(unittest.TestCase):
         self.assertIs(owners[-1][0], state)
 
 
-class LegacyYearAndScaleLookTests(unittest.TestCase):
+class YearAndScaleLookTests(unittest.TestCase):
     def test_selected_scale_button_has_white_text(self):
         @solara.component
         def Harness():

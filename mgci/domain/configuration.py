@@ -85,7 +85,7 @@ class Configuration(Immutable):
     units: str = 'sqkm'
     aoi_graph: str = ''
     aoi_name: str = ''
-    # AOI short name (e.g. ISO code) used by the legacy report folder and file names.
+    # AOI short name (e.g. ISO code) used in report folder and file names.
     aoi_label: str = ''
     ref_area: str = ''
     reporting_intervals: tuple[int, ...] = (2000, 2005, 2010, 2015, 2018, 2021, 2024)

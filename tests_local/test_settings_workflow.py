@@ -137,7 +137,7 @@ class SettingsActionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(original.request.configuration.source, 'Original source')
         self.assertIn(75.0, report.OBS_VALUE.tolist())
 
-    async def test_repeat_report_exports_keep_distinct_legacy_named_files(self):
+    async def test_repeat_report_exports_keep_distinct_file_names(self):
         state = report_state()
         state.edit(replace(state.configuration, aoi_label='AND'))
         request = state.prepare('a', 'statistics')

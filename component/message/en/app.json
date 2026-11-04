@@ -295,9 +295,9 @@
     "record": "Task record",
     "no_file": "Please select a task file.",
     "retrieve": "Retrieve and save report",
-    "legacy": "This legacy task has no captured input provenance. Its results are available as history; workbook reconstruction still requires the original transition data.",
     "original_transition": "Original transition CSV for this historical task",
-    "historical_saved": "Historical report saved to {path}. The legacy task has no verifiable input fingerprint."
+    "historical_saved": "Historical report saved to {path}. A task from an earlier version has no verifiable input fingerprint.",
+    "historical": "This task, made by an earlier version, has no captured input provenance. Its results are available as history; workbook reconstruction still requires the original transition data."
   },
   "areas": {
     "not_reporting": "{name} is not an SDG reporting country or area. Select another area."

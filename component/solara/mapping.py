@@ -24,7 +24,7 @@ log = logging.getLogger('MGCI.solara.mapping')
 
 @solara.component
 def IconAction(icon, title, action, disabled=False, last=False):
-    # Legacy sw.Btn(...).set_tooltip(bottom=True). The inline wrapper keeps each
+    # Icon button with a bottom tooltip. The inline wrapper keeps each
     # icon at its own position in the toolbar.
     button = rv.Btn(icon=True, color='primary', class_='' if last else 'mr-2', disabled=disabled,
                     v_on='tooltip.on', children=[rv.Icon(children=[icon])])
@@ -36,7 +36,7 @@ def IconAction(icon, title, action, disabled=False, last=False):
 
 @solara.component
 def DialogCancel(action):
-    """Legacy BaseDialog cancel button: small, filled secondary."""
+    """Dialog cancel button: small, filled secondary."""
     solara.Button(msg('reclass.tooltip.load_target.cancel_btn'), small=True, color='secondary', on_click=action)
 
 
@@ -48,7 +48,7 @@ def CloseAction(action):
 
 @solara.component
 def SaveName(filename, folder):
-    """Legacy save field: normalized on blur, with a live destination preview."""
+    """Save-name field: normalized on blur, with a live destination preview."""
     field = rv.TextField(label=msg('reclass.dialog.save.w_file_label'), v_model=filename.value,
                          on_v_model=lambda value: filename.set(value or ''))
     ipyvue.use_event(field, 'blur', lambda *_: filename.set(normalize_str(filename.value)) if filename.value else None)
@@ -78,7 +78,7 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
     target_mode = solara.use_reactive('standard')
     error = solara.use_reactive('')
     notifications = use_notifications()
-    # Legacy folders: mappings live in custom_map_matrix, target classes in custom_classifications.
+    # Mappings live in custom_map_matrix, target classes in custom_classifications.
     folder = 'module_results/sdg_indicators/15.4.2/custom_map_matrix'
     class_folder = 'module_results/sdg_indicators/15.4.2/custom_classifications'
     labels = classification_labels(selected)
@@ -143,7 +143,7 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
                 error.set(str(exception))
 
     assigned = sum(dict(selected.mapping).get(code) in selected.targets for code in classes)
-    # Legacy ReclassifyTable: warning text while incomplete; bar red at 0 %,
+    # Warning text while incomplete; bar red at 0 %,
     # orange while partial and green when complete.
     progress = round(100 * assigned / len(classes)) if classes else 0
     with rv.Toolbar(flat=True, color='accent'):
@@ -185,8 +185,8 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
                     SaveName(filename, folder)
                 else:
                     if active.value == 'target':
-                        # Legacy TargetClassesDialog: "use SEEA" / "Custom" toggles
-                        # (selected one filled) above an always visible file input.
+                        # "Use SEEA" / "Custom" toggles (selected one filled) above an
+                        # always visible file input.
                         rv.Html(tag='span', children=[msg('reclass.dialog.target.description')])
                         with rv.Html(tag='div', class_='mt-5'):
                             solara.Button(msg('landcover.standard'), on_click=lambda: target_mode.set('standard'),

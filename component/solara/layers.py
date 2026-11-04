@@ -60,7 +60,7 @@ def install_layer(map_, artifact):
 def LayerPanel(state, publish, map_, gee_interface, drive_interface, sepal_client, prepare=None, before_use=None,
                enabled=None):
     selected = solara.use_reactive('')
-    # Like the legacy selector, offer only the indicators switched on in the settings.
+    # Offer only the indicators switched on in the settings.
     choices = tuple(choice for choice in layer_choices(state.configuration) if enabled is None or choice[0] in enabled.value)
     indexed = {f'{indicator}:{selector}': (indicator, selector, title) for indicator, selector, title in choices}
     current = indexed.get(selected.value)
@@ -85,7 +85,7 @@ def LayerPanel(state, publish, map_, gee_interface, drive_interface, sepal_clien
 
 @solara.component
 def MapOutputs(state, map_, context_legend=None):
-    """Own map layers and the floating legend at app level, like the legacy MapLegend.
+    """Own map layers and the floating legend at app level.
 
     The Results panel mounts lazily, so neither may depend on it being open.
     """

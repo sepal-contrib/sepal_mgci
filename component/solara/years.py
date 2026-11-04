@@ -113,7 +113,7 @@ def IndicatorYears(config, indicator, enabled, on_enabled, on_images):
                         with rv.Html(tag='span', class_='mt-2'):
                             rv.Html(tag='span', children=['Reporting years: ' if indicator == 'a' else 'Baseline: '])
                             for index, year in enumerate(years):
-                                # Legacy separators: ", " between A chips; "Report: " after the B baseline.
+                                # Separators: ", " between A chips; "Report: " after the B baseline.
                                 if indicator == 'b' and index == 1:
                                     rv.Html(tag='span', children=[' Report: '])
                                 elif indicator == 'a' and index:
@@ -133,7 +133,7 @@ def IndicatorYears(config, indicator, enabled, on_enabled, on_images):
                 on_v_model=lambda value: on_images(model_images(value, indicator)))
             with rv.CardActions():
                 rv.Spacer()
-                # Legacy CloseBtn (outlined primary) and OK (filled primary) with mr-2.
+                # Close (outlined primary) and OK (filled primary) with mr-2.
                 solara.Button(msg('app.step_action.close'), on_click=lambda: opened.set(False), small=True,
                               text=True, outlined=True, color='primary', classes=['mr-2'])
                 solara.Button('OK', on_click=lambda: opened.set(False), disabled=bool(errors), small=True,

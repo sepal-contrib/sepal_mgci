@@ -12,7 +12,7 @@ from pysepal.solara.components.task_button import TaskButtonComponent
 from component.message import msg
 
 from mgci.domain.validation import readiness
-from mgci.infrastructure.reports import build_workbook, build_legacy_workbook
+from mgci.infrastructure.reports import build_workbook, build_historical_workbook
 from mgci.infrastructure.transitions import load_transition
 from mgci.infrastructure.tasks import submit, retrieve, TASK_FOLDER
 from .toasts import LASTING
@@ -69,9 +69,9 @@ def TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_c
                 return None
             if request is None:
                 if any('_' in key for key in payload) and not original:
-                    return revision, (None, msg('tasks.legacy'), payload, None)
+                    return revision, (None, msg('tasks.historical'), payload, None)
                 matrix = await load_transition(workspace, original) if original else None
-                content = await asyncio.to_thread(build_legacy_workbook, payload, record['model_state'], matrix)
+                content = await asyncio.to_thread(build_historical_workbook, payload, record['model_state'], matrix)
                 identifier = str(uuid4())
             else:
                 from mgci.application.state import Artifact, freeze_payload
@@ -104,10 +104,10 @@ def TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_c
             if revision != generation.current:
                 return
             completed.set(result)
-            output, error, legacy, content = result
-            if legacy is not None:
+            output, error, historical, content = result
+            if historical is not None:
                 needs_transition.set(needs_transition.value or content is None)
-            if legacy is not None:
+            if historical is not None:
                 notifications.warning(error)
             elif error:
                 notifications.error(error)
@@ -134,7 +134,7 @@ def TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_c
         completed.set(None)
 
     def start():
-        # Like the legacy tile, the button stays enabled and explains a missing file.
+        # The button stays enabled and explains a missing file.
         if not path.value:
             missing.set(True)
             return
@@ -146,7 +146,7 @@ def TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_c
     def lifetime():
         return cancel
     solara.use_effect(lifetime, [])
-    # Legacy DownloadTaskView: flat card, catalogue title/description, default file button.
+    # Flat card with the task title, description and file picker.
     with rv.Card(elevation=0, class_='ma-0 pa-0'):
         rv.CardTitle(children=[msg('dashboard.tasks.title')], class_='px-0 mx-0')
         solara.Markdown(msg('dashboard.tasks.description', folder=TASK_FOLDER))

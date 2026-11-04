@@ -76,8 +76,8 @@ def build_report_revision(revision) -> bytes:
     return build_workbook(artifacts)
 
 
-def build_legacy_workbook(payload, model_state, transition=None):
-    """Reconstruct a historical workbook without promoting legacy data to current."""
+def build_historical_workbook(payload, model_state, transition=None):
+    """Rebuild the workbook of a task record from an earlier version, without making it current."""
     from component.scripts.scripts import export_reports
 
     has_a = any('_' not in key for key in payload)

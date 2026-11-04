@@ -23,7 +23,7 @@ from .setup import MappingTable, ReadinessMessages, WorkflowQuestions, Transitio
 
 @solara.component
 def SetupAlert(alert, on_close):
-    """Legacy AlertDialog: persistent, the alert text and a full-width Close."""
+    """Persistent dialog with the alert text and a full-width Close."""
     kind, lines = alert or ('info', ())
     with rv.Dialog(v_model=alert is not None, on_v_model=lambda value: None if value else on_close(),
                    persistent=True, max_width=750, style_='margin: 0 !important;'):
@@ -158,7 +158,7 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
             inspect()
 
     def use_default():
-        # Legacy use_default(): the default dataset is usable without opening the dialog.
+        # The default dataset is usable without opening the dialog.
         # Its discovery only lists the images; the packaged mapping gives the classes.
         if not custom and config.aoi_identity and not discovered and not inspect.pending:
             inspect()
@@ -201,14 +201,14 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
 
     with rv.Dialog(v_model=opened.value, on_v_model=opened.set, persistent=True, max_width=1200, eager=True):
         with rv.Card():
-            # Legacy VegetationView wraps the stepper in a plain layout, so its
-            # 'box-shadow: inherit' resolves to none rather than the card's shadow.
+            # A plain layout around the stepper, so its 'box-shadow: inherit'
+            # resolves to none rather than the card's shadow.
             with rv.Html(tag='div', class_='d-block'):
                 with rv.Stepper(v_model=step.value, on_v_model=step.set, vertical=True, elevation=0,
                                 style_='box-shadow:inherit!important;background-color:inherit!important;'):
                     rv.StepperStep(step=1, editable=True, children=[msg('veg_layer.stepper.header.data_selection')])
                     with rv.StepperContent(step=1):
-                        # Flat: the legacy elevated card showed as a shadow under the lone asset field.
+                        # Flat: an elevated card shows as a shadow under the lone asset field.
                         with rv.Card(elevation=0):
                             with rv.Html(tag='div', class_='mx-2'):
                                 classes = TaskButtonComponent(label=msg('reclass.get_classes'), on_start=inspect, on_cancel=cancel,
@@ -222,8 +222,8 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
                     if reclassify:
                         rv.StepperStep(step=2, editable=discovered, children=[msg('veg_layer.stepper.header.reclassify_a')])
                         with rv.StepperContent(step=2):
-                            # Legacy layout: a d-block wrapper (keeps the description black) and
-                            # the ReclassifyView card with pa-5 around the table.
+                            # A d-block wrapper (keeps the description black) and
+                            # a card with pa-5 around the table.
                             with rv.Card(elevation=0):
                                 with rv.Html(tag='div', class_='d-block'):
                                     rv.CardText(children=[msg('reclass.description')])

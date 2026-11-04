@@ -77,12 +77,12 @@ def readiness(config: Configuration, indicator: str, purpose: str) -> Readiness:
     if len(mapping) != len(selected.mapping) or not valid_codes(mapping) or not valid_codes(mapping.values()):
         issue('mapping', 'invalid_mapping')
     if config.workflow != Workflow.CUSTOM_CANONICAL:
-        # The packaged mapping cannot be edited; as legacy no_remap, classes it lacks are masked.
+        # The packaged mapping cannot be edited; no_remap masks the classes it lacks.
         user_mapping = config.workflow == Workflow.CUSTOM_RECLASSIFY
         if not mapping or (user_mapping and evidence and not set(evidence.classes) <= set(mapping)):
             issue('mapping', 'mapping_incomplete')
-        # As the legacy app: an empty row (target 0) is masked out by no_remap, with the
-        # "Empty classes will be masked out" warning; only a table with no target blocks.
+        # An empty row (target 0) is masked out by no_remap, and the table warns about it;
+        # only a table with no target blocks.
         assigned = {code: target for code, target in mapping.items() if target != 0}
         if mapping and not assigned:
             issue('mapping', 'mapping_unassigned')

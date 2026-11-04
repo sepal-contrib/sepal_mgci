@@ -143,7 +143,7 @@ def BChart(artifact, selection, visible=True):
 
 @solara.component
 def ChartPanel(state, publish, indicator, gee_interface, prepare, before_use=None, enabled=None):
-    # Like the legacy dashboard, an indicator switched off in the settings cannot be shown.
+    # An indicator switched off in the settings cannot be shown.
     active_indicator = enabled is None or indicator in enabled.value
     opened = solara.use_reactive(False)
     from pysepal.solara.notifications import use_notifications

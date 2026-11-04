@@ -23,7 +23,7 @@ from .years import IndicatorYears
 log = logging.getLogger('MGCI.solara.settings')
 
 
-# Legacy calculation_tile message when work runs as an Earth Engine task.
+# Shown when the work goes to an Earth Engine task instead.
 TASKED = ("The computation could not be completed on the fly. The task *'{path}'* has been tasked in your "
           "[GEE account](https://code.earthengine.google.com/tasks).")
 
@@ -31,7 +31,7 @@ TASKED = ("The computation could not be completed on the fly. The task *'{path}'
 @solara.component
 def CalculationAction(state, publish, indicators, run, prepare=None, background=False, workspace=None, gee_interface=None,
                       notify=None):
-    # ``notify`` lets the settings panel route messages into its legacy inline alert.
+    # ``notify`` lets the settings panel route messages into its status alert.
     notifications = notify or use_notifications()
     active = solara.use_ref(())
 
@@ -172,7 +172,7 @@ def ReportAction(state, workspace, before_export=None, indicators=('a', 'b'), on
 
 @solara.component
 def StatusAlert(kind, lines, download=None):
-    """Legacy alert above the action row: calculation progress, results and report links."""
+    """Status alert above the action row: calculation progress, results and report links."""
     with rv.Alert(type=kind, text=True, class_='mt-5'):
         for line in lines:
             # solara.Markdown carries the Jupyter text colour; inherit the alert's instead.
@@ -188,7 +188,7 @@ def StatusAlert(kind, lines, download=None):
 
 @solara.component
 def HelpTooltip(text, top=False, children=[]):
-    """Legacy sw.Tooltip: 300 px wide, right of the control (scale: above)."""
+    """Help tooltip, 300 px wide, right of the control (or above it)."""
     activator = rv.Html(tag='div', v_on='tooltip.on', children=children)
     rv.Tooltip(right=not top, top=top, max_width=300, children=[text],
                v_slots=[{'name': 'activator', 'variable': 'tooltip', 'children': activator}])
@@ -200,7 +200,7 @@ def SettingsPanel(state, publish, gee_interface, workspace, prepare, before_expo
     background = solara.use_reactive(False)
     # The app shares the on/off selection with the Results panel.
     enabled = solara.use_reactive(('a', 'b') if enabled is None else enabled)
-    # (type, lines, revisions when shown, optional download); edits hide it like the legacy alert reset.
+    # (type, lines, revisions when shown, optional download); an edit hides it.
     status = solara.use_reactive(None)
 
     def revisions():
@@ -236,8 +236,7 @@ def SettingsPanel(state, publish, gee_interface, workspace, prepare, before_expo
         with rv.ExpansionPanels(class_='my-2'):
             with rv.ExpansionPanel():
                 rv.ExpansionPanelHeader(children=[msg('dashboard.advanced_options')])
-                # Legacy controls only: DEM, source and reference area stay fixed
-                # configuration values, as in the original calculation tile.
+                # DEM, source and reference area are fixed configuration values, not options.
                 with rv.ExpansionPanelContent():
                     with rv.Html(tag='div', class_='d-flex'):
                         with HelpTooltip(msg('dashboard.help.rsa')):
@@ -251,7 +250,7 @@ def SettingsPanel(state, publish, gee_interface, workspace, prepare, before_expo
                         with HelpTooltip(msg('dashboard.help.scale'), top=True):
                             ScaleField(config.scale, lambda value: edit(scale=value))
         ReadinessMessages(config, enabled.value)
-        # Messages sit above the buttons, as in the legacy tile.
+        # Messages sit above the buttons.
         if status.value is not None and status.value[2] == revisions():
             kind, lines, _, download = status.value
             StatusAlert(kind, lines, download).key('status')

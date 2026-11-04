@@ -52,7 +52,7 @@ class SessionState:
     def __init__(self, configuration: Configuration):
         self._configuration = configuration
         self._session = str(uuid4())
-        # Short legacy number in report and export names (SDG1542_<AOI><session_id>).
+        # Short number in report and export names (SDG1542_<AOI><session_id>).
         self.session_id = random.randint(1000, 9999)
         self._mounted = True
         self._slots = {}

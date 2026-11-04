@@ -17,7 +17,7 @@ def initial_configuration(year: int | None = None) -> Configuration:
     with (PARAMETERS / 'lc_map_matrix.csv').open(newline='') as stream:
         mapping = normalize_mapping((row['from_code'], row['to_code']) for row in csv.DictReader(stream))
     asset = 'users/amitghosh/sdg_module/esa/cci_landcover'
-    # Same visible defaults as the legacy year editors: A starts with 2000 only,
+    # Default years: A starts with 2000 only,
     # B with the 2000-2015 baseline and a 2018 report.
     def images(years):
         return tuple(ImageSelection(f'{asset}/{year}', year) for year in years)

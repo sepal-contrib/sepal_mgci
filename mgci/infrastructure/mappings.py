@@ -14,7 +14,7 @@ def parse_mapping(content, selected):
     loaded = dict(normalize_mapping((row['from_code'], row['to_code']) for row in reader))
     if not selected.evidence:
         raise ValueError('Get the source classes before loading a mapping')
-    # As the legacy import: target 0 leaves a class unassigned, rows for classes not
+    # Target 0 leaves a class unassigned, rows for classes not
     # in the table are ignored, and classes not in the file keep their current target.
     missing = sorted(set(loaded.values()) - set(selected.targets) - {0})
     if missing:

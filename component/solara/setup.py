@@ -17,7 +17,7 @@ from mgci.infrastructure.defaults import classification_labels
 def WorkflowQuestions(value: Workflow, on_value):
     custom = value in (Workflow.CUSTOM_CANONICAL, Workflow.CUSTOM_RECLASSIFY)
     with rv.Html(tag='div', class_='pa-0 ma-0'):
-        # pysepal's Markdown widget, as in the legacy questionnaire (same link styling).
+        # pysepal's Markdown widget, for its link styling.
         sw.Markdown.element(mkd_str=msg('veg_layer.description'), class_='pa-0 ma-0')
         rv.Html(tag='h3', children=[msg('veg_layer.questionnaire.q1')])
         with rv.RadioGroup(v_model=custom, on_v_model=lambda yes: on_value(
@@ -124,7 +124,7 @@ def readiness_text(config, indicator, purpose='statistics'):
 
 @solara.component
 def ReadinessMessages(config, indicators, purpose='statistics'):
-    """All the reasons in one filled alert, one line per sub-indicator, like the legacy sw.Alert."""
+    """All the reasons in one filled alert, one line per sub-indicator."""
     lines = [line for line in (readiness_text(config, indicator, purpose) for indicator in indicators) if line]
     if lines:
         with rv.Alert(type='warning', text=True, dense=True, class_='mt-5'):
@@ -146,7 +146,7 @@ def TransitionEditor(table, labels, on_value, disabled=False, on_reset=None):
     colors = {1: '#DC143C', 2: '#FFFACD', 3: '#008000'}
 
     def heading(code):
-        # Legacy transitionMatrix.vue: names over 20 characters keep their first and
+        # Names over 20 characters keep their first and
         # last 7 characters, with the full name in a 175 px bottom tooltip.
         name = labels.get(code, str(code))
         if len(name) <= 20:
@@ -165,7 +165,7 @@ def TransitionEditor(table, labels, on_value, disabled=False, on_reset=None):
     if table is not None:
         codes = sorted({row[0] for row in table.rows} | {row[1] for row in table.rows})
         impacts = {(left, right): impact for left, right, impact in table.rows}
-        # Scoped rules from the legacy template keep the cells compact.
+        # Scoped rules keep the cells compact.
         rv.Html(tag='style', children=[
             '.mgci-transition-matrix td{padding:0!important;margin:0!important;}'
             '.mgci-transition-matrix .v-select{margin:4px!important;}'

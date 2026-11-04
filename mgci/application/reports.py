@@ -23,7 +23,7 @@ class ReportRevision:
 
     @property
     def filename(self):
-        # Legacy name: SDG1542_<AOI><session>[_sub_a|_sub_b].xlsx. Later exports in
+        # Name: SDG1542_<AOI><session>[_sub_a|_sub_b].xlsx. Later exports in
         # the same session get a counter instead of overwriting earlier reports.
         keys = tuple(artifact.request.slot[0] for artifact in self.artifacts)
         which = '' if keys == ('a', 'b') else f'_sub_{keys[0]}'

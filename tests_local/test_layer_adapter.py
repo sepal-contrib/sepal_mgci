@@ -28,7 +28,7 @@ class LayerAdapterTests(ApiTestCase):
         self.assertEqual(payload['title'], 'Land cover 2000')
         self.assertIn('1=Nival', payload['belt_key'])
 
-    def test_export_sources_build_the_legacy_image_from_current_settings(self):
+    def test_export_sources_build_the_image_from_current_settings(self):
         from mgci.infrastructure.science import build_layer
         from mgci.application.state import Request
         from mgci.domain.provenance import scientific_identity

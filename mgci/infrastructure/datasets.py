@@ -31,7 +31,7 @@ async def _classes(image, aoi, region, gee_interface):
 
     image = image.select(0)
     nominal = image.projection().nominalScale()
-    # Legacy scale: double a nominal scale under 30 m, and never go below 30 m.
+    # Sampling scale: double a nominal scale under 30 m, and never go below 30 m.
     scale = ee.Number(ee.Algorithms.If(nominal.lt(30), nominal.multiply(2), nominal)).max(30)
     histogram = image.clipToCollection(aoi).reduceRegion(ee.Reducer.frequencyHistogram(), geometry=region,
                                                          scale=scale, maxPixels=1e13)
@@ -79,7 +79,7 @@ async def discover(config, indicator, gee_interface) -> DatasetDiscovery:
             _DEFAULT_RECORDS[selected.asset] = records
     images = tuple(sorted((ImageSelection(row['id'], _year(row)) for row in records), key=lambda image: (image.year, image.asset)))
     if default:
-        # Legacy default flow: the packaged mapping lists the classes, so no histograms run.
+        # Default dataset: the packaged mapping lists the classes, so no histograms run.
         classes = {source for source, _ in selected.mapping}
     else:
         classes = set()

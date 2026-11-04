@@ -11,7 +11,7 @@ log = logging.getLogger('MGCI.infrastructure.layers')
 
 
 def layer_choices(config):
-    """(indicator, selector, title) for every layer, with the legacy selector titles."""
+    """(indicator, selector, title) for every layer that the configuration can show."""
     from component.message import msg
 
 
@@ -107,12 +107,12 @@ def export_sources(config, indicators, session_id):
             log.debug('Resolved export %s', '/'.join(filter(None, slot)))
             return ResolvedExport(
                 ee_object=parts.export_image,
-                # Legacy destinations: <asset root>/sepal_sdg15_4_2/<AOI>_<session>/SubA_landcover2000.
+                # Destinations: <asset root>/sepal_sdg15_4_2/<AOI>_<session>/SubA_landcover2000.
                 default_name=f"{'SubA' if slot[0] == 'a' else 'SubB'}_{title.replace(' ', '').lower()}",
                 gee_folder=f'sepal_sdg15_4_2/{config.aoi_label}_{session_id}',
-                # Per-feature bounds, as legacy: dissolving dense country boundaries hits EE edge limits.
+                # Per-feature bounds: dissolving dense country boundaries hits EE edge limits.
                 region=aoi_bbox(parts.aoi),
-                # The processing scale when set, else the legacy export default of 1000 m.
+                # The processing scale when set, else 1000 m.
                 default_scale=config.scale.metres or 1000,
                 max_pixels=int(1e13), vis_params=parts.vis,
             )

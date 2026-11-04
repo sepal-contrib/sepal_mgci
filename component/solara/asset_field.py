@@ -1,4 +1,4 @@
-"""Land-cover asset combobox: browse once per session, as the legacy AssetSelect."""
+"""Land-cover asset combobox: lists the image collections once per session."""
 
 import logging
 import reacton.ipyvue as ipyvue
@@ -34,7 +34,7 @@ def LandCoverAssetField(value, on_value, gee_interface, *, disabled=False, error
                         on_v_model=lambda selected: on_value(str(selected or '').strip()),
                         items=list(dict.fromkeys((*items, *((value,) if value else ())))),
                         disabled=disabled, clearable=True,
-                        # pysepal AssetSelect defaults, kept by the legacy field.
+                        # pysepal AssetSelect defaults.
                         dense=True, class_='my-5 mx-1', hint=hint, persistent_hint=bool(hint),
                         prepend_inner_icon='mdi-sync', loading=task.pending or busy,
                         error_messages=[message] if message else [],

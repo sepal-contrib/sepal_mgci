@@ -14,7 +14,7 @@ from test_solara_calculation import until
 
 
 class TaskPanelTests(unittest.IsolatedAsyncioTestCase):
-    async def test_legacy_transition_error_can_retry_and_new_task_requires_new_selection(self):
+    async def test_historical_transition_error_can_retry_and_new_task_requires_new_selection(self):
         state = report_state()
         reads, writes = [], []
         payload = {'2000_2015_2018': {}}
@@ -41,7 +41,7 @@ class TaskPanelTests(unittest.IsolatedAsyncioTestCase):
             TaskPanel(state, lambda: None, Workspace(), object(), object(), object())
         with patch('component.solara.tasks.FileInputComponent', Picker), \
              patch('component.solara.tasks.retrieve', retrieve), \
-             patch('component.solara.tasks.build_legacy_workbook', return_value=b'historical workbook') as workbook:
+             patch('component.solara.tasks.build_historical_workbook', return_value=b'historical workbook') as workbook:
             root, context = solara.render(Harness(), handle_error=False)
             self.addCleanup(context.close)
             def fields():
@@ -157,7 +157,7 @@ class TaskPanelTests(unittest.IsolatedAsyncioTestCase):
             self.assertIsNone(state.current('a', 'statistics'))
 
 
-class TaskPanelLegacyLayoutTests(unittest.IsolatedAsyncioTestCase):
+class TaskPanelLookTests(unittest.IsolatedAsyncioTestCase):
     async def test_button_stays_enabled_and_explains_a_missing_file(self):
         from mgci.application.state import SessionState
         from mgci.infrastructure.defaults import initial_configuration
