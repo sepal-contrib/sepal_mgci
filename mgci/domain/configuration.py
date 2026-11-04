@@ -1,14 +1,18 @@
 """Canonical values; adapters normalize raw input before constructing these."""
 
 from dataclasses import dataclass, fields
-from enum import StrEnum
+from enum import Enum
 
 
-class Workflow(StrEnum):
+class Workflow(str, Enum):
     DEFAULT = 'default'
     DEFAULT_EDIT_TRANSITIONS = 'default_edit_transitions'
     CUSTOM_RECLASSIFY = 'custom_reclassify'
     CUSTOM_CANONICAL = 'custom_canonical'
+
+    # Not StrEnum: the SEPAL app image and CI run Python 3.10. This keeps StrEnum's str().
+    def __str__(self):
+        return self.value
 
 
 class Immutable:
