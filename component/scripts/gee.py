@@ -6,6 +6,7 @@ import pandas as pd
 from pathlib import Path
 
 from component.scripts.file_handler import read_file
+from component.scripts.reclassification import normalize_matrix
 from component.scripts.aoi_geometry import aoi_bbox
 from pysepal.scripts.gee_interface import GEEInterface
 
@@ -30,7 +31,7 @@ def no_remap(image: ee.Image, remap_matrix: Optional[dict] = None):
     """return remapped or raw image if there's a matrix"""
 
     if remap_matrix:
-        from_, to_ = list(zip(*remap_matrix.items()))
+        from_, to_ = zip(*normalize_matrix(remap_matrix).items())
         return image.remap(from_, to_, NO_DATA_VALUE).selfMask()
 
     return image
@@ -165,6 +166,7 @@ def reduce_regions(
     scale: Optional[int] = None,
     method: str = "clip",
     bands: Optional[List[str]] = None,
+    biobelt_asset: str = param.BIOBELT,
 ) -> ee.Dictionary:
     """Reduce land use/land cover image to bioclimatic belts regions using planimetric
     or real surface area
@@ -194,7 +196,7 @@ def reduce_regions(
     # Define two ways of calculation, with only one date and with both
     ee_lc_start = ee.Image(lc_years[0]).select(0)
 
-    clip_biobelt = ee.Image(param.BIOBELT)
+    clip_biobelt = ee.Image(biobelt_asset)
 
     if rsa:
         # The RSA image is scale-invariant, so the land cover working

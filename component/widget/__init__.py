@@ -1,2 +1,1 @@
-from .calc_params import Calculation
-from .custom_widgets import *
+"""Widgets the Solara app embeds: the MapApp shell and the ipecharts dashboards."""

@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, Optional, Tuple
 
 import pandas as pd
 
@@ -16,8 +16,6 @@ from component.scripts.report_scripts import (
 )
 from component.scripts.file_handler import read_file
 
-if TYPE_CHECKING:
-    from component.model.model import MgciModel
 
 BELT_TABLE = pd.read_csv(param.BIOBELTS_DESC)
 "pd.Dataframe: bioclimatic belts classes and description"

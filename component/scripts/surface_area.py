@@ -6,43 +6,40 @@ import ee
 
 __all__ = ["get_real_surface_area"]
 
+# Plain data, made into ee objects per call, so importing needs no Earth Engine session.
 
 # Define names to the eight neighbors and central bands.
-NEIGHBORS_NAMES = ee.List(["A", "B", "C", "D", "E", "F", "G", "H", "I"])
+NEIGHBORS_NAMES = ["A", "B", "C", "D", "E", "F", "G", "H", "I"]
 
 # Define a subtraction matrix used to steps 1-2.
-SUBTRACTION_MATRIX = ee.Dictionary(
-    {
-        "A": ["B", "D", "E"],
-        "B": ["C", "E"],
-        "C": ["F", "E"],
-        "D": ["E", "G"],
-        "E": ["F", "H"],
-        "F": ["I"],
-        "G": ["H", "E"],
-        "H": ["I"],
-        "I": ["E"],
-    }
-)
+SUBTRACTION_MATRIX = {
+    "A": ["B", "D", "E"],
+    "B": ["C", "E"],
+    "C": ["F", "E"],
+    "D": ["E", "G"],
+    "E": ["F", "H"],
+    "F": ["I"],
+    "G": ["H", "E"],
+    "H": ["I"],
+    "I": ["E"],
+}
 
 # Neighbour pairs on the same row span the cell's E-W size, pairs on the same
 # column its N-S size, and the four pairs through the centre span both.
-NS_PAIRS = ee.List(["AD", "BE", "CF", "DG", "EH", "FI"])
-DIAGONALS = ee.List(["AE", "CE", "GE", "IE"])
+NS_PAIRS = ["AD", "BE", "CF", "DG", "EH", "FI"]
+DIAGONALS = ["AE", "CE", "GE", "IE"]
 
 # Define triangles segments that will be used in the 3-4 step
-TRIANGLES_MATRIX = ee.Dictionary(
-    {
-        "T1": ["AE", "AB", "BE"],
-        "T2": ["BE", "BC", "CE"],
-        "T3": ["AD", "DE", "AE"],
-        "T4": ["CE", "CF", "EF"],
-        "T5": ["DE", "DG", "GE"],
-        "T6": ["EF", "FI", "IE"],
-        "T7": ["GE", "EH", "GH"],
-        "T8": ["EH", "IE", "HI"],
-    }
-)
+TRIANGLES_MATRIX = {
+    "T1": ["AE", "AB", "BE"],
+    "T2": ["BE", "BC", "CE"],
+    "T3": ["AD", "DE", "AE"],
+    "T4": ["CE", "CF", "EF"],
+    "T5": ["DE", "DG", "GE"],
+    "T6": ["EF", "FI", "IE"],
+    "T7": ["GE", "EH", "GH"],
+    "T8": ["EH", "IE", "HI"],
+}
 
 
 def get_real_surface_area(dem_asset: str, clip_geometry):
@@ -56,6 +53,11 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
         clip_geometry (ee.Object): GEE geometry to clip the DEM
     """
 
+    neighbors_names = ee.List(NEIGHBORS_NAMES)
+    subtraction_matrix = ee.Dictionary(SUBTRACTION_MATRIX)
+    ns_pairs, diagonals = ee.List(NS_PAIRS), ee.List(DIAGONALS)
+    triangles_matrix = ee.Dictionary(TRIANGLES_MATRIX)
+
     def get_half_side(neighbor_name):
         def inner_subtract(sub_neig):
             band_name = ee.String(neighbor_name).cat(sub_neig)
@@ -63,9 +65,9 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
             # Horizontal distance between the two cells: diagonal, N-S or E-W
             size = ee.Image(
                 ee.Algorithms.If(
-                    DIAGONALS.contains(band_name),
+                    diagonals.contains(band_name),
                     diagonal_size,
-                    ee.Algorithms.If(NS_PAIRS.contains(band_name), dy, dx),
+                    ee.Algorithms.If(ns_pairs.contains(band_name), dy, dx),
                 )
             )
 
@@ -80,7 +82,7 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
             )
 
         # Return a list of half-sides
-        return ee.List(SUBTRACTION_MATRIX.get(neighbor_name)).map(inner_subtract)
+        return ee.List(subtraction_matrix.get(neighbor_name)).map(inner_subtract)
 
     def get_triangles_area(triangle_name, triangle_sides):
         semi_perimeter = (
@@ -108,7 +110,7 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
     neighbors = (
         dem.neighborhoodToBands(ee.Kernel.square(1))
         .clip(clip_geometry)
-        .rename(NEIGHBORS_NAMES)
+        .rename(neighbors_names)
     )
 
     # Cell sizes are pinned to the DEM grid because the image is only valid there.
@@ -121,7 +123,7 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
     diagonal_size = dx.pow(2).add(dy.pow(2)).sqrt()
 
     # Calculate half-sides, based on steps 1-2
-    half_sides = NEIGHBORS_NAMES.map(get_half_side)
+    half_sides = neighbors_names.map(get_half_side)
     half_sides = ee.ImageCollection.fromImages(half_sides.flatten()).toBands()
 
     # Rename bands, since in the previous step a prefix has been added
@@ -130,7 +132,7 @@ def get_real_surface_area(dem_asset: str, clip_geometry):
     )
     half_sides = ee.Image(half_sides.rename(new_names))
 
-    triangles_area = TRIANGLES_MATRIX.map(get_triangles_area)
+    triangles_area = triangles_matrix.map(get_triangles_area)
 
     surface = (
         ee.ImageCollection.fromImages(triangles_area.values())

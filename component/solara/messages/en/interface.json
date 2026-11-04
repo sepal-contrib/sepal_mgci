@@ -1,0 +1,97 @@
+{
+  "scale": {
+    "label": "Processing scale (m)",
+    "native": "Native",
+    "custom": "Custom",
+    "error": "Enter a scale from {min} to {max} m."
+  },
+  "setup": {
+    "yes": "Yes",
+    "no": "No",
+    "target": "Target class",
+    "unassigned": "Select a target class.",
+    "image": "Image {number}",
+    "baseline_start": "Baseline start",
+    "baseline_end": "Baseline end",
+    "report": "Reporting image",
+    "year": "Year",
+    "add_year": "Add reporting year",
+    "unavailable": "Sub-indicator {indicator} is not ready:",
+    "asset": "Land-cover asset",
+    "classes": "Get classes",
+    "loading": "Reading dataset classes…",
+    "close": "Close",
+    "validate": "Validate",
+    "title": "Set up land cover",
+    "source": "Source",
+    "area": "Reference area",
+    "dem": "Elevation dataset",
+    "rsa": "Use real surface area",
+    "transition": "Transition matrix CSV",
+    "indicator": "Sub-indicator {indicator}",
+    "advanced": "Advanced options",
+    "workspace_required": "Connect an authenticated SEPAL workspace to select user files.",
+    "classification": "Target classification CSV (B)",
+    "from_to": "From ↓ / To →",
+    "impacts": "D: degradation · S: stable · I: improvement"
+  },
+  "validation": {
+    "asset_required": "Select a land-cover image or collection.",
+    "invalid_workflow": "Complete the land-cover questions.",
+    "default_raw_asset": "The default dataset requires reclassification.",
+    "discovery_required": "Get classes for the selected dataset and area.",
+    "stale_discovery": "The dataset or area changed. Get classes again.",
+    "stale_images": "The selected years use images from another land cover asset. Select the years again.",
+    "invalid_discovery": "The discovered class codes are invalid.",
+    "invalid_targets": "Choose unique integer target class codes.",
+    "unknown_target": "Some class codes are outside the selected classification.",
+    "transition_code_range": "Transition class codes must be from 1 to 99.",
+    "invalid_mapping": "Each source code must have one integer target code.",
+    "mapping_incomplete": "Assign every discovered source class.",
+    "mapping_unassigned": "Assign a target class to at least one source class.",
+    "unexpected_mapping": "Clear reclassification when using an already classified dataset.",
+    "transition_required": "Select a transition CSV explicitly for sub-indicator B.",
+    "invalid_transition": "The transition matrix must cover every target pair with valid impacts.",
+    "aoi_required": "Select an area of interest.",
+    "years_required": "Select an image and year for every reporting row.",
+    "period_order": "Choose a baseline and reporting years in increasing order.",
+    "invalid_reporting_schedule": "Reporting dates are invalid.",
+    "no_reporting_years": "The selected images do not cover a reporting date.",
+    "duplicate_years": "Choose only one image per year.",
+    "scale_range": "Enter a scale from 10 to 1500 m or choose Native.",
+    "dem_required": "Select an elevation dataset for real surface area.",
+    "invalid_units": "Reports currently require square kilometres."
+  },
+  "layers": {
+    "label": "Layers",
+    "add": "Add layer",
+    "export": "Export",
+    "export_title": "Export layers",
+    "selection_changed": "The selected layer changed. Review it before exporting."
+  },
+  "reports": {
+    "save": "Save report",
+    "saved": "Report saved to {path}"
+  },
+  "charts": {
+    "flow": "Flow",
+    "matrix": "Matrix",
+    "transitions": "Land-cover transitions · {belt}",
+    "show": "View charts",
+    "title": "Sub-indicator {indicator} · {area}"
+  },
+  "tasks": {
+    "submit": "Submit {indicator} in background",
+    "submitted": "Task submitted. Retrieve it using {path}.",
+    "background": "Run in background",
+    "record": "Task record",
+    "no_file": "Please select a task file.",
+    "retrieve": "Retrieve and save report",
+    "legacy": "This legacy task has no captured input provenance. Its results are available as history; workbook reconstruction still requires the original transition data.",
+    "original_transition": "Original transition CSV for this historical task",
+    "historical_saved": "Historical report saved to {path}. The legacy task has no verifiable input fingerprint."
+  },
+  "areas": {
+    "not_reporting": "{name} is not an SDG reporting country or area. Select another area."
+  }
+}

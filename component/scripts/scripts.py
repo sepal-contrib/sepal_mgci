@@ -1,5 +1,4 @@
 from io import BytesIO
-from typing import TYPE_CHECKING
 from component.scripts.file_handler import read_file
 from component.types import Pathlike
 import random
@@ -15,15 +14,12 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment
 
 
-from component.parameter.directory import dir_
 import component.parameter.module_parameter as param
 import component.scripts as cs
 from component.scripts import mountain_area as mntn
 from component.scripts import sub_a as sub_a
 from component.scripts import sub_b as sub_b
 
-if TYPE_CHECKING:
-    from component.model.model import MgciModel
 
 
 __all__ = [
@@ -97,6 +93,8 @@ def get_report_folder(aoi_name: str, sepal_client=None) -> Path:
     """
 
     # Create a folder to store multiple year reports from the same area
+    from component.parameter.directory import dir_
+
     report_folder = dir_.reports_dir / f"SDG1542_{aoi_name}"
 
     return create_folder(report_folder, sepal_client=sepal_client)
@@ -301,7 +299,7 @@ def interpolate_sub_a_data(
     """Interpolate sub A data between two years.
 
     Args:
-        mode (MgciModel): MGCI model containing results from calculation
+        mode: the calculation results
         year1 (int): first year
         year2 (int): second year
         target_year (int): target year

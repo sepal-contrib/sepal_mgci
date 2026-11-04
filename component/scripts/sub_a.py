@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, TYPE_CHECKING
+from typing import Optional, Tuple
 
 import pandas as pd
 import component.scripts as cs
@@ -6,6 +6,7 @@ import component.scripts as cs
 # isort: off
 from component.parameter.index_parameters import sub_a_cols, sub_a_landtype_cols
 import component.parameter.module_parameter as param
+from component.message import cm
 
 
 from component.scripts.report_scripts import (
@@ -16,11 +17,26 @@ from component.scripts.report_scripts import (
     get_obs_status,
 )
 
-if TYPE_CHECKING:
-    from component.model.model import MgciModel
 
 
 LC_MAP_MATRIX = pd.read_csv(param.LC_MAP_MATRIX)
+
+
+def _check_target_classes(df: pd.DataFrame) -> None:
+    """Raise if the data has classes that the green/non-green table does not know.
+
+    This happens with a custom map that the user did not reclassify.
+    """
+    unknown = sorted(set(df.lc_class) - set(LC_MAP_MATRIX.to_code))
+    if unknown:
+        classes = ", ".join(
+            str(int(code)) if float(code).is_integer() else str(code) for code in unknown
+        )
+        raise ValueError(
+            cm.setup.unknown_classes.format(
+                classes=classes, step=cm.app.drawer_item.vegetation
+            )
+        )
 
 
 def get_mgci_landtype(parsed_df):
@@ -32,6 +48,7 @@ def get_mgci_landtype(parsed_df):
     """
 
     df = fill_parsed_df(parsed_df.copy())
+    _check_target_classes(df)
 
     # As for this subindicator we will always use the same land cover classification,
     # we can use the param.LC_MAP_MATRIX to get the is_green value.
@@ -92,6 +109,7 @@ def get_mgci(parsed_df: pd.DataFrame) -> pd.DataFrame:
     """
 
     df = fill_parsed_df(parsed_df.copy())
+    _check_target_classes(df)
 
     # Adds is_green column to the dataframe based on lc_class.
     df["is_green"] = df.apply(
