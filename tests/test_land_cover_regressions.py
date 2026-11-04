@@ -26,19 +26,19 @@ def test_remap_normalizes_histogram_and_saved_json_codes():
 
 
 @pytest.mark.parametrize("indicator", ["a", "b"])
-def test_map_refuses_incomplete_form_before_requesting_earth_engine(indicator):
+def test_map_refuses_unreclassified_form_before_requesting_earth_engine(indicator):
     view = LayerHandler.__new__(LayerHandler)
     view.model = custom_model(
-        matrix_sub_a={10: 1, 20: 0}, matrix_sub_b={10: 1, 20: 0}
+        matrix_sub_a={10: 0, 20: 0}, matrix_sub_b={10: 0, 20: 0}
     )
     view.w_layers = SimpleNamespace(v_model=[indicator, "land_cover_2000", "Land cover"])
     with pytest.raises(SetupError):
         asyncio.run(view.add_layer_async())
 
 
-def test_export_refuses_incomplete_form_before_building_image():
+def test_export_refuses_unreclassified_form_before_building_image():
     view = ExportMapDialog.__new__(ExportMapDialog)
-    view.model = custom_model(matrix_sub_a={10: 1, 20: 0})
+    view.model = custom_model(matrix_sub_a={10: 0, 20: 0})
     view.w_layers = SimpleNamespace(v_model=["a", "land_cover_2000", "Land cover"])
     with pytest.raises(SetupError):
         view.get_ee_image()

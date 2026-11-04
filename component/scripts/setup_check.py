@@ -52,21 +52,21 @@ def check_land_cover(model, indicators=INDICATORS):
             matrix = normalize_matrix(getattr(model, f"matrix_{indicator}"))
         except ValueError:
             _fail("invalid_matrix", "vegetation", indicator=_letter(indicator))
-        if (not custom or reclassify) and not matrix:
+        # Empty rows (target 0) are masked out, as the table warns; a table with no target is not a matrix.
+        if (not custom or reclassify) and not any(matrix.values()):
             _fail("no_matrix", "vegetation", indicator=_letter(indicator))
-        if matrix and any(target == 0 for target in matrix.values()):
-            _fail("incomplete_matrix", "vegetation", indicator=_letter(indicator))
         classes = getattr(model, f"lulc_classes_{indicator}", None) or LC_COLOR.index
         try:
             targets = {class_code(code) for code in classes}
         except ValueError:
             _fail("invalid_matrix", "vegetation", indicator=_letter(indicator))
-        if set(matrix.values()) - targets:
+        assigned = set(matrix.values()) - {0}
+        if assigned - targets:
             _fail("invalid_matrix", "vegetation", indicator=_letter(indicator))
         if indicator == "sub_b":
             if not model.transition_matrix:
                 _fail("no_transition", "vegetation")
-            _check_transition(model.transition_matrix, set(matrix.values()) or targets)
+            _check_transition(model.transition_matrix, assigned or targets)
 
 
 def _check_transition(path, targets):

@@ -67,11 +67,16 @@ class ReadinessTests(unittest.TestCase):
 
     def test_omitted_source_and_unassigned_target_block_execution(self):
         for mapping, expected in ((((10, 1),), 'mapping_incomplete'),
-                                  (((10, 1), (20, 0)), 'mapping_unassigned'),
-                                  (((10, 1), (20, 999)), 'mapping_unassigned'),
+                                  (((10, 0), (20, 0)), 'mapping_unassigned'),
+                                  (((10, 1), (20, 999)), 'unknown_target'),
                                   (((10, 1), (20, 3)), 'unknown_target')):
             config = configuration()
             self.assertIn(expected, self.codes(replace(config, a=replace(config.a, mapping=mapping))))
+
+    def test_empty_row_is_masked_out_not_blocked(self):
+        # As the legacy app: target 0 is masked by no_remap, and the table warns about it.
+        config = configuration()
+        self.assertEqual(self.codes(replace(config, a=replace(config.a, mapping=((10, 1), (20, 0))))), set())
 
     def test_loading_empty_or_wrong_scope_discovery_is_not_readiness(self):
         config = configuration()

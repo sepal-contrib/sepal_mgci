@@ -51,7 +51,7 @@
     "transition_code_range": "Transition class codes must be from 1 to 99.",
     "invalid_mapping": "Each source code must have one integer target code.",
     "mapping_incomplete": "Assign every discovered source class.",
-    "mapping_unassigned": "Some source classes have no target.",
+    "mapping_unassigned": "Assign a target class to at least one source class.",
     "unexpected_mapping": "Clear reclassification when using an already classified dataset.",
     "transition_required": "Select a transition CSV explicitly for sub-indicator B.",
     "invalid_transition": "The transition matrix must cover every target pair with valid impacts.",

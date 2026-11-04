@@ -52,11 +52,15 @@ def test_the_default_asset_can_be_reclassified():
 
 @pytest.mark.parametrize(
     "matrix",
-    [{"10": 1, "20": 0}, {10: 1, 20: None}, {10: 1, 20: 999}, {"bad": 1}, {10: 1.5}],
+    [{"10": 0, "20": 0}, {10: 1, 20: None}, {10: 1, 20: 999}, {"bad": 1}, {10: 1.5}],
 )
-def test_incomplete_or_invalid_reclassification_is_refused(matrix):
+def test_unreclassified_or_invalid_reclassification_is_refused(matrix):
     with pytest.raises(SetupError):
         check_land_cover(custom_model(matrix_sub_a=matrix), ("sub_a",))
+
+
+def test_empty_rows_are_masked_out_not_refused():
+    check_land_cover(custom_model(matrix_sub_a={"10": 1, "20": 0}), ("sub_a",))
 
 
 def test_target_classes_must_match_the_reclassification():
@@ -233,7 +237,7 @@ def test_the_land_cover_step_needs_at_least_one_reclassification():
 
 def test_the_land_cover_step_gives_a_shared_problem_once():
     with pytest.raises(SetupError) as error:
-        check_land_cover_step(custom_model(lc_asset_sub_a=""))
+        check_land_cover_step(custom_model(lc_asset_sub_a="", lc_asset_sub_b=""))
 
     assert str(error.value) == cm.setup.no_asset.format(
         step=cm.app.drawer_item.vegetation

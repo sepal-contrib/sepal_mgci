@@ -25,7 +25,7 @@ from .setup import MappingTable, ReadinessMessages, WorkflowQuestions, Transitio
 # New readiness codes rendered with the legacy setup catalogue (component/scripts/setup_check.py).
 LEGACY_SETUP = {
     'aoi_required': 'no_aoi', 'asset_required': 'no_asset', 'default_raw_asset': 'default_asset',
-    'mapping_incomplete': 'incomplete_matrix', 'mapping_unassigned': 'incomplete_matrix',
+    'mapping_incomplete': 'incomplete_matrix', 'mapping_unassigned': 'no_matrix',
     'invalid_mapping': 'invalid_matrix', 'unknown_target': 'invalid_matrix', 'invalid_targets': 'invalid_matrix',
     'transition_required': 'no_transition', 'invalid_transition': 'invalid_transition',
     'years_required': 'no_years', 'stale_images': 'other_asset',

@@ -81,11 +81,14 @@ def readiness(config: Configuration, indicator: str, purpose: str) -> Readiness:
         user_mapping = config.workflow == Workflow.CUSTOM_RECLASSIFY
         if not mapping or (user_mapping and evidence and not set(evidence.classes) <= set(mapping)):
             issue('mapping', 'mapping_incomplete')
-        if any(code in (0, 999) for code in mapping.values()):
+        # As the legacy app: an empty row (target 0) is masked out by no_remap, with the
+        # "Empty classes will be masked out" warning; only a table with no target blocks.
+        assigned = {code: target for code, target in mapping.items() if target != 0}
+        if mapping and not assigned:
             issue('mapping', 'mapping_unassigned')
-        if set(mapping.values()) - targets:
+        if set(assigned.values()) - targets:
             issue('mapping', 'unknown_target')
-        effective = {mapping[code] for code in evidence.classes if code in mapping} if evidence else set()
+        effective = {assigned[code] for code in evidence.classes if code in assigned} if evidence else set()
     else:
         if mapping:
             issue('mapping', 'unexpected_mapping')
