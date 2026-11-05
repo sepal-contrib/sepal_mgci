@@ -58,9 +58,6 @@ class LandCoverParityTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(selectors), 1)
         buttons = [widget for widget in widgets(root) if isinstance(widget, v.Btn)]
         self.assertEqual(sum('Get classes' in button.children for button in buttons), 1)
-        # Inside the field's outer slot, so it centres on the input and not on the hint below.
-        slot = next(item for item in selectors[0].v_slots if item['name'] == 'append-outer')
-        self.assertIn('Get classes', slot['children'].children)
         tables = [widget for widget in widgets(root) if isinstance(widget, v.SimpleTable)]
         self.assertEqual(sum(table.height == '300px' for table in tables), 2)
         # Footer Close buttons are outlined; the alert dialog's full-width Close is plain.
@@ -68,6 +65,27 @@ class LandCoverParityTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(close)
         self.assertTrue(all(button.outlined for button in close))
         await asyncio.sleep(.01)
+
+    async def test_get_classes_shows_after_switching_to_reclassify(self):
+        config = replace(report_state().configuration, workflow=Workflow.DEFAULT)
+        resources = {key: ResourceState() for key in ('a', 'b', 'transition')}
+        @solara.component
+        def Harness():
+            state, publish = use_session_state(config)
+            NotificationProvider()
+            LandCoverPanel(state, publish, resources, Interface(), None, None)
+        root, context = solara.render(Harness(), handle_error=False)
+        self.addCleanup(context.close)
+        for index in (0, 1):
+            [widget for widget in widgets(root) if isinstance(widget, v.RadioGroup)][index].v_model = True
+            await asyncio.sleep(.01)
+        def children(widget):
+            yield widget
+            for child in getattr(widget, 'children', None) or ():
+                if hasattr(child, 'children'):
+                    yield from children(child)
+        # The browser does not draw a slot added to a mounted field, so the button must be a plain child.
+        self.assertTrue(any(isinstance(w, v.Btn) and 'Get classes' in w.children for w in children(root)))
 
     async def test_mapping_tools_keep_info_and_save_dialogs_and_capture_csv(self):
         config = report_state().configuration
