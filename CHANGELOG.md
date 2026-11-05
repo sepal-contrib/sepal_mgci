@@ -1,3 +1,19 @@
+## 2.0.0 (2026-11-05)
+
+### Feat
+
+- replace the widget app with a Solara app built on pysepal
+
+### Fix
+
+- keep the years and classes when a questionnaire answer keeps the dataset
+- let Close discard the edits of the years and land cover dialogs
+
+### Refactor
+
+- use one message catalogue
+- remove unused code
+
 ## 1.3.1 (2026-10-27)
 
 ### Fix
