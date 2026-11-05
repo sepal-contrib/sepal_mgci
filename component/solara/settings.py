@@ -13,6 +13,7 @@ from pysepal.solara.notifications import use_notifications
 from component.message import msg
 from mgci.application.reports import prepare_report
 from mgci.domain.validation import NotReady, readiness
+from mgci.errors import LocalizedError
 from mgci.infrastructure.reports import build_report_revision
 from mgci.infrastructure.science import calculate
 from mgci.infrastructure.tasks import submit
@@ -21,11 +22,6 @@ from .setup import ReadinessMessages, error_text
 from .years import IndicatorYears
 
 log = logging.getLogger('MGCI.solara.settings')
-
-
-# Shown when the work goes to an Earth Engine task instead.
-TASKED = ("The computation could not be completed on the fly. The task *'{path}'* has been tasked in your "
-          "[GEE account](https://code.earthengine.google.com/tasks).")
 
 
 @solara.component
@@ -51,7 +47,7 @@ def CalculationAction(state, publish, indicators, run, prepare=None, background=
             # Refresh B first; its file load must finish before capturing A.
             for key in sorted(selected, reverse=True):
                 if state.revision(key, 'statistics') != revisions[key]:
-                    raise ValueError('Settings changed while preparing the calculation. Please try again.')
+                    raise LocalizedError('settings_changed')
                 request = await prepare(key, 'statistics', '') if prepare else state.prepare(key, 'statistics')
                 requests.append(request)
                 prepared_revisions[request.request_id] = state.revision(key, 'statistics')
@@ -63,7 +59,8 @@ def CalculationAction(state, publish, indicators, run, prepare=None, background=
                 try:
                     if deferred:
                         _, path = await submit(request, gee_interface, workspace)
-                        notifications.warning(TASKED.format(path=path))
+                        # Shown when the work goes to an Earth Engine task instead.
+                        notifications.warning(msg('settings.tasked', path=path))
                     else:
                         try:
                             payload = await run(request)
@@ -75,7 +72,7 @@ def CalculationAction(state, publish, indicators, run, prepare=None, background=
                                 raise
                             log.warning('On-the-fly calculation hit an Earth Engine limit; submitting a task: %s', error)
                             _, path = await submit(request, gee_interface, workspace)
-                            notifications.warning(TASKED.format(path=path))
+                            notifications.warning(msg('settings.tasked', path=path))
                         else:
                             if state.accept(request, payload):
                                 completed += 1
@@ -88,7 +85,7 @@ def CalculationAction(state, publish, indicators, run, prepare=None, background=
             if (not deferred and completed == len(selected)
                     and all((artifact := state.current(*request.slot)) is not None
                             and artifact.request == request for request in requests)):
-                notifications.success('The computation has been completed.')
+                notifications.success(msg('settings.completed'))
         except asyncio.CancelledError:
             for request in requests:
                 state.cancel(request)
@@ -183,7 +180,7 @@ def StatusAlert(kind, lines, download=None):
                 with solara.FileDownload(content, filename=revision.filename, mime_type=XLSX):
                     with rv.Html(tag='u'):
                         with rv.Html(tag='i'):
-                            rv.Html(tag='a', children=['Click to download'])
+                            rv.Html(tag='a', children=[msg('settings.download')])
 
 
 @solara.component
@@ -218,7 +215,7 @@ def SettingsPanel(state, publish, gee_interface, workspace, prepare, before_expo
 
     def saved(result):
         revision, folder, content = result
-        status.set(('success', (f'Reporting tables successfully exported {folder},',), revisions(), (revision, content)))
+        status.set(('success', (msg('settings.exported', folder=folder),), revisions(), (revision, content)))
 
     def edit(**values):
         state.edit(replace(state.configuration, **values))
@@ -259,4 +256,4 @@ def SettingsPanel(state, publish, gee_interface, workspace, prepare, before_expo
             CalculationAction(state, publish, enabled.value, lambda request: calculate(request, gee_interface),
                               prepare, background.value, workspace, gee_interface, notify=inline)
             ReportAction(state, workspace, before_export, enabled.value, on_saved=saved,
-                         on_start=lambda: add('info', 'Exporting tables...'))
+                         on_start=lambda: add('info', msg('settings.exporting')))

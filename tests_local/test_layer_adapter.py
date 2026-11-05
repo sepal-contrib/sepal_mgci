@@ -45,6 +45,19 @@ class LayerAdapterTests(ApiTestCase):
         self.assertEqual(resolved.gee_folder, f'sepal_sdg15_4_2/{self.config.aoi_label}_1234')
         self.assertEqual(resolved.default_scale, self.config.scale.metres or 1000)
 
+    def test_french_titles_keep_english_export_names_and_metadata(self):
+        from pysepal.i18n import set_locale
+        set_locale('fr')
+        self.addCleanup(set_locale, 'en')
+        sources = {source.id: source for source in export_sources(self.config, ('a', 'b'), 1)}
+        self.assertEqual(sources['a|lc/2000'].label, 'Couverture terrestre 2000 (Sous-indicateur A)')
+        self.assertEqual(sources['a|lc/2000'].resolve().default_name, 'SubA_landcover2000')
+        degradation = next(source for key, source in sources.items() if key.endswith('|final_degradation'))
+        resolved = degradation.resolve()
+        self.assertRegex(resolved.default_name, r'^SubB_totaldegradation\d{4}$')
+        self.assertEqual(resolved.vis_params['labels'], ['Dégradé', 'Stable', 'Amélioré'])
+        self.assertIn('1=Degraded', resolved.ee_object.serialize())
+
     def test_unready_indicator_is_listed_disabled_and_switched_off_one_hidden(self):
         sources = export_sources(replace(self.config, aoi_identity=''), ('a',), 1)
         self.assertTrue(sources and all(source.disabled for source in sources))

@@ -9,6 +9,11 @@ from component.scripts.plots import get_land_cover_bar_chart
 from component.scripts.sub_a import get_mgci
 
 
+def belt_label(belt):
+    """Button and title name of a belt code, or of "Total" (all belts)."""
+    return msg("belts.overall") if belt == "Total" else param.belt_name(belt)
+
+
 def close_tree(widget, keep=()):
     """Close ``widget`` and every widget under its ``children``.
 
@@ -39,7 +44,7 @@ class BeltSelector(sw.Flex):
         details = details or {}
 
         for belt in belts:
-            name = "Overall" if belt == "Total" else param.BIOBELT_LEGEND[belt][0]
+            name = belt_label(belt)
             content = [
                 v.Html(
                     tag="div",
@@ -130,7 +135,7 @@ class MgciDashboard(sw.Layout):
                 v.Html(
                     tag="div",
                     class_="text-body-2 mt-2",
-                    children=[msg('dashboard.global_.desc', unit=param.UNITS["sqkm"][1])],
+                    children=[msg('dashboard.global_.desc', unit=msg('units.sqkm'))],
                 ),
             ],
         )
@@ -178,8 +183,7 @@ class MgciDashboard(sw.Layout):
 
     def _show_belt(self, belt):
         self.selected_belt = belt
-        name = "Overall" if belt == "Total" else param.BIOBELT_LEGEND[belt][0]
-        self.chart_title.children = [f"Land-cover composition · {name}"]
+        self.chart_title.children = [msg("charts.composition", belt=belt_label(belt))]
         self.chart_description.children = (
             []
             if belt == "Total"

@@ -18,7 +18,9 @@ def WorkflowQuestions(value: Workflow, on_value):
     custom = value in (Workflow.CUSTOM_CANONICAL, Workflow.CUSTOM_RECLASSIFY)
     with rv.Html(tag='div', class_='pa-0 ma-0'):
         # pysepal's Markdown widget, for its link styling.
-        sw.Markdown.element(mkd_str=msg('veg_layer.description'), class_='pa-0 ma-0')
+        # Markdown renders its text once, so a new key rebuilds it when the language changes.
+        description = msg('veg_layer.description')
+        sw.Markdown.element(mkd_str=description, class_='pa-0 ma-0').key(description)
         rv.Html(tag='h3', children=[msg('veg_layer.questionnaire.q1')])
         with rv.RadioGroup(v_model=custom, on_v_model=lambda yes: on_value(
                 Workflow.CUSTOM_CANONICAL if yes else Workflow.DEFAULT), row=True):
@@ -154,7 +156,7 @@ def TransitionEditor(table, labels, on_value, disabled=False, on_reset=None):
                                 with rv.Html(tag='td', class_='ma-0 pa-0', style_=f'background-color:{colors.get(impact, "transparent")};'):
                                     rv.Select(v_model=impact, disabled=disabled, color='white', class_='ma-1',
                                               on_v_model=lambda value, source=source, target=target: change(source, target, value),
-                                              items=[{'text': 'I', 'value': 3}, {'text': 'S', 'value': 2}, {'text': 'D', 'value': 1}],
+                                              items=[{'text': msg(f'impacts.codes.{code}'), 'value': code} for code in (3, 2, 1)],
                                               dense=True)
     else:
         rv.Html(tag='div', class_='text-center pa-4 grey--text', children=[msg('landcover.empty_transition')])

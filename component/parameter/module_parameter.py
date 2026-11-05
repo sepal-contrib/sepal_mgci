@@ -24,8 +24,16 @@ BIOBELT_LEGEND = {
     2: ["Alpine", "#ffd500"],
     3: ["Montane", "#bbff00"],
     4: ["Remaining mountain area", "#034502"],
-    "total": [msg('aoi.legend.total'), "#24221f"],
+    "total": ["Total", "#24221f"],
 }
+"dict: English belt names, kept for exported metadata; display names come from belt_name()"
+
+
+def belt_name(code):
+    """Display name of a bioclimatic belt code, or of "total", in the user's language."""
+    if code == "total":
+        return msg('aoi.legend.total')
+    return msg(f'belts.{int(code)}') if int(code) in BIOBELT_LEGEND else str(code)
 
 
 # Kapos layer visualization for map

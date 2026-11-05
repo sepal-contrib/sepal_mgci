@@ -20,7 +20,17 @@
     "step_action": {
       "back": "Back",
       "close": "Close",
-      "next": "Next"
+      "next": "Next",
+      "ok": "OK"
+    },
+    "title": "SDG 15.4.2",
+    "results": {
+      "title": "Results",
+      "description": "This section contains the results of the analysis. You can add layers to the map, view sub-indicators, and download tasks.",
+      "layers_title": "Visualize layers",
+      "layers_description": "Show a layer on the map or export it. Set the area of interest and the years in the {step} step first.",
+      "sub_a_description": "Explore land-cover composition for Sub-indicator A by year and mountain belt.",
+      "sub_b_description": "Explore land-cover transitions by period and mountain belt."
     }
   },
   "calculation": {
@@ -40,7 +50,13 @@
     "reporting_subtitle": "Each year will be reported against the baseline",
     "y_start": "Initial year",
     "y_end": "Final year",
-    "match_year": "Corresponding year"
+    "match_year": "Corresponding year",
+    "chips_reporting": "Reporting years:",
+    "chips_baseline": "Baseline:",
+    "chips_report": "Report:",
+    "required": "Required",
+    "order_error": "Start year must be before end year",
+    "asset_placeholder": "GEE Asset ID"
   },
   "dashboard": {
     "advanced_options": "Advanced options",
@@ -98,7 +114,13 @@
     "hide": "Hide {name}",
     "cancel": "Stop adding {name}",
     "export": "Export {name}",
-    "export_title": "Export layers"
+    "export_title": "Export layers",
+    "biobelts": "Bioclimatic belts",
+    "legend": {
+      "1": "Degraded",
+      "2": "Stable",
+      "3": "Improved"
+    }
   },
   "rec": {
     "rec": {
@@ -128,7 +150,8 @@
         "error": {
           "no_file": "Please select a file containing a reclassified matrix."
         },
-        "title": "Load remapping table"
+        "title": "Load remapping table",
+        "file_label": "filename"
       },
       "save": {
         "alert": {
@@ -147,10 +170,11 @@
       "target": {
         "btn_label": "Load",
         "description": "This module allows users to modify the default target land cover classes used in the reclassification process. The module is set to use the standard 10 SEEA classes by default, but for sub indicator B, users have the option to either use these default classes or create their own custom classification. To use the custom classification option, simply select the 'custom' button and upload a file containing the target classifications that will be used in the reclassification table."
-      }
+      },
+      "info_title": "Land cover classes"
     },
     "get_classes": "Get classes",
-    "non_complete": "You have classified {assigned} classes. Empty classes will be masked out from the analysis.",
+    "non_complete": "You have classified {assigned} of {total} classes. Empty classes will be masked out from the analysis.",
     "title": "Reclassify table",
     "tooltip": {
       "info": "Show info",
@@ -237,7 +261,16 @@
   "charts": {
     "flow": "Flow",
     "matrix": "Matrix",
-    "transitions": "Land-cover transitions · {belt}"
+    "transitions": "Land-cover transitions · {belt}",
+    "show_dashboard": "Show dashboard",
+    "year": "Year",
+    "period": "Period",
+    "from": "From · {year}",
+    "to": "To · {year}",
+    "matrix_axes": "From class ↓  ·  To class →  ·  Area (km²) on hover",
+    "no_observed": "No observed area",
+    "class": "Class {code}",
+    "composition": "Land-cover composition · {belt}"
   },
   "tasks": {
     "no_file": "Please select a task file.",
@@ -260,5 +293,74 @@
     "saved": "Mapping saved to {path}",
     "changed": "The setup changed while reading the file. Select it again.",
     "workspace_required": "Connect an authenticated SEPAL workspace to read or save user files."
+  },
+  "belts": {
+    "1": "Nival",
+    "2": "Alpine",
+    "3": "Montane",
+    "4": "Remaining mountain area",
+    "overall": "Overall"
+  },
+  "impacts": {
+    "1": "Degradation",
+    "2": "Stable",
+    "3": "Improvement",
+    "unclassified": "Unclassified",
+    "codes": {
+      "1": "D",
+      "2": "S",
+      "3": "I"
+    }
+  },
+  "settings": {
+    "tasked": "The computation could not be completed on the fly. The task *'{path}'* has been tasked in your [GEE account](https://code.earthengine.google.com/tasks).",
+    "completed": "The computation has been completed.",
+    "exporting": "Exporting tables...",
+    "exported": "Reporting tables successfully exported {folder},",
+    "download": "Click to download"
+  },
+  "errors": {
+    "settings_changed": "Settings changed while preparing the calculation. Please try again.",
+    "setup_changed_loading": "Setup changed while loading; select the file again",
+    "setup_changed_discovery": "Setup changed during discovery; get classes again",
+    "no_class_evidence": "No complete class evidence for the selected dataset and area",
+    "workspace_required": "An authenticated SEPAL workspace is required for user files",
+    "workspace_transition": "An authenticated SEPAL workspace is required to read transition files",
+    "report_indicator": "Select at least one indicator for the report",
+    "report_not_calculated": "Calculate sub-indicator {indicator} before downloading its report",
+    "historical_transition": "Select the original transition CSV to reconstruct this historical B report",
+    "dataset_type": "Select an Earth Engine image or image collection",
+    "dataset_images": "Dataset contains no images or duplicate image identifiers",
+    "dataset_aoi": "Select an area of interest before getting classes",
+    "class_code": "Invalid integer class code: {value}",
+    "duplicate_class_code": "Duplicate class code: {code}",
+    "mapping_columns": "Mapping needs from_code and to_code columns",
+    "mapping_no_classes": "Get the source classes before loading a mapping",
+    "mapping_unknown_targets": "Some of the target land cover classes ({classes}) are not present in the destination land cover classes.",
+    "classification_columns": "Classification needs lc_class, desc and color columns",
+    "classification_rows": "Use unique class codes from 1 to 99, names and #RRGGBB colours",
+    "classification_empty": "Classification is empty",
+    "transition_columns": "Missing or duplicate transition columns",
+    "transition_extra_fields": "Transition row has extra fields",
+    "transition_rows": "Duplicate transition pair or invalid impact",
+    "transition_empty": "Transition table is empty",
+    "transition_invalid": "Invalid transition CSV",
+    "transition_required": "Select a transition file",
+    "task_record_unsupported": "Unsupported or incomplete task record",
+    "task_not_submitted": "This task record has no confirmed submission; check Earth Engine tasks before resubmitting",
+    "task_status": "Task is {status}",
+    "task_unavailable": "Task is unavailable",
+    "task_csv_missing": "The completed task CSV was not found in Google Drive",
+    "task_record_not_saved": "Task {task} was submitted, but its record could not be saved: {error}",
+    "task_provenance_mismatch": "Task provenance does not match its captured inputs",
+    "task_provenance_invalid": "Invalid task provenance record",
+    "task_result_identifier": "Invalid or duplicate task result identifier",
+    "task_result_category": "Invalid {category} task result",
+    "task_result_rows": "Expected grouped-area rows",
+    "task_result_empty": "Task result is empty",
+    "task_results_incomplete": "Task results do not contain the complete requested years and categories"
+  },
+  "units": {
+    "sqkm": "square kilometers"
   }
 }

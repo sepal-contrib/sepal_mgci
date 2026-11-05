@@ -30,7 +30,7 @@ def SetupAlert(alert, on_close):
                 for line in lines:
                     rv.Html(tag='p', class_='mb-0', children=[line])
             with rv.CardActions():
-                solara.Button('Close', on_click=on_close, block=True)
+                solara.Button(msg('app.step_action.close'), on_click=on_close, block=True)
 
 
 @solara.component

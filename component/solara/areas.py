@@ -6,6 +6,7 @@ import json
 import solara
 from pysepal.solara.notifications import use_notifications
 
+from component.message import msg
 from mgci.infrastructure.areas import prepare_biobelt
 
 log = logging.getLogger('MGCI.solara.areas')
@@ -42,7 +43,7 @@ def BiobeltOverlay(config, map_, gee_interface, on_legend):
             import ee
             from pysepal.mapping.layer import EELayer
             map_.add_layer(EELayer(ee_object=ee.Image(ee.deserializer.decode(json.loads(payload['graph']))),
-                                  url=payload['url'], name='Bioclimatic belts', attribution='Google Earth Engine', max_zoom=24), key='biobelts')
+                                  url=payload['url'], name=msg('layers.biobelts'), attribution='Google Earth Engine', max_zoom=24), key='biobelts')
             on_legend(payload['legend'])
     solara.use_effect(receive, [task.finished, task.value])
     solara.use_effect(lambda: lambda: map_.remove_layer('biobelts', none_ok=True), [])

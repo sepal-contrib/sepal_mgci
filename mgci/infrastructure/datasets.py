@@ -8,6 +8,7 @@ import re
 
 from mgci.domain.codes import class_code
 from mgci.domain.configuration import DatasetDiscovery, DatasetEvidence, ImageSelection, Workflow
+from mgci.errors import LocalizedError
 
 # Image records of the default dataset, listed once per server process. It is a
 # public collection shared by every session, and its images do not depend on the AOI.
@@ -52,12 +53,12 @@ async def _records(asset, gee_interface):
     elif asset_type == 'IMAGE':
         records = [{'id': asset, 'time': metadata.get('properties', {}).get('system:time_start')}]
     else:
-        raise ValueError('Select an Earth Engine image or image collection')
+        raise LocalizedError('dataset_type')
     if asset_type == 'IMAGE_COLLECTION':
         records = [{**record, 'id': record['id'] if '/' in record['id']
                     else f"{asset.rstrip('/')}/{record['id']}"} for record in records]
     if not records or len({record['id'] for record in records}) != len(records):
-        raise ValueError('Dataset contains no images or duplicate image identifiers')
+        raise LocalizedError('dataset_images')
     return records
 
 
@@ -66,7 +67,7 @@ async def discover(config, indicator, gee_interface) -> DatasetDiscovery:
     from component.scripts.aoi_geometry import aoi_bbox
 
     if not config.aoi_graph or sha256(config.aoi_graph.encode()).hexdigest() != config.aoi_identity:
-        raise ValueError('Select an area of interest before getting classes')
+        raise LocalizedError('dataset_aoi')
     selected = getattr(config, indicator)
     aoi = ee.FeatureCollection(ee.deserializer.decode(json.loads(config.aoi_graph)))
     default = (config.workflow in (Workflow.DEFAULT, Workflow.DEFAULT_EDIT_TRANSITIONS)

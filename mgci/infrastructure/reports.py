@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 from mgci.application.state import Artifact
 from mgci.domain.reporting import reporting_breakpoints
+from mgci.errors import LocalizedError
 
 
 def plain_data(value):
@@ -83,7 +84,7 @@ def build_historical_workbook(payload, model_state, transition=None):
     has_a = any('_' not in key for key in payload)
     has_b = any('_' in key for key in payload)
     if has_b and transition is None:
-        raise ValueError('Select the original transition CSV to reconstruct this historical B report')
+        raise LocalizedError('historical_transition')
     sink = _WorkbookSink()
     export_reports(plain_data(payload),
                    {int(year): sources for year, sources in model_state['reporting_years_sub_a'].items()},

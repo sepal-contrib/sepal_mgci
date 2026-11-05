@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from uuid import uuid4
 
 from .state import Artifact
+from mgci.errors import LocalizedError
 
 
 @dataclass(frozen=True)
@@ -34,12 +35,12 @@ class ReportRevision:
 def prepare_report(state, indicators, session_id=0, sequence=1) -> ReportRevision:
     selected = tuple(indicators)
     if not selected or len(set(selected)) != len(selected) or any(key not in ('a', 'b') for key in selected):
-        raise ValueError('Select at least one indicator for the report')
+        raise LocalizedError('report_indicator')
     artifacts = []
     for key in selected:
         artifact = state.current(key, 'statistics')
         if artifact is None:
-            raise ValueError(f'Calculate sub-indicator {key.upper()} before downloading its report')
+            raise LocalizedError('report_not_calculated', indicator=key.upper())
         artifacts.append(state.export_artifact(artifact.request))
     config = state.configuration
     return ReportRevision(str(uuid4()), tuple(artifacts), config.aoi_name, config.ref_area, config.source,

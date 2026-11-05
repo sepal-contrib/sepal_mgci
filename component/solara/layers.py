@@ -195,7 +195,7 @@ def MapOutputs(state, map_, context_legend=None, shown=None):
     artifacts = use_map_layers(state, lambda artifact: install_layer(map_, artifact),
                                lambda key: map_.remove_layer(key, none_ok=True),
                                None if shown is None else shown.value)
-    entries = ([('biobelts', 'Bioclimatic belts', context_legend)] if context_legend else []) + [
+    entries = ([('biobelts', msg('layers.biobelts'), context_legend)] if context_legend else []) + [
         (artifact.request.request_id, artifact.payload['title'], {'items': plain_data(artifact.payload['legend'])}) for artifact in artifacts]
     effective = next((entry for entry in entries if entry[0] == legend.value), entries[-1] if entries else None)
     LegendComponent(legend_data=effective[2] if effective else {}, visible=bool(effective),

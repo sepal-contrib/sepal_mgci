@@ -1,0 +1,366 @@
+{
+  "aoi": {
+    "legend": {
+      "total": "Total",
+      "color": "Couleur",
+      "desc": "Description",
+      "perc": "%",
+      "area": "Superficie (km²)",
+      "no_mountain": "Aucune zone de montagne"
+    }
+  },
+  "app": {
+    "drawer_item": {
+      "aoi": "1. Zone d'intérêt",
+      "calculation": "3. Paramètres de l'indicateur",
+      "dashboard": "4. Résultats",
+      "task": "Exporter depuis une tâche",
+      "vegetation": "2. Jeu de données de couverture terrestre"
+    },
+    "step_action": {
+      "back": "Retour",
+      "close": "Fermer",
+      "next": "Suivant",
+      "ok": "OK"
+    },
+    "title": "ODD 15.4.2",
+    "results": {
+      "title": "Résultats",
+      "description": "Cette section contient les résultats de l'analyse. Vous pouvez ajouter des couches à la carte, consulter les sous-indicateurs et télécharger les tâches.",
+      "layers_title": "Visualiser les couches",
+      "layers_description": "Affichez une couche sur la carte ou exportez-la. Définissez d'abord la zone d'intérêt et les années à l'étape {step}.",
+      "sub_a_description": "Explorez la composition de la couverture terrestre du sous-indicateur A par année et par ceinture de montagne.",
+      "sub_b_description": "Explorez les transitions de couverture terrestre par période et par ceinture de montagne."
+    }
+  },
+  "calculation": {
+    "sub_a": {
+      "title": "Sous-indicateur A",
+      "desc_active": "D'après les données fournies, le module peut générer des rapports pour les années suivantes. Si une année manque, le module estime ses valeurs par interpolation linéaire.",
+      "desc_disabled": "Le sous-indicateur A ne sera pas calculé. Pour activer son traitement, cliquez sur l'interrupteur en haut à droite de cette carte et sélectionnez la ou les couches cibles."
+    },
+    "sub_b": {
+      "title": "Sous-indicateur B",
+      "desc_active": "D'après les données fournies, le module peut générer des rapports pour les années suivantes.",
+      "desc_disabled": "Le sous-indicateur B ne sera pas calculé. Pour activer son traitement, cliquez sur l'interrupteur en haut à droite de cette carte et sélectionnez la ou les couches cibles."
+    },
+    "year": "Année",
+    "baseline_title": "Période de référence",
+    "reporting_title": "Années de rapport",
+    "reporting_subtitle": "Chaque année sera comparée à la période de référence",
+    "y_start": "Année initiale",
+    "y_end": "Année finale",
+    "match_year": "Année correspondante",
+    "chips_reporting": "Années de rapport :",
+    "chips_baseline": "Référence :",
+    "chips_report": "Rapport :",
+    "required": "Obligatoire",
+    "order_error": "L'année initiale doit précéder l'année finale",
+    "asset_placeholder": "ID de l'asset GEE"
+  },
+  "dashboard": {
+    "advanced_options": "Options avancées",
+    "alert": {
+      "computing": "Calcul des valeurs du MGCI avec la {area}. Ce processus peut prendre quelques minutes."
+    },
+    "global_": {
+      "desc": "Part de la zone de montagne couverte de végétation. Sélectionnez une ceinture bioclimatique pour examiner sa composition ; survolez une barre pour voir sa superficie en {unit}.",
+      "title": "Indice global du couvert végétal des montagnes"
+    },
+    "help": {
+      "background": "Exécuter le traitement en arrière-plan. Utilisez cette option en cas de dépassement du délai de calcul ou si l'outil n'affiche pas rapidement les résultats.",
+      "rsa": "Utiliser la superficie réelle. Désactivez cette option pour calculer les résultats avec la superficie planimétrique. Pour plus de détails, consultez la documentation du module.",
+      "scale": "« Native » utilise la résolution des données de couverture terrestre. Une échelle plus grossière accélère le traitement, mais le rend moins précis. Le maximum est de 1500 m, car les ceintures de montagne ne sont pas précises à des échelles plus grossières."
+    },
+    "individual": {
+      "desc": {
+        "belt_1": "Zones de montagne où la température moyenne de la saison de croissance est inférieure à 3,5 °C et où la saison de croissance dure moins de 10 jours",
+        "belt_2": "Zones de montagne où la température moyenne de la saison de croissance est comprise entre 3,5 °C et 6,4 °C et où la saison de croissance dure entre 10 et 54 jours.",
+        "belt_3": "Zones de montagne où la température moyenne de la saison de croissance est comprise entre 6,4 °C et 15 °C",
+        "belt_4": "Zones de montagne où la température moyenne de la saison de croissance est supérieure à 15 °C"
+      }
+    },
+    "label": {
+      "background": "Exécuter en arrière-plan dans EE (pour les grands jeux de données)",
+      "calculate": "Calculer l'indicateur",
+      "calculate_from_task": "Télécharger et exporter les tableaux",
+      "custom_scale": "Personnalisée",
+      "download": "Exporter les tableaux de rapport",
+      "plan": "superficie planimétrique",
+      "rsa": "Utiliser la superficie réelle",
+      "rsa_name": "superficie réelle",
+      "scale": "Échelle de traitement"
+    },
+    "tasks": {
+      "description": "Cette section vous aide à gérer les calculs qui s'exécutent en arrière-plan sur Google Earth Engine. Voici ce que vous pouvez faire :<br><br>- **Trouver votre fichier de tâche** : un « fichier de tâche » unique est créé pour chaque calcul envoyé en arrière-plan dans GEE. Vous le trouverez dans le dossier « <i>{folder}</i> ».<br>- **Suivre votre tâche** : surveillez la progression de votre tâche et vérifiez son état à tout moment.<br>- **Télécharger les résultats** : une fois la tâche terminée, téléchargez ici les résultats et les tableaux de rapport.<br>- **Consulter votre tableau de bord** : vos résultats alimentent automatiquement le tableau de bord, ce qui facilite leur examen et leur analyse.<br>Suivez les étapes de cette page pour gérer et récupérer les résultats de vos calculs.",
+      "title": "Traitement en arrière-plan dans GEE"
+    },
+    "window_title": "Tableau de bord du sous-indicateur {indicator} · {area}"
+  },
+  "layers": {
+    "final_degradation": "Dégradation totale",
+    "baseline_degradation": "Dégradation de référence",
+    "report_degradation": "Dégradation de la période de rapport",
+    "land_cover": "Couverture terrestre",
+    "sub_a_header": "Sous-indicateur A",
+    "sub_b_header": "Sous-indicateur B",
+    "columns": {
+      "name": "Couche",
+      "indicator": "Sous-indicateur",
+      "action": "Action"
+    },
+    "empty": "Aucune couche pour le moment. Sélectionnez d'abord la zone d'intérêt et les années.",
+    "show": "Afficher {name} sur la carte",
+    "hide": "Masquer {name}",
+    "cancel": "Arrêter l'ajout de {name}",
+    "export": "Exporter {name}",
+    "export_title": "Exporter les couches",
+    "biobelts": "Ceintures bioclimatiques",
+    "legend": {
+      "1": "Dégradé",
+      "2": "Stable",
+      "3": "Amélioré"
+    }
+  },
+  "rec": {
+    "rec": {
+      "headers": {
+        "0": "Classe d'origine",
+        "1": "Classe de destination"
+      },
+      "input": {
+        "classif": {
+          "label": "fichier de classes"
+        }
+      }
+    }
+  },
+  "reclass": {
+    "default_table": {
+      "header": {
+        "lc_class": "Classe de couverture terrestre",
+        "desc": "Nom",
+        "color": "Couleur"
+      }
+    },
+    "description": "Reclassez les classes de couverture terrestre de vos jeux de données personnalisés selon la légende de couverture terrestre de référence utilisée pour cet indicateur",
+    "dialog": {
+      "import_": {
+        "btn_label": "Charger",
+        "error": {
+          "no_file": "Sélectionnez un fichier contenant une matrice de reclassement."
+        },
+        "title": "Charger une table de correspondance",
+        "file_label": "nom du fichier"
+      },
+      "save": {
+        "alert": {
+          "default": "Choisissez un nom pour le fichier de sortie",
+          "folder": "Votre fichier sera enregistré dans : {folder}",
+          "name": "sous le nom {name}."
+        },
+        "btn_label": "Enregistrer",
+        "error": {
+          "no_matrix": "Aucune table à enregistrer. Remplissez d'abord la table.",
+          "no_name": "Saisissez un nom de fichier."
+        },
+        "title": "Enregistrer la matrice",
+        "w_file_label": "Nom du fichier de matrice :"
+      },
+      "target": {
+        "btn_label": "Charger",
+        "description": "Ce module permet de modifier les classes cibles de couverture terrestre par défaut utilisées lors du reclassement. Par défaut, le module utilise les 10 classes standard du SCEE, mais pour le sous-indicateur B, vous pouvez utiliser ces classes par défaut ou créer votre propre classification. Pour utiliser une classification personnalisée, sélectionnez le bouton « Personnalisée » et chargez un fichier contenant les classes cibles à utiliser dans la table de reclassement."
+      },
+      "info_title": "Classes de couverture terrestre"
+    },
+    "get_classes": "Obtenir les classes",
+    "non_complete": "Vous avez classé {assigned} classes sur {total}. Les classes vides seront exclues de l'analyse.",
+    "title": "Table de reclassement",
+    "tooltip": {
+      "info": "Afficher les informations",
+      "load_matrix": "Charger la matrice depuis un fichier .csv",
+      "load_target": {
+        "btn": "Importer les classes cibles de couverture terrestre",
+        "cancel_btn": "Annuler",
+        "title": "Classes cibles de couverture terrestre"
+      },
+      "save_matrix": "Enregistrer la matrice dans un fichier .csv"
+    }
+  },
+  "reclass_view": {
+    "ic_custom_label": "Sélectionnez une collection d'images personnalisée",
+    "ic_default_label": "Collection d'images par défaut"
+  },
+  "setup": {
+    "years_incomplete": "Sélectionnez une image et une année pour chaque période de rapport.",
+    "unknown_classes": "Les données de couverture terrestre contiennent des classes qui ne sont pas des classes cibles ({classes}). Reclassez les classes de couverture terrestre à l'étape « {step} ».",
+    "partial": "{reason} Tant que ce n'est pas fait, vous ne pouvez utiliser que le sous-indicateur {ready}.",
+    "yes": "Oui",
+    "no": "Non",
+    "unavailable": "Le sous-indicateur {indicator} n'est pas prêt :",
+    "workspace_required": "Connectez un espace de travail SEPAL authentifié pour sélectionner des fichiers utilisateur."
+  },
+  "veg_layer": {
+    "description": "L'indicateur ODD 15.4.2 utilise des données de couverture terrestre pour évaluer et suivre les changements de couverture terrestre et leur impact estimé en termes de dégradation et de restauration des écosystèmes.</br>Indiquez ci-dessous si vous souhaitez utiliser vos propres cartes de couverture terrestre de votre pays pour calculer les deux sous-indicateurs. Sinon, l'outil utilisera par défaut, comme solution mondiale, la série chronologique de couverture terrestre produite par l'Agence spatiale européenne (ESA) dans le cadre de la Climate Change Initiative (CCI) (pour plus d'informations sur ce jeu de données, consultez <a href='http://maps.elie.ucl.ac.be/CCI/viewer/index.php'>http://maps.elie.ucl.ac.be/CCI/viewer/index.php</a>)",
+    "dialog": {
+      "validate": "Valider et fermer"
+    },
+    "questionnaire": {
+      "alert_not_classify": "Vous avez choisi de ne pas reclasser une carte de couverture terrestre personnalisée. Le module considérera que la carte sélectionnée est déjà classée selon la classification du SCEE des Nations Unies et utilisera la matrice de transition par défaut.",
+      "btn": {
+        "label": "Configurer la couverture terrestre"
+      },
+      "q1": "Souhaitez-vous sélectionner ou reclasser une carte d'utilisation ou de couverture des terres ?",
+      "q2": "Souhaitez-vous modifier la matrice de transition de couverture terrestre par défaut ?",
+      "q3": "Devez-vous reclasser la carte d'utilisation ou de couverture des terres sélectionnée selon la classification du SCEE des Nations Unies ?"
+    },
+    "stepper": {
+      "header": {
+        "data_selection": "Sélection du jeu de données",
+        "reclassify_a": "Reclasser la couverture terrestre pour le sous-indicateur A",
+        "reclassify_b": "Reclasser la couverture terrestre pour le sous-indicateur B",
+        "transition_matrix": "Matrice de transition"
+      }
+    },
+    "subtitle": "Sélection du jeu de données de couverture terrestre"
+  },
+  "scale": {
+    "native": "Native",
+    "error": "Saisissez une échelle de {min} à {max} m."
+  },
+  "validation": {
+    "asset_required": "Sélectionnez une image ou une collection de couverture terrestre.",
+    "invalid_workflow": "Répondez aux questions sur la couverture terrestre.",
+    "default_raw_asset": "Le jeu de données par défaut doit être reclassé.",
+    "discovery_required": "Obtenez les classes du jeu de données et de la zone sélectionnés.",
+    "stale_discovery": "Le jeu de données ou la zone a changé. Obtenez à nouveau les classes.",
+    "stale_images": "Les années sélectionnées utilisent des images d'un autre asset de couverture terrestre. Sélectionnez à nouveau les années.",
+    "invalid_discovery": "Les codes de classe trouvés ne sont pas valides.",
+    "invalid_targets": "Choisissez des codes de classe cible entiers et uniques.",
+    "unknown_target": "Certains codes de classe ne font pas partie de la classification sélectionnée.",
+    "transition_code_range": "Les codes de classe de transition doivent être compris entre 1 et 99.",
+    "invalid_mapping": "Chaque code source doit avoir un seul code cible entier.",
+    "mapping_incomplete": "Attribuez chaque classe source trouvée.",
+    "mapping_unassigned": "Attribuez une classe cible à au moins une classe source.",
+    "unexpected_mapping": "Supprimez le reclassement si vous utilisez un jeu de données déjà classé.",
+    "transition_required": "Sélectionnez explicitement un fichier CSV de transition pour le sous-indicateur B.",
+    "invalid_transition": "La matrice de transition doit couvrir chaque paire de classes cibles avec des impacts valides.",
+    "aoi_required": "Sélectionnez une zone d'intérêt.",
+    "years_required": "Sélectionnez une image et une année pour chaque ligne de rapport.",
+    "period_order": "Choisissez une période de référence et des années de rapport dans l'ordre croissant.",
+    "invalid_reporting_schedule": "Les dates de rapport ne sont pas valides.",
+    "no_reporting_years": "Les images sélectionnées ne couvrent aucune date de rapport.",
+    "duplicate_years": "Choisissez une seule image par année.",
+    "scale_range": "Saisissez une échelle de 10 à 1500 m ou choisissez Native.",
+    "dem_required": "Sélectionnez un jeu de données d'altitude pour la superficie réelle.",
+    "invalid_units": "Les rapports nécessitent actuellement des kilomètres carrés."
+  },
+  "reports": {
+    "saved": "Rapport enregistré dans {path}"
+  },
+  "charts": {
+    "flow": "Flux",
+    "matrix": "Matrice",
+    "transitions": "Transitions de couverture terrestre · {belt}",
+    "show_dashboard": "Afficher le tableau de bord",
+    "year": "Année",
+    "period": "Période",
+    "from": "De · {year}",
+    "to": "À · {year}",
+    "matrix_axes": "Classe d'origine ↓  ·  Classe de destination →  ·  Superficie (km²) au survol",
+    "no_observed": "Aucune superficie observée",
+    "class": "Classe {code}",
+    "composition": "Composition de la couverture terrestre · {belt}"
+  },
+  "tasks": {
+    "no_file": "Sélectionnez un fichier de tâche.",
+    "retrieve": "Récupérer et enregistrer le rapport",
+    "original_transition": "Fichier CSV de transition d'origine de cette tâche historique",
+    "historical_saved": "Rapport historique enregistré dans {path}. Une tâche créée par une version antérieure n'a pas d'empreinte vérifiable de ses données d'entrée.",
+    "historical": "Cette tâche, créée par une version antérieure, n'a pas enregistré la provenance de ses données d'entrée. Ses résultats sont disponibles comme historique ; la reconstruction du classeur nécessite toujours les données de transition d'origine."
+  },
+  "areas": {
+    "not_reporting": "{name} n'est pas un pays ou une zone de rapport des ODD. Sélectionnez une autre zone."
+  },
+  "landcover": {
+    "empty": "Aucune donnée disponible",
+    "empty_transition": "Aucune donnée de matrice de transition disponible",
+    "reset": "Réinitialiser toutes les valeurs",
+    "custom": "Personnalisée",
+    "standard": "Utiliser le SCEE",
+    "transition_title": "Fichier de transition",
+    "transition_description": "Sélectionnez un fichier de transition personnalisé contenant toutes les transitions possibles de vos données. Le fichier doit contenir les colonnes suivantes : from_code, to_code, impact_code. Les noms des colonnes doivent être exactement identiques.",
+    "saved": "Correspondance enregistrée dans {path}",
+    "changed": "La configuration a changé pendant la lecture du fichier. Sélectionnez-le à nouveau.",
+    "workspace_required": "Connectez un espace de travail SEPAL authentifié pour lire ou enregistrer des fichiers utilisateur."
+  },
+  "belts": {
+    "1": "Nival",
+    "2": "Alpin",
+    "3": "Montagnard",
+    "4": "Autres zones de montagne",
+    "overall": "Ensemble"
+  },
+  "impacts": {
+    "1": "Dégradation",
+    "2": "Stable",
+    "3": "Amélioration",
+    "unclassified": "Non classé",
+    "codes": {
+      "1": "D",
+      "2": "S",
+      "3": "A"
+    }
+  },
+  "settings": {
+    "tasked": "Le calcul n'a pas pu être effectué à la volée. La tâche *'{path}'* a été lancée dans votre [compte GEE](https://code.earthengine.google.com/tasks).",
+    "completed": "Le calcul est terminé.",
+    "exporting": "Exportation des tableaux...",
+    "exported": "Tableaux de rapport exportés dans {folder},",
+    "download": "Cliquez pour télécharger"
+  },
+  "errors": {
+    "settings_changed": "Les paramètres ont changé pendant la préparation du calcul. Réessayez.",
+    "setup_changed_loading": "La configuration a changé pendant le chargement. Sélectionnez à nouveau le fichier.",
+    "setup_changed_discovery": "La configuration a changé pendant la recherche des classes. Obtenez à nouveau les classes.",
+    "no_class_evidence": "Les classes du jeu de données et de la zone sélectionnés sont incomplètes.",
+    "workspace_required": "Un espace de travail SEPAL authentifié est nécessaire pour les fichiers utilisateur.",
+    "workspace_transition": "Un espace de travail SEPAL authentifié est nécessaire pour lire les fichiers de transition.",
+    "report_indicator": "Sélectionnez au moins un indicateur pour le rapport.",
+    "report_not_calculated": "Calculez le sous-indicateur {indicator} avant de télécharger son rapport.",
+    "historical_transition": "Sélectionnez le fichier CSV de transition d'origine pour reconstruire ce rapport B historique.",
+    "dataset_type": "Sélectionnez une image ou une collection d'images Earth Engine.",
+    "dataset_images": "Le jeu de données ne contient aucune image ou contient des identifiants d'image en double.",
+    "dataset_aoi": "Sélectionnez une zone d'intérêt avant d'obtenir les classes.",
+    "class_code": "Code de classe entier non valide : {value}",
+    "duplicate_class_code": "Code de classe en double : {code}",
+    "mapping_columns": "La table de correspondance doit contenir les colonnes from_code et to_code.",
+    "mapping_no_classes": "Obtenez les classes sources avant de charger une table de correspondance.",
+    "mapping_unknown_targets": "Certaines classes cibles de couverture terrestre ({classes}) ne figurent pas parmi les classes de destination.",
+    "classification_columns": "La classification doit contenir les colonnes lc_class, desc et color.",
+    "classification_rows": "Utilisez des codes de classe uniques de 1 à 99, des noms et des couleurs #RRGGBB.",
+    "classification_empty": "La classification est vide.",
+    "transition_columns": "Colonnes de transition manquantes ou en double.",
+    "transition_extra_fields": "Une ligne de transition contient des champs en trop.",
+    "transition_rows": "Paire de transition en double ou impact non valide.",
+    "transition_empty": "La table de transition est vide.",
+    "transition_invalid": "Fichier CSV de transition non valide.",
+    "transition_required": "Sélectionnez un fichier de transition.",
+    "task_record_unsupported": "Fichier de tâche non pris en charge ou incomplet.",
+    "task_not_submitted": "Ce fichier de tâche n'a pas de soumission confirmée. Vérifiez les tâches Earth Engine avant de la soumettre à nouveau.",
+    "task_status": "État de la tâche : {status}",
+    "task_unavailable": "La tâche n'est pas disponible.",
+    "task_csv_missing": "Le fichier CSV de la tâche terminée est introuvable dans Google Drive.",
+    "task_record_not_saved": "La tâche {task} a été soumise, mais son fichier n'a pas pu être enregistré : {error}",
+    "task_provenance_mismatch": "La provenance de la tâche ne correspond pas à ses données d'entrée enregistrées.",
+    "task_provenance_invalid": "Provenance de tâche non valide.",
+    "task_result_identifier": "Identifiant de résultat de tâche non valide ou en double.",
+    "task_result_category": "Résultat de tâche {category} non valide.",
+    "task_result_rows": "Des lignes de superficie groupées sont attendues.",
+    "task_result_empty": "Le résultat de la tâche est vide.",
+    "task_results_incomplete": "Les résultats de la tâche ne contiennent pas toutes les années et catégories demandées."
+  },
+  "units": {
+    "sqkm": "kilomètres carrés"
+  }
+}

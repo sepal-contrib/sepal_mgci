@@ -2,6 +2,8 @@
 
 from decimal import Decimal, InvalidOperation
 
+from mgci.errors import LocalizedError
+
 
 def class_code(value: object) -> int:
     if isinstance(value, bool):
@@ -12,7 +14,7 @@ def class_code(value: object) -> int:
             raise ValueError
         return int(number)
     except (InvalidOperation, ValueError, TypeError):
-        raise ValueError(f'Invalid integer class code: {value!r}') from None
+        raise LocalizedError('class_code', value=repr(value)) from None
 
 
 def normalize_mapping(items) -> tuple[tuple[int, int], ...]:
@@ -20,6 +22,6 @@ def normalize_mapping(items) -> tuple[tuple[int, int], ...]:
     for source, target in items:
         source, target = class_code(source), class_code(target)
         if source in result:
-            raise ValueError(f'Duplicate class code: {source}')
+            raise LocalizedError('duplicate_class_code', code=source)
         result[source] = target
     return tuple(sorted(result.items()))

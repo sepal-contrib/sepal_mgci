@@ -5,7 +5,7 @@ import ee
 import pandas as pd
 
 from component.message import msg
-from component.parameter.module_parameter import BIOBELT_LEGEND
+from component.parameter.module_parameter import BIOBELT_LEGEND, belt_name
 from component.scripts.aoi_geometry import aoi_bbox
 from pysepal.solara import get_current_gee_interface
 
@@ -53,7 +53,7 @@ async def get_belt_area(aoi, biobelt, gee_interface=None) -> tuple:
         df["area"] = df["area"].apply("{:,.0f}".format)
 
         # Parse legend code by display description
-        df["desc"] = df["class"].apply(lambda x: BIOBELT_LEGEND[x][0])
+        df["desc"] = df["class"].apply(belt_name)
         # Get the corresponding code to each class
         df["color"] = df["class"].apply(lambda x: BIOBELT_LEGEND[x][1])
         df = df.round(2)
@@ -76,7 +76,7 @@ async def get_belt_area(aoi, biobelt, gee_interface=None) -> tuple:
         df_fallback = pd.DataFrame(
             {
                 msg('aoi.legend.color'): ["gray"],
-                msg('aoi.legend.desc'): ["No mountain"],
+                msg('aoi.legend.desc'): [msg('aoi.legend.no_mountain')],
                 msg('aoi.legend.area'): ["0"],
                 msg('aoi.legend.perc'): ["0"],
             }
