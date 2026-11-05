@@ -18,7 +18,6 @@ from mgci.infrastructure.transitions import load_transition
 from mgci.infrastructure.workspace import ClientWorkspace
 from .charts import ChartPanel
 from .landcover import LandCoverPanel
-from .export import ExportPanel
 from .layers import LayerPanel, MapOutputs
 from .session import use_session_state
 from .settings import SettingsPanel
@@ -42,8 +41,10 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
     NotificationProvider()
     context_legend = solara.use_reactive(None)
     enabled = solara.use_reactive(('a', 'b'))
+    # (indicator, selector) of the layers drawn on the map; the layers table toggles them.
+    shown = solara.use_reactive(frozenset())
     BiobeltOverlay(state.configuration, map_, gee_interface, context_legend.set)
-    MapOutputs(state, map_, context_legend.value)
+    MapOutputs(state, map_, context_legend.value, shown)
 
     async def load(path):
         if workspace is None:
@@ -87,13 +88,9 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
         right_panel_content=[
             {'content': [AdminButton(logger_instance=logging.getLogger('MGCI'))]},
             {'title': 'Visualize layers', 'icon': 'mdi-layers',
-             'content': [LayerPanel(state, publish, map_, gee_interface, drive_interface, sepal_client, prepare, before_export, enabled)],
-             'description': 'To add layers to the map, you will first need to select the area of interest '
-                            'and the years in the 3. Indicator settings step.'},
-            {'title': 'Export', 'icon': 'mdi-export-variant',
-             'content': [ExportPanel(state, gee_interface, drive_interface, sepal_client, enabled)],
-             'description': 'Export the layers of both sub-indicators to Earth Engine, Google Drive or your '
-                            'SEPAL workspace. Layers become available once their sub-indicator is set up.'},
+             'content': [LayerPanel(state, publish, shown, gee_interface, drive_interface, sepal_client, prepare, enabled)],
+             'description': 'Show a layer on the map or export it. Set the area of interest and the years '
+                            'in the 3. Indicator settings step first.'},
             {'title': 'Sub indicator A', 'icon': 'mdi-chart-bar',
              'content': [ChartPanel(state, publish, 'a', gee_interface, prepare, before_export, enabled)],
              'description': 'Explore land-cover composition for Sub-indicator A by year and mountain belt.'},

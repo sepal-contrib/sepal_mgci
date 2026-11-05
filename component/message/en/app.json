@@ -88,9 +88,16 @@
     "land_cover": "Land cover",
     "sub_a_header": "Sub indicator A",
     "sub_b_header": "Sub indicator B",
-    "label": "Layers",
-    "add": "Add layer",
-    "export": "Export",
+    "columns": {
+      "name": "Layer",
+      "indicator": "Sub-indicator",
+      "action": "Action"
+    },
+    "empty": "No layers yet. Select the area of interest and the years first.",
+    "show": "Show {name} on the map",
+    "hide": "Hide {name}",
+    "cancel": "Stop adding {name}",
+    "export": "Export {name}",
     "export_title": "Export layers"
   },
   "rec": {
