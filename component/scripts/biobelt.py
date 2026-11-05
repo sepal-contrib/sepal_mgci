@@ -4,7 +4,7 @@ import json
 import ee
 import pandas as pd
 
-from component.message import cm
+from component.message import msg
 from component.parameter.module_parameter import BIOBELT_LEGEND
 from component.scripts.aoi_geometry import aoi_bbox
 from pysepal.solara import get_current_gee_interface
@@ -15,10 +15,10 @@ def unnest(group):
     return ee.List([[ee.String(d_group.get("group"))], [d_group.get("sum")]]).flatten()
 
 
-async def get_belt_area(aoi, biobelt) -> tuple:
+async def get_belt_area(aoi, biobelt, gee_interface=None) -> tuple:
     """returns legend-dict for the belt areas over the AOI feature collection."""
 
-    gee_interface = get_current_gee_interface()
+    gee_interface = gee_interface or get_current_gee_interface()
 
     try:
         area = await gee_interface.get_info_async(
@@ -61,24 +61,24 @@ async def get_belt_area(aoi, biobelt) -> tuple:
         df = df.astype(str)
         df = df.rename(
             columns={
-                "color": cm.aoi.legend.color,
-                "desc": cm.aoi.legend.desc,
-                "area": cm.aoi.legend.area,
-                "perc": cm.aoi.legend.perc,
+                "color": msg('aoi.legend.color'),
+                "desc": msg('aoi.legend.desc'),
+                "area": msg('aoi.legend.area'),
+                "perc": msg('aoi.legend.perc'),
             }
         )
 
         if len(df) == 1:
-            df.iloc[0] = ["#24221f", cm.legend.no_mountain, "-", "-"]
+            df.iloc[0] = ["#24221f", msg('aoi.legend.no_mountain'), "-", "-"]
 
     except ZeroDivisionError:
         # If a division by zero error happens, return meaningful values
         df_fallback = pd.DataFrame(
             {
-                cm.aoi.legend.color: ["gray"],
-                cm.aoi.legend.desc: ["No mountain"],
-                cm.aoi.legend.area: ["0"],
-                cm.aoi.legend.perc: ["0"],
+                msg('aoi.legend.color'): ["gray"],
+                msg('aoi.legend.desc'): ["No mountain"],
+                msg('aoi.legend.area'): ["0"],
+                msg('aoi.legend.perc'): ["0"],
             }
         )
 

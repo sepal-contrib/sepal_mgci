@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from component.message import cm
+from component.message import msg
 
 # Create a range of years from 2000 to present year
 # and sort them in descending order
@@ -32,15 +32,15 @@ BIOBELT_LEGEND = {
     2: ["Alpine", "#ffd500"],
     3: ["Montane", "#bbff00"],
     4: ["Remaining mountain area", "#034502"],
-    "total": [cm.aoi.legend.total, "#24221f"],
+    "total": [msg('aoi.legend.total'), "#24221f"],
 }
 
 LEGEND_NAMES = {
-    "color": cm.aoi.legend.color,
-    "desc": cm.aoi.legend.desc,
-    "area": cm.aoi.legend.area,
-    "perc": cm.aoi.legend.perc,
-    "total": cm.aoi.legend.total,
+    "color": msg('aoi.legend.color'),
+    "desc": msg('aoi.legend.desc'),
+    "area": msg('aoi.legend.area'),
+    "perc": msg('aoi.legend.perc'),
+    "total": msg('aoi.legend.total'),
 }
 
 # Kapos layer visualization for map

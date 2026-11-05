@@ -87,11 +87,12 @@
     
     <!-- Reporting Years Section -->
     <div v-if="reportingItems.length > 0">
-      <div class="d-flex align-center mb-3">
-        <v-card-title>{{ reporting_title }}</v-card-title>
-      </div>
+      <!-- Title and subtitle as direct siblings, so Vuetify spaces them like a card header. -->
+      <v-card-title>{{ reporting_title }}</v-card-title>
       <v-card-subtitle>{{ reporting_subtitle }}</v-card-subtitle>
-      
+
+      <!-- In card text, like the baseline rows, so the rows get the same side padding. -->
+      <v-card-text>
       <div v-for="(item, index) in reportingItems" :key="item.id" class="mb-4">
         <v-row align="center">
           <!-- Asset Selection - Uses most space -->
@@ -147,8 +148,7 @@
         
         <v-divider v-if="index < reportingItems.length - 1" class="my-2" />
       </div>
-      
-      <!-- Remove the additional add button section since + is always on first reporting item -->
+      </v-card-text>
     </div>
   </v-card>
 </template>

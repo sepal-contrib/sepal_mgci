@@ -4,7 +4,7 @@ import pysepal.sepalwidgets as sw
 from ipywidgets import Widget
 
 import component.parameter.module_parameter as param
-from component.message import cm
+from component.message import msg
 from component.scripts.plots import get_land_cover_bar_chart
 from component.scripts.sub_a import get_mgci
 
@@ -26,49 +26,6 @@ def close_tree(widget, keep=()):
         item.close()
 
     close(widget)
-
-
-class DashboardRequestSelector(sw.Flex):
-    """Compact year or period buttons for requesting dashboard data."""
-
-    def __init__(self, on_request, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.class_ = "d-flex flex-wrap justify-center"
-        self.on_request = on_request
-        self.buttons = {}
-        self.loading_key = None
-
-    def set_choices(self, choices):
-        previous = list(self.buttons.values())
-        self.buttons = {}
-        for key, label, value in choices:
-            button = v.Btn(
-                small=True,
-                color="primary",
-                outlined=True,
-                class_="text-none ma-1 px-3",
-                children=[label],
-            )
-            button.on_event("click", lambda *_, selected=value: self.on_request(selected))
-            self.buttons[key] = button
-        self.children = list(self.buttons.values())
-        for button in previous:
-            button.close()
-
-    def mark_selected(self, selected):
-        for key, button in self.buttons.items():
-            button.outlined = key != selected
-
-    def set_loading(self, key, loading):
-        if loading:
-            self.loading_key = key
-        elif self.loading_key != key:
-            return
-        else:
-            self.loading_key = None
-        for button_key, button in self.buttons.items():
-            button.loading = self.loading_key == button_key
-            button.disabled = self.loading_key is not None
 
 
 class BeltSelector(sw.Flex):
@@ -163,7 +120,7 @@ class MgciDashboard(sw.Layout):
                 v.Html(
                     tag="div",
                     class_="text-overline",
-                    children=[cm.dashboard.global_.title],
+                    children=[msg('dashboard.global_.title')],
                 ),
                 v.Html(
                     tag="div",
@@ -173,7 +130,7 @@ class MgciDashboard(sw.Layout):
                 v.Html(
                     tag="div",
                     class_="text-body-2 mt-2",
-                    children=[cm.dashboard.global_.desc.format(param.UNITS["sqkm"][1])],
+                    children=[msg('dashboard.global_.desc', unit=param.UNITS["sqkm"][1])],
                 ),
             ],
         )
@@ -226,7 +183,7 @@ class MgciDashboard(sw.Layout):
         self.chart_description.children = (
             []
             if belt == "Total"
-            else [getattr(cm.dashboard.individual.desc, f"belt_{int(belt)}")]
+            else [msg(f"dashboard.individual.desc.belt_{int(belt)}")]
         )
         values = self.df if belt == "Total" else self.df[self.df.belt_class == belt]
         chart = get_land_cover_bar_chart(values, self.model.lulc_classes_sub_a or {})

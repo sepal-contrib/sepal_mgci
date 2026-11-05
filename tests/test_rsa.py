@@ -1,7 +1,6 @@
 import pytest
 import ee
 
-from component.model import MgciModel
 from component.scripts.surface_area import get_real_surface_area
 
 
