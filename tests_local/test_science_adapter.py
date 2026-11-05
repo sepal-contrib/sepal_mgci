@@ -1,10 +1,7 @@
 import json
-import os
 import unittest
 from dataclasses import replace
 from unittest.mock import patch
-
-os.environ['DEPLOY_ENV'] = 'sepal_solara'
 
 import ee
 from ee.apitestcase import ApiTestCase

@@ -4,8 +4,9 @@ import unittest
 import ipyvuetify as v
 import solara
 
-from component.solara.setup import WorkflowQuestions, MappingTable, YearSelection
-from mgci.domain.configuration import Workflow
+from component.solara.setup import WorkflowQuestions, MappingTable
+from component.solara.years import model_images
+from mgci.domain.configuration import ImageSelection, Workflow
 from mgci.infrastructure.defaults import initial_configuration
 from test_solara_components import walk
 
@@ -40,12 +41,5 @@ class SetupComponentTests(unittest.TestCase):
         self.assertEqual(dict(selected.value.mapping)[10], 0)
 
     def test_year_clear_does_not_retain_previous_valid_year(self):
-        selected = solara.reactive(initial_configuration(2026).a)
-        @solara.component
-        def Harness():
-            YearSelection(selected.value, 'a', lambda value: selected.set(replace(selected.value, images=value)))
-        root, context = solara.render(Harness(), handle_error=False)
-        self.addCleanup(context.close)
-        field = next(w for w in walk(root) if isinstance(w, v.TextField))
-        field.v_model = ''
-        self.assertEqual(selected.value.images[0].year, 0)
+        images = model_images({1: {'asset': 'lc/2000', 'year': ''}}, 'a')
+        self.assertEqual(images, (ImageSelection('lc/2000', 0),))

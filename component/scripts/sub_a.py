@@ -1,7 +1,6 @@
 from typing import Optional, Tuple
 
 import pandas as pd
-import component.scripts as cs
 
 # isort: off
 from component.parameter.index_parameters import sub_a_cols, sub_a_landtype_cols

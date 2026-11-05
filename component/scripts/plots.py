@@ -5,7 +5,7 @@ from typing import Tuple
 import pandas as pd
 
 from ipecharts.echarts import EChartsRawWidget, EChartsWidget
-from ipecharts.option import Grid, Legend, Option, Tooltip, XAxis, YAxis
+from ipecharts.option import Grid, Option, Tooltip, XAxis, YAxis
 from ipecharts.option.basewidget import BaseWidget as EChartsOptionWidget
 from ipecharts.option.series import Bar, Sankey
 from pysepal.solara import get_current_theme_state
@@ -339,52 +339,3 @@ def get_land_cover_bar_chart(values, classes, theme_state=None):
     )
 
 
-def get_series_data(df):
-    """Generate series data for a bar chart."""
-
-    series_data = []
-    for col in df.columns:
-        if col == "year":
-            continue
-        series_data.append(
-            {
-                "name": col,
-                "data": df[col].tolist(),
-                "itemStyle": {"color": "#5f8b95"},
-            }
-        )
-    return series_data
-
-
-def get_bars(series_data):
-    """Create a list of bar series from the series data."""
-    bars = []
-    for series in series_data:
-        bars.append(
-            Bar(
-                **{
-                    "type": "bar",
-                    "name": series["name"],
-                    "stack": True,
-                    "data": series["data"],
-                    "itemStyle": series["itemStyle"],
-                }
-            )
-        )
-    return bars
-
-
-def get_chart(df):
-
-    landcov_names, series_data = get_series_data(df)
-    bars = get_bars(series_data)
-
-    option = Option(
-        backgroundColor="#1e1e1e00",
-        legend=Legend(data=landcov_names),
-        yAxis=YAxis(type="category", data=landcov_names),
-        xAxis=XAxis(type="value"),
-        series=bars,
-        tooltip=Tooltip(),
-    )
-    return EChartsWidget(option=option)

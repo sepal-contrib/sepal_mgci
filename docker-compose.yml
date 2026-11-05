@@ -16,9 +16,6 @@ services:
       # dev login for running against a SEPAL instance from outside it; real
       # SEPAL headers always win, so it is inert in a deployed container
       PYSEPAL_DEV_AUTH: "${PYSEPAL_DEV_AUTH:-false}"
-      # keeps result paths relative to the SEPAL home; this container runs as
-      # root, so the absolute form would be rejected on the first write
-      DEPLOY_ENV: "${DEPLOY_ENV:-sepal_solara}"
       LOCAL_SEPAL_USER: "${LOCAL_SEPAL_USER:-}"
       LOCAL_SEPAL_PASSWORD: "${LOCAL_SEPAL_PASSWORD:-}"
     healthcheck:

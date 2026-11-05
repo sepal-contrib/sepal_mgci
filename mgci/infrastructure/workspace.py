@@ -24,10 +24,3 @@ class ClientWorkspace:
         log.debug('Workspace mkdir %s', path)
         return await asyncio.to_thread(self.client.files.mkdir, path, parents=parents)
 
-
-def current_workspace():
-    from pysepal import solara as runtime
-
-    if hasattr(runtime, 'get_current_filesystem'):
-        return runtime.get_current_filesystem()
-    return ClientWorkspace(runtime.get_current_sepal_client())

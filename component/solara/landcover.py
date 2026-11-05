@@ -6,9 +6,7 @@ import reacton.ipyvuetify as rv
 import solara
 from pysepal.solara.components.inputs import FileInputComponent
 from pysepal.solara.components.task_button import TaskButtonComponent
-from pysepal.solara.notifications import use_notifications
 
-from mgci.application.discovery import inspect_dataset, select_asset
 from mgci.application.landcover import WorkflowDrafts, inspect_shared_dataset, restore_setup, select_shared_asset
 from component.message import msg
 from .mapping import MappingEditor, CloseAction
@@ -18,7 +16,7 @@ from mgci.domain.configuration import Workflow
 from mgci.domain.validation import readiness
 from mgci.infrastructure.datasets import discover
 from mgci.infrastructure.defaults import initial_configuration, classification_labels
-from .setup import MappingTable, ReadinessMessages, WorkflowQuestions, TransitionEditor, readiness_text
+from .setup import WorkflowQuestions, TransitionEditor, readiness_text
 
 
 @solara.component
@@ -33,45 +31,6 @@ def SetupAlert(alert, on_close):
                     rv.Html(tag='p', class_='mb-0', children=[line])
             with rv.CardActions():
                 solara.Button('Close', on_click=on_close, block=True)
-
-
-@solara.component
-def DatasetEditor(state, publish, indicator, resource, gee_interface):
-    selected = getattr(state.configuration, indicator)
-    custom = state.configuration.workflow in (Workflow.CUSTOM_CANONICAL, Workflow.CUSTOM_RECLASSIFY)
-
-    def asset(value):
-        resource.begin('')
-        select_asset(state, indicator, str(value or '').strip())
-        publish()
-
-    @solara.lab.use_task(dependencies=None, raise_error=False, prefer_threaded=False)
-    async def inspect():
-        async def load(config, key):
-            publish()
-            return await discover(config, key, gee_interface)
-        result = await inspect_dataset(state, resource, load, indicator)
-        publish()
-        return result
-
-    def cancel():
-        resource.begin('')
-        if inspect.pending:
-            inspect.cancel()
-        publish()
-
-    with rv.Html(tag='div', class_='pa-2'):
-        rv.TextField(label=msg('setup.asset'), v_model=selected.asset, on_v_model=asset,
-                     disabled=not custom, error_messages=[resource.error] if resource.error else [], dense=True)
-        TaskButtonComponent(label=msg('setup.classes'), on_start=inspect, on_cancel=cancel,
-                            running=inspect.pending, external_busy=not state.configuration.aoi_identity, small=True)
-        if selected.evidence and state.configuration.workflow != Workflow.CUSTOM_CANONICAL:
-            MappingTable(selected, selected.evidence.classes, lambda mapping: edit(mapping=mapping))
-        ReadinessMessages(state.configuration, (indicator,), 'setup')
-
-    def edit(**values):
-        state.edit(replace(state.configuration, **{indicator: replace(getattr(state.configuration, indicator), **values)}))
-        publish()
 
 
 @solara.component

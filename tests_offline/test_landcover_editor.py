@@ -17,7 +17,7 @@ class MappingFilesTests(unittest.TestCase):
             with self.subTest(body=body), self.assertRaises(ValueError):
                 parse_mapping(body, selected)
 
-    def test_import_applies_known_rows_like_the_legacy_loader(self):
+    def test_import_applies_only_known_rows(self):
         selected = replace(configuration().a, mapping=((10, 1), (20, 2)))
         # Extra source classes are ignored, omitted ones keep their target, 0 unassigns.
         body = b'from_code,to_code\n10,2\n30,1\n'
@@ -66,6 +66,48 @@ class SharedDiscoveryTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await pending)
         self.assertIsNone(state.configuration.a.evidence)
         self.assertIsNone(state.configuration.b.evidence)
+
+    async def test_new_asset_clears_images_and_evidence_of_both(self):
+        state = SessionState(configuration())
+        select_shared_asset(state, {key: ResourceState() for key in ('a', 'b')}, 'new')
+        for key in ('a', 'b'):
+            selected = getattr(state.configuration, key)
+            self.assertEqual((selected.asset, selected.evidence, selected.images), ('new', None, ()))
+
+    async def test_obsolete_failure_does_not_erase_new_discovery(self):
+        config = configuration()
+        state = SessionState(config)
+        resources = {key: ResourceState() for key in ('a', 'b')}
+        future = asyncio.get_running_loop().create_future()
+        async def old(snapshot, indicator):
+            return await future
+        pending = asyncio.create_task(inspect_shared_dataset(state, resources, old))
+        await asyncio.sleep(0)
+        async def new(snapshot, indicator):
+            return DatasetDiscovery(config.a.evidence, config.a.images)
+        self.assertTrue(await inspect_shared_dataset(state, resources, new))
+        future.set_exception(ValueError('old failure'))
+        self.assertFalse(await pending)
+        self.assertEqual(resources['a'].status, 'ready')
+        self.assertEqual(state.configuration.a.evidence, config.a.evidence)
+
+    async def test_wrong_scope_discovery_is_rejected(self):
+        config = configuration()
+        state = SessionState(config)
+        resources = {key: ResourceState() for key in ('a', 'b')}
+        async def wrong(snapshot, indicator):
+            return DatasetDiscovery(replace(config.a.evidence, asset='other'), config.a.images)
+        self.assertFalse(await inspect_shared_dataset(state, resources, wrong))
+        self.assertIsNone(state.configuration.a.evidence)
+        self.assertEqual(resources['a'].status, 'error')
+
+    async def test_discovery_keeps_the_selected_years_it_still_finds(self):
+        config = configuration()
+        state = SessionState(config)
+        async def load(snapshot, indicator):
+            return DatasetDiscovery(config.a.evidence, config.a.images)
+        self.assertTrue(await inspect_shared_dataset(state, {key: ResourceState() for key in ('a', 'b')}, load))
+        self.assertEqual(state.configuration.a.images, config.a.images)
 
 
 class RestoreSetupTests(unittest.TestCase):
