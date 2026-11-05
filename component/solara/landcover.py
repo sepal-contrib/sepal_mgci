@@ -183,15 +183,18 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
                     with rv.StepperContent(step=1):
                         # Flat: an elevated card shows as a shadow under the lone asset field.
                         with rv.Card(elevation=0):
-                            with rv.Html(tag='div', class_='mx-2'):
-                                classes = TaskButtonComponent(label=msg('reclass.get_classes'), on_start=inspect, on_cancel=cancel,
-                                                              running=inspect.pending, small=True,
-                                                              external_busy=not config.aoi_identity or not config.a.asset
-                                                              ) if reclassify else None
+                            # The button sits beside the field, not in its slot: the browser does not
+                            # draw a slot added to a mounted field, and the dialog mounts in default mode.
+                            with rv.Html(tag='div', class_='mx-2 d-flex align-start'):
                                 LandCoverAssetField(config.a.asset, select, gee_interface, disabled=not custom,
                                                     error=resources['a'].error, busy=inspect.pending,
-                                                    hint='' if config.aoi_identity else msg('validation.aoi_required'),
-                                                    append=classes)
+                                                    hint='' if config.aoi_identity else msg('validation.aoi_required'))
+                                if reclassify:
+                                    # 19px puts the button on the input row of the dense field.
+                                    with rv.Html(tag='div', class_='ml-2', style_='margin-top: 19px'):
+                                        TaskButtonComponent(label=msg('reclass.get_classes'), on_start=inspect, on_cancel=cancel,
+                                                            running=inspect.pending, small=True,
+                                                            external_busy=not config.aoi_identity or not config.a.asset)
                     if reclassify:
                         rv.StepperStep(step=2, editable=discovered, children=[msg('veg_layer.stepper.header.reclassify_a')])
                         with rv.StepperContent(step=2):
