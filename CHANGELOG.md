@@ -1,3 +1,14 @@
+## 2.1.0 (2026-11-05)
+
+### Feat
+
+- add Spanish and French translations
+- show and export layers from a table
+
+### Fix
+
+- show the Get classes button when the user reclassifies a map
+
 ## 2.0.0 (2026-11-05)
 
 ### Feat
