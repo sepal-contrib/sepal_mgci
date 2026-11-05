@@ -2,13 +2,10 @@
 
 from typing import Dict, List, Optional, Tuple
 import ee
-import pandas as pd
-from pathlib import Path
 
 from component.scripts.file_handler import read_file
 from component.scripts.reclassification import normalize_matrix
 from component.scripts.aoi_geometry import aoi_bbox
-from pysepal.scripts.gee_interface import GEEInterface
 
 import component.parameter.module_parameter as param
 from component.scripts.surface_area import get_real_surface_area
@@ -312,14 +309,3 @@ def get_transition(
     )
 
 
-def read_asset(asset_id: str) -> ee.Image:
-    """Converts an asset id to an ee.Image"""
-    return ee.Image(asset_id)
-
-
-def get_gee_recipe_folder(recipe_name: str, gee_interface: GEEInterface) -> Path:
-    """Create the recipe's GEE asset folder and return its absolute path."""
-
-    recipe_folder = Path("sepal_sdg15_4_2") / recipe_name
-    gee_interface.create_folder(str(recipe_folder))
-    return Path(gee_interface.get_folder()) / recipe_folder

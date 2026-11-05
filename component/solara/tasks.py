@@ -11,44 +11,12 @@ from pysepal.solara.notifications import use_notifications
 from pysepal.solara.components.task_button import TaskButtonComponent
 from component.message import msg
 
-from mgci.domain.validation import readiness
 from mgci.infrastructure.reports import build_workbook, build_historical_workbook
 from mgci.infrastructure.transitions import load_transition
-from mgci.infrastructure.tasks import submit, retrieve, TASK_FOLDER
+from mgci.infrastructure.tasks import retrieve, TASK_FOLDER
 from .toasts import LASTING
 
 log = logging.getLogger('MGCI.solara.tasks')
-
-
-@solara.component
-def BackgroundAction(state, publish, indicator, gee_interface, workspace, prepare):
-    notifications = use_notifications()
-
-    @solara.lab.use_task(dependencies=None, raise_error=False, prefer_threaded=False)
-    async def run(revision):
-        request = None
-        if state.revision(indicator, 'statistics') != revision:
-            return None
-        try:
-            request = await prepare(indicator, 'statistics', '')
-            record, path = await submit(request, gee_interface, workspace)
-            return path, None
-        except Exception as error:
-            log.exception('Background calculation of %s failed', indicator.upper())
-            if request:
-                state.fail(request, str(error))
-            return None, str(error)
-        finally:
-            publish()
-
-    def receive():
-        if run.finished and run.value:
-            path, error = run.value
-            notifications.error(error) if error else notifications.success(msg('tasks.submitted', path=path), timeout=LASTING)
-    solara.use_effect(receive, [run.finished, run.value])
-    TaskButtonComponent(label=msg('tasks.submit', indicator=indicator.upper()), small=True, running=run.pending,
-                        external_busy=workspace is None or not readiness(state.configuration, indicator, 'statistics').ready,
-                        on_start=lambda: run(state.revision(indicator, 'statistics')), on_cancel=run.cancel)
 
 
 @solara.component

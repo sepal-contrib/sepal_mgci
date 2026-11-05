@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, NewType, Tuple, TypedDict, Union
+from typing import Dict, List, NewType, TypedDict, Union
 
 Pathlike = Union[str, Path]
 """A type hint for a path-like object, either a string or a Path object."""

@@ -18,14 +18,6 @@ current_year = pd.Timestamp.now().year
 REPORT_INTERVALS = [2000, 2005, 2010, 2015] + list(range(2018, current_year + 1, 3))
 "list: list of years used in the report to match asset selection"
 
-# SET SOME PARAMETERS
-UPPER_THRESHOLDS = {98: "green", 95: "orange", 90: "red"}
-
-# Forest, grassland, cropland, wetland
-GREEN_CLASSES = [1, 2, 3, 4]
-
-# LULC Classes that will be displayed in the dashboard
-DISPLAY_CLASSES = [1, 2, 3, 4, 5, 6]
 
 BIOBELT_LEGEND = {
     1: ["Nival", "#ff0000"],
@@ -35,13 +27,6 @@ BIOBELT_LEGEND = {
     "total": [msg('aoi.legend.total'), "#24221f"],
 }
 
-LEGEND_NAMES = {
-    "color": msg('aoi.legend.color'),
-    "desc": msg('aoi.legend.desc'),
-    "area": msg('aoi.legend.area'),
-    "perc": msg('aoi.legend.perc'),
-    "total": msg('aoi.legend.total'),
-}
 
 # Kapos layer visualization for map
 BIOBELT_VIS = {
@@ -49,19 +34,6 @@ BIOBELT_VIS = {
     "min": 1,
     "max": 4,
 }
-
-M49 = Path(__file__).parent / "m49_iso31661.csv"
-M49_FILE = Path(__file__).parent / "m49_countries.csv"
-
-
-CUSTOM_AOI_ITEMS = [
-    {"header": "Administrative definitions"},
-    {"text": "Country", "value": "ADMIN0"},
-    {"text": "Sub-national level 1", "value": "ADMIN1"},
-    {"text": "Sub-national level 2", "value": "ADMIN2"},
-    {"header": "Custom geometries"},
-    {"text": "GEE Asset name", "value": "ASSET"},
-]
 
 
 BIOBELT = "users/xavidelamo/SDG1542_Mntn_BioclimaticBelts"
@@ -91,8 +63,6 @@ UNITS = {
 }
 
 
-LC_COLOR = pd.read_csv(LC_CLASSES, index_col=0)
-
 transition_degradation_matrix = pd.read_csv(TRANSITION_DEGRADATION_MATRIX_FILE)
 
 
@@ -114,40 +84,6 @@ DECODE = {
     },
 }
 "dict: dictionary containing the displayed labels for transition classes"
-
-
-DEFAULT_ASSETS = {
-    "sub_b": {
-        "baseline": {
-            "start_year": {
-                "asset_id": f"{LULC_DEFAULT}/2000",
-                "year": 2000,
-            },
-            "end_year": {
-                "asset_id": f"{LULC_DEFAULT}/2015",
-                "year": 2015,
-            },
-        },
-        "report": {
-            "asset_id": f"{LULC_DEFAULT}/2018",
-            "year": 2018,
-        },
-    },
-    "sub_a": {
-        1: {
-            "asset_id": f"{LULC_DEFAULT}/2000",
-            "year": 2000,
-        },
-        2: {
-            "asset_id": f"{LULC_DEFAULT}/2015",
-            "year": 2015,
-        },
-        3: {
-            "asset_id": f"{LULC_DEFAULT}/2018",
-            "year": 2018,
-        },
-    },
-}
 
 
 TBD = ""

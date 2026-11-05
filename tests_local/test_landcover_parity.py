@@ -63,7 +63,7 @@ class LandCoverParityTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('Get classes', slot['children'].children)
         tables = [widget for widget in widgets(root) if isinstance(widget, v.SimpleTable)]
         self.assertEqual(sum(table.height == '300px' for table in tables), 2)
-        # Footer Close buttons; the legacy alert dialog's full-width Close is plain.
+        # Footer Close buttons are outlined; the alert dialog's full-width Close is plain.
         close = [button for button in buttons if 'Close' in button.children and not button.block]
         self.assertTrue(close)
         self.assertTrue(all(button.outlined for button in close))

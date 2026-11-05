@@ -1,12 +1,10 @@
 from io import BytesIO
 from component.scripts.file_handler import read_file
 from component.types import Pathlike
-import random
 import re
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Dict, List, Literal, Tuple, Union
 
-import ipyvuetify as v
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
@@ -21,83 +19,18 @@ from component.scripts import sub_a as sub_a
 from component.scripts import sub_b as sub_b
 
 
-
 __all__ = [
-    "human_format",
-    "get_random_color",
-    "get_mgci_color",
-    "get_report_folder",
     "get_sub_b_years",
-    "get_sub_b_items",
-    "create_avatar",
     "get_a_years",
     "get_b_years",
     "read_from_csv",
     "export_reports",
     "get_sub_a_break_points",
-    "years_from_dict",
     "parse_to_year_a",
     "parse_sub_b_year",
     "parse_result",
     "get_reporting_years",
-    "create_folder",
 ]
-
-
-def create_avatar(mgci: float) -> v.Avatar:
-    """Creates a circular avatar containing the MGCI value"""
-    color = cs.get_mgci_color(mgci)
-
-    overall_mgci_html = v.Html(
-        tag="h1", children=["MGCI", v.Html(tag="br"), str(mgci) + "%"]
-    )
-    return v.Avatar(color=color, size="150", children=[overall_mgci_html])
-
-
-def human_format(num: float, round_to: int = 2) -> str:
-    magnitude = 0
-    while abs(num) >= 1000:
-        magnitude += 1
-        num = round(num / 1000.0, round_to)
-    return "{:.{}f}{}".format(
-        round(num, round_to), round_to, ["", "K", "M", "G", "T", "P"][magnitude]
-    )
-
-
-def get_random_color() -> str:
-    return "#{:06x}".format(random.randint(0, 0xFFFFFF))
-
-
-def get_mgci_color(mgci: float) -> str:
-    """Return color based on a given MGCI scale"""
-
-    thresholds = sorted(param.UPPER_THRESHOLDS, reverse=True)
-
-    for threshold in thresholds:
-        if mgci >= threshold:
-            break
-    return param.UPPER_THRESHOLDS[threshold]
-
-
-def create_folder(folder, sepal_client=None) -> PurePosixPath:
-    if sepal_client:
-        return sepal_client.files.mkdir(str(folder), parents=True)
-    folder.mkdir(parents=True, exist_ok=True)
-    return folder
-
-
-def get_report_folder(aoi_name: str, sepal_client=None) -> Path:
-    """Get output report folder path
-    args:
-        aoi_name: coming from the aoi_model.name
-    """
-
-    # Create a folder to store multiple year reports from the same area
-    from component.parameter.directory import dir_
-
-    report_folder = dir_.reports_dir / f"SDG1542_{aoi_name}"
-
-    return create_folder(report_folder, sepal_client=sepal_client)
 
 
 def remove_duplicated_years(
@@ -117,75 +50,6 @@ def remove_duplicated_years(
         )
         for fs in set(converted_list)
     ]
-
-
-def years_from_dict(year_dict: Tuple[Dict]) -> str:
-    """Extract years from a get_years dictionary.
-
-    It will be used to label and display the progress in the alerts.
-
-    Args:
-        year_dict (dict): dictionary with years coming from get_years function
-    """
-
-    return "_".join([str(year.get("year")) for year in year_dict])
-
-
-def get_interpolation_years(
-    breaking_points: Dict[str, List[Dict[str, str]]],
-) -> List[List[Dict[str, str]]]:
-    """Get interpolation years (assets) from the breaking points.
-
-    Based on the breaking points, it will return a list of years (assets)
-    that will be used to interpolate the sub indicator.
-
-    There are three posible cases:
-
-     1. a reporting period has 4 years, in that case we need to calculate
-        the reduction with first and second year, and second and third year.
-
-     2. a reporting period has 3 years, this case is special because we
-        have two options: calculate the reduction with first and second year,
-        or second and third year. The option selected will be the one that
-        has the reporting period at the end or beginning of the asset list.
-        for example, if the reporting period is 2010-2015, and the asset list
-        is [2009, 2011, 2015], then we will calculate the reduction with
-        2009-2011, while if the asset list is [2010, 2013, 2016], then we will
-        calculate the reduction with 2013-2016.
-
-     3. a reporting period has 2 years, in that case we need to calculate
-        the reduction with first and second year.
-    """
-    # create a list of years to calculate the reduction
-    years_to_calculate: list[list[dict[str, str]]] = []
-    for period, year in breaking_points.items():
-        if len(year) == 4:
-            years_to_calculate.append(year[:2])
-            years_to_calculate.append(year[1:])
-        elif len(year) == 3:
-            if year[0].get("year") in period:
-                years_to_calculate.append([year[0]])
-                years_to_calculate.append(year[1:])
-            elif year[-1].get("year") in period:
-                years_to_calculate.append(year[:2])
-                years_to_calculate.append([year[-1]])
-            else:
-                raise ValueError("Invalid reporting period.")
-        elif len(year) == 2:
-            years_to_calculate.append(year)
-        else:
-            raise ValueError("Invalid year format")
-
-    # remove duplicated years
-    years_to_calculate = remove_duplicated_years(years_to_calculate)
-
-    return sorted(
-        [
-            sorted(segment, key=lambda x: x.get("year"))
-            for segment in years_to_calculate
-        ],
-        key=lambda x: [y.get("year") for y in x],
-    )
 
 
 def get_a_years(sub_a_year: dict) -> List[Tuple[Dict[str, int]]]:
@@ -552,35 +416,6 @@ def get_sub_a_data_reports(
     return sub_a_reports, mtn_reports
 
 
-def filter_report_years(sub_b_years):
-    """This function filtersout reports which doesn't have to be reported"""
-    result = []
-
-    # Include the 'baseline' dictionary
-    for item in sub_b_years:
-        if "baseline" in item:
-            result.append(item)
-            break  # Assuming there's only one 'baseline'
-
-    # Find the 'report' with the highest second value
-    max_report = None
-    max_second_value = None
-    for item in sub_b_years:
-        if "report" in item:
-            report_values = item["report"]
-            if len(report_values) >= 2:
-                second_value = report_values[1]
-                if max_second_value is None or second_value > max_second_value:
-                    max_second_value = second_value
-                    max_report = item
-
-    # Include the 'report' with the highest second value
-    if max_report:
-        result.append(max_report)
-
-    return result
-
-
 def get_sub_b_data_reports(
     results: dict,
     sub_b_year,
@@ -784,28 +619,3 @@ def get_sub_b_years(
     return values
 
 
-def get_sub_b_items(
-    reporting_years_sub_b: List[list],
-) -> List[Dict[str, Dict[str, Tuple[int, int]]]]:
-    """Generate items with labels from transition years and values."""
-
-    values = get_sub_b_years(reporting_years_sub_b)
-    transition_years = get_transition_years(reporting_years_sub_b)
-
-    labels = [
-        " -> ".join([str(y) for y in years]) for years in [transition_years[0]]
-    ] + [" -> ".join([str(y) for y in years]) for years in transition_years[1:]]
-
-    items = [{"text": label, "value": value} for label, value in zip(labels, values)]
-
-    return items
-
-
-def set_transition_code(df):
-    """Create a new column containing the "transition" code
-    that is the concatenation of the from_code and to_code"""
-
-    df = df.copy()
-    df.loc[:, "transition"] = df.from_code * 100 + df.to_code
-
-    return df

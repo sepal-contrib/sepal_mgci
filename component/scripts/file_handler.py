@@ -1,15 +1,11 @@
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any
 import json
 import ast
 import io
 import pandas as pd
 from pysepal.solara import get_current_sepal_client
 from mgci.domain.configuration import TransitionTable
-from pathlib import Path
-from typing import Optional, Any
-import io
-import pandas as pd
 
 
 def read_file(file_path: str, **pd_args) -> Any:
@@ -70,24 +66,3 @@ def read_file(file_path: str, **pd_args) -> Any:
     return raw
 
 
-def df_to_csv(
-    df: pd.DataFrame,
-    file_path: str,
-    sepal_session: Optional[Any] = None,
-    **to_csv_kwargs,
-) -> Optional[Path]:
-
-    buf = io.StringIO()
-    df.to_csv(buf, **{"index": False, **to_csv_kwargs})
-    csv_text = buf.getvalue()
-
-    sepal_session = get_current_sepal_client()
-    if sepal_session:
-        # send the CSV _text_ as your `file` field
-        # overwrite=True to match the local branch (write_text); pysepal-api 409s otherwise
-        return sepal_session.files.write(file_path, csv_text, overwrite=True)
-    else:
-        # write a real .csv on disk
-        p = Path(file_path)
-        p.write_text(csv_text, encoding="utf-8")
-        return p

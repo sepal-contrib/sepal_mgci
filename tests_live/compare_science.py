@@ -1,4 +1,4 @@
-"""Read-only live comparison of the new and legacy calculations; prints one JSON row per case, never exports.
+"""Read-only live check that the app statistics match a direct `reduce_regions` call; prints one JSON row per case, never exports.
 
 Needs Earth Engine credentials.
 """

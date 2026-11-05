@@ -7,7 +7,7 @@ import reacton.ipyvuetify as rv
 import solara
 
 from component.message import msg
-from mgci.domain.configuration import ImageSelection, Workflow
+from mgci.domain.configuration import Workflow
 from mgci.domain.codes import class_code
 from mgci.domain.validation import NotReady, readiness
 from mgci.infrastructure.defaults import classification_labels
@@ -70,41 +70,6 @@ def MappingTable(selected, classes, on_value, source_labels=None):
                 with rv.Html(tag='tr'):
                     rv.Html(tag='td', children=[''])
                     rv.Html(tag='td', children=[msg('landcover.empty')])
-
-
-@solara.component
-def YearSelection(selected, indicator, on_value):
-    assets = list(selected.evidence.images) if selected.evidence else [image.asset for image in selected.images]
-
-    def change(index, **values):
-        images = list(selected.images)
-        images[index] = replace(images[index], **values)
-        on_value(tuple(images))
-
-    def year(index, value):
-        try:
-            parsed = class_code(value)
-        except ValueError:
-            parsed = 0
-        change(index, year=parsed)
-
-    with rv.Html(tag='div', class_='pa-2'):
-        for index, image in enumerate(selected.images):
-            label = msg('setup.image', number=index + 1)
-            if indicator == 'b':
-                label = msg('setup.baseline_start' if index == 0 else 'setup.baseline_end' if index == 1 else 'setup.report')
-            with rv.Row(dense=True):
-                with rv.Col(cols=8):
-                    rv.Select(label=label, items=assets, v_model=image.asset,
-                              on_v_model=lambda value, index=index: change(index, asset=value or ''), dense=True)
-                with rv.Col(cols=3):
-                    rv.TextField(label=msg('setup.year'), type='number', v_model=str(image.year) if image.year else '',
-                                 on_v_model=lambda value, index=index: year(index, value), dense=True)
-                with rv.Col(cols=1):
-                    solara.Button(icon_name='mdi-close', icon=True, disabled=indicator == 'b' and index < 2,
-                                  on_click=lambda index=index: on_value(tuple(image for n, image in enumerate(selected.images) if n != index)))
-        solara.Button(msg('setup.add_year'), icon_name='mdi-plus', text=True,
-                      on_click=lambda: on_value((*selected.images, ImageSelection('', 0))))
 
 
 def error_text(error):

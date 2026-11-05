@@ -74,7 +74,7 @@ class ReadinessTests(unittest.TestCase):
             self.assertIn(expected, self.codes(replace(config, a=replace(config.a, mapping=mapping))))
 
     def test_empty_row_is_masked_out_not_blocked(self):
-        # As the legacy app: target 0 is masked by no_remap, and the table warns about it.
+        # Target 0 is masked by no_remap, and the table warns about it.
         config = configuration()
         self.assertEqual(self.codes(replace(config, a=replace(config.a, mapping=((10, 1), (20, 0))))), set())
 

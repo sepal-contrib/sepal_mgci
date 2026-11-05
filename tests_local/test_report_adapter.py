@@ -1,10 +1,8 @@
-import os
 import unittest
 from dataclasses import replace
 from io import BytesIO
 from unittest.mock import patch
 
-os.environ['DEPLOY_ENV'] = 'sepal_solara'
 import pandas as pd
 
 from mgci.application.state import SessionState

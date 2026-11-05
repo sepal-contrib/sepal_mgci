@@ -142,13 +142,21 @@ def IndicatorYears(config, indicator, enabled, on_enabled, on_images):
             with rv.CardTitle():
                 rv.Html(tag='span', children=[text('title')])
                 rv.Spacer()
-                with solara.Tooltip('Reset all values'):
+                with solara.Tooltip(msg('landcover.reset')):
                     solara.Button(icon=True, icon_name='mdi-broom', color='primary',
-                                  attributes={'aria-label': 'Reset all values'},
+                                  attributes={'aria-label': msg('landcover.reset')},
                                   on_click=lambda: draft.set(tuple(ImageSelection('', 0) for _ in range(1 if indicator == 'a' else 3))))
+            labels = {'asset_label': msg('calculation.year'), 'year_label': msg('calculation.match_year')}
+            if indicator == 'a':
+                labels['title'] = msg('calculation.reporting_title')
+            else:
+                labels.update(baseline_title=msg('calculation.baseline_title'),
+                              reporting_title=msg('calculation.reporting_title'),
+                              reporting_subtitle=msg('calculation.reporting_subtitle'),
+                              start_year_label=msg('calculation.y_start'), end_year_label=msg('calculation.y_end'))
             (YearListA if indicator == 'a' else YearListB).element(
                 v_model=year_model(editing, indicator), items=items, errors=editing_errors,
-                on_v_model=lambda value: draft.set(model_images(value, indicator)))
+                on_v_model=lambda value: draft.set(model_images(value, indicator)), **labels)
             with rv.CardActions():
                 rv.Spacer()
                 # Close (outlined primary) and OK (filled primary) with mr-2.

@@ -43,7 +43,7 @@ formatter = "colored_ee"
 stream    = "ext://sys.stdout"
 
 # ─── LOGGERS ────────────────────────────────────────────────
-# MGCI.* (legacy MGCI.scripts.*, new MGCI.application.*, MGCI.infrastructure.*,
+# MGCI.* (MGCI.scripts.*, MGCI.application.*, MGCI.infrastructure.*,
 # MGCI.solara.*) inherit the MGCI level and handler.
 
 [loggers.MGCI]

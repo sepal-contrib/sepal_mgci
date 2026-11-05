@@ -1,8 +1,7 @@
-from typing import List, Tuple
+from typing import Tuple
 import pandas as pd
 
 import component.parameter.module_parameter as param
-import component.scripts as cs
 
 # isort: off
 from component.parameter.index_parameters import mountain_area_cols

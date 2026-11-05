@@ -1,16 +1,14 @@
-"""Exercise local numerical regression functions without legacy auth fixtures."""
+"""Run the sub-indicator B numerical regressions without the pytest Earth Engine fixtures."""
 
-import os
 from pathlib import Path
 import runpy
 import unittest
 from unittest.mock import patch
 
-os.environ['DEPLOY_ENV'] = 'sepal_solara'
 from mgci.infrastructure.transitions import parse_transition
 
 
-class LegacyReportTests(unittest.TestCase):
+class NumericalRegressionTests(unittest.TestCase):
     def test_existing_b_numerical_regressions(self):
         with patch('socket.socket.connect', side_effect=AssertionError('Network forbidden')):
             cases = runpy.run_path('tests/test_scripts/test_sub_b.py')

@@ -3,7 +3,6 @@ from typing import Dict, Optional, Tuple
 import pandas as pd
 
 import component.parameter.module_parameter as param
-import component.scripts as cs
 
 # isort: off
 from component.parameter.index_parameters import sub_b_landtype_cols, sub_b_perc_cols

@@ -6,8 +6,7 @@
       "desc": "Description",
       "perc": "%",
       "area": "Area (sqkm)",
-      "no_mountain": "No mountain area",
-      "belts": "Bioclimatic belts"
+      "no_mountain": "No mountain area"
     }
   },
   "app": {
@@ -28,28 +27,19 @@
     "sub_a": {
       "title": "Sub indicator A",
       "desc_active": "Based on the data you've provided, the module can generate reports for the following years. Please note that if a year is missing, the module will employ linear interpolation to estimate the values for that year.",
-      "desc_disabled": "The subindicator A will not be calculated. To activate its processing, click the top right switch in this card and select the target layer(s).",
-      "desc_no_data": "You have activated the subindicator A, use the 'Add layer' button to select the target layer(s)."
+      "desc_disabled": "The subindicator A will not be calculated. To activate its processing, click the top right switch in this card and select the target layer(s)."
     },
     "sub_b": {
       "title": "Sub indicator B",
       "desc_active": "Based on the data you've provided, the module can generate reports for the following years.",
-      "desc_disabled": "The subindicator B will not be calculated. To activate its processing, click the top right switch in this card and select the target layer(s).",
-      "desc_no_data": "You have activated the subindicator A, use the 'Add layer' button to select the target layer(s)."
+      "desc_disabled": "The subindicator B will not be calculated. To activate its processing, click the top right switch in this card and select the target layer(s)."
     },
     "year": "Year",
     "baseline_title": "Baseline period",
     "reporting_title": "Reporting years",
     "reporting_subtitle": "Each year will be reported against the baseline",
-    "y_base": "Baseline period (year)",
     "y_start": "Initial year",
     "y_end": "Final year",
-    "y_report": "Reporting period (year)",
-    "y_actual": "Actual year",
-    "error": {
-      "no_subind": "You have to select at least one indicator.",
-      "no_years": "You have to select at least one layer (year)."
-    },
     "match_year": "Corresponding year"
   },
   "dashboard": {
@@ -101,8 +91,7 @@
     "label": "Layers",
     "add": "Add layer",
     "export": "Export",
-    "export_title": "Export layers",
-    "selection_changed": "The selected layer changed. Review it before exporting."
+    "export_title": "Export layers"
   },
   "rec": {
     "rec": {
@@ -172,53 +161,13 @@
     "ic_default_label": "Default Image Collection"
   },
   "setup": {
-    "no_aoi": "Select an area of interest in \"{step}\".",
-    "no_asset": "Select a land cover asset in \"{step}\".",
-    "default_asset": "The default land cover map needs reclassification. Choose Yes for reclassification, or select a map already using the target classes in \"{step}\".",
-    "no_images": "The images of the land cover asset could not be read. In \"{step}\", select an image collection that exists and that you can access.",
-    "no_matrix": "Sub-indicator {indicator}: Reclassify the land cover classes in \"{step}\".",
-    "no_matrix_any": "Reclassify the land cover classes for sub-indicator A, B or both in \"{step}\".",
-    "incomplete_matrix": "Sub-indicator {indicator}: Assign a target class to every land cover class in \"{step}\".",
-    "invalid_matrix": "Sub-indicator {indicator}: Use integer class codes and assign only classes from the target classification in \"{step}\".",
-    "invalid_transition": "Sub-indicator B: The transition matrix must contain one valid impact for every pair of target classes, without duplicate pairs. Check the file selected in \"{step}\".",
-    "unreadable_transition": "Sub-indicator B: Could not read transition matrix \"{path}\": {reason}. Select an accessible file in \"{step}\".",
-    "no_transition": "Sub-indicator B: Load a transition matrix in \"{step}\".",
-    "no_indicator": "Select at least one sub-indicator in \"{step}\".",
-    "no_years": "Sub-indicator {indicator}: Select an image and a year for each reporting period in \"{step}\".",
     "years_incomplete": "Select an image and a year for each reporting period.",
-    "baseline_order": "Sub-indicator B: The baseline start year must be before its end year. Change it in \"{step}\".",
-    "other_asset": "Sub-indicator {indicator}: The selected years use images from another land cover asset. Select the years again in \"{step}\".",
     "unknown_classes": "The land cover data has classes that are not target classes ({classes}). Reclassify the land cover classes in \"{step}\".",
     "partial": "{reason} Until you do this, you can use only sub-indicator {ready}.",
-    "scale_range": "The process scale must be from {min} to {max} m. Change it in \"{step}\".",
     "yes": "Yes",
     "no": "No",
-    "target": "Target class",
-    "unassigned": "Select a target class.",
-    "image": "Image {number}",
-    "baseline_start": "Baseline start",
-    "baseline_end": "Baseline end",
-    "report": "Reporting image",
-    "year": "Year",
-    "add_year": "Add reporting year",
     "unavailable": "Sub-indicator {indicator} is not ready:",
-    "asset": "Land-cover asset",
-    "classes": "Get classes",
-    "loading": "Reading dataset classes…",
-    "close": "Close",
-    "validate": "Validate",
-    "title": "Set up land cover",
-    "source": "Source",
-    "area": "Reference area",
-    "dem": "Elevation dataset",
-    "rsa": "Use real surface area",
-    "transition": "Transition matrix CSV",
-    "indicator": "Sub-indicator {indicator}",
-    "advanced": "Advanced options",
-    "workspace_required": "Connect an authenticated SEPAL workspace to select user files.",
-    "classification": "Target classification CSV (B)",
-    "from_to": "From ↓ / To →",
-    "impacts": "D: degradation · S: stable · I: improvement"
+    "workspace_required": "Connect an authenticated SEPAL workspace to select user files."
   },
   "veg_layer": {
     "description": "SDG indicator 15.4.2 makes use land cover data to evaluate and monitor land cover change and its estimated impact in terms of ecosystem degradation and recovery.</br>Please indicate below if you wish to use a set of custom land cover maps of your country to compute both indicators. If not, the tool will use the land cover time series produced by the European Space Agency (ESA) under the Climate Change Initiative (CCI) as a default global solution (For further information on this dataset, please check <a href='http://maps.elie.ucl.ac.be/CCI/viewer/index.php'>http://maps.elie.ucl.ac.be/CCI/viewer/index.php</a>)",
@@ -245,9 +194,7 @@
     "subtitle": "Selection of land cover dataset"
   },
   "scale": {
-    "label": "Processing scale (m)",
     "native": "Native",
-    "custom": "Custom",
     "error": "Enter a scale from {min} to {max} m."
   },
   "validation": {
@@ -278,21 +225,14 @@
     "invalid_units": "Reports currently require square kilometres."
   },
   "reports": {
-    "save": "Save report",
     "saved": "Report saved to {path}"
   },
   "charts": {
     "flow": "Flow",
     "matrix": "Matrix",
-    "transitions": "Land-cover transitions · {belt}",
-    "show": "View charts",
-    "title": "Sub-indicator {indicator} · {area}"
+    "transitions": "Land-cover transitions · {belt}"
   },
   "tasks": {
-    "submit": "Submit {indicator} in background",
-    "submitted": "Task submitted. Retrieve it using {path}.",
-    "background": "Run in background",
-    "record": "Task record",
     "no_file": "Please select a task file.",
     "retrieve": "Retrieve and save report",
     "original_transition": "Original transition CSV for this historical task",
@@ -306,20 +246,12 @@
     "empty": "No data available",
     "empty_transition": "No transition matrix data available",
     "reset": "Reset all values",
-    "progress": "{assigned} of {total} classes assigned",
     "custom": "Custom",
     "standard": "Use SEEA",
     "transition_title": "Transition file",
     "transition_description": "Select a custom transition file containing all the possible transitions in your custom data. The file must contain the following columns: from_code, to_code, impact_code, columns names have to be exactly the same.",
     "saved": "Mapping saved to {path}",
-    "destination": "Your file will be saved to {path}",
     "changed": "The setup changed while reading the file. Select it again.",
-    "workspace_required": "Connect an authenticated SEPAL workspace to read or save user files.",
-    "filename": "Enter a file name without folders.",
-    "failed": "Complete the indicated land-cover fields before validating."
-  },
-  "task_report": {
-    "download": "Download report",
-    "description": "This section helps you retrieve calculations running in the background on Google Earth Engine.\n\n- Locate your task file in `{folder}`.\n- Check whether the calculation has completed and download its reporting tables.\n- Results from the current calculation can populate its dashboard. Earlier calculations remain historical reports with their original settings.\n\nFollow the steps below to retrieve your calculation outputs."
+    "workspace_required": "Connect an authenticated SEPAL workspace to read or save user files."
   }
 }
