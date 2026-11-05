@@ -3,13 +3,15 @@
 import logging
 import asyncio
 
+from mgci.errors import LocalizedError
+
 log = logging.getLogger('MGCI.infrastructure.workspace')
 
 
 class ClientWorkspace:
     def __init__(self, client):
         if client is None:
-            raise ValueError('An authenticated SEPAL workspace is required for user files')
+            raise LocalizedError('workspace_required')
         self.client = client
 
     async def read_bytes_async(self, path: str) -> bytes:

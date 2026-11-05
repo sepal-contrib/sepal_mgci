@@ -4,6 +4,7 @@ import logging
 from dataclasses import replace
 
 from .state import ResourceState, SessionState
+from mgci.errors import LocalizedError
 
 log = logging.getLogger('MGCI.application.operations')
 
@@ -24,7 +25,7 @@ async def select_transition(state: SessionState, resource: ResourceState, load, 
             state.edit(replace(state.configuration, transition=None))
         return False
     if state.revision('b', 'statistics') != revision:
-        resource.fail(token, 'Setup changed while loading; select the file again')
+        resource.fail(token, LocalizedError('setup_changed_loading'))
         return False
     if not resource.succeed(token, table):
         return False
@@ -45,7 +46,7 @@ async def refresh_transition(state: SessionState, load) -> bool:
     log.debug('Refreshing transition file %s', table.source)
     fresh = await load(table.source)
     if state.revision('b', 'statistics') != revision or state.configuration.transition != table:
-        raise ValueError('Settings changed while preparing the calculation. Please try again.')
+        raise LocalizedError('settings_changed')
     if fresh != table:
         state.edit(replace(state.configuration, transition=fresh))
     return True

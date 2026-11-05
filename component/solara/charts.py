@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import reacton.ipyvuetify as rv
 import solara
+from pysepal.i18n import current_locale
 from pysepal.solara.components.task_button import TaskButtonComponent
 
 from mgci.infrastructure.charts import chart_choices, chart_frame
@@ -63,7 +64,8 @@ def AChart(artifact, selection, visible=True):
         previous.current = widget
         return widget
 
-    widget = solara.use_memo(build, [artifact.request.request_id, selection])
+    # The dashboard holds translated text, so a language change rebuilds it.
+    widget = solara.use_memo(build, [artifact.request.request_id, selection, current_locale()])
     solara.use_effect(lambda: lambda: close_tree(widget), [widget])
     use_chart_resize(widget, visible)
     rv.Html(tag='div', children=[widget])
@@ -72,8 +74,8 @@ def AChart(artifact, selection, visible=True):
 @solara.component
 def BChart(artifact, selection, visible=True):
     from component.scripts.plots import get_nodes_and_links, get_sankey_chart, get_transition_matrix_chart
-    from component.widget.mgci_dashboard import BeltSelector, close_tree
-    from component.parameter.module_parameter import BIOBELT_LEGEND, DECODE
+    from component.widget.mgci_dashboard import BeltSelector, belt_label, close_tree
+    from component.parameter.module_parameter import DECODE
 
     belt = solara.use_reactive('Total')
     view = solara.use_reactive('flow')
@@ -84,8 +86,6 @@ def BChart(artifact, selection, visible=True):
     frame = solara.use_memo(load_frame, [artifact.request.request_id, selection])
     belts = ('Total', *sorted(set(frame.belt_class)))
     effective = belt.value if belt.value in belts else 'Total'
-    names = {code: value[0] for code, value in BIOBELT_LEGEND.items()}
-    names['Total'] = 'Overall'
     labels = {code: (name, color) for code, name, color in classification_labels(artifact.request.configuration.b)}
     images = artifact.request.configuration.b.images
     years = (images[0].year, images[1].year) if selection == 'baseline' else (
@@ -100,10 +100,11 @@ def BChart(artifact, selection, visible=True):
         series.nodes, series.links = data['nodes'], data['links']
         return chart
 
-    chart = solara.use_memo(build, [artifact.request.request_id, selection, effective, view.value])
+    locale = current_locale()
+    chart = solara.use_memo(build, [artifact.request.request_id, selection, effective, view.value, locale])
     solara.use_effect(lambda: chart.close, [chart])
     use_chart_resize(chart, visible)
-    selector = solara.use_memo(lambda: BeltSelector(belts, on_select=belt.set), [belts])
+    selector = solara.use_memo(lambda: BeltSelector(belts, on_select=belt.set), [belts, locale])
     solara.use_effect(lambda: lambda: close_tree(selector), [selector])
     solara.use_effect(lambda: selector.select(effective), [selector, effective])
     with rv.Html(tag='div', class_='d-block'):
@@ -112,18 +113,18 @@ def BChart(artifact, selection, visible=True):
             for key in ('flow', 'matrix'):
                 solara.Button(msg(f'charts.{key}'), on_click=lambda key=key: view.set(key),
                               outlined=view.value != key, small=True, color='primary', classes=['text-none', 'mx-1'])
-        rv.Html(tag='h4', class_='mb-2', children=[msg('charts.transitions', belt=names.get(effective, str(effective)))])
+        rv.Html(tag='h4', class_='mb-2', children=[msg('charts.transitions', belt=belt_label(effective))])
         if view.value == 'flow':
             with rv.Html(tag='div', class_='d-flex justify-space-between text-overline px-4 mt-2'):
-                rv.Html(tag='span', children=[f'From · {years[0]}'])
-                rv.Html(tag='span', children=[f'To · {years[1]}'])
+                rv.Html(tag='span', children=[msg('charts.from', year=years[0])])
+                rv.Html(tag='span', children=[msg('charts.to', year=years[1])])
         else:
-            rv.Html(tag='div', class_='text-caption text-center', children=['From class ↓  ·  To class →  ·  Area (km²) on hover'])
+            rv.Html(tag='div', class_='text-caption text-center', children=[msg('charts.matrix_axes')])
         rv.Html(tag='div', children=[chart])
         if view.value == 'matrix':
             with rv.Html(tag='div', class_='d-flex flex-wrap justify-center text-caption mt-1 mb-2'):
-                for name, color in [*((DECODE[code]['label'], DECODE[code]['color']) for code in (1, 2, 3)),
-                                    ('No observed area', 'rgba(128, 138, 142, 0.18)')]:
+                for name, color in [*((msg(f'impacts.{code}'), DECODE[code]['color']) for code in (1, 2, 3)),
+                                    (msg('charts.no_observed'), 'rgba(128, 138, 142, 0.18)')]:
                     with rv.Html(tag='span', class_='d-inline-flex align-center mx-1 my-1', style_='width:145px; height:30px;'):
                         rv.Html(tag='span', style_=f'display:inline-block; width:12px; height:12px; border-radius:2px; border:1px solid var(--v-primary-base); background:{color};')
                         rv.Html(tag='span', class_='ml-1', children=[name])
@@ -134,7 +135,7 @@ def BChart(artifact, selection, visible=True):
             values = frame if effective == 'Total' else frame[frame.belt_class == effective]
             with rv.Html(tag='div', class_='mt-1 mb-2 px-3', style_='display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:4px 10px; width:100%;'):
                 for code in sorted(set(values.from_lc) | set(values.to_lc)):
-                    name, color = labels.get(code, (f'Class {code}', '#888888'))
+                    name, color = labels.get(code, (msg('charts.class', code=code), '#888888'))
                     compact = 'Aquatic/flooded vegetation' if code == 6 and name == 'Shrubs and/or herbaceous vegetation, aquatic or regularly flooded' else name
                     with rv.Html(tag='span', class_='d-inline-flex align-center text-caption', style_='height:32px; min-width:0;', attributes={'title': name}):
                         rv.Html(tag='span', style_=f'display:inline-block; flex:0 0 11px; height:11px; border-radius:2px; border:1px solid var(--v-primary-base); background:{color};')
@@ -169,20 +170,20 @@ def ChartPanel(state, publish, indicator, gee_interface, prepare, before_use=Non
     solara.use_effect(received, [request_id])
     with rv.Html(tag='div', class_='pa-2'):
         if artifact:
-            TaskButtonComponent(label='Show dashboard', on_start=lambda: show(artifact), on_cancel=show.cancel,
+            TaskButtonComponent(label=msg('charts.show_dashboard'), on_start=lambda: show(artifact), on_cancel=show.cancel,
                                 running=show.pending, small=True, block=True, external_busy=not active_indicator)
         else:
             RequestAction(state, publish, indicator, 'chart', lambda request: calculate(request, gee_interface),
-                          label='Show dashboard', prepare=prepare, disabled=not active_indicator, block=True)
+                          label=msg('charts.show_dashboard'), prepare=prepare, disabled=not active_indicator, block=True)
         if artifact:
             choices = chart_choices(artifact)
             current = selection.value if selection.value in dict(choices) else choices[-1][0]
             with rv.Dialog(v_model=opened.value, on_v_model=opened.set, max_width=1180, overlay_opacity=.7, eager=True):
                 with rv.Card(class_='pa-2 d-flex flex-column', style_='box-sizing:border-box; height:min(1180px, calc(90vh - 16px)); height:min(1180px, calc(90dvh - 16px));'):
-                    rv.CardTitle(children=['Results'])
+                    rv.CardTitle(children=[msg('app.results.title')])
                     with rv.CardText(class_='flex-grow-1', style_='min-height:0; overflow-y:auto;'):
                         rv.Html(tag='h3', class_='mb-3', children=[msg('dashboard.window_title', indicator=indicator.upper(), area=artifact.request.configuration.aoi_name)])
-                        rv.Html(tag='div', class_='text-caption text-center', children=['Year' if indicator == 'a' else 'Period'])
+                        rv.Html(tag='div', class_='text-caption text-center', children=[msg('charts.year' if indicator == 'a' else 'charts.period')])
                         with rv.Html(tag='div', class_='d-flex flex-wrap justify-center'):
                             for key, label in choices:
                                 solara.Button(label, on_click=lambda key=key: selection.set(key), small=True,

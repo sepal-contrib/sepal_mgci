@@ -4,5 +4,8 @@ from pathlib import Path
 
 from pysepal.i18n import catalog
 
+import mgci.errors
+
 messages = catalog(Path(__file__).parent)
 msg = messages.msg
+mgci.errors.translate = msg

@@ -10,6 +10,7 @@ import re
 from mgci.application.state import Request
 from mgci.domain.configuration import Configuration, DatasetEvidence, ImageSelection, IndicatorConfig, ScalePolicy, TransitionTable, Workflow
 from mgci.domain.provenance import scientific_identity
+from mgci.errors import LocalizedError
 
 
 def encode_request(request: Request) -> dict:
@@ -42,10 +43,10 @@ def decode_request(record: dict) -> Request:
         fields = {**record, 'configuration': config, 'slot': tuple(record['slot'])}
         request = Request(**fields)
         if request.slot[1] != 'statistics' or request.identity != scientific_identity(config, *request.slot[:2]):
-            raise ValueError('Task provenance does not match its captured inputs')
+            raise LocalizedError('task_provenance_mismatch')
         return request
     except (KeyError, TypeError, IndexError) as error:
-        raise ValueError('Invalid task provenance record') from error
+        raise LocalizedError('task_provenance_invalid') from error
 
 
 def parse_task_csv(content: bytes) -> dict:
@@ -54,7 +55,7 @@ def parse_task_csv(content: bytes) -> dict:
     for row in reader:
         key = row.get('process_id', '')
         if not re.fullmatch(r'\d+(?:_\d+_\d+)?', key) or key in results:
-            raise ValueError('Invalid or duplicate task result identifier')
+            raise LocalizedError('task_result_identifier')
         categories = ('sub_a',) if '_' not in key else (
             'baseline_degradation', 'final_degradation', 'baseline_transition', 'report_transition')
         parsed = {}
@@ -65,13 +66,13 @@ def parse_task_csv(content: bytes) -> dict:
             try:
                 value = ast.literal_eval(text)
             except (ValueError, SyntaxError) as error:
-                raise ValueError(f'Invalid {category} task result') from error
+                raise LocalizedError('task_result_category', category=category) from error
             if not isinstance(value, list):
-                raise ValueError('Expected grouped-area rows')
+                raise LocalizedError('task_result_rows')
             parsed[category] = value
         results[key] = parsed
     if not results:
-        raise ValueError('Task result is empty')
+        raise LocalizedError('task_result_empty')
     return results
 
 
@@ -87,4 +88,4 @@ def validate_results(request, payload):
         expected = {f'{images[0].year}_{images[1].year}_{image.year}' for image in images[2:]}
         categories = {'baseline_degradation', 'final_degradation', 'baseline_transition', 'report_transition'}
     if set(payload) != expected or any(set(value) != categories for value in payload.values()):
-        raise ValueError('Task results do not contain the complete requested years and categories')
+        raise LocalizedError('task_results_incomplete')

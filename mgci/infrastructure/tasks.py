@@ -5,6 +5,8 @@ import asyncio
 import json
 from types import SimpleNamespace
 
+from mgci.errors import LocalizedError
+
 from .science import build_statistics
 from .task_records import decode_request, encode_request, parse_task_csv, validate_results
 
@@ -33,7 +35,7 @@ async def submit(request, gee_interface, workspace):
         try:
             await workspace.write_async(path, json.dumps(record), overwrite=True)
         except Exception as error:
-            raise RuntimeError(f'Task {task.id} was submitted, but its record could not be saved: {error}') from error
+            raise LocalizedError('task_record_not_saved', task=task.id, error=str(error)) from error
         return record, path
 
     # Local cancellation cannot retract a remote submission. Finish saving its
@@ -67,19 +69,19 @@ async def retrieve(path, workspace, gee_interface, drive_interface):
     record = json.loads(await workspace.read_bytes_async(path))
     request = decode_request(record['request']) if record.get('schema') == 1 else None
     if request is None and 'model_state' not in record:
-        raise ValueError('Unsupported or incomplete task record')
+        raise LocalizedError('task_record_unsupported')
     task_info = record.get('task')
     if not task_info:
-        raise ValueError('This task record has no confirmed submission; check Earth Engine tasks before resubmitting')
+        raise LocalizedError('task_not_submitted')
     task = await gee_interface.get_task_async(task_info['id'])
     status = get_task_state_name(task)
     if status not in ('COMPLETED', 'SUCCEEDED'):
-        raise ValueError(f'Task is {status or "unavailable"}')
+        raise LocalizedError('task_status', status=status) if status else LocalizedError('task_unavailable')
     sink = _DownloadSink()
     name = f"{task_info['name']}.csv"
     await asyncio.to_thread(drive_interface.download_file, name, name, SimpleNamespace(files=sink))
     if sink.content is None:
-        raise ValueError('The completed task CSV was not found in Google Drive')
+        raise LocalizedError('task_csv_missing')
     payload = parse_task_csv(sink.content)
     if request is not None:
         validate_results(request, payload)

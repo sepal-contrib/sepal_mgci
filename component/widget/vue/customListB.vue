@@ -21,7 +21,7 @@
               :items="sortedItemsAsc"
               :label="start_year_label"
               dense
-              placeholder="GEE Asset ID"
+              :placeholder="asset_placeholder"
               :error="hasBaselineError('base', 'asset')"
               :error-messages="getBaselineError('base', 'asset')"
             />
@@ -52,7 +52,7 @@
               :items="sortedItemsDesc"
               :label="end_year_label"
               dense
-              placeholder="GEE Asset ID"
+              :placeholder="asset_placeholder"
               :error="hasBaselineError('report', 'asset')"
               :error-messages="getBaselineError('report', 'asset')"
             />
@@ -103,7 +103,7 @@
               :items="items"
               :label="asset_label"
               dense
-              placeholder="GEE Asset ID"
+              :placeholder="asset_placeholder"
               :error="hasReportingError(item.id, 'asset')"
               :error-messages="getReportingError(item.id, 'asset')"
             />
@@ -168,7 +168,10 @@ export default {
     reporting_subtitle: { type: String, default: '' },
     start_year_label: { type: String, default: 'Start Year' },
     end_year_label: { type: String, default: 'End Year' },
+    order_error_label: { type: String, default: 'Start year must be before end year' },
     asset_label: { type: String, default: 'Asset' },
+    asset_placeholder: { type: String, default: 'GEE Asset ID' },
+    required_label: { type: String, default: 'Required' },
     year_label: { type: String, default: 'Year' }
   },
   
@@ -269,9 +272,9 @@ export default {
       const hasYearError = this.errors.some(error => error === `Year required for baseline ${period}` && field === 'year');
       const hasOrderError = this.errors.some(error => error === 'Start year must be before end year in baseline period' && field === 'year');
       
-      if (hasAssetError) return ['Required'];
-      if (hasYearError) return ['Required'];
-      if (hasOrderError) return ['Start year must be before end year'];
+      if (hasAssetError) return [this.required_label];
+      if (hasYearError) return [this.required_label];
+      if (hasOrderError) return [this.order_error_label];
       return [];
     },
     
@@ -286,8 +289,8 @@ export default {
       const hasAssetError = this.errors.some(error => error === `Asset required for reporting year ${itemId}` && field === 'asset');
       const hasYearError = this.errors.some(error => error === `Year required for reporting year ${itemId}` && field === 'year');
       
-      if (hasAssetError) return ['Required'];
-      if (hasYearError) return ['Required'];
+      if (hasAssetError) return [this.required_label];
+      if (hasYearError) return [this.required_label];
       return [];
     },
     

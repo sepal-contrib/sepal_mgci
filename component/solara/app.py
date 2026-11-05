@@ -8,11 +8,12 @@ from pysepal.solara import get_current_theme_state
 from pysepal.solara.components.admin import AdminButton
 from pysepal.solara.notifications import NotificationProvider
 
-from component.message import msg
+from component.message import messages, msg
 from component.scripts.steps import add_step_actions
 from component.widget.app_shell import MgciMapApp
 from mgci.application.operations import prepare_request, refresh_transition
 from mgci.application.state import ResourceState
+from mgci.errors import LocalizedError
 from mgci.infrastructure.defaults import initial_configuration
 from mgci.infrastructure.transitions import load_transition
 from mgci.infrastructure.workspace import ClientWorkspace
@@ -48,7 +49,7 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
 
     async def load(path):
         if workspace is None:
-            raise ValueError('An authenticated SEPAL workspace is required to read transition files')
+            raise LocalizedError('workspace_transition')
         return await load_transition(workspace, path)
 
     async def prepare(indicator, purpose, selection):
@@ -78,23 +79,21 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
         {'id': 6, 'name': msg('app.drawer_item.task'), 'icon': 'mdi-export', 'display': 'dialog',
          'content': [TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_client)]},
     ])
-    MgciMapApp.element(app_title='SDG 15.4.2', app_icon='mdi-image-filter-hdr', main_map=[map_],
-        theme_state=theme, steps_data=steps, dialog_width=750,
+    MgciMapApp.element(app_title=msg('app.title'), app_icon='mdi-image-filter-hdr', main_map=[map_],
+        theme_state=theme, steps_data=steps, dialog_width=750, locales=messages.available_locales(),
         repo_url='https://github.com/sepal-contrib/sepal_mgci',
-        right_panel_config={'title': 'Results', 'icon': 'mdi-image-filter-hdr', 'width': 400,
-                            'description': 'This section contains the results of the analysis. You can add layers '
-                                           'to the map, view sub-indicators, and download tasks.',
+        right_panel_config={'title': msg('app.results.title'), 'icon': 'mdi-image-filter-hdr', 'width': 440,
+                            'description': msg('app.results.description'),
                             'toggle_icon': 'mdi-chart-line'},
         right_panel_content=[
             {'content': [AdminButton(logger_instance=logging.getLogger('MGCI'))]},
-            {'title': 'Visualize layers', 'icon': 'mdi-layers',
+            {'title': msg('app.results.layers_title'), 'icon': 'mdi-layers',
              'content': [LayerPanel(state, publish, shown, gee_interface, drive_interface, sepal_client, prepare, enabled)],
-             'description': 'Show a layer on the map or export it. Set the area of interest and the years '
-                            'in the 3. Indicator settings step first.'},
-            {'title': 'Sub indicator A', 'icon': 'mdi-chart-bar',
+             'description': msg('app.results.layers_description', step=msg('app.drawer_item.calculation'))},
+            {'title': msg('calculation.sub_a.title'), 'icon': 'mdi-chart-bar',
              'content': [ChartPanel(state, publish, 'a', gee_interface, prepare, before_export, enabled)],
-             'description': 'Explore land-cover composition for Sub-indicator A by year and mountain belt.'},
-            {'title': 'Sub indicator B', 'icon': 'mdi-chart-bar',
+             'description': msg('app.results.sub_a_description')},
+            {'title': msg('calculation.sub_b.title'), 'icon': 'mdi-chart-bar',
              'content': [ChartPanel(state, publish, 'b', gee_interface, prepare, before_export, enabled)],
-             'description': 'Explore land-cover transitions by period and mountain belt.'},
+             'description': msg('app.results.sub_b_description')},
         ])

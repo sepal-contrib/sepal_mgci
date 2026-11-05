@@ -12,7 +12,7 @@
               :items="items"
               :label="asset_label"
               dense
-              placeholder="GEE Asset ID"
+              :placeholder="asset_placeholder"
               :error="hasAssetError(item.id)"
               :error-messages="getAssetError(item.id)"
               class="mr-2"
@@ -77,6 +77,8 @@ export default {
     max_items: { type: String, default: '9' },
     title: { type: String, default: 'Reporting years' },
     asset_label: { type: String, default: 'Asset' },
+    asset_placeholder: { type: String, default: 'GEE Asset ID' },
+    required_label: { type: String, default: 'Required' },
     year_label: { type: String, default: 'Year' }
   },
   
@@ -156,7 +158,7 @@ export default {
       const hasError = this.errors.some(error => 
         error === `Asset required for item ${itemId}`
       );
-      return hasError ? ['Required'] : [];
+      return hasError ? [this.required_label] : [];
     },
     
     hasYearError(itemId) {
@@ -169,7 +171,7 @@ export default {
       const hasError = this.errors.some(error => 
         error === `Year required for item ${itemId}`
       );
-      return hasError ? ['Required'] : [];
+      return hasError ? [this.required_label] : [];
     },
     
     updateItem(index, field, value) {

@@ -11,6 +11,7 @@ from ipecharts.option.series import Bar, Sankey
 from pysepal.solara import get_current_theme_state
 
 import component.parameter.module_parameter as param
+from component.message import msg
 from component.scripts.file_handler import read_file
 
 
@@ -137,7 +138,7 @@ def get_nodes_and_links(
 
     def class_info(code):
         return desc_color_map.get(
-            code, {"desc": f"Class {code}", "color": "#888888"}
+            code, {"desc": msg("charts.class", code=code), "color": "#888888"}
         )
 
     def node_name(code, year):
@@ -208,7 +209,8 @@ def get_transition_matrix_chart(
     for source in codes:
         for target in codes:
             area = float(transitions.get((source, target), 0.0))
-            impact = param.DECODE.get(impacts.get((source, target)))
+            impact_code = impacts.get((source, target))
+            impact = param.DECODE.get(impact_code)
             color = (
                 impact["color"]
                 if area > 0 and impact
@@ -220,9 +222,9 @@ def get_transition_matrix_chart(
                     "itemStyle": {"color": color},
                     "tooltip": {
                         "formatter": (
-                            f"{escape(labels.get(source, {}).get('desc', f'Class {source}'))}"
-                            f" → {escape(labels.get(target, {}).get('desc', f'Class {target}'))}"
-                            f"<br>{impact['label'] if impact else 'Unclassified'}"
+                            f"{escape(labels.get(source, {}).get('desc', msg('charts.class', code=source)))}"
+                            f" → {escape(labels.get(target, {}).get('desc', msg('charts.class', code=target)))}"
+                            f"<br>{msg(f'impacts.{impact_code}') if impact else msg('impacts.unclassified')}"
                             f"<br><b>{area:,.1f} km²</b>"
                         )
                     },
@@ -284,7 +286,7 @@ def get_land_cover_bar_chart(values, classes, theme_state=None):
         code = row["lc_class"]
         class_info = classes.get(code, classes.get(str(code)))
         if class_info is None:
-            class_info = [f"Class {code}", "#888888"]
+            class_info = [msg("charts.class", code=code), "#888888"]
         name, color = class_info[:2]
         labels.append(name)
         percentage = round(row["sum"] / total_area * 100, 1) if total_area else 0

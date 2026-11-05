@@ -149,7 +149,7 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
     with rv.Toolbar(flat=True, color='accent'):
         rv.Html(tag='span', children=[msg('reclass.title')])
         rv.Html(tag='span', class_='ml-2 warning--text',
-                children=[msg('reclass.non_complete', assigned=f'{assigned} of {len(classes)}')]
+                children=[msg('reclass.non_complete', assigned=assigned, total=len(classes))]
                 if assigned < len(classes) else [])
         rv.Spacer()
         rv.Divider(vertical=True, class_='mx-2')
@@ -162,7 +162,7 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
                       color='error' if progress == 0 else 'warning' if progress < 100 else 'success')
     MappingTable(selected, classes, lambda mapping: edit(mapping=mapping), source_names)
 
-    titles = {'info': 'Land cover classes', 'target': msg('reclass.tooltip.load_target.title'),
+    titles = {'info': msg('reclass.dialog.info_title'), 'target': msg('reclass.tooltip.load_target.title'),
               'import': msg('reclass.dialog.import_.title'), 'save': msg('reclass.dialog.save.title')}
     with rv.Dialog(v_model=bool(active.value), on_v_model=lambda value: None if value else close_dialog(),
                    max_width=950, overlay_opacity=0.7, eager=True):
@@ -203,7 +203,7 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
                         FileInputComponent(value=file_path.value, on_value=choose_file, sepal_client=sepal_client,
                                            extensions=['.csv'],
                                            initial_folder=folder if active.value == 'import' else class_folder,
-                                           label='filename' if active.value == 'import' else msg('rec.rec.input.classif.label'),
+                                           label=msg('reclass.dialog.import_.file_label') if active.value == 'import' else msg('rec.rec.input.classif.label'),
                                            ).key(f'file-{active.value}')
                     else:
                         rv.Html(tag='p', children=[msg('landcover.workspace_required')])

@@ -4,6 +4,7 @@ import logging
 from dataclasses import replace
 
 from mgci.domain.configuration import Workflow
+from mgci.errors import LocalizedError
 
 log = logging.getLogger('MGCI.application.landcover')
 
@@ -76,13 +77,13 @@ async def inspect_shared_dataset(state, resources, load):
         if (evidence.asset != captured.a.asset or evidence.aoi_identity != captured.aoi_identity
                 or evidence.status != 'ready' or not evidence.classes or not result.images
                 or tuple(image.asset for image in result.images) != evidence.images):
-            raise ValueError('No complete class evidence for the selected dataset and area')
+            raise LocalizedError('no_class_evidence')
         # Discovery reads the asset over the area; unrelated edits such as a
         # transition cell do not make it stale.
         current = state.configuration
         if (current.aoi_identity != captured.aoi_identity
                 or any(getattr(current, key).asset != captured.a.asset for key in ('a', 'b'))):
-            raise ValueError('Setup changed during discovery; get classes again')
+            raise LocalizedError('setup_changed_discovery')
     except Exception as error:
         log.warning('Class discovery failed for %s', captured.a.asset, exc_info=True)
         for key in ('a', 'b'):

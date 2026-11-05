@@ -23,6 +23,8 @@ class YearListA(v.VuetifyTemplate):
     title = Unicode('Reporting years').tag(sync=True)
     asset_label = Unicode('Year').tag(sync=True)
     year_label = Unicode('Corresponding year').tag(sync=True)
+    asset_placeholder = Unicode('GEE Asset ID').tag(sync=True)
+    required_label = Unicode('Required').tag(sync=True)
 
 
 class YearListB(YearListA):
@@ -32,6 +34,7 @@ class YearListB(YearListA):
     reporting_subtitle = Unicode('Each year will be reported against the baseline').tag(sync=True)
     start_year_label = Unicode('Initial year').tag(sync=True)
     end_year_label = Unicode('Final year').tag(sync=True)
+    order_error_label = Unicode('Start year must be before end year').tag(sync=True)
 
 
 def year_model(images, indicator):
@@ -128,11 +131,11 @@ def IndicatorYears(config, indicator, enabled, on_enabled, on_images):
                     rv.Spacer(class_='my-2')
                     if enabled and years and not errors:
                         with rv.Html(tag='span', class_='mt-2'):
-                            rv.Html(tag='span', children=['Reporting years: ' if indicator == 'a' else 'Baseline: '])
+                            rv.Html(tag='span', children=[msg('calculation.chips_reporting' if indicator == 'a' else 'calculation.chips_baseline') + ' '])
                             for index, year in enumerate(years):
                                 # Separators: ", " between A chips; "Report: " after the B baseline.
                                 if indicator == 'b' and index == 1:
-                                    rv.Html(tag='span', children=[' Report: '])
+                                    rv.Html(tag='span', children=[f" {msg('calculation.chips_report')} "])
                                 elif indicator == 'a' and index:
                                     rv.Html(tag='span', children=[', '])
                                 rv.Chip(color='success', small=True, children=[year])
@@ -146,14 +149,17 @@ def IndicatorYears(config, indicator, enabled, on_enabled, on_images):
                     solara.Button(icon=True, icon_name='mdi-broom', color='primary',
                                   attributes={'aria-label': msg('landcover.reset')},
                                   on_click=lambda: draft.set(tuple(ImageSelection('', 0) for _ in range(1 if indicator == 'a' else 3))))
-            labels = {'asset_label': msg('calculation.year'), 'year_label': msg('calculation.match_year')}
+            labels = {'asset_label': msg('calculation.year'), 'year_label': msg('calculation.match_year'),
+                      'asset_placeholder': msg('calculation.asset_placeholder'),
+                      'required_label': msg('calculation.required')}
             if indicator == 'a':
                 labels['title'] = msg('calculation.reporting_title')
             else:
                 labels.update(baseline_title=msg('calculation.baseline_title'),
                               reporting_title=msg('calculation.reporting_title'),
                               reporting_subtitle=msg('calculation.reporting_subtitle'),
-                              start_year_label=msg('calculation.y_start'), end_year_label=msg('calculation.y_end'))
+                              start_year_label=msg('calculation.y_start'), end_year_label=msg('calculation.y_end'),
+                              order_error_label=msg('calculation.order_error'))
             (YearListA if indicator == 'a' else YearListB).element(
                 v_model=year_model(editing, indicator), items=items, errors=editing_errors,
                 on_v_model=lambda value: draft.set(model_images(value, indicator)), **labels)
@@ -162,5 +168,5 @@ def IndicatorYears(config, indicator, enabled, on_enabled, on_images):
                 # Close (outlined primary) and OK (filled primary) with mr-2.
                 solara.Button(msg('app.step_action.close'), on_click=close, small=True,
                               text=True, outlined=True, color='primary', classes=['mr-2'])
-                solara.Button('OK', on_click=confirm, disabled=bool(editing_errors), small=True,
+                solara.Button(msg('app.step_action.ok'), on_click=confirm, disabled=bool(editing_errors), small=True,
                               color='primary', classes=['mr-2'])
