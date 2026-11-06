@@ -13,6 +13,9 @@ log = logging.getLogger('MGCI.infrastructure.layers')
 IMPACT_CLASSES = ((1, 'Degraded', '#8B0000'), (2, 'Stable', '#B0C4DE'), (3, 'Improved', '#008000'))
 
 
+# Export source id of the bioclimatic belts, which have no sub-indicator.
+BELTS_SOURCE = 'belts'
+
 # Default export names use these English stems in every language: a translated
 # title would put accents, which asset names cannot hold, into the name.
 EXPORT_STEMS = {'land_cover': 'landcover', 'final_degradation': 'totaldegradation',
@@ -108,6 +111,9 @@ def export_sources(config, indicators, session_id):
     headers = {'a': msg('layers.sub_a_header'), 'b': msg('layers.sub_b_header')}
     ready = {key: readiness(config, key, 'image_export').ready for key in ('a', 'b')}
     sources = []
+    if config.aoi_graph and config.aoi_identity:
+        sources.append(ExportSource(id=BELTS_SOURCE, label=msg('layers.biobelts'), kind='image',
+                                    resolve=lambda: _belt_export(config, session_id)))
     for (indicator, selector, title), (*_, kind, year) in zip(layer_choices(config), _layers(config)):
         if indicator not in indicators:
             continue
@@ -135,3 +141,23 @@ def export_sources(config, indicators, session_id):
                                     kind='image', resolve=resolve,
                                     description=headers[indicator], disabled=not ready[indicator]))
     return tuple(sources)
+
+
+def _belt_export(config, session_id):
+    """The belts of the AOI alone, with their class key, as the other exports carry it."""
+    import ee
+    from pysepal.solara.components.export import ResolvedExport
+    from component.parameter.module_parameter import BIOBELT_LEGEND, belt_name
+    from component.scripts.aoi_geometry import aoi_bbox
+
+    aoi = ee.FeatureCollection(ee.deserializer.decode(json.loads(config.aoi_graph)))
+    codes = [code for code in BIOBELT_LEGEND if isinstance(code, int)]
+    belt_key = '; '.join(f'{code}={BIOBELT_LEGEND[code][0]}' for code in codes)
+    image = (ee.Image(config.biobelt).rename('bioclimatic_belt').clip(aoi).toInt16()
+             .set({'mgci_bioclimatic_belt_classes': belt_key}))
+    return ResolvedExport(
+        ee_object=image, default_name='bioclimaticbelts',
+        gee_folder=f'sepal_sdg15_4_2/{config.aoi_label}_{session_id}', region=aoi_bbox(aoi),
+        default_scale=config.scale.metres or 1000, max_pixels=int(1e13),
+        vis_params={'min': codes[0], 'max': codes[-1], 'palette': [BIOBELT_LEGEND[code][1] for code in codes],
+                    'values': codes, 'labels': [belt_name(code) for code in codes]})

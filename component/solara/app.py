@@ -44,7 +44,10 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
     enabled = solara.use_reactive(('a', 'b'))
     # (indicator, selector) of the layers drawn on the map; the layers table toggles them.
     shown = solara.use_reactive(frozenset())
-    BiobeltOverlay(state.configuration, map_, gee_interface, context_legend.set)
+    # The belts row of the layers table toggles the overlay; a new AOI shows it again.
+    belts_shown = solara.use_reactive(True)
+    belts_status = solara.use_reactive(None)
+    BiobeltOverlay(state.configuration, map_, gee_interface, context_legend.set, belts_shown, belts_status.set)
     MapOutputs(state, map_, context_legend.value, shown)
 
     async def load(path):
@@ -88,7 +91,8 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
         right_panel_content=[
             {'content': [AdminButton(logger_instance=logging.getLogger('MGCI'))]},
             {'title': msg('app.results.layers_title'), 'icon': 'mdi-layers',
-             'content': [LayerPanel(state, publish, shown, gee_interface, drive_interface, sepal_client, prepare, enabled)],
+             'content': [LayerPanel(state, publish, shown, gee_interface, drive_interface, sepal_client, prepare, enabled,
+                                     belts_shown=belts_shown, belts_status=belts_status.value)],
              'description': msg('app.results.layers_description', step=msg('app.drawer_item.calculation'))},
             {'title': msg('calculation.sub_a.title'), 'icon': 'mdi-chart-bar',
              'content': [ChartPanel(state, publish, 'a', gee_interface, prepare, before_export, enabled)],
