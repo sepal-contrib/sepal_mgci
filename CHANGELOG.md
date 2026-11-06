@@ -1,3 +1,9 @@
+## 2.2.0 (2026-11-06)
+
+### Feat
+
+- show, hide and export the bioclimatic belts from the layers table
+
 ## 2.1.0 (2026-11-05)
 
 ### Feat
