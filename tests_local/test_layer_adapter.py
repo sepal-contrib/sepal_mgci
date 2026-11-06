@@ -58,6 +58,21 @@ class LayerAdapterTests(ApiTestCase):
         self.assertEqual(resolved.vis_params['labels'], ['Dégradé', 'Stable', 'Amélioré'])
         self.assertIn('1=Degraded', resolved.ee_object.serialize())
 
+    def test_belts_export_alone_with_their_class_key(self):
+        sources = export_sources(self.config, ('a',), 1234)
+        self.assertEqual(sources[0].id, 'belts')
+        self.assertEqual(sources[0].label, 'Bioclimatic belts')
+        self.assertFalse(sources[0].disabled)
+        resolved = sources[0].resolve()
+        graph = resolved.ee_object.serialize()
+        for expected in ('bioclimatic_belt', 'mgci_bioclimatic_belt_classes', '1=Nival'):
+            self.assertIn(expected, graph)
+        self.assertEqual(resolved.default_name, 'bioclimaticbelts')
+        self.assertEqual(resolved.gee_folder, f'sepal_sdg15_4_2/{self.config.aoi_label}_1234')
+        self.assertEqual(resolved.vis_params['values'], [1, 2, 3, 4])
+        # Without an area of interest there are no belts to export.
+        self.assertNotIn('belts', [source.id for source in export_sources(replace(self.config, aoi_graph=''), ('a',), 1)])
+
     def test_unready_indicator_is_listed_disabled_and_switched_off_one_hidden(self):
         sources = export_sources(replace(self.config, aoi_identity=''), ('a',), 1)
         self.assertTrue(sources and all(source.disabled for source in sources))

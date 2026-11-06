@@ -28,7 +28,7 @@
       "title": "Results",
       "description": "This section contains the results of the analysis. You can add layers to the map, view sub-indicators, and download tasks.",
       "layers_title": "Visualize layers",
-      "layers_description": "Show a layer on the map or export it. Set the area of interest and the years in the {step} step first.",
+      "layers_description": "Show a layer on the map or export it. The bioclimatic belts need only the area of interest. The other layers also need the years of the {step} step.",
       "sub_a_description": "Explore land-cover composition for Sub-indicator A by year and mountain belt.",
       "sub_b_description": "Explore land-cover transitions by period and mountain belt."
     }
@@ -109,7 +109,7 @@
       "indicator": "Sub-indicator",
       "action": "Action"
     },
-    "empty": "No layers yet. Select the area of interest and the years first.",
+    "empty": "No layers yet. Select the area of interest first.",
     "show": "Show {name} on the map",
     "hide": "Hide {name}",
     "cancel": "Stop adding {name}",

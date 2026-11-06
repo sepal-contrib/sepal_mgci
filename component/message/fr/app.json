@@ -28,7 +28,7 @@
       "title": "Résultats",
       "description": "Cette section contient les résultats de l'analyse. Vous pouvez ajouter des couches à la carte, consulter les sous-indicateurs et télécharger les tâches.",
       "layers_title": "Visualiser les couches",
-      "layers_description": "Affichez une couche sur la carte ou exportez-la. Définissez d'abord la zone d'intérêt et les années à l'étape {step}.",
+      "layers_description": "Affichez une couche sur la carte ou exportez-la. Les ceintures bioclimatiques n'ont besoin que de la zone d'intérêt. Les autres couches ont aussi besoin des années de l'étape {step}.",
       "sub_a_description": "Explorez la composition de la couverture terrestre du sous-indicateur A par année et par ceinture de montagne.",
       "sub_b_description": "Explorez les transitions de couverture terrestre par période et par ceinture de montagne."
     }
@@ -109,7 +109,7 @@
       "indicator": "Sous-indicateur",
       "action": "Action"
     },
-    "empty": "Aucune couche pour le moment. Sélectionnez d'abord la zone d'intérêt et les années.",
+    "empty": "Aucune couche pour le moment. Sélectionnez d'abord la zone d'intérêt.",
     "show": "Afficher {name} sur la carte",
     "hide": "Masquer {name}",
     "cancel": "Arrêter l'ajout de {name}",

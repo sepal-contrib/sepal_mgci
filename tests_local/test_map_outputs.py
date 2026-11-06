@@ -195,6 +195,107 @@ class LayerTableTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((len(controller.opened), controller.selected_source_id.value), (2, 'a|lc/2000'))
 
 
+class BeltRowTests(unittest.IsolatedAsyncioTestCase):
+    def render(self, config, belts_shown=None, belts_status='ready'):
+        from pysepal.solara.notifications import NotificationProvider
+        belts_shown = belts_shown or solara.reactive(True)
+        status = solara.reactive(belts_status)
+        shown = solara.reactive(frozenset())
+
+        @solara.component
+        def Harness():
+            state, publish = use_session_state(config)
+            NotificationProvider()
+            LayerPanel(state, publish, shown, object(), object(), None, belts_shown=belts_shown,
+                       belts_status=status.value)
+
+        controller = FakeController()
+        for target, value in (('use_export_dialog', lambda *args, **kwargs: controller), ('ExportDialog', NoDialog)):
+            patcher = patch(f'component.solara.layers.{target}', value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        root, context = solara.render(Harness(), handle_error=False)
+        self.addCleanup(context.close)
+        return root, belts_shown, status, controller
+
+    def config(self):
+        from dataclasses import replace
+        return replace(report_state().configuration, aoi_graph='{}')
+
+    async def test_belts_row_comes_first_for_both_indicators(self):
+        root, *_ = self.render(self.config())
+        title, eye, export = layer_rows(root)[0]
+        self.assertEqual((title, indicator_column(root)[0]), ('Bioclimatic belts', 'A, B'))
+        self.assertEqual(eye_icon(eye), 'mdi-eye')
+        self.assertFalse(export.disabled)
+
+    async def test_eye_hides_and_shows_the_belts(self):
+        root, belts_shown, *_ = self.render(self.config())
+        layer_rows(root)[0][1].fire_event('click', None)
+        self.assertFalse(belts_shown.value)
+        self.assertEqual(eye_icon(layer_rows(root)[0][1]), 'mdi-eye-off-outline')
+        layer_rows(root)[0][1].fire_event('click', None)
+        self.assertTrue(belts_shown.value)
+
+    async def test_loading_belts_show_a_spinner(self):
+        root, *_ = self.render(self.config(), belts_status='loading')
+        self.assertIsNone(eye_icon(layer_rows(root)[0][1]))
+
+    async def test_no_area_of_interest_has_no_belts_row(self):
+        root, *_ = self.render(initial_configuration(2026))
+        self.assertNotIn('Bioclimatic belts', [title for title, *_ in layer_rows(root)])
+
+    async def test_belts_export_icon_opens_the_dialog_on_the_belts(self):
+        root, _, _, controller = self.render(self.config())
+        layer_rows(root)[0][2].fire_event('click', None)
+        self.assertEqual(controller.selected_source_id.value, 'belts')
+
+
+class BiobeltOverlayTests(unittest.IsolatedAsyncioTestCase):
+    async def test_hiding_removes_the_layer_and_legend_and_showing_reuses_the_tiles(self):
+        from dataclasses import replace
+        from component.solara import areas
+        calls, installed, removed, legends, statuses = [], [], [], [], []
+
+        async def prepare(config, gee_interface):
+            calls.append(config.aoi_identity)
+            return {'graph': '{}', 'url': 'u', 'legend': {'items': []}}
+
+        class Map:
+            def remove_layer(self, key, none_ok=False):
+                removed.append(key)
+
+        config = solara.reactive(replace(report_state().configuration, aoi_graph='{}'))
+        shown = solara.reactive(True)
+
+        @solara.component
+        def Overlay():
+            areas.BiobeltOverlay(config.value, Map(), object(), legends.append, shown, statuses.append)
+
+        @solara.component
+        def Harness():
+            from pysepal.solara.notifications import NotificationProvider
+            NotificationProvider()
+            Overlay()
+
+        with patch.object(areas, 'prepare_biobelt', prepare), \
+             patch.object(areas, 'install_biobelt', lambda map_, payload: installed.append(payload['url'])):
+            root, context = solara.render(Harness(), handle_error=False)
+            self.addCleanup(context.close)
+            await until(lambda: installed == ['u'])
+            self.assertEqual((legends[-1], statuses[-1]), ({'items': []}, 'ready'))
+            shown.set(False)
+            await until(lambda: legends[-1] is None)
+            self.assertIn('biobelts', removed)
+            shown.set(True)
+            await until(lambda: installed == ['u', 'u'])
+            self.assertEqual(calls, ['aoi'])
+            # A new area of interest shows its belts again.
+            shown.set(False)
+            config.set(replace(config.value, aoi_identity='other'))
+            await until(lambda: shown.value and calls == ['aoi', 'other'])
+
+
 class ShownLayersTests(unittest.TestCase):
     def test_only_shown_layers_are_installed(self):
         state = report_state()

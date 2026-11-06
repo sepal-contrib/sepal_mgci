@@ -22,7 +22,7 @@ from pysepal.solara.components.legend import LegendComponent
 from reacton.ipyvue import use_event
 
 from mgci.domain.validation import readiness
-from mgci.infrastructure.layers import export_sources, layer_choices, prepare_layer
+from mgci.infrastructure.layers import BELTS_SOURCE, export_sources, layer_choices, prepare_layer
 from mgci.infrastructure.reports import plain_data
 from .actions import use_request
 from .setup import readiness_text
@@ -155,17 +155,38 @@ def _LayerRow(state, publish, indicator, selector, title, shown, gee_interface, 
 
 
 @solara.component
-def LayerPanel(state, publish, shown, gee_interface, drive_interface, sepal_client, prepare=None, enabled=None):
-    """One row per layer of the sub-indicators switched on in the settings."""
+def _BeltRow(shown, status, on_export):
+    """The bioclimatic belts: both sub-indicators use them, and they need only the AOI."""
+    title = msg('layers.biobelts')
+    is_shown = shown.value and status == 'ready'
+    with rv.Html(tag='tr'):
+        rv.Html(tag='td', children=[title])
+        rv.Html(tag='td', style_='text-align:center;', children=['A, B'])
+        with rv.Html(tag='td', style_='text-align:center; white-space:nowrap;'):
+            _IconAction('mdi-eye' if is_shown else 'mdi-eye-off-outline',
+                        msg('layers.hide' if is_shown else 'layers.show', name=title),
+                        lambda: shown.set(not shown.value), disabled=status not in ('ready', 'loading'),
+                        color='primary' if is_shown else None, busy=status == 'loading')
+            _IconAction('mdi-cloud-upload-outline', msg('layers.export', name=title), on_export)
+
+
+@solara.component
+def LayerPanel(state, publish, shown, gee_interface, drive_interface, sepal_client, prepare=None, enabled=None,
+               belts_shown=None, belts_status=None):
+    """One row per layer of the sub-indicators switched on in the settings.
+
+    With ``belts_shown``, the bioclimatic belts come first as soon as the AOI is set.
+    """
     export_request, set_export_request = solara.use_state(_ExportRequest(0, ''))
     config = state.configuration
     indicators = ('a', 'b') if enabled is None else enabled.value
     choices = tuple(choice for choice in layer_choices(config) if choice[0] in indicators)
+    belts = belts_shown is not None and bool(config.aoi_graph and config.aoi_identity)
 
     def exporter(source_id):
         return lambda: set_export_request(lambda previous: _ExportRequest(previous.nonce + 1, source_id))
 
-    if not choices:
+    if not (choices or belts):
         rv.Html(tag='div', class_='pa-2 text-caption', children=[msg('layers.empty')])
     else:
         with rv.SimpleTable(dense=True):
@@ -175,6 +196,8 @@ def LayerPanel(state, publish, shown, gee_interface, drive_interface, sepal_clie
                         children=[msg('layers.columns.indicator')])
                 rv.Html(tag='th', style_='text-align:center;', children=[msg('layers.columns.action')])
             with rv.Html(tag='tbody'):
+                if belts:
+                    _BeltRow(belts_shown, belts_status, exporter(BELTS_SOURCE)).key('layer-belts')
                 for indicator, selector, title in choices:
                     # Keyed, so a running add stays with its layer when the rows change.
                     _LayerRow(state, publish, indicator, selector, title, shown, gee_interface, prepare,

@@ -28,7 +28,7 @@
       "title": "Resultados",
       "description": "Esta sección contiene los resultados del análisis. Puedes añadir capas al mapa, ver los subindicadores y descargar tareas.",
       "layers_title": "Visualizar capas",
-      "layers_description": "Muestra una capa en el mapa o expórtala. Primero define el área de interés y los años en el paso {step}.",
+      "layers_description": "Muestra una capa en el mapa o expórtala. Los cinturones bioclimáticos solo necesitan el área de interés. Las demás capas también necesitan los años del paso {step}.",
       "sub_a_description": "Explora la composición de la cobertura terrestre del subindicador A por año y por cinturón de montaña.",
       "sub_b_description": "Explora las transiciones de cobertura terrestre por período y por cinturón de montaña."
     }
@@ -109,7 +109,7 @@
       "indicator": "Subindicador",
       "action": "Acción"
     },
-    "empty": "Todavía no hay capas. Primero selecciona el área de interés y los años.",
+    "empty": "Todavía no hay capas. Primero selecciona el área de interés.",
     "show": "Mostrar {name} en el mapa",
     "hide": "Ocultar {name}",
     "cancel": "Dejar de añadir {name}",
