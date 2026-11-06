@@ -30,8 +30,12 @@ class MigrationShellTests(unittest.IsolatedAsyncioTestCase):
             trigger.value
             MgciApp(Interface(), None, object())
         with patch('component.solara.app.SepalMap', return_value=map_), patch('component.solara.app.AreaPanel', AreaBoundary):
-            _, context = solara.render(Harness(), handle_error=False)
+            root, context = solara.render(Harness(), handle_error=False)
             try:
+                from component.widget.app_shell import MgciMapApp
+                shell = next(w for w in walk(root) if isinstance(w, MgciMapApp))
+                # The Documentation link opens the published guide, not a file in this repository.
+                self.assertEqual(shell.docs_url, 'https://mgci-docs.readthedocs.io/en/latest/sepal/index.html')
                 trigger.set(1)
                 await asyncio.sleep(.05)
             finally:

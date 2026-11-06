@@ -85,6 +85,7 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
     MgciMapApp.element(app_title=msg('app.title'), app_icon='mdi-image-filter-hdr', main_map=[map_],
         theme_state=theme, steps_data=steps, dialog_width=750, locales=messages.available_locales(),
         repo_url='https://github.com/sepal-contrib/sepal_mgci',
+        docs_url='https://mgci-docs.readthedocs.io/en/latest/sepal/index.html',
         right_panel_config={'title': msg('app.results.title'), 'icon': 'mdi-image-filter-hdr', 'width': 440,
                             'description': msg('app.results.description'),
                             'toggle_icon': 'mdi-chart-line'},
