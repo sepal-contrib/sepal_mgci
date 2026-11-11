@@ -201,7 +201,7 @@
     "workspace_required": "Connectez un espace de travail SEPAL authentifié pour sélectionner des fichiers utilisateur."
   },
   "veg_layer": {
-    "description": "L'indicateur ODD 15.4.2 utilise des données de couverture terrestre pour évaluer et suivre les changements de couverture terrestre et leur impact estimé en termes de dégradation et de restauration des écosystèmes.</br>Indiquez ci-dessous si vous souhaitez utiliser vos propres cartes de couverture terrestre de votre pays pour calculer les deux sous-indicateurs. Sinon, l'outil utilisera par défaut, comme solution mondiale, la série chronologique de couverture terrestre produite par l'Agence spatiale européenne (ESA) dans le cadre de la Climate Change Initiative (CCI) (pour plus d'informations sur ce jeu de données, consultez <a href='http://maps.elie.ucl.ac.be/CCI/viewer/index.php'>http://maps.elie.ucl.ac.be/CCI/viewer/index.php</a>)",
+    "description": "L'indicateur ODD 15.4.2 utilise des données de couverture terrestre pour évaluer et suivre les changements de couverture terrestre et leur impact estimé en termes de dégradation et de restauration des écosystèmes.</br>Indiquez ci-dessous si vous souhaitez utiliser vos propres cartes de couverture terrestre de votre pays pour calculer les deux sous-indicateurs. Sinon, l'outil utilisera par défaut, comme solution mondiale, la série chronologique de couverture terrestre produite par l'Agence spatiale européenne (ESA) dans le cadre de la Climate Change Initiative (CCI) (pour plus d'informations sur ce jeu de données, consultez <a href='http://maps.elie.ucl.ac.be/CCI/viewer/index.php' target='_blank'>http://maps.elie.ucl.ac.be/CCI/viewer/index.php</a>)",
     "dialog": {
       "validate": "Valider et fermer"
     },

@@ -201,7 +201,7 @@
     "workspace_required": "Conecta un espacio de trabajo de SEPAL autenticado para seleccionar archivos de usuario."
   },
   "veg_layer": {
-    "description": "El indicador ODS 15.4.2 usa datos de cobertura terrestre para evaluar y seguir los cambios de cobertura terrestre y su impacto estimado en términos de degradación y recuperación de los ecosistemas.</br>Indica a continuación si quieres usar un conjunto de mapas de cobertura terrestre personalizados de tu país para calcular ambos subindicadores. Si no, la herramienta usará como solución global predeterminada la serie temporal de cobertura terrestre producida por la Agencia Espacial Europea (ESA) en el marco de la Climate Change Initiative (CCI) (para más información sobre este conjunto de datos, consulta <a href='http://maps.elie.ucl.ac.be/CCI/viewer/index.php'>http://maps.elie.ucl.ac.be/CCI/viewer/index.php</a>)",
+    "description": "El indicador ODS 15.4.2 usa datos de cobertura terrestre para evaluar y seguir los cambios de cobertura terrestre y su impacto estimado en términos de degradación y recuperación de los ecosistemas.</br>Indica a continuación si quieres usar un conjunto de mapas de cobertura terrestre personalizados de tu país para calcular ambos subindicadores. Si no, la herramienta usará como solución global predeterminada la serie temporal de cobertura terrestre producida por la Agencia Espacial Europea (ESA) en el marco de la Climate Change Initiative (CCI) (para más información sobre este conjunto de datos, consulta <a href='http://maps.elie.ucl.ac.be/CCI/viewer/index.php' target='_blank'>http://maps.elie.ucl.ac.be/CCI/viewer/index.php</a>)",
     "dialog": {
       "validate": "Validar y cerrar"
     },

@@ -2,7 +2,6 @@
 
 from dataclasses import replace
 
-import pysepal.sepalwidgets as sw
 import reacton.ipyvuetify as rv
 import solara
 
@@ -17,10 +16,7 @@ from mgci.infrastructure.defaults import classification_labels
 def WorkflowQuestions(value: Workflow, on_value):
     custom = value in (Workflow.CUSTOM_CANONICAL, Workflow.CUSTOM_RECLASSIFY)
     with rv.Html(tag='div', class_='pa-0 ma-0'):
-        # pysepal's Markdown widget, for its link styling.
-        # Markdown renders its text once, so a new key rebuilds it when the language changes.
-        description = msg('veg_layer.description')
-        sw.Markdown.element(mkd_str=description, class_='pa-0 ma-0').key(description)
+        solara.Markdown(msg('veg_layer.description'), style='padding:0;')
         rv.Html(tag='h3', children=[msg('veg_layer.questionnaire.q1')])
         with rv.RadioGroup(v_model=custom, on_v_model=lambda yes: on_value(
                 Workflow.CUSTOM_CANONICAL if yes else Workflow.DEFAULT), row=True):
