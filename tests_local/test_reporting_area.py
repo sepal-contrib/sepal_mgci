@@ -91,7 +91,7 @@ class PysepalPickerTests(unittest.IsolatedAsyncioTestCase):
             self.addCleanup(context.close)
             next(w for w in walk(root) if isinstance(w, v.Select)).v_model = 'ADMIN0'
             await asyncio.sleep(.05)
-            [w for w in walk(root) if isinstance(w, v.Select)][1].v_model = '170'
+            next(w for w in walk(root) if isinstance(w, v.Autocomplete)).v_model = '170'
             await asyncio.sleep(.05)
             next(w for w in walk(root) if isinstance(w, v.Btn) and not w.disabled).fire_event('click', None)
             for _ in range(50):
