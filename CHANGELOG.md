@@ -1,3 +1,10 @@
+## 2.2.1 (2026-11-16)
+
+### Fix
+
+- move to pysepal 4.2
+- open the published documentation from the Documentation link
+
 ## 2.2.0 (2026-11-06)
 
 ### Feat
