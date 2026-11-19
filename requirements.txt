@@ -4,8 +4,8 @@ wheel
 voila
 earthengine-api
 
-pysepal>=4.2.0,<5  # Solara/ee-client generation
-pysepal-api>=0.3.0,<0.4  # compatible with the published pysepal 4.2.0 release
+pysepal>=4.3.0,<5  # 4.3: a Next to "Results" opens the results panel
+pysepal-api>=0.4.0,<0.5  # what pysepal 4.3 requires
 
 solara
 ee-client>=3.2.1  # required by pysepal 4 (provider-agnostic auth)
