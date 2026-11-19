@@ -1,3 +1,14 @@
+## 2.3.0 (2026-11-19)
+
+### Feat
+
+- move to the native Solara MapApp
+
+### Fix
+
+- drop the chart resize nudge, require ipecharts 1.4.2
+- use solara.Markdown for the land-cover description
+
 ## 2.2.1 (2026-11-16)
 
 ### Fix
