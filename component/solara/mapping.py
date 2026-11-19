@@ -165,7 +165,7 @@ def MappingEditor(state, publish, indicator, workspace, sepal_client):
     titles = {'info': msg('reclass.dialog.info_title'), 'target': msg('reclass.tooltip.load_target.title'),
               'import': msg('reclass.dialog.import_.title'), 'save': msg('reclass.dialog.save.title')}
     with rv.Dialog(v_model=bool(active.value), on_v_model=lambda value: None if value else close_dialog(),
-                   max_width=950, overlay_opacity=0.7, eager=True):
+                   max_width=950, overlay_opacity=0.7):
         with rv.Card(class_='pa-2'):
             rv.CardTitle(children=[titles.get(active.value, '')])
             with rv.CardText():

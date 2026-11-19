@@ -35,8 +35,8 @@ def _charts(root):
 def use_chart_resize(root, visible):
     """Redraw the charts at their real size once the dashboard dialog is shown.
 
-    The dialog is eager, so the charts are built hidden and measure a wrong box
-    (pysepal docs/guides/ipecharts.md, "Responsive Charts"). A class change makes
+    The dialog keeps its content while closed, so charts built then are hidden
+    and measure a wrong box (pysepal docs/guides/ipecharts.md, "Responsive Charts"). A class change makes
     ipecharts call resize(); wait first so the browser has laid the dialog out.
     """
     async def follow():
@@ -178,7 +178,7 @@ def ChartPanel(state, publish, indicator, gee_interface, prepare, before_use=Non
         if artifact:
             choices = chart_choices(artifact)
             current = selection.value if selection.value in dict(choices) else choices[-1][0]
-            with rv.Dialog(v_model=opened.value, on_v_model=opened.set, max_width=1180, overlay_opacity=.7, eager=True):
+            with rv.Dialog(v_model=opened.value, on_v_model=opened.set, max_width=1180, overlay_opacity=.7):
                 with rv.Card(class_='pa-2 d-flex flex-column', style_='box-sizing:border-box; height:min(1180px, calc(90vh - 16px)); height:min(1180px, calc(90dvh - 16px));'):
                     rv.CardTitle(children=[msg('app.results.title')])
                     with rv.CardText(class_='flex-grow-1', style_='min-height:0; overflow-y:auto;'):

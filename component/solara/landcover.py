@@ -172,7 +172,7 @@ def LandCoverPanel(state, publish, resources, gee_interface, sepal_client, load_
         solara.Button(msg('veg_layer.questionnaire.btn.label'), on_click=open_dialog,
                       small=True, color='primary', classes=['mt-4'])
 
-    with rv.Dialog(v_model=opened.value, on_v_model=opened.set, persistent=True, max_width=1200, eager=True):
+    with rv.Dialog(v_model=opened.value, on_v_model=opened.set, persistent=True, max_width=1200):
         with rv.Card():
             # A plain layout around the stepper, so its 'box-shadow: inherit'
             # resolves to none rather than the card's shadow.

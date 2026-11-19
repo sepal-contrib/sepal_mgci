@@ -140,7 +140,7 @@ def IndicatorYears(config, indicator, enabled, on_enabled, on_images):
                                     rv.Html(tag='span', children=[', '])
                                 rv.Chip(color='success', small=True, children=[year])
     with rv.Dialog(v_model=opened.value, on_v_model=lambda value: None if value else close(),
-                   persistent=True, eager=True, max_width=750):
+                   persistent=True, max_width=750):
         with rv.Card(max_width=750, min_height=420, class_='pa-4', style_='height:100%;'):
             with rv.CardTitle():
                 rv.Html(tag='span', children=[text('title')])

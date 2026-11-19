@@ -6,11 +6,11 @@ import solara
 from pysepal.mapping import SepalMap
 from pysepal.solara import get_current_theme_state
 from pysepal.solara.components.admin import AdminButton
+from pysepal.solara.components.map_app import MapApp
 from pysepal.solara.notifications import NotificationProvider
 
 from component.message import messages, msg
 from component.scripts.steps import add_step_actions
-from component.widget.app_shell import MgciMapApp
 from mgci.application.operations import prepare_request, refresh_transition
 from mgci.application.state import ResourceState
 from mgci.errors import LocalizedError
@@ -82,7 +82,7 @@ def MgciApp(gee_interface, sepal_client, drive_interface):
         {'id': 6, 'name': msg('app.drawer_item.task'), 'icon': 'mdi-export', 'display': 'dialog',
          'content': [TaskPanel(state, publish, workspace, gee_interface, drive_interface, sepal_client)]},
     ])
-    MgciMapApp.element(app_title=msg('app.title'), app_icon='mdi-image-filter-hdr', main_map=[map_],
+    MapApp(app_title=msg('app.title'), app_icon='mdi-image-filter-hdr', main_map=[map_],
         theme_state=theme, steps_data=steps, dialog_width=750, locales=messages.available_locales(),
         repo_url='https://github.com/sepal-contrib/sepal_mgci',
         docs_url='https://mgci-docs.readthedocs.io/en/latest/sepal/index.html',

@@ -32,10 +32,9 @@ class MigrationShellTests(unittest.IsolatedAsyncioTestCase):
         with patch('component.solara.app.SepalMap', return_value=map_), patch('component.solara.app.AreaPanel', AreaBoundary):
             root, context = solara.render(Harness(), handle_error=False)
             try:
-                from component.widget.app_shell import MgciMapApp
-                shell = next(w for w in walk(root) if isinstance(w, MgciMapApp))
+                links = [w.href for w in walk(root) if hasattr(w, 'vue_click') and w.href]
                 # The Documentation link opens the published guide, not a file in this repository.
-                self.assertEqual(shell.docs_url, 'https://mgci-docs.readthedocs.io/en/latest/sepal/index.html')
+                self.assertIn('https://mgci-docs.readthedocs.io/en/latest/sepal/index.html', links)
                 trigger.set(1)
                 await asyncio.sleep(.05)
             finally:
