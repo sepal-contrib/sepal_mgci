@@ -24,4 +24,4 @@ pytest
 pygaul>=0.4.2 # GAUL 2024 columns (gaul0_code); required by pysepal 4
 
 ipyvuetify<3
-ipecharts>=1.4
+ipecharts>=1.4.2

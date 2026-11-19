@@ -55,7 +55,6 @@ class LandCoverAfterAreaTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_full_mapapp_nested_landcover_uses_published_aoi(self):
         from component.solara.app import MgciApp
-        from component.widget.app_shell import MgciMapApp
         from pysepal.mapping import SepalMap
         seen, calls = [], []
         @solara.component
@@ -79,13 +78,16 @@ class LandCoverAfterAreaTests(unittest.IsolatedAsyncioTestCase):
                 for child in getattr(widget, 'children', ()):
                     if not isinstance(child, str):
                         yield from walk_shell(child)
-            shell = next(widget for widget in walk_shell(root) if isinstance(widget, MgciMapApp))
             state, publish = seen[-1]
             state.edit(replace(state.configuration, aoi_identity='new-mapapp-aoi', aoi_graph='captured'))
             publish()
-            shell.vue_handle_step_activation(3)
-            step_content = next(step for step in shell.steps_data if step['id'] == 3)['content']
-            button = next(widget for content in step_content for widget in widgets(content)
+            item = next(widget for widget in walk_shell(root) if hasattr(widget, 'vue_click')
+                        and (widget.item_attributes or {}).get('data-step-id') == '3')
+            item.vue_click(None)
+            window = next(widget for widget in walk_shell(root) if isinstance(widget, v.Dialog)
+                          and 'sepal-mapapp__dialog' in (widget.content_class or ''))
+            self.assertTrue(window.v_model)
+            button = next(widget for widget in widgets(window)
                           if isinstance(widget, v.Btn) and 'Set up land cover' in widget.children)
             button.fire_event('click', None)
             await until(lambda: bool(calls))

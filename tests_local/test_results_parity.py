@@ -57,10 +57,9 @@ class ChartParityTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('Degradation', text())
 
 
-class ChartResizeTests(unittest.IsolatedAsyncioTestCase):
-    async def test_shown_dialog_nudges_each_chart_to_redraw(self):
-        import asyncio
-        from component.solara.charts import _charts
+class ChartRenderTests(unittest.IsolatedAsyncioTestCase):
+    async def test_b_dashboard_renders_its_chart(self):
+        from ipecharts.echarts import EChartsRawWidget, EChartsWidget
         state = report_state()
         selected = state.configuration.b
         images = tuple(ImageSelection(f'lc/{year}', year) for year in (2000, 2015, 2018))
@@ -71,9 +70,6 @@ class ChartResizeTests(unittest.IsolatedAsyncioTestCase):
         request = state.prepare('b', 'statistics')
         rows = [{'biobelt': 1, 'groups': [{'lc': 104, 'sum': 3.0}, {'lc': 401, 'sum': 1.0}]}]
         state.accept(request, {'2000_2015_2018': {'baseline_transition': rows, 'report_transition': rows}})
-        root, context = solara.render(BChart(state.current('b', 'statistics'), 'baseline', True), handle_error=False)
+        root, context = solara.render(BChart(state.current('b', 'statistics'), 'baseline'), handle_error=False)
         self.addCleanup(context.close)
-        charts = [chart for widget in walk(root) for chart in _charts(widget)]
-        self.assertTrue(charts)
-        await asyncio.sleep(.4)
-        self.assertTrue(all({'mgci-resize-a', 'mgci-resize-b'} & set(chart._dom_classes) for chart in charts))
+        self.assertTrue(any(isinstance(widget, (EChartsWidget, EChartsRawWidget)) for widget in walk(root)))

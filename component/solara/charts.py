@@ -1,6 +1,5 @@
 """Captured-result charts retaining the existing ipecharts renderers."""
 
-import asyncio
 import logging
 from types import SimpleNamespace
 
@@ -18,40 +17,8 @@ from component.message import msg
 log = logging.getLogger('MGCI.solara.charts')
 
 
-def _charts(root):
-    """Every ipecharts widget in a widget tree."""
-    import ipywidgets
-    from ipecharts.echarts import EChartsRawWidget, EChartsWidget
-
-    found, stack = [], [root]
-    while stack:
-        item = stack.pop()
-        if isinstance(item, (EChartsWidget, EChartsRawWidget)):
-            found.append(item)
-        stack.extend(child for child in getattr(item, 'children', None) or () if isinstance(child, ipywidgets.Widget))
-    return found
-
-
-def use_chart_resize(root, visible):
-    """Redraw the charts at their real size once the dashboard dialog is shown.
-
-    The dialog is eager, so the charts are built hidden and measure a wrong box
-    (pysepal docs/guides/ipecharts.md, "Responsive Charts"). A class change makes
-    ipecharts call resize(); wait first so the browser has laid the dialog out.
-    """
-    async def follow():
-        if not visible or root is None:
-            return
-        await asyncio.sleep(0.25)
-        for chart in _charts(root):
-            flipped = 'mgci-resize-b' if 'mgci-resize-a' in chart._dom_classes else 'mgci-resize-a'
-            chart.remove_class('mgci-resize-a').remove_class('mgci-resize-b').add_class(flipped)
-
-    solara.lab.use_task(follow, dependencies=[visible, id(root)], prefer_threaded=False)
-
-
 @solara.component
-def AChart(artifact, selection, visible=True):
+def AChart(artifact, selection):
     from component.widget.mgci_dashboard import MgciDashboard, close_tree
     previous = solara.use_ref(None)
 
@@ -67,12 +34,11 @@ def AChart(artifact, selection, visible=True):
     # The dashboard holds translated text, so a language change rebuilds it.
     widget = solara.use_memo(build, [artifact.request.request_id, selection, current_locale()])
     solara.use_effect(lambda: lambda: close_tree(widget), [widget])
-    use_chart_resize(widget, visible)
     rv.Html(tag='div', children=[widget])
 
 
 @solara.component
-def BChart(artifact, selection, visible=True):
+def BChart(artifact, selection):
     from component.scripts.plots import get_nodes_and_links, get_sankey_chart, get_transition_matrix_chart
     from component.widget.mgci_dashboard import BeltSelector, belt_label, close_tree
     from component.parameter.module_parameter import DECODE
@@ -103,7 +69,6 @@ def BChart(artifact, selection, visible=True):
     locale = current_locale()
     chart = solara.use_memo(build, [artifact.request.request_id, selection, effective, view.value, locale])
     solara.use_effect(lambda: chart.close, [chart])
-    use_chart_resize(chart, visible)
     selector = solara.use_memo(lambda: BeltSelector(belts, on_select=belt.set), [belts, locale])
     solara.use_effect(lambda: lambda: close_tree(selector), [selector])
     solara.use_effect(lambda: selector.select(effective), [selector, effective])
@@ -178,7 +143,7 @@ def ChartPanel(state, publish, indicator, gee_interface, prepare, before_use=Non
         if artifact:
             choices = chart_choices(artifact)
             current = selection.value if selection.value in dict(choices) else choices[-1][0]
-            with rv.Dialog(v_model=opened.value, on_v_model=opened.set, max_width=1180, overlay_opacity=.7, eager=True):
+            with rv.Dialog(v_model=opened.value, on_v_model=opened.set, max_width=1180, overlay_opacity=.7):
                 with rv.Card(class_='pa-2 d-flex flex-column', style_='box-sizing:border-box; height:min(1180px, calc(90vh - 16px)); height:min(1180px, calc(90dvh - 16px));'):
                     rv.CardTitle(children=[msg('app.results.title')])
                     with rv.CardText(class_='flex-grow-1', style_='min-height:0; overflow-y:auto;'):
@@ -189,9 +154,9 @@ def ChartPanel(state, publish, indicator, gee_interface, prepare, before_use=Non
                                 solara.Button(label, on_click=lambda key=key: selection.set(key), small=True,
                                               outlined=current != key, color='primary', classes=['text-none', 'mx-1'])
                         if indicator == 'a':
-                            AChart(artifact, current, opened.value)
+                            AChart(artifact, current)
                         else:
-                            BChart(artifact, current, opened.value)
+                            BChart(artifact, current)
                     with rv.CardActions():
                         rv.Spacer()
                         solara.Button(msg('app.step_action.close'), on_click=lambda: opened.set(False), small=True, text=True,
